@@ -12,6 +12,7 @@ use App\Models\DashboardLog;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Hash;
 use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\Storage;
 
 class CoordinatorController extends Controller
 {
@@ -195,41 +196,25 @@ class CoordinatorController extends Controller
             'document_title' => 'required|string|max:150',
             'document_type' => 'required|in:pdf,image',
             'documents' => 'required|array',
-            'documents.*' => 'required|file|max:10240',
+            'documents.*' => $request->input('document_type') === 'pdf'
+                ? 'required|file|max:10240|mimes:pdf|mimetypes:application/pdf'
+                : 'required|file|max:10240|mimes:jpg,jpeg,png|mimetypes:image/jpeg,image/png',
             'category' => 'required|in:Policies,Forms,Reports,Memos,Research Papers,Other',
             'tags' => 'nullable|string',
         ]);
-
-        // Additional validation: Ensure file extensions match document_type
-        $documentType = $validated['document_type'];
-        foreach ($request->file('documents') as $file) {
-            $extension = strtolower($file->getClientOriginalExtension());
-            
-            if ($documentType === 'pdf' && $extension !== 'pdf') {
-                return redirect()->back()
-                    ->withErrors(['documents' => 'You selected "PDF Document" but uploaded a non-PDF file.'])
-                    ->withInput();
-            }
-            
-            if ($documentType === 'image' && !in_array($extension, ['jpg', 'jpeg', 'png'])) {
-                return redirect()->back()
-                    ->withErrors(['documents' => 'You selected "Image File" but uploaded an invalid image format. Only JPG, JPEG, PNG allowed.'])
-                    ->withInput();
-            }
-        }
 
         // Parse tags
         $tags = !empty($validated['tags']) ? implode(',', array_map('trim', explode(',', $validated['tags']))) : '';
 
         $uploadedCount = 0;
         foreach ($request->file('documents') as $index => $file) {
-            $filename = time() . '_' . $index . '_' . $file->getClientOriginalName();
-            $file->move(public_path('uploads/documents'), $filename);
+            $filename = time() . '_' . $index . '_' . $file->hashName();
+            Storage::disk('local')->putFileAs('documents', $file, $filename);
 
             Document::create([
                 'uploaded_by' => auth()->id(),
                 'document_title' => $validated['document_title'] . ($uploadedCount > 0 ? ' (' . ($uploadedCount + 1) . ')' : ''),
-                'file_path' => 'uploads/documents/' . $filename,
+                'file_path' => 'documents/' . $filename,
                 'document_type' => $validated['document_type'],
                 'category' => $validated['category'],
                 'tags' => $tags,
@@ -395,41 +380,43 @@ class CoordinatorController extends Controller
     public function viewDocument($id)
     {
         $document = Document::findOrFail($id);
-        $filePath = public_path($document->file_path);
 
-        if (!file_exists($filePath)) {
+        if (!$document->canView(auth()->user())) {
+            abort(403, 'Unauthorized access');
+        }
+
+        if (!Storage::disk('local')->exists($document->file_path)) {
             abort(404, 'File not found');
         }
 
         // Track document view
         DocumentView::trackView(auth()->id(), $id);
 
-        $extension = strtolower(pathinfo($filePath, PATHINFO_EXTENSION));
-        $mimeTypes = [
-            'pdf' => 'application/pdf',
-            'png' => 'image/png',
-            'jpg' => 'image/jpeg',
-            'jpeg' => 'image/jpeg',
-        ];
+        $mimeType = Storage::disk('local')->mimeType($document->file_path);
+        $allowedMimes = ['application/pdf', 'image/jpeg', 'image/png'];
+        if (!in_array($mimeType, $allowedMimes)) {
+            $mimeType = 'application/octet-stream';
+        }
 
-        $mimeType = $mimeTypes[$extension] ?? 'application/octet-stream';
-
-        return response()->file($filePath, [
+        return Storage::disk('local')->response($document->file_path, null, [
             'Content-Type' => $mimeType,
-            'Content-Disposition' => 'inline; filename="' . basename($filePath) . '"'
+            'Content-Disposition' => 'inline; filename="' . basename($document->file_path) . '"',
         ]);
     }
 
     public function downloadDocument($id)
     {
         $document = Document::findOrFail($id);
-        $filePath = public_path($document->file_path);
 
-        if (!file_exists($filePath)) {
+        if (!$document->canView(auth()->user())) {
+            abort(403, 'Unauthorized access');
+        }
+
+        if (!Storage::disk('local')->exists($document->file_path)) {
             abort(404, 'File not found');
         }
 
-        return response()->download($filePath, basename($document->file_path));
+        return Storage::disk('local')->download($document->file_path, basename($document->file_path));
     }
 
     // Toggle document favorite

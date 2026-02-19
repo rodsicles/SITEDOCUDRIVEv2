@@ -4,6 +4,7 @@ namespace App\Models;
 
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
+use App\Models\Employee;
 
 class CalendarEvent extends Model
 {
@@ -68,12 +69,24 @@ class CalendarEvent extends Model
     // Get events for a specific user
     public static function getEventsForUser($userId, $startDate = null, $endDate = null)
     {
-        $query = self::where(function($q) use ($userId) {
+        $userDepartment = Employee::where('user_id', $userId)->value('department');
+
+        $query = self::where(function($q) use ($userId, $userDepartment) {
             $q->where('created_by', $userId)
               ->orWhere('visibility', 'Public')
               ->orWhereHas('attendees', function($q2) use ($userId) {
                   $q2->where('user_id', $userId);
               });
+
+            // Include Department-scoped events where creator is in the same department
+            if ($userDepartment) {
+                $q->orWhere(function($q3) use ($userDepartment) {
+                    $q3->where('visibility', 'Department')
+                       ->whereHas('creator.employee', function($q4) use ($userDepartment) {
+                           $q4->where('department', $userDepartment);
+                       });
+                });
+            }
         });
 
         if ($startDate) {

@@ -22,7 +22,7 @@ class AuthController extends Controller
             'password' => 'required|string',
         ]);
 
-        if (Auth::attempt(['username' => $credentials['username'], 'password' => $credentials['password']])) {
+        if (Auth::attempt(['username' => $credentials['username'], 'password' => $credentials['password'], 'status' => 'Active'])) {
             $request->session()->regenerate();
             
             DashboardLog::create([

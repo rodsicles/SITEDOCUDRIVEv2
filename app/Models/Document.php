@@ -76,6 +76,25 @@ class Document extends Model
     }
 
     /**
+     * Check if a user is allowed to view/download this document.
+     */
+    public function canView(User $user): bool
+    {
+        if ($user->isDean()) {
+            return true;
+        }
+
+        if ($user->role_id === 2) { // Program Coordinator
+            // Own documents + faculty uploads
+            return $this->uploaded_by === $user->id
+                || optional($this->uploader)->role_id === 3;
+        }
+
+        // Faculty – own documents only
+        return $this->uploaded_by === $user->id;
+    }
+
+    /**
      * Get filtered documents based on user role
      * Faculty uploads are visible to: owner, coordinator, and dean
      * Coordinator uploads are visible to: owner and dean

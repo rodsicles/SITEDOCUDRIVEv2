@@ -40,8 +40,10 @@ class SearchController extends Controller
         }
 
         // Search Tasks
-        $tasksQuery = Task::where('task_title', 'LIKE', "%{$query}%")
-            ->orWhere('task_description', 'LIKE', "%{$query}%");
+        $tasksQuery = Task::where(function($q) use ($query) {
+            $q->where('task_title', 'LIKE', "%{$query}%")
+              ->orWhere('task_description', 'LIKE', "%{$query}%");
+        });
 
         if ($user->isFaculty()) {
             $tasksQuery->where('assigned_to', $user->id);
@@ -66,9 +68,12 @@ class SearchController extends Controller
             ];
         }
 
-        // Search Documents
-        $documents = Document::where('document_title', 'LIKE', "%{$query}%")
-            ->orWhere('document_type', 'LIKE', "%{$query}%")
+        // Search Documents (role-filtered)
+        $documents = Document::getFilteredDocuments($user)
+            ->where(function ($q) use ($query) {
+                $q->where('document_title', 'LIKE', "%{$query}%")
+                  ->orWhere('document_type', 'LIKE', "%{$query}%");
+            })
             ->limit(5)
             ->get();
 

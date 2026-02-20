@@ -2,8 +2,8 @@
 
 @section('title', 'Dean Dashboard')
 
-@section('page-title', 'Dean Dashboard')
-@section('page-subtitle', 'Comprehensive overview of employee analytics')
+@section('page-title', 'Data Analytics Dashboard')
+@section('page-subtitle', 'Comprehensive overview of system analytics')
 
 @section('sidebar')
     <a href="{{ route('dean.dashboard') }}" class="menu-item active">
@@ -42,28 +42,126 @@
 
         <div class="stat-card">
             <div class="stat-icon">
+                <i class="fas fa-file-alt"></i>
+            </div>
+            <div class="stat-value">{{ $totalDocuments }}</div>
+            <div class="stat-label">Total Documents</div>
+        </div>
+
+        <div class="stat-card">
+            <div class="stat-icon">
+                <i class="fas fa-calendar-times"></i>
+            </div>
+            <div class="stat-value">{{ $leaveThisMonth }}</div>
+            <div class="stat-label">Total Leave</div>
+            <small style="display: block; font-size: 0.75rem; margin-top: 0.25rem; color: #6b7280;">This month | {{ $leaveThisYear }} this year</small>
+        </div>
+
+        <div class="stat-card">
+            <div class="stat-icon">
                 <i class="fas fa-tasks"></i>
             </div>
             <div class="stat-value">{{ $totalTasks }}</div>
             <div class="stat-label">Total Tasks</div>
         </div>
+    </div>
 
-        <div class="stat-card">
-            <div class="stat-icon">
-                <i class="fas fa-check-circle"></i>
-            </div>
-            <div class="stat-value">{{ $completedTasks }}</div>
-            <div class="stat-label">Completed Tasks</div>
+    <!-- System Usage Analytics Chart -->
+    <div class="bg-white dark:bg-[#2a2a2a] rounded-xl p-6 mb-6 shadow-md border border-gray-200 dark:border-gray-700 animate-[fadeIn_0.5s_ease]">
+        <div class="flex justify-between items-center mb-5 pb-4 border-b-2 border-gray-200 dark:border-gray-700">
+            <h3 class="text-lg font-semibold text-gray-800 dark:text-gray-200 m-0">
+                <i class="fas fa-chart-bar mr-2"></i>System Usage Analytics ({{ date('Y') }})
+            </h3>
+            <span class="inline-block px-3 py-1 text-xs font-semibold rounded-md bg-green-100 dark:bg-green-900/30 text-green-800 dark:text-green-300">Monthly Activity</span>
         </div>
-
-        <div class="stat-card">
-            <div class="stat-icon">
-                <i class="fas fa-clock"></i>
-            </div>
-            <div class="stat-value">{{ $pendingTasks }}</div>
-            <div class="stat-label">Pending Tasks</div>
+        
+        <!-- Bar Chart -->
+        <div class="relative" style="height: 300px;">
+            <canvas id="systemUsageChart"></canvas>
         </div>
     </div>
+
+    <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js"></script>
+    <script>
+        const ctx = document.getElementById('systemUsageChart').getContext('2d');
+        const monthlyData = @json(array_values($monthlyUsage));
+        const monthLabels = @json($monthNames);
+        
+        new Chart(ctx, {
+            type: 'bar',
+            data: {
+                labels: monthLabels,
+                datasets: [{
+                    label: 'System Activities',
+                    data: monthlyData,
+                    backgroundColor: 'rgba(2, 138, 15, 0.65)',
+                    borderColor: '#028a0f',
+                    borderWidth: 2,
+                    borderRadius: 8,
+                    hoverBackgroundColor: '#028a0f'
+                }]
+            },
+            options: {
+                responsive: true,
+                maintainAspectRatio: false,
+                plugins: {
+                    legend: {
+                        display: true,
+                        position: 'top',
+                        labels: {
+                            color: document.documentElement.classList.contains('dark') ? '#e5e7eb' : '#374151',
+                            font: {
+                                size: 12,
+                                weight: '600'
+                            }
+                        }
+                    },
+                    tooltip: {
+                        backgroundColor: 'rgba(0, 0, 0, 0.8)',
+                        titleColor: '#fff',
+                        bodyColor: '#fff',
+                        borderColor: '#028a0f',
+                        borderWidth: 1,
+                        padding: 12,
+                        displayColors: false,
+                        callbacks: {
+                            label: function(context) {
+                                return 'Activities: ' + context.parsed.y;
+                            }
+                        }
+                    }
+                },
+                scales: {
+                    y: {
+                        beginAtZero: true,
+                        ticks: {
+                            color: document.documentElement.classList.contains('dark') ? '#9ca3af' : '#6b7280',
+                            font: {
+                                size: 11
+                            },
+                            stepSize: 1
+                        },
+                        grid: {
+                            color: document.documentElement.classList.contains('dark') ? '#374151' : '#e5e7eb',
+                            drawBorder: false
+                        }
+                    },
+                    x: {
+                        ticks: {
+                            color: document.documentElement.classList.contains('dark') ? '#9ca3af' : '#6b7280',
+                            font: {
+                                size: 11,
+                                weight: '600'
+                            }
+                        },
+                        grid: {
+                            display: false
+                        }
+                    }
+                }
+            }
+        });
+    </script>
 
     <!-- Top Performers -->
     <div class="content-card">

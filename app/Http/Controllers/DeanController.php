@@ -17,9 +17,41 @@ class DeanController extends Controller
     public function dashboard()
     {
         $totalEmployees = Employee::count();
+        
+        // Total Documents in the system
+        $totalDocuments = Document::count();
+        
+        // Dean's leave requests this month and year
+        $leaveThisMonth = \App\Models\LeaveRequest::where('user_id', auth()->id())
+            ->whereYear('start_date', date('Y'))
+            ->whereMonth('start_date', date('m'))
+            ->count();
+        
+        $leaveThisYear = \App\Models\LeaveRequest::where('user_id', auth()->id())
+            ->whereYear('start_date', date('Y'))
+            ->count();
+        
+        // Total tasks in the system
         $totalTasks = Task::count();
-        $completedTasks = Task::where('status', 'Completed')->count();
-        $pendingTasks = Task::where('status', 'Pending')->count();
+        
+        // System Usage Analytics by Month (Current Year)
+        $systemUsageData = DashboardLog::select(
+                DB::raw('MONTH(log_date) as month'),
+                DB::raw('COUNT(*) as activity_count')
+            )
+            ->whereYear('log_date', date('Y'))
+            ->groupBy('month')
+            ->orderBy('month')
+            ->get();
+        
+        // Create array with all 12 months
+        $monthlyUsage = array_fill(1, 12, 0);
+        foreach ($systemUsageData as $data) {
+            $monthlyUsage[$data->month] = $data->activity_count;
+        }
+        
+        // Month names
+        $monthNames = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
         
         // Dean sees all activities using filtered logs
         $recentActivities = DashboardLog::getFilteredLogs(auth()->user(), 10);
@@ -41,9 +73,12 @@ class DeanController extends Controller
 
         return view('dean.dashboard', compact(
             'totalEmployees',
+            'totalDocuments',
+            'leaveThisMonth',
+            'leaveThisYear',
             'totalTasks',
-            'completedTasks',
-            'pendingTasks',
+            'monthlyUsage',
+            'monthNames',
             'recentActivities',
             'performanceData',
             'topPerformers'

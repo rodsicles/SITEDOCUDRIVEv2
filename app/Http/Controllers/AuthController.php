@@ -28,6 +28,7 @@ class AuthController extends Controller
             DashboardLog::create([
                 'user_id' => Auth::id(),
                 'activity' => 'User logged in',
+                'activity_type' => 'login',
             ]);
 
             $role = Auth::user()->role->role_name;
@@ -50,6 +51,7 @@ class AuthController extends Controller
         DashboardLog::create([
             'user_id' => Auth::id(),
             'activity' => 'User logged out',
+            'activity_type' => 'logout',
         ]);
 
         Auth::logout();

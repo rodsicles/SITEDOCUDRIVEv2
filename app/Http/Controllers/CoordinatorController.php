@@ -19,13 +19,22 @@ class CoordinatorController extends Controller
     public function dashboard()
     {
         $totalFaculty = User::where('role_id', 3)->count();
-        $myTasks = Task::where('assigned_by', auth()->id())->count();
-        $pendingTasks = Task::where('assigned_by', auth()->id())
-            ->where('status', 'Pending')
+        
+        // Total Documents submitted by coordinator
+        $totalDocuments = Document::where('uploaded_by', auth()->id())->count();
+        
+        // Coordinator's leave requests this month and year
+        $leaveThisMonth = \App\Models\LeaveRequest::where('user_id', auth()->id())
+            ->whereYear('start_date', date('Y'))
+            ->whereMonth('start_date', date('m'))
             ->count();
-        $completedTasks = Task::where('assigned_by', auth()->id())
-            ->where('status', 'Completed')
+        
+        $leaveThisYear = \App\Models\LeaveRequest::where('user_id', auth()->id())
+            ->whereYear('start_date', date('Y'))
             ->count();
+        
+        // Total tasks created by coordinator
+        $totalTasks = Task::where('assigned_by', auth()->id())->count();
 
         $recentTasks = Task::with(['assignedTo.employee'])
             ->where('assigned_by', auth()->id())
@@ -43,9 +52,10 @@ class CoordinatorController extends Controller
 
         return view('coordinator.dashboard', compact(
             'totalFaculty',
-            'myTasks',
-            'pendingTasks',
-            'completedTasks',
+            'totalDocuments',
+            'leaveThisMonth',
+            'leaveThisYear',
+            'totalTasks',
             'recentTasks',
             'facultyList',
             'recentActivities'

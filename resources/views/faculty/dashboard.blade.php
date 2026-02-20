@@ -2,8 +2,8 @@
 
 @section('title', 'Faculty Dashboard')
 
-@section('page-title', 'My Dashboard')
-@section('page-subtitle', 'Track your tasks and performance')
+@section('page-title', 'Data Analytics Dashboard')
+@section('page-subtitle', 'Track your performance metrics and activities')
 
 @section('sidebar')
     <a href="{{ route('faculty.dashboard') }}" class="menu-item active">
@@ -33,38 +33,33 @@
 @endsection
 
 @section('content')
-    <!-- Stats Grid -->
-    <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-5 mb-6">
-        <div class="bg-white dark:bg-[#2a2a2a] rounded-xl p-6 shadow-md transition-all hover:-translate-y-1 hover:shadow-lg border border-gray-200 dark:border-gray-700 animate-[fadeInUp_0.5s_ease] [animation-delay:0.1s]">
-            <div class="w-12 h-12 rounded-xl bg-gradient-to-br from-[rgba(2,138,15,0.65)] to-[#028a0f] flex items-center justify-center text-xl text-white mb-4">
-                <i class="fas fa-tasks"></i>
+    <!-- Stats Grid - 3 Metrics -->
+    <div class="stats-grid">
+        <div class="stat-card">
+            <div class="stat-icon">
+                <i class="fas fa-file-alt"></i>
             </div>
-            <div class="text-3xl font-bold text-gray-800 dark:text-gray-200 mb-1 leading-tight">{{ $totalTasks }}</div>
-            <div class="text-sm text-gray-600 dark:text-gray-400 font-medium uppercase tracking-wide">Total Tasks</div>
+            <div class="stat-value">{{ $totalDocuments }}</div>
+            <div class="stat-label">Total Documents</div>
+            <small style="display: block; font-size: 0.75rem; margin-top: 0.25rem; color: #6b7280;">Submitted by you</small>
         </div>
 
-        <div class="bg-white dark:bg-[#2a2a2a] rounded-xl p-6 shadow-md transition-all hover:-translate-y-1 hover:shadow-lg border border-gray-200 dark:border-gray-700 animate-[fadeInUp_0.5s_ease] [animation-delay:0.2s]">
-            <div class="w-12 h-12 rounded-xl bg-gradient-to-br from-[rgba(2,138,15,0.65)] to-[#028a0f] flex items-center justify-center text-xl text-white mb-4">
-                <i class="fas fa-clock"></i>
+        <div class="stat-card">
+            <div class="stat-icon">
+                <i class="fas fa-calendar-times"></i>
             </div>
-            <div class="text-3xl font-bold text-gray-800 dark:text-gray-200 mb-1 leading-tight">{{ $pendingTasks }}</div>
-            <div class="text-sm text-gray-600 dark:text-gray-400 font-medium uppercase tracking-wide">Pending</div>
+            <div class="stat-value">{{ $leaveThisMonth }}</div>
+            <div class="stat-label">Total Leave</div>
+            <small style="display: block; font-size: 0.75rem; margin-top: 0.25rem; color: #6b7280;">This month | {{ $leaveThisYear }} this year</small>
         </div>
 
-        <div class="bg-white dark:bg-[#2a2a2a] rounded-xl p-6 shadow-md transition-all hover:-translate-y-1 hover:shadow-lg border border-gray-200 dark:border-gray-700 animate-[fadeInUp_0.5s_ease] [animation-delay:0.3s]">
-            <div class="w-12 h-12 rounded-xl bg-gradient-to-br from-[rgba(2,138,15,0.65)] to-[#028a0f] flex items-center justify-center text-xl text-white mb-4">
-                <i class="fas fa-spinner"></i>
-            </div>
-            <div class="text-3xl font-bold text-gray-800 dark:text-gray-200 mb-1 leading-tight">{{ $inProgressTasks }}</div>
-            <div class="text-sm text-gray-600 dark:text-gray-400 font-medium uppercase tracking-wide">In Progress</div>
-        </div>
-
-        <div class="bg-white dark:bg-[#2a2a2a] rounded-xl p-6 shadow-md transition-all hover:-translate-y-1 hover:shadow-lg border border-gray-200 dark:border-gray-700 animate-[fadeInUp_0.5s_ease] [animation-delay:0.4s]">
-            <div class="w-12 h-12 rounded-xl bg-gradient-to-br from-[rgba(2,138,15,0.65)] to-[#028a0f] flex items-center justify-center text-xl text-white mb-4">
+        <div class="stat-card">
+            <div class="stat-icon">
                 <i class="fas fa-check-circle"></i>
             </div>
-            <div class="text-3xl font-bold text-gray-800 dark:text-gray-200 mb-1 leading-tight">{{ $completedTasks }}</div>
-            <div class="text-sm text-gray-600 dark:text-gray-400 font-medium uppercase tracking-wide">Completed</div>
+            <div class="stat-value">{{ $completedTasks }}</div>
+            <div class="stat-label">Task Completed</div>
+            <small style="display: block; font-size: 0.75rem; margin-top: 0.25rem; color: #6b7280;">All time</small>
         </div>
     </div>
 

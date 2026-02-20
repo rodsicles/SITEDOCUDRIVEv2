@@ -14,13 +14,22 @@ class FacultyController extends Controller
 {
     public function dashboard()
     {
-        $totalTasks = Task::where('assigned_to', auth()->id())->count();
-        $pendingTasks = Task::where('assigned_to', auth()->id())
-            ->where('status', 'Pending')
+        // NEW METRICS: Total Documents, Leave Requests, Task Completed
+        $totalDocuments = Document::where('uploaded_by', auth()->id())->count();
+        
+        // Leave requests this month
+        $employee = auth()->user()->employee;
+        $leaveThisMonth = \App\Models\LeaveRequest::where('user_id', auth()->id())
+            ->whereYear('start_date', date('Y'))
+            ->whereMonth('start_date', date('m'))
             ->count();
-        $inProgressTasks = Task::where('assigned_to', auth()->id())
-            ->where('status', 'In Progress')
+        
+        // Leave requests this year
+        $leaveThisYear = \App\Models\LeaveRequest::where('user_id', auth()->id())
+            ->whereYear('start_date', date('Y'))
             ->count();
+        
+        // Task completed
         $completedTasks = Task::where('assigned_to', auth()->id())
             ->where('status', 'Completed')
             ->count();
@@ -40,7 +49,6 @@ class FacultyController extends Controller
             ->take(5)
             ->get();
 
-        $employee = auth()->user()->employee;
         $performanceReports = PerformanceReport::with('evaluator')
             ->where('employee_id', $employee->employee_id)
             ->latest('report_date')
@@ -51,9 +59,9 @@ class FacultyController extends Controller
         $recentActivities = \App\Models\DashboardLog::getFilteredLogs(auth()->user(), 10);
 
         return view('faculty.dashboard', compact(
-            'totalTasks',
-            'pendingTasks',
-            'inProgressTasks',
+            'totalDocuments',
+            'leaveThisMonth',
+            'leaveThisYear',
             'completedTasks',
             'recentTasks',
             'unreadNotifications',

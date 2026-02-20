@@ -2,8 +2,8 @@
 
 @section('title', 'Program Coordinator Dashboard')
 
-@section('page-title', 'Coordinator Dashboard')
-@section('page-subtitle', 'Manage tasks and faculty members')
+@section('page-title', 'Data Analytics Dashboard')
+@section('page-subtitle', 'Manage tasks and faculty performance')
 
 @section('sidebar')
     <a href="{{ route('coordinator.dashboard') }}" class="menu-item active">
@@ -39,26 +39,27 @@
 
         <div class="stat-card">
             <div class="stat-icon">
+                <i class="fas fa-file-alt"></i>
+            </div>
+            <div class="stat-value">{{ $totalDocuments }}</div>
+            <div class="stat-label">Total Documents</div>
+        </div>
+
+        <div class="stat-card">
+            <div class="stat-icon">
+                <i class="fas fa-calendar-times"></i>
+            </div>
+            <div class="stat-value">{{ $leaveThisMonth }}</div>
+            <div class="stat-label">Total Leave</div>
+            <small style="display: block; font-size: 0.75rem; margin-top: 0.25rem; color: #6b7280;">This month | {{ $leaveThisYear }} this year</small>
+        </div>
+
+        <div class="stat-card">
+            <div class="stat-icon">
                 <i class="fas fa-tasks"></i>
             </div>
-            <div class="stat-value">{{ $myTasks }}</div>
-            <div class="stat-label">My Tasks</div>
-        </div>
-
-        <div class="stat-card">
-            <div class="stat-icon">
-                <i class="fas fa-check-circle"></i>
-            </div>
-            <div class="stat-value">{{ $completedTasks }}</div>
-            <div class="stat-label">Completed</div>
-        </div>
-
-        <div class="stat-card">
-            <div class="stat-icon">
-                <i class="fas fa-clock"></i>
-            </div>
-            <div class="stat-value">{{ $pendingTasks }}</div>
-            <div class="stat-label">Pending</div>
+            <div class="stat-value">{{ $totalTasks }}</div>
+            <div class="stat-label">Total Tasks</div>
         </div>
     </div>
 

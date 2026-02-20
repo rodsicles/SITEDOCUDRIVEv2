@@ -12,6 +12,12 @@
     <a href="{{ route('coordinator.tasks') }}" class="menu-item">
         <i class="fas fa-tasks"></i> Tasks
     </a>
+    <a href="{{ route('leave.index') }}" class="menu-item">
+        <i class="fas fa-calendar-alt"></i> Leave Requests
+    </a>
+    <a href="{{ route('calendar.index') }}" class="menu-item">
+        <i class="fas fa-calendar"></i> Calendar
+    </a>
     <a href="{{ route('coordinator.faculty') }}" class="menu-item active">
         <i class="fas fa-users"></i> Faculty Members
     </a>

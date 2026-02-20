@@ -160,14 +160,33 @@ class LeaveController extends Controller
                 ->get();
         }
 
-        // Format for calendar
+        // Format for calendar with better colors and info
         $events = $leaves->map(function($leave) {
+            // Different colors based on leave type
+            $colors = [
+                'Sick Leave' => '#ef4444',      // Red-500
+                'Vacation Leave' => '#3b82f6',   // Blue-500  
+                'Emergency Leave' => '#f97316',  // Orange-500
+                'Personal Leave' => '#8b5cf6',   // Violet-500
+                'Study Leave' => '#f59e0b',      // Amber-500
+                'Maternity Leave' => '#ec4899',  // Pink-500
+                'Paternity Leave' => '#06b6d4',  // Cyan-500
+                'Other' => '#6b7280'             // Gray-500
+            ];
+
             return [
                 'title' => $leave->user->username . ' - ' . $leave->leave_type,
                 'start' => $leave->start_date->format('Y-m-d'),
                 'end' => $leave->end_date->addDay()->format('Y-m-d'), // FullCalendar end is exclusive
-                'color' => '#dc3545',
+                'color' => $colors[$leave->leave_type] ?? '#dc2626',
                 'description' => $leave->reason,
+                'textColor' => '#ffffff',
+                'classNames' => ['leave-event'],
+                'extendedProps' => [
+                    'leaveType' => $leave->leave_type,
+                    'employeeName' => $leave->user->employee->full_name ?? $leave->user->username,
+                    'days' => $leave->days_count
+                ]
             ];
         });
 

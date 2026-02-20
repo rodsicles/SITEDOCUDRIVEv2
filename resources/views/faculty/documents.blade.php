@@ -12,6 +12,12 @@
     <a href="{{ route('faculty.tasks') }}" class="menu-item">
         <i class="fas fa-tasks"></i> My Tasks
     </a>
+    <a href="{{ route('leave.index') }}" class="menu-item">
+        <i class="fas fa-calendar-alt"></i> Leave Requests
+    </a>
+    <a href="{{ route('calendar.index') }}" class="menu-item">
+        <i class="fas fa-calendar"></i> Calendar
+    </a>
     <a href="{{ route('faculty.notifications') }}" class="menu-item">
         <i class="fas fa-bell"></i> Notifications
     </a>

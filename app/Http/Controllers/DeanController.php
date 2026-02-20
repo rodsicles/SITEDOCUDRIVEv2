@@ -52,7 +52,7 @@ class DeanController extends Controller
 
     public function employees()
     {
-        $employees = Employee::with('user.role')->paginate(15);
+        $employees = Employee::with('user.role')->latest('created_at')->paginate(15);
         return view('dean.employees', compact('employees'));
     }
 

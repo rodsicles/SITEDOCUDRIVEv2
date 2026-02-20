@@ -9,6 +9,12 @@
     <a href="{{ route('dean.dashboard') }}" class="menu-item">
         <i class="fas fa-chart-line"></i> Dashboard
     </a>
+    <a href="{{ route('leave.index') }}" class="menu-item">
+        <i class="fas fa-calendar-alt"></i> Leave Requests
+    </a>
+    <a href="{{ route('calendar.index') }}" class="menu-item">
+        <i class="fas fa-calendar"></i> Calendar
+    </a>
     <a href="{{ route('dean.employees') }}" class="menu-item active">
         <i class="fas fa-users"></i> Employees
     </a>

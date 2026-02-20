@@ -47,6 +47,11 @@ class CalendarController extends Controller
     // Create event form
     public function create()
     {
+        // Only Dean and Coordinator can create events
+        if (!auth()->user()->isProgramCoordinator() && !auth()->user()->isDean()) {
+            return back()->with('error', 'Only Program Coordinators and Deans can create events.');
+        }
+
         $users = User::with('employee')->where('status', 'Active')->get();
         return view('calendar.create', compact('users'));
     }
@@ -54,6 +59,10 @@ class CalendarController extends Controller
     // Store event
     public function store(Request $request)
     {
+        // Only Dean and Coordinator can create events
+        if (!auth()->user()->isProgramCoordinator() && !auth()->user()->isDean()) {
+            return back()->with('error', 'Only Program Coordinators and Deans can create events.');
+        }
         $validated = $request->validate([
             'title' => 'required|string|max:200',
             'description' => 'nullable|string',
@@ -130,9 +139,13 @@ class CalendarController extends Controller
     {
         $event = CalendarEvent::findOrFail($id);
 
-        // Only creator can update
+        // Only creator can update, and only if they are Dean/Coordinator
         if ($event->created_by !== auth()->id()) {
             return back()->with('error', 'You can only edit your own events.');
+        }
+
+        if (!auth()->user()->isProgramCoordinator() && !auth()->user()->isDean()) {
+            return back()->with('error', 'Only Program Coordinators and Deans can update events.');
         }
 
         $validated = $request->validate([
@@ -156,9 +169,15 @@ class CalendarController extends Controller
     {
         $event = CalendarEvent::findOrFail($id);
 
-        // Only creator or admin can delete
-        if ($event->created_by !== auth()->id() && !auth()->user()->isDean()) {
+        // Only creator (if Dean/Coordinator) or Dean can delete
+        $user = auth()->user();
+        if ($event->created_by !== $user->id && !$user->isDean()) {
             return back()->with('error', 'Unauthorized action.');
+        }
+
+        // If user is the creator, they must be Dean or Coordinator
+        if ($event->created_by === $user->id && !$user->isProgramCoordinator() && !$user->isDean()) {
+            return back()->with('error', 'Only Program Coordinators and Deans can delete events.');
         }
 
         // Notify attendees

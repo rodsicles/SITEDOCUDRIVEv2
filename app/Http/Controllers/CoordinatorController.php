@@ -56,6 +56,7 @@ class CoordinatorController extends Controller
     {
         $tasks = Task::with(['assignedTo.employee'])
             ->where('assigned_by', auth()->id())
+            ->latest('created_at')
             ->paginate(15);
         return view('coordinator.tasks', compact('tasks'));
     }
@@ -123,6 +124,7 @@ class CoordinatorController extends Controller
     {
         $facultyMembers = User::with('employee')
             ->where('role_id', 3)
+            ->latest('created_at')
             ->paginate(15);
         return view('coordinator.faculty', compact('facultyMembers'));
     }

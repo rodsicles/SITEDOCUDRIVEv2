@@ -102,9 +102,11 @@
     <div class="content-card">
         <div class="card-header">
             <h3 class="card-title">Event Calendar</h3>
+            @if(auth()->user()->isProgramCoordinator() || auth()->user()->isDean())
             <a href="{{ route('calendar.create') }}" class="btn btn-success">
                 <i class="fas fa-plus"></i> Create Event
             </a>
+            @endif
         </div>
 
         <!-- Legend -->

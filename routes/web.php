@@ -36,16 +36,20 @@ Route::middleware('auth')->prefix('leave')->name('leave.')->group(function () {
     Route::get('/calendar', [LeaveController::class, 'calendar'])->name('calendar');
 });
 
-// Calendar/Events (All authenticated users)
+// Calendar/Events (All authenticated users can view, only Dean/Coordinator can create/edit)
 Route::middleware('auth')->prefix('calendar')->name('calendar.')->group(function () {
     Route::get('/', [CalendarController::class, 'index'])->name('index');
-    Route::get('/create', [CalendarController::class, 'create'])->name('create');
-    Route::post('/', [CalendarController::class, 'store'])->name('store');
     Route::get('/{id}', [CalendarController::class, 'show'])->name('show');
-    Route::put('/{id}', [CalendarController::class, 'update'])->name('update');
-    Route::delete('/{id}', [CalendarController::class, 'destroy'])->name('destroy');
     Route::post('/{id}/respond', [CalendarController::class, 'respond'])->name('respond');
     Route::get('/events/json', [CalendarController::class, 'getEvents'])->name('events.json');
+    
+    // Only Dean and Coordinator can create/edit/delete events
+    Route::middleware('role:Dean,Program Coordinator')->group(function () {
+        Route::get('/create', [CalendarController::class, 'create'])->name('create');
+        Route::post('/', [CalendarController::class, 'store'])->name('store');
+        Route::put('/{id}', [CalendarController::class, 'update'])->name('update');
+        Route::delete('/{id}', [CalendarController::class, 'destroy'])->name('destroy');
+    });
 });
 
 // Dean Routes

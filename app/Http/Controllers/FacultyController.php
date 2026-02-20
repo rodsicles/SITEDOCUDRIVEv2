@@ -67,6 +67,7 @@ class FacultyController extends Controller
     {
         $tasks = Task::with('assignedBy')
             ->where('assigned_to', auth()->id())
+            ->latest('created_at')
             ->paginate(15);
         return view('faculty.tasks', compact('tasks'));
     }

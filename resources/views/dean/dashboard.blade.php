@@ -87,6 +87,9 @@
         const monthlyData = @json(array_values($monthlyUsage));
         const monthLabels = @json($monthNames);
         
+        // Calculate total for percentage
+        const totalActivities = monthlyData.reduce((sum, val) => sum + val, 0);
+        
         new Chart(ctx, {
             type: 'bar',
             data: {
@@ -126,7 +129,12 @@
                         displayColors: false,
                         callbacks: {
                             label: function(context) {
-                                return 'Activities: ' + context.parsed.y;
+                                const value = context.parsed.y;
+                                const percentage = totalActivities > 0 ? ((value / totalActivities) * 100).toFixed(1) : 0;
+                                return [
+                                    'Activities: ' + value,
+                                    'Percentage: ' + percentage + '%'
+                                ];
                             }
                         }
                     }

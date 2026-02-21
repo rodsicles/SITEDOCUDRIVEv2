@@ -207,7 +207,6 @@
                 <thead>
                     <tr>
                         <th class="bg-transparent text-gray-600 dark:text-gray-400 font-semibold text-xs uppercase tracking-wide px-3 py-3 text-left border-b border-gray-200 dark:border-gray-700">Activity</th>
-                        <th class="bg-transparent text-gray-600 dark:text-gray-400 font-semibold text-xs uppercase tracking-wide px-3 py-3 text-left border-b border-gray-200 dark:border-gray-700">Type</th>
                         <th class="bg-transparent text-gray-600 dark:text-gray-400 font-semibold text-xs uppercase tracking-wide px-3 py-3 text-left border-b border-gray-200 dark:border-gray-700">Date & Time</th>
                     </tr>
                 </thead>
@@ -216,26 +215,22 @@
                     <tr class="transition-colors hover:bg-gray-50 dark:hover:bg-gray-800">
                         <td class="px-3 py-4 border-b border-gray-200 dark:border-gray-700 text-gray-800 dark:text-gray-200 text-sm">
                             {{ $activity->activity }}
+                            @if($activity->activity_type)
+                                <span class="inline-block px-3 py-1 text-xs font-semibold rounded-md bg-gray-100 dark:bg-gray-700 text-gray-700 dark:text-gray-300 ml-1.5">
+                                    {{ ucfirst(str_replace('_', ' ', $activity->activity_type)) }}
+                                </span>
+                            @endif
                             @if($activity->user_id !== auth()->id() && $activity->user)
                                 <br><small class="text-gray-600 dark:text-gray-400">
                                     <i class="fas fa-info-circle"></i> By {{ $activity->user->employee->full_name ?? $activity->user->username }}
                                 </small>
                             @endif
                         </td>
-                        <td class="px-3 py-4 border-b border-gray-200 dark:border-gray-700 text-sm">
-                            @if($activity->activity_type)
-                                <span class="inline-block px-3 py-1 text-xs font-semibold rounded-md bg-gray-100dark:bg-gray-700 text-gray-700 dark:text-gray-300">
-                                    {{ ucfirst(str_replace('_', ' ', $activity->activity_type)) }}
-                                </span>
-                            @else
-                                <span class="text-gray-600 dark:text-gray-400">—</span>
-                            @endif
-                        </td>
                         <td class="px-3 py-4 border-b border-gray-200 dark:border-gray-700 text-gray-800 dark:text-gray-200 text-sm">{{ $activity->log_date->format('M d, Y h:i A') }}</td>
                     </tr>
                     @empty
                     <tr>
-                        <td colspan="3" class="px-3 py-8 text-center text-gray-600 dark:text-gray-400">
+                        <td colspan="2" class="px-3 py-8 text-center text-gray-600 dark:text-gray-400">
                             No recent activities
                         </td>
                     </tr>

@@ -8,6 +8,7 @@
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
 </head>
 <body class="flex flex-col justify-center items-center min-h-screen h-full p-4 sm:p-5 bg-gradient-to-br from-[#028a0f] to-[#026a0c] dark:from-[#0a1f0c] dark:to-[#051108] transition-colors duration-300" data-font-size="medium">
+
     <!-- Loading Overlay -->
     <div id="loadingOverlay" class="fixed inset-0 bg-white/85 dark:bg-black/85 backdrop-blur-sm z-[9999] hidden items-center justify-center animate-[fadeIn_0.3s_ease] transition-colors duration-300">
         <div class="text-center bg-white dark:bg-[#2a2a2a] p-10 px-12 rounded-3xl shadow-[0_20px_60px_rgba(0,0,0,0.3)] animate-[bounceIn_0.5s_ease] transition-colors duration-300">

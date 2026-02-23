@@ -39,8 +39,6 @@ Route::middleware('auth')->prefix('leave')->name('leave.')->group(function () {
 // Calendar/Events (All authenticated users can view, only Dean/Coordinator can create/edit)
 Route::middleware('auth')->prefix('calendar')->name('calendar.')->group(function () {
     Route::get('/', [CalendarController::class, 'index'])->name('index');
-    Route::get('/{id}', [CalendarController::class, 'show'])->name('show');
-    Route::post('/{id}/respond', [CalendarController::class, 'respond'])->name('respond');
     Route::get('/events/json', [CalendarController::class, 'getEvents'])->name('events.json');
     
     // Only Dean and Coordinator can create/edit/delete events
@@ -50,6 +48,10 @@ Route::middleware('auth')->prefix('calendar')->name('calendar.')->group(function
         Route::put('/{id}', [CalendarController::class, 'update'])->name('update');
         Route::delete('/{id}', [CalendarController::class, 'destroy'])->name('destroy');
     });
+    
+    // Show and respond routes - MUST come after /create to avoid conflicts
+    Route::get('/{id}', [CalendarController::class, 'show'])->name('show');
+    Route::post('/{id}/respond', [CalendarController::class, 'respond'])->name('respond');
 });
 
 // Dean Routes

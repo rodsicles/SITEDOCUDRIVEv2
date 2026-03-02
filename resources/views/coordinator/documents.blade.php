@@ -92,6 +92,31 @@
             <h3 class="card-title">All Documents</h3>
             <span class="badge badge-info">{{ $documents->total() }} Files</span>
         </div>
+
+        <!-- Category Filter -->
+        <div class="flex flex-wrap gap-2 px-4 pb-4">
+            <a href="{{ route('coordinator.documents') }}" 
+               class="btn text-xs py-1.5 px-3 {{ !$categoryFilter ? 'btn-primary' : 'bg-gray-200 dark:bg-gray-700 text-gray-700 dark:text-gray-300' }}">
+                <i class="fas fa-th-list mr-1"></i> All
+            </a>
+            @foreach($categories as $cat)
+                @php
+                    $catColors = [
+                        'Policies' => '#1976d2',
+                        'Forms' => '#388e3c',
+                        'Reports' => '#d32f2f',
+                        'Memos' => '#f57c00',
+                        'Research Papers' => '#7b1fa2',
+                        'Other' => '#616161',
+                    ];
+                @endphp
+                <a href="{{ route('coordinator.documents', ['category' => $cat]) }}" 
+                   class="btn text-xs py-1.5 px-3 {{ $categoryFilter === $cat ? 'text-white' : 'bg-gray-200 dark:bg-gray-700 text-gray-700 dark:text-gray-300' }}"
+                   @if($categoryFilter === $cat) style="background: {{ $catColors[$cat] ?? '#616161' }}" @endif>
+                    {{ $cat }}
+                </a>
+            @endforeach
+        </div>
         <table class="data-table">
             <thead>
                 <tr>

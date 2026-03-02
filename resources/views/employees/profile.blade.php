@@ -11,7 +11,7 @@
             <i class="fas fa-chart-line"></i> Dashboard
         </a>
         <a href="{{ route('dean.employees') }}" class="menu-item">
-            <i class="fas fa-users"></i> Employees
+            <i class="fas fa-users"></i> Faculty Members
         </a>
         <a href="{{ route('dean.reports') }}" class="menu-item">
             <i class="fas fa-file-alt"></i> Performance Reports
@@ -43,7 +43,7 @@
     <div class="mb-5">
         @if(auth()->user()->isDean())
             <a href="{{ route('dean.employees') }}" class="btn btn-secondary">
-                <i class="fas fa-arrow-left"></i> Back to Employees
+                <i class="fas fa-arrow-left"></i> Back to Faculty Members
             </a>
         @else
             <a href="{{ route('coordinator.faculty') }}" class="btn btn-secondary">
@@ -167,6 +167,23 @@
         </div>
         
         @if($documentStats['total'] > 0)
+            <!-- Folder Filter Buttons -->
+            @if($folders->count() > 0)
+            <div class="flex flex-wrap gap-2 mb-5 px-4">
+                <button onclick="filterDocuments('all')" class="folder-filter-btn active" data-folder="all">
+                    <i class="fas fa-th-list"></i> All Documents
+                </button>
+                <button onclick="filterDocuments('uncategorized')" class="folder-filter-btn" data-folder="uncategorized">
+                    <i class="fas fa-folder-open"></i> Uncategorized ({{ $documents->whereNull('folder_id')->count() }})
+                </button>
+                @foreach($folders as $folder)
+                <button onclick="filterDocuments({{ $folder->folder_id }})" class="folder-filter-btn" data-folder="{{ $folder->folder_id }}" style="border-left: 4px solid {{ $folder->color }}">
+                    <i class="fas fa-folder"></i> {{ $folder->folder_name }} ({{ $folder->documents_count }})
+                </button>
+                @endforeach
+            </div>
+            @endif
+
             <!-- Document Stats by Type -->
             <div class="flex flex-wrap gap-2.5 mb-5 p-2.5 bg-gray-100 dark:bg-gray-800 rounded-lg">
                 @foreach($documentStats['byType'] as $type => $count)
@@ -180,6 +197,7 @@
                 <thead>
                     <tr>
                         <th>Document Title</th>
+                        <th>Folder</th>
                         <th>Type</th>
                         <th>File Name</th>
                         <th>Upload Date</th>
@@ -188,8 +206,19 @@
                 </thead>
                 <tbody>
                     @foreach($documents as $document)
-                    <tr>
+                    <tr class="document-row" data-folder="{{ $document->folder_id ?? 'uncategorized' }}">
                         <td><strong>{{ $document->document_title }}</strong></td>
+                        <td>
+                            @if($document->folder)
+                                <span class="px-2 py-1 rounded text-xs" style="background: {{ $document->folder->color }}20; color: {{ $document->folder->color }}; border: 1px solid {{ $document->folder->color }}">
+                                    <i class="fas fa-folder"></i> {{ $document->folder->folder_name }}
+                                </span>
+                            @else
+                                <span class="text-gray-500 text-xs">
+                                    <i class="fas fa-folder-open"></i> Uncategorized
+                                </span>
+                            @endif
+                        </td>
                         <td>
                             <span class="badge badge-info">
                                 {{ $document->document_type ?? 'N/A' }}
@@ -374,3 +403,30 @@
         @endif
     </div>
 @endsection
+
+@push('scripts')
+<script>
+function filterDocuments(folderId) {
+    const rows = document.querySelectorAll('.document-row');
+    const buttons = document.querySelectorAll('.folder-filter-btn');
+    
+    // Update active button
+    buttons.forEach(btn => btn.classList.remove('active'));
+    document.querySelector(`[data-folder="${folderId}"]`).classList.add('active');
+    
+    // Filter rows
+    rows.forEach(row => {
+        const rowFolder = row.getAttribute('data-folder');
+        if (folderId === 'all') {
+            row.style.display = '';
+        } else if (folderId === 'uncategorized' && rowFolder === 'uncategorized') {
+            row.style.display = '';
+        } else if (rowFolder == folderId) {
+            row.style.display = '';
+        } else {
+            row.style.display = 'none';
+        }
+    });
+}
+</script>
+@endpush

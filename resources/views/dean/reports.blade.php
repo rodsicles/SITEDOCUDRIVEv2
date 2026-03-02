@@ -16,7 +16,7 @@
         <i class="fas fa-calendar"></i> Calendar
     </a>
     <a href="{{ route('dean.employees') }}" class="menu-item">
-        <i class="fas fa-users"></i> Employees
+        <i class="fas fa-users"></i> Faculty Members
     </a>
     <a href="{{ route('dean.reports') }}" class="menu-item active">
         <i class="fas fa-file-alt"></i> Performance Reports

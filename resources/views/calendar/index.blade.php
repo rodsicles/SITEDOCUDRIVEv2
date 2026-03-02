@@ -51,49 +51,69 @@
 @push('styles')
 <link href="https://cdn.jsdelivr.net/npm/fullcalendar@6.1.10/index.global.min.css" rel="stylesheet">
 <style>
-    #calendar {
-        background: var(--white);
-        padding: 20px;
-        border-radius: 12px;
-        box-shadow: var(--shadow);
+    :root {
+        --fc-button-bg-color: #028a0f;
+        --fc-button-border-color: #028a0f;
+        --fc-button-text-color: #fff;
+        --fc-button-hover-bg-color: #026a0c;
+        --fc-button-hover-border-color: #026a0c;
+        --fc-button-active-bg-color: #025509;
+        --fc-button-active-border-color: #025509;
     }
-    .fc {
-        color: var(--text-dark);
+
+    [data-theme="dark"] {
+        --fc-button-bg-color: #02b815;
+        --fc-button-border-color: #02b815;
+        --fc-button-hover-bg-color: #028a0f;
+        --fc-button-hover-border-color: #028a0f;
+        --fc-button-active-bg-color: #026a0c;
+        --fc-button-active-border-color: #026a0c;
     }
-    .fc .fc-button {
-        background: var(--primary-color);
-        border-color: var(--primary-color);
+
+    .fc .fc-button-primary {
+        background-color: #028a0f !important;
+        border-color: #028a0f !important;
+        color: #ffffff !important;
+        font-weight: 600 !important;
+        border-radius: 0.5rem !important;
+        box-shadow: 0 2px 4px rgba(2, 138, 15, 0.3) !important;
     }
-    .fc .fc-button:hover {
-        background: var(--primary-dark);
-        border-color: var(--primary-dark);
+
+    .fc .fc-button-primary:hover:not(:disabled) {
+        background-color: #026a0c !important;
+        border-color: #026a0c !important;
     }
-    .fc .fc-button-primary:not(:disabled).fc-button-active {
-        background: var(--primary-dark);
-        border-color: var(--primary-dark);
+
+    .fc .fc-button-primary:not(:disabled).fc-button-active,
+    .fc .fc-button-primary:not(:disabled):active {
+        background-color: #025509 !important;
+        border-color: #025509 !important;
     }
-    .legend {
-        display: flex;
-        gap: 20px;
-        flex-wrap: wrap;
-        margin-bottom: 20px;
-        padding: 15px;
-        background: rgb(243 244 246 / var(--tw-bg-opacity, 1));
-        border-radius: 8px;
+
+    .fc .fc-button-primary:disabled {
+        background-color: #9ca3af !important;
+        border-color: #9ca3af !important;
+        opacity: 0.6 !important;
     }
-    [data-theme="dark"] .legend {
-        background: rgb(55 65 81 / var(--tw-bg-opacity, 1));
+
+    [data-theme="dark"] .fc .fc-button-primary {
+        background-color: #02b815 !important;
+        border-color: #02b815 !important;
+        color: #ffffff !important;
     }
-    .legend-item {
-        display: flex;
-        align-items: center;
-        gap: 8px;
-        font-size: 13px;
+
+    [data-theme="dark"] .fc .fc-button-primary:hover:not(:disabled) {
+        background-color: #028a0f !important;
+        border-color: #028a0f !important;
     }
-    .legend-color {
-        width: 20px;
-        height: 20px;
-        border-radius: 4px;
+
+    .fc .fc-toolbar-title {
+        font-weight: 700 !important;
+        color: #1f2937 !important;
+    }
+
+    [data-theme="dark"] .fc .fc-toolbar-title {
+        color: #f3f4f6 !important;
     }
 </style>
 @endpush
@@ -110,34 +130,28 @@
         </div>
 
         <!-- Legend -->
-        <div class="legend">
-            <div class="legend-item">
-                <div class="legend-color bg-blue-600"></div>
-                <span>Meeting</span>
+        <div class="calendar-legend">
+            <div class="calendar-legend-title">Event Types</div>
+            <div class="calendar-legend-item">
+                <span class="calendar-legend-dot" style="background:#2563eb"></span> Meeting
             </div>
-            <div class="legend-item">
-                <div class="legend-color bg-red-600"></div>
-                <span>Deadline</span>
+            <div class="calendar-legend-item">
+                <span class="calendar-legend-dot" style="background:#dc2626"></span> Deadline
             </div>
-            <div class="legend-item">
-                <div class="legend-color bg-green-600"></div>
-                <span>Training</span>
+            <div class="calendar-legend-item">
+                <span class="calendar-legend-dot" style="background:#16a34a"></span> Training
             </div>
-            <div class="legend-item">
-                <div class="legend-color bg-purple-600"></div>
-                <span>Conference</span>
+            <div class="calendar-legend-item">
+                <span class="calendar-legend-dot" style="background:#9333ea"></span> Conference
             </div>
-            <div class="legend-item">
-                <div class="legend-color bg-yellow-500"></div>
-                <span>Holiday</span>
+            <div class="calendar-legend-item">
+                <span class="calendar-legend-dot" style="background:#eab308"></span> Holiday
             </div>
-            <div class="legend-item">
-                <div class="legend-color bg-cyan-600"></div>
-                <span>Seminar</span>
+            <div class="calendar-legend-item">
+                <span class="calendar-legend-dot" style="background:#0891b2"></span> Seminar
             </div>
-            <div class="legend-item">
-                <div class="legend-color bg-gray-600"></div>
-                <span>Other</span>
+            <div class="calendar-legend-item">
+                <span class="calendar-legend-dot" style="background:#4b5563"></span> Other
             </div>
         </div>
 

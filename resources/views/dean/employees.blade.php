@@ -1,9 +1,9 @@
 @extends('layouts.dashboard')
 
-@section('title', 'Employees - Dean')
+@section('title', 'Faculty Members - Dean')
 
-@section('page-title', 'All Employees')
-@section('page-subtitle', 'Manage and view all employee information')
+@section('page-title', 'Faculty Members')
+@section('page-subtitle', 'Manage and view all faculty information')
 
 @section('sidebar')
     <a href="{{ route('dean.dashboard') }}" class="menu-item">
@@ -16,7 +16,7 @@
         <i class="fas fa-calendar"></i> Calendar
     </a>
     <a href="{{ route('dean.employees') }}" class="menu-item active">
-        <i class="fas fa-users"></i> Employees
+        <i class="fas fa-users"></i> Faculty Members
     </a>
     <a href="{{ route('dean.reports') }}" class="menu-item">
         <i class="fas fa-file-alt"></i> Performance Reports
@@ -32,7 +32,7 @@
 @section('content')
     <div class="content-card">
         <div class="card-header">
-            <h3 class="card-title">Employee Directory</h3>
+            <h3 class="card-title">Faculty Directory</h3>
             <span class="badge badge-info">{{ $employees->total() }} Total</span>
         </div>
         <table class="data-table">
@@ -75,7 +75,7 @@
                 @empty
                 <tr>
                     <td colspan="7" class="text-center text-gray-500 dark:text-gray-400">
-                        No employees found
+                        No faculty members found
                     </td>
                 </tr>
                 @endforelse

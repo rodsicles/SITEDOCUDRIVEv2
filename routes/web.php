@@ -9,6 +9,7 @@ use App\Http\Controllers\SearchController;
 use App\Http\Controllers\ProfileController;
 use App\Http\Controllers\LeaveController;
 use App\Http\Controllers\CalendarController;
+use App\Http\Controllers\FolderController;
 
 // Authentication Routes
 Route::get('/', [AuthController::class, 'showLogin'])->name('login');
@@ -31,6 +32,9 @@ Route::middleware('auth')->prefix('leave')->name('leave.')->group(function () {
     Route::get('/', [LeaveController::class, 'index'])->name('index');
     Route::get('/create', [LeaveController::class, 'create'])->name('create');
     Route::post('/', [LeaveController::class, 'store'])->name('store');
+    Route::get('/{id}/edit', [LeaveController::class, 'edit'])->name('edit');
+    Route::patch('/{id}', [LeaveController::class, 'update'])->name('update');
+    Route::post('/{id}/cancel', [LeaveController::class, 'cancel'])->name('cancel');
     Route::post('/{id}/approve', [LeaveController::class, 'approve'])->name('approve');
     Route::post('/{id}/reject', [LeaveController::class, 'reject'])->name('reject');
     Route::get('/calendar', [LeaveController::class, 'calendar'])->name('calendar');
@@ -64,6 +68,13 @@ Route::middleware(['auth', 'role:Dean'])->prefix('dean')->name('dean.')->group(f
     Route::get('/documents', [DeanController::class, 'documents'])->name('documents');
     Route::get('/documents/{id}/view', [DeanController::class, 'viewDocument'])->name('view-document');
     Route::get('/documents/{id}/download', [DeanController::class, 'downloadDocument'])->name('download-document');
+    
+    // Folder Management
+    Route::post('/folders', [FolderController::class, 'store'])->name('folders.store');
+    Route::patch('/folders/{folder}', [FolderController::class, 'update'])->name('folders.update');
+    Route::delete('/folders/{folder}', [FolderController::class, 'destroy'])->name('folders.destroy');
+    Route::get('/folders/list', [FolderController::class, 'getUserFolders'])->name('folders.list');
+    Route::post('/documents/{document}/move', [FolderController::class, 'moveDocument'])->name('documents.move');
 });
 
 // Program Coordinator Routes
@@ -91,6 +102,13 @@ Route::middleware(['auth', 'role:Program Coordinator'])->prefix('coordinator')->
     Route::post('/documents', [CoordinatorController::class, 'uploadDocument'])->name('upload-document');
     Route::get('/documents/{id}/view', [CoordinatorController::class, 'viewDocument'])->name('view-document');
     Route::get('/documents/{id}/download', [CoordinatorController::class, 'downloadDocument'])->name('download-document');
+    
+    // Folder Management
+    Route::post('/folders', [FolderController::class, 'store'])->name('folders.store');
+    Route::patch('/folders/{folder}', [FolderController::class, 'update'])->name('folders.update');
+    Route::delete('/folders/{folder}', [FolderController::class, 'destroy'])->name('folders.destroy');
+    Route::get('/folders/list', [FolderController::class, 'getUserFolders'])->name('folders.list');
+    Route::post('/documents/{document}/move', [FolderController::class, 'moveDocument'])->name('documents.move');
 });
 
 // Faculty Employee Routes
@@ -99,6 +117,13 @@ Route::middleware(['auth', 'role:Faculty Employee'])->prefix('faculty')->name('f
     Route::get('/tasks', [FacultyController::class, 'tasks'])->name('tasks');
     Route::patch('/tasks/{id}/status', [FacultyController::class, 'updateTaskStatus'])->name('update-task-status');
     Route::get('/notifications', [FacultyController::class, 'notifications'])->name('notifications');
+    
+    // Folder Management
+    Route::post('/folders', [FolderController::class, 'store'])->name('folders.store');
+    Route::patch('/folders/{folder}', [FolderController::class, 'update'])->name('folders.update');
+    Route::delete('/folders/{folder}', [FolderController::class, 'destroy'])->name('folders.destroy');
+    Route::get('/folders/list', [FolderController::class, 'getUserFolders'])->name('folders.list');
+    Route::post('/documents/{document}/move', [FolderController::class, 'moveDocument'])->name('documents.move');
     Route::post('/notifications/{id}/read', [FacultyController::class, 'markNotificationRead'])->name('mark-notification-read');
     Route::get('/documents', [FacultyController::class, 'documents'])->name('documents');
     Route::post('/documents', [FacultyController::class, 'uploadDocument'])->name('upload-document');

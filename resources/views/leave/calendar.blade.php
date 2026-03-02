@@ -48,39 +48,75 @@
 @push('styles')
 <link href="https://cdn.jsdelivr.net/npm/fullcalendar@6.1.10/index.global.min.css" rel="stylesheet">
 <style>
-    #calendar {
-        background: var(--white);
-        padding: 20px;
-        border-radius: 12px;
-        box-shadow: var(--shadow);
+    :root {
+        --fc-button-bg-color: #028a0f;
+        --fc-button-border-color: #028a0f;
+        --fc-button-text-color: #fff;
+        --fc-button-hover-bg-color: #026a0c;
+        --fc-button-hover-border-color: #026a0c;
+        --fc-button-active-bg-color: #025509;
+        --fc-button-active-border-color: #025509;
     }
-    .fc {
-        color: var(--text-dark);
+
+    [data-theme="dark"] {
+        --fc-button-bg-color: #02b815;
+        --fc-button-border-color: #02b815;
+        --fc-button-hover-bg-color: #028a0f;
+        --fc-button-hover-border-color: #028a0f;
+        --fc-button-active-bg-color: #026a0c;
+        --fc-button-active-border-color: #026a0c;
     }
-    .fc .fc-button {
-        background: var(--primary-color);
-        border-color: var(--primary-color);
-    }
-    .fc .fc-button:hover {
-        background: var(--primary-dark);
-        border-color: var(--primary-dark);
-    }
-    .fc .fc-button-primary:not(:disabled).fc-button-active {
-        background: var(--primary-dark);
-        border-color: var(--primary-dark);
-    }
-    
-    /* Weekend highlighting with Tailwind-like values */
-    .weekend-cell {
-        background-color: rgba(0, 0, 0, 0.05) !important;
-    }
-    
-    /* Leave event styling */
-    .leave-event {
-        border-radius: 0.375rem !important; /* rounded-md */
-        border: none !important;
+
+    .fc .fc-button-primary {
+        background-color: #028a0f !important;
+        border-color: #028a0f !important;
+        color: #ffffff !important;
         font-weight: 600 !important;
-        font-size: 0.875rem !important;
+        padding: 0.5rem 1rem !important;
+        border-radius: 0.5rem !important;
+        box-shadow: 0 2px 4px rgba(2, 138, 15, 0.3) !important;
+    }
+
+    .fc .fc-button-primary:hover:not(:disabled) {
+        background-color: #026a0c !important;
+        border-color: #026a0c !important;
+        transform: translateY(-1px) !important;
+    }
+
+    .fc .fc-button-primary:not(:disabled).fc-button-active,
+    .fc .fc-button-primary:not(:disabled):active {
+        background-color: #025509 !important;
+        border-color: #025509 !important;
+    }
+
+    .fc .fc-button-primary:disabled {
+        background-color: #9ca3af !important;
+        border-color: #9ca3af !important;
+        opacity: 0.6 !important;
+    }
+
+    [data-theme="dark"] .fc .fc-button-primary {
+        background-color: #02b815 !important;
+        border-color: #02b815 !important;
+        color: #ffffff !important;
+    }
+
+    [data-theme="dark"] .fc .fc-button-primary:hover:not(:disabled) {
+        background-color: #028a0f !important;
+        border-color: #028a0f !important;
+    }
+
+    .fc .fc-toolbar-title {
+        font-weight: 700 !important;
+        color: #1f2937 !important;
+    }
+
+    [data-theme="dark"] .fc .fc-toolbar-title {
+        color: #f3f4f6 !important;
+    }
+
+    [data-theme="dark"] .fc .fc-daygrid-day {
+        background-color: #1f2937 !important;
     }
 </style>
 @endpush
@@ -102,47 +138,73 @@
         </div>
 
         <!-- Leave Types Legend -->
-        <div class="px-5 pb-4">
-            <div class="bg-gray-50 dark:bg-gray-800 rounded-lg p-4">
-                <h4 class="text-sm font-semibold text-gray-700 dark:text-gray-300 mb-3">Leave Types Legend:</h4>
-                <div class="grid grid-cols-2 md:grid-cols-4 lg:grid-cols-8 gap-2 text-xs">
-                    <div class="flex items-center gap-1.5">
-                        <div class="w-3 h-3 rounded-sm bg-red-500"></div>
-                        <span class="text-gray-600 dark:text-gray-400">Sick Leave</span>
-                    </div>
-                    <div class="flex items-center gap-1.5">
-                        <div class="w-3 h-3 rounded-sm bg-blue-500"></div>
-                        <span class="text-gray-600 dark:text-gray-400">Vacation</span>
-                    </div>
-                    <div class="flex items-center gap-1.5">
-                        <div class="w-3 h-3 rounded-sm bg-orange-500"></div>
-                        <span class="text-gray-600 dark:text-gray-400">Emergency</span>
-                    </div>
-                    <div class="flex items-center gap-1.5">
-                        <div class="w-3 h-3 rounded-sm bg-violet-500"></div>
-                        <span class="text-gray-600 dark:text-gray-400">Personal</span>
-                    </div>
-                    <div class="flex items-center gap-1.5">
-                        <div class="w-3 h-3 rounded-sm bg-amber-500"></div>
-                        <span class="text-gray-600 dark:text-gray-400">Study</span>
-                    </div>
-                    <div class="flex items-center gap-1.5">
-                        <div class="w-3 h-3 rounded-sm bg-pink-500"></div>
-                        <span class="text-gray-600 dark:text-gray-400">Maternity</span>
-                    </div>
-                    <div class="flex items-center gap-1.5">
-                        <div class="w-3 h-3 rounded-sm bg-cyan-500"></div>
-                        <span class="text-gray-600 dark:text-gray-400">Paternity</span>
-                    </div>
-                    <div class="flex items-center gap-1.5">
-                        <div class="w-3 h-3 rounded-sm bg-gray-500"></div>
-                        <span class="text-gray-600 dark:text-gray-400">Other</span>
-                    </div>
-                </div>
+        <div class="calendar-legend">
+            <div class="calendar-legend-title">Leave Types</div>
+            <div class="calendar-legend-item">
+                <span class="calendar-legend-dot" style="background:#ef4444"></span> Sick Leave
+            </div>
+            <div class="calendar-legend-item">
+                <span class="calendar-legend-dot" style="background:#3b82f6"></span> Vacation
+            </div>
+            <div class="calendar-legend-item">
+                <span class="calendar-legend-dot" style="background:#f97316"></span> Emergency
+            </div>
+            <div class="calendar-legend-item">
+                <span class="calendar-legend-dot" style="background:#8b5cf6"></span> Personal
+            </div>
+            <div class="calendar-legend-item">
+                <span class="calendar-legend-dot" style="background:#f59e0b"></span> Study
+            </div>
+            <div class="calendar-legend-item">
+                <span class="calendar-legend-dot" style="background:#ec4899"></span> Maternity
+            </div>
+            <div class="calendar-legend-item">
+                <span class="calendar-legend-dot" style="background:#06b6d4"></span> Paternity
+            </div>
+            <div class="calendar-legend-item">
+                <span class="calendar-legend-dot" style="background:#6b7280"></span> Other
             </div>
         </div>
 
         <div id="calendar"></div>
+
+        <!-- Navigation Hint -->
+        <div class="calendar-nav-hint">
+            <i class="fas fa-info-circle mr-1"></i>
+            Use ← → arrows to navigate months for advance leave planning — Plan leaves up to 2027!
+        </div>
+    </div>
+
+    <!-- Leave Detail Modal -->
+    <div id="leaveModal" class="calendar-modal-overlay" onclick="if(event.target===this)closeLeaveModal()">
+        <div class="calendar-modal-card">
+            <button class="calendar-modal-close" onclick="closeLeaveModal()" title="Close (Esc)">&times;</button>
+            
+            <div class="calendar-modal-header">
+                <span id="modalBadge" class="calendar-modal-type-badge"></span>
+                <div id="modalTitle" class="calendar-modal-title"></div>
+            </div>
+            
+            <div class="calendar-modal-row">
+                <span class="calendar-modal-label"><i class="fas fa-user text-[0.65rem]"></i> Employee</span>
+                <span id="modalEmployee" class="calendar-modal-value"></span>
+            </div>
+            
+            <div class="calendar-modal-row">
+                <span class="calendar-modal-label"><i class="fas fa-calendar-alt text-[0.65rem]"></i> Dates</span>
+                <span id="modalDates" class="calendar-modal-value"></span>
+            </div>
+            
+            <div class="calendar-modal-row">
+                <span class="calendar-modal-label"><i class="fas fa-clock text-[0.65rem]"></i> Duration</span>
+                <span id="modalDuration" class="calendar-modal-value"></span>
+            </div>
+            
+            <div class="calendar-modal-row">
+                <span class="calendar-modal-label"><i class="fas fa-comment-alt text-[0.65rem]"></i> Reason</span>
+                <span id="modalReason" class="calendar-modal-value"></span>
+            </div>
+        </div>
     </div>
 @endsection
 
@@ -153,6 +215,17 @@
         const calendarEl = document.getElementById('calendar');
         const events = @json($events);
 
+        const leaveColors = {
+            'Sick Leave': '#ef4444',
+            'Vacation Leave': '#3b82f6',
+            'Emergency Leave': '#f97316',
+            'Personal Leave': '#8b5cf6',
+            'Study Leave': '#f59e0b',
+            'Maternity Leave': '#ec4899',
+            'Paternity Leave': '#06b6d4',
+            'Other': '#6b7280'
+        };
+
         const calendar = new FullCalendar.Calendar(calendarEl, {
             initialView: 'dayGridMonth',
             headerToolbar: {
@@ -160,48 +233,56 @@
                 center: 'title',
                 right: 'dayGridMonth,timeGridWeek,listMonth'
             },
-            // Allow navigation to future months for advance leave planning
+            buttonText: {
+                today: 'Today',
+                month: 'Month',
+                week: 'Week',
+                list: 'List'
+            },
             validRange: {
-                start: '2024-01-01', // Allow some past navigation
-                end: '2027-12-31'   // Allow far future navigation
+                start: '2024-01-01',
+                end: '2027-12-31'
             },
             events: events,
             eventClick: function(info) {
-                const startDate = info.event.start.toLocaleDateString();
-                const endDate = info.event.end ? info.event.end.toLocaleDateString() : startDate;
-                const employeeName = info.event.extendedProps.employeeName || info.event.title;
-                const leaveType = info.event.extendedProps.leaveType || 'Leave';
-                const days = info.event.extendedProps.days || 'N/A';
-                
-                const eventDetails = `Employee: ${employeeName}\nLeave Type: ${leaveType}\nDates: ${startDate} - ${endDate}\nDuration: ${days} day(s)\nReason: ${info.event.extendedProps.description || 'N/A'}`;
-                
-                alert(eventDetails);
+                info.jsEvent.preventDefault();
+                const props = info.event.extendedProps;
+                const startDate = info.event.start.toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' });
+                const endDate = info.event.end
+                    ? new Date(info.event.end.getTime() - 86400000).toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' })
+                    : startDate;
+
+                const leaveType = props.leaveType || 'Leave';
+                document.getElementById('modalBadge').textContent = leaveType;
+                document.getElementById('modalBadge').style.background = leaveColors[leaveType] || '#6b7280';
+                document.getElementById('modalTitle').textContent = props.employeeName || info.event.title;
+                document.getElementById('modalEmployee').textContent = props.employeeName || info.event.title;
+                document.getElementById('modalDates').textContent = startDate === endDate ? startDate : startDate + ' — ' + endDate;
+                document.getElementById('modalDuration').textContent = (props.days || 'N/A') + ' day(s)';
+                document.getElementById('modalReason').textContent = props.description || 'No reason provided';
+                document.getElementById('leaveModal').classList.add('active');
             },
-            // Highlight weekends differently  
             dayCellClassNames: function(arg) {
                 if (arg.date.getDay() === 0 || arg.date.getDay() === 6) {
-                    return ['weekend-cell'];
+                    return ['fc-weekend-cell'];
                 }
                 return [];
             },
-            // Add month navigation tracking
-            datesSet: function(info) {
-                console.log('Calendar showing:', info.startStr, 'to', info.endStr);
-            },
             height: 'auto',
             contentHeight: 600,
-            // Improve event display
             eventDisplay: 'block',
             displayEventTime: false,
         });
 
         calendar.render();
-        
-        // Add navigation hint for users with Tailwind classes
-        const navHint = document.createElement('div');
-        navHint.innerHTML = '<small class="text-gray-500 dark:text-gray-400"><i class="fas fa-info-circle mr-2"></i>Use ← → arrows to navigate months for advance leave planning - Plan leaves up to 2027!</small>';
-        navHint.classList.add('text-center', 'mt-3', 'p-2', 'bg-blue-50', 'dark:bg-blue-900/20', 'rounded-lg', 'border', 'border-blue-200', 'dark:border-blue-700');
-        calendarEl.parentNode.appendChild(navHint);
+    });
+
+    function closeLeaveModal() {
+        document.getElementById('leaveModal').classList.remove('active');
+    }
+
+    document.addEventListener('keydown', function(e) {
+        if (e.key === 'Escape') closeLeaveModal();
     });
 </script>
 @endpush

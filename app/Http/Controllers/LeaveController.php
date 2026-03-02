@@ -85,6 +85,87 @@ class LeaveController extends Controller
         return redirect()->route('leave.index')->with('success', 'Leave request submitted successfully.');
     }
 
+    // Faculty: Edit leave request (only pending)
+    public function edit($id)
+    {
+        $leaveRequest = LeaveRequest::findOrFail($id);
+
+        // Only the owner can edit their pending request
+        if ($leaveRequest->user_id !== auth()->id() || !$leaveRequest->isPending()) {
+            return redirect()->route('leave.index')->with('error', 'Cannot edit this leave request.');
+        }
+
+        $leaveBalance = LeaveBalance::getOrCreateBalance(auth()->id());
+        return view('leave.edit', compact('leaveRequest', 'leaveBalance'));
+    }
+
+    // Faculty: Update leave request
+    public function update(Request $request, $id)
+    {
+        $leaveRequest = LeaveRequest::findOrFail($id);
+
+        // Only the owner can update their pending request
+        if ($leaveRequest->user_id !== auth()->id() || !$leaveRequest->isPending()) {
+            return redirect()->route('leave.index')->with('error', 'Cannot update this leave request.');
+        }
+
+        $validated = $request->validate([
+            'leave_type' => 'required|in:Sick Leave,Vacation Leave,Emergency Leave,Personal Leave,Study Leave,Maternity Leave,Paternity Leave,Other',
+            'start_date' => 'required|date|after_or_equal:today',
+            'end_date' => 'required|date|after_or_equal:start_date',
+            'reason' => 'required|string|min:10',
+        ]);
+
+        $startDate = new \DateTime($validated['start_date']);
+        $endDate = new \DateTime($validated['end_date']);
+        $daysCount = $startDate->diff($endDate)->days + 1;
+
+        // Check leave balance
+        $balance = LeaveBalance::getOrCreateBalance(auth()->id());
+        if ((str_contains($validated['leave_type'], 'Sick') && $daysCount > $balance->getRemainingSickLeave()) ||
+            (!str_contains($validated['leave_type'], 'Sick') && $daysCount > $balance->getRemainingVacationLeave())) {
+            return back()->with('error', 'Insufficient leave balance for this request.');
+        }
+
+        $leaveRequest->update([
+            'leave_type' => $validated['leave_type'],
+            'start_date' => $validated['start_date'],
+            'end_date' => $validated['end_date'],
+            'days_count' => $daysCount,
+            'reason' => $validated['reason'],
+        ]);
+
+        return redirect()->route('leave.index')->with('success', 'Leave request updated successfully.');
+    }
+
+    // Faculty: Cancel leave request (only pending)
+    public function cancel($id)
+    {
+        $leaveRequest = LeaveRequest::findOrFail($id);
+
+        // Only the owner can cancel their pending request
+        if ($leaveRequest->user_id !== auth()->id()) {
+            return back()->with('error', 'Unauthorized action.');
+        }
+
+        if (!$leaveRequest->isPending()) {
+            return back()->with('error', 'Only pending leave requests can be cancelled.');
+        }
+
+        $leaveRequest->update(['status' => 'Cancelled']);
+
+        // Notify coordinators and dean
+        $coordinatorsAndDeans = User::whereIn('role_id', [1, 2])->get();
+        foreach ($coordinatorsAndDeans as $supervisor) {
+            Notification::create([
+                'user_id' => $supervisor->id,
+                'message' => auth()->user()->username . ' cancelled a ' . $leaveRequest->leave_type . ' request (' . $leaveRequest->days_count . ' days)',
+            ]);
+        }
+
+        return back()->with('success', 'Leave request cancelled successfully.');
+    }
+
     // Coordinator/Dean: Approve leave
     public function approve($id)
     {

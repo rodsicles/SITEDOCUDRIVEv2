@@ -128,12 +128,24 @@
                             <span class="badge badge-warning">Pending</span>
                         @elseif($leave->status === 'Approved')
                             <span class="badge badge-success">Approved</span>
+                        @elseif($leave->status === 'Cancelled')
+                            <span class="badge badge-secondary">Cancelled</span>
                         @else
                             <span class="badge badge-danger">Rejected</span>
                         @endif
                     </td>
                     <td>
-                        @if($leave->isPending() && (auth()->user()->isProgramCoordinator() || auth()->user()->isDean()))
+                        @if($leave->isPending() && auth()->user()->isFaculty() && $leave->user_id === auth()->id())
+                            <!-- Faculty can edit/cancel their own pending requests -->
+                            <a href="{{ route('leave.edit', $leave->leave_id) }}" class="btn bg-blue-600 hover:bg-blue-700 text-white py-1.5 px-2.5 text-xs mr-1.5">
+                                <i class="fas fa-edit"></i> Edit
+                            </a>
+                            <button class="btn btn-danger py-1.5 px-2.5 text-xs" 
+                                    onclick="cancelLeave({{ $leave->leave_id }})">
+                                <i class="fas fa-times-circle"></i> Cancel
+                            </button>
+                        @elseif($leave->isPending() && (auth()->user()->isProgramCoordinator() || auth()->user()->isDean()))
+                            <!-- Coordinators/Dean approve or reject -->
                             <button class="btn btn-success py-1.5 px-2.5 text-xs mr-1.5" 
                                     onclick="approveLeave({{ $leave->leave_id }})">
                                 <i class="fas fa-check"></i> Approve
@@ -148,6 +160,8 @@
                             <small class="text-gray-500 dark:text-gray-400">
                                 Approved by {{ $leave->reviewer->username ?? 'N/A' }}
                             </small>
+                        @elseif($leave->isCancelled())
+                            <small class="text-gray-500 dark:text-gray-400">Cancelled by user</small>
                         @endif
                     </td>
                 </tr>
@@ -188,27 +202,136 @@
             </form>
         </div>
     </div>
+
+    <!-- Approve Modal -->
+    <div class="modal-overlay" id="approveModal">
+        <div class="modal-card max-w-md">
+            <div class="flex items-start gap-4 mb-5">
+                <div class="flex-shrink-0 w-12 h-12 bg-green-100 dark:bg-green-900/30 rounded-full flex items-center justify-center">
+                    <i class="fas fa-check-circle text-2xl text-green-600 dark:text-green-400"></i>
+                </div>
+                <div class="flex-1">
+                    <h3 class="text-xl font-bold text-gray-900 dark:text-white mb-2">Approve Leave Request</h3>
+                    <p class="text-gray-600 dark:text-gray-400 text-sm">
+                        Are you sure you want to approve this leave request? The employee will be notified of the approval.
+                    </p>
+                </div>
+            </div>
+            <div class="flex justify-end gap-3">
+                <button type="button" onclick="closeApproveModal()" 
+                        class="px-4 py-2 text-sm font-medium text-gray-700 dark:text-gray-300 bg-white dark:bg-gray-700 border border-gray-300 dark:border-gray-600 rounded-lg hover:bg-gray-50 dark:hover:bg-gray-600 transition-colors">
+                    Cancel
+                </button>
+                <button type="button" onclick="confirmApprove()" 
+                        class="px-4 py-2 text-sm font-medium text-white bg-green-600 hover:bg-green-700 rounded-lg transition-colors flex items-center gap-2">
+                    <i class="fas fa-check"></i>
+                    Yes, Approve
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Cancel Modal -->
+    <div class="modal-overlay" id="cancelModal">
+        <div class="modal-card max-w-md">
+            <div class="flex items-start gap-4 mb-5">
+                <div class="flex-shrink-0 w-12 h-12 bg-red-100 dark:bg-red-900/30 rounded-full flex items-center justify-center">
+                    <i class="fas fa-exclamation-triangle text-2xl text-red-600 dark:text-red-400"></i>
+                </div>
+                <div class="flex-1">
+                    <h3 class="text-xl font-bold text-gray-900 dark:text-white mb-2">Cancel Leave Request</h3>
+                    <p class="text-gray-600 dark:text-gray-400 text-sm mb-3">
+                        Are you sure you want to cancel this leave request?
+                    </p>
+                    <div class="bg-red-50 dark:bg-red-900/20 border border-red-200 dark:border-red-800 rounded-lg p-3">
+                        <p class="text-red-700 dark:text-red-300 text-xs font-medium flex items-center gap-2">
+                            <i class="fas fa-info-circle"></i>
+                            This action cannot be undone.
+                        </p>
+                    </div>
+                </div>
+            </div>
+            <div class="flex justify-end gap-3">
+                <button type="button" onclick="closeCancelModal()" 
+                        class="px-4 py-2 text-sm font-medium text-gray-700 dark:text-gray-300 bg-white dark:bg-gray-700 border border-gray-300 dark:border-gray-600 rounded-lg hover:bg-gray-50 dark:hover:bg-gray-600 transition-colors">
+                    Keep Request
+                </button>
+                <button type="button" onclick="confirmCancel()" 
+                        class="px-4 py-2 text-sm font-medium text-white bg-red-600 hover:bg-red-700 rounded-lg transition-colors flex items-center gap-2">
+                    <i class="fas fa-times"></i>
+                    Yes, Cancel Request
+                </button>
+            </div>
+        </div>
+    </div>
 @endsection
 
 @push('scripts')
 <script>
+    let pendingLeaveId = null;
+
     function approveLeave(leaveId) {
-        if (confirm('Are you sure you want to approve this leave request?')) {
-            fetch(`/leave/${leaveId}/approve`, {
-                method: 'POST',
-                headers: {
-                    'X-CSRF-TOKEN': '{{ csrf_token() }}',
-                    'Content-Type': 'application/json',
-                },
-            })
-            .then(response => {
-                if (response.ok) {
-                    location.reload();
-                } else {
-                    alert('Failed to approve leave request');
-                }
-            });
-        }
+        pendingLeaveId = leaveId;
+        document.getElementById('approveModal').classList.add('active');
+    }
+
+    function confirmApprove() {
+        fetch(`/leave/${pendingLeaveId}/approve`, {
+            method: 'POST',
+            headers: {
+                'X-CSRF-TOKEN': '{{ csrf_token() }}',
+                'Content-Type': 'application/json',
+            },
+        })
+        .then(response => {
+            if (response.ok) {
+                location.reload();
+            } else {
+                alert('Failed to approve leave request');
+                closeApproveModal();
+            }
+        })
+        .catch(error => {
+            alert('An error occurred while approving the leave request');
+            closeApproveModal();
+        });
+    }
+
+    function closeApproveModal() {
+        document.getElementById('approveModal').classList.remove('active');
+        pendingLeaveId = null;
+    }
+
+    function cancelLeave(leaveId) {
+        pendingLeaveId = leaveId;
+        document.getElementById('cancelModal').classList.add('active');
+    }
+
+    function confirmCancel() {
+        fetch(`/leave/${pendingLeaveId}/cancel`, {
+            method: 'POST',
+            headers: {
+                'X-CSRF-TOKEN': '{{ csrf_token() }}',
+                'Content-Type': 'application/json',
+            },
+        })
+        .then(response => {
+            if (response.ok) {
+                location.reload();
+            } else {
+                alert('Failed to cancel leave request');
+                closeCancelModal();
+            }
+        })
+        .catch(error => {
+            alert('An error occurred while canceling the leave request');
+            closeCancelModal();
+        });
+    }
+
+    function closeCancelModal() {
+        document.getElementById('cancelModal').classList.remove('active');
+        pendingLeaveId = null;
     }
 
     function openRejectModal(leaveId) {
@@ -224,6 +347,33 @@
     document.getElementById('rejectModal').addEventListener('click', function(e) {
         if (e.target === this) {
             closeRejectModal();
+        }
+    });
+
+    document.getElementById('approveModal').addEventListener('click', function(e) {
+        if (e.target === this) {
+            closeApproveModal();
+        }
+    });
+
+    document.getElementById('cancelModal').addEventListener('click', function(e) {
+        if (e.target === this) {
+            closeCancelModal();
+        }
+    });
+
+    // Close modal with Escape key
+    document.addEventListener('keydown', function(e) {
+        if (e.key === 'Escape') {
+            if (document.getElementById('rejectModal').classList.contains('active')) {
+                closeRejectModal();
+            }
+            if (document.getElementById('approveModal').classList.contains('active')) {
+                closeApproveModal();
+            }
+            if (document.getElementById('cancelModal').classList.contains('active')) {
+                closeCancelModal();
+            }
         }
     });
 </script>

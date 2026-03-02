@@ -16,7 +16,7 @@
         <i class="fas fa-calendar"></i> Calendar
     </a>
     <a href="{{ route('dean.employees') }}" class="menu-item">
-        <i class="fas fa-users"></i> Employees
+        <i class="fas fa-users"></i> Faculty Members
     </a>
     <a href="{{ route('dean.reports') }}" class="menu-item">
         <i class="fas fa-file-alt"></i> Performance Reports
@@ -30,9 +30,12 @@
 @endsection
 
 @section('content')
+    {{-- Include Folder Management Section --}}
+    @include('partials.folder-section')
+
     <div class="content-card">
         <div class="card-header">
-            <h3 class="card-title">All Documents</h3>
+            <h3 class="card-title"><i class="fas fa-folder-open mr-2"></i> All Documents</h3>
             <span class="badge-info">{{ $documents->total() }} Files</span>
         </div>
 
@@ -137,3 +140,6 @@
         </div>
     </div>
 @endsection
+
+{{-- Include Folder Modals --}}
+@include('partials.folder-modals')

@@ -128,13 +128,34 @@ class FacultyController extends Controller
         return redirect()->back();
     }
 
-    public function documents()
+    public function documents(Request $request)
     {
-        $documents = Document::getFilteredDocuments(auth()->user())->paginate(15);
+        $categoryFilter = $request->query('category');
+        $folderFilter = $request->query('folder');
+        
+        // Get user's folders
+        $folders = \App\Models\Folder::where('user_id', auth()->id())
+            ->withCount('documents')
+            ->orderBy('folder_name')
+            ->get();
+        
+        // Filter documents by folder if specified
+        $documentsQuery = Document::getFilteredDocuments(auth()->user(), $categoryFilter);
+        
+        if ($folderFilter !== null) {
+            if ($folderFilter === 'uncategorized') {
+                $documentsQuery->whereNull('folder_id');
+            } else {
+                $documentsQuery->where('folder_id', $folderFilter);
+            }
+        }
+        
+        $documents = $documentsQuery->paginate(15)->appends($request->query());
         $recentDocuments = DocumentView::getRecentDocuments(auth()->id(), 5);
         $favoriteDocuments = auth()->user()->documentFavorites()->with('document')->get()->pluck('document');
+        $categories = ['Policies', 'Forms', 'Reports', 'Memos', 'Research Papers', 'Other'];
         
-        return view('faculty.documents', compact('documents', 'recentDocuments', 'favoriteDocuments'));
+        return view('faculty.documents', compact('documents', 'recentDocuments', 'favoriteDocuments', 'categories', 'categoryFilter', 'folders', 'folderFilter'));
     }
 
     public function uploadDocument(Request $request)
@@ -148,6 +169,7 @@ class FacultyController extends Controller
                 : 'required|file|max:10240|mimes:jpg,jpeg,png|mimetypes:image/jpeg,image/png',
             'category' => 'required|in:Policies,Forms,Reports,Memos,Research Papers,Other',
             'tags' => 'nullable|string',
+            'folder_id' => 'nullable|exists:folders,folder_id',
         ]);
 
         // Parse tags
@@ -160,6 +182,7 @@ class FacultyController extends Controller
 
             Document::create([
                 'uploaded_by' => auth()->id(),
+                'folder_id' => $validated['folder_id'] ?? null,
                 'document_title' => $validated['document_title'] . ($uploadedCount > 0 ? ' (' . ($uploadedCount + 1) . ')' : ''),
                 'file_path' => 'documents/' . $filename,
                 'document_type' => $validated['document_type'],

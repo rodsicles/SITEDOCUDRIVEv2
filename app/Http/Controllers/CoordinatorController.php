@@ -193,13 +193,34 @@ class CoordinatorController extends Controller
         }
     }
 
-    public function documents()
+    public function documents(Request $request)
     {
-        $documents = Document::getFilteredDocuments(auth()->user())->paginate(15);
+        $categoryFilter = $request->query('category');
+        $folderFilter = $request->query('folder');
+        
+        // Get user's folders
+        $folders = \App\Models\Folder::where('user_id', auth()->id())
+            ->withCount('documents')
+            ->orderBy('folder_name')
+            ->get();
+        
+        // Filter documents by folder if specified
+        $documentsQuery = Document::getFilteredDocuments(auth()->user(), $categoryFilter);
+        
+        if ($folderFilter !== null) {
+            if ($folderFilter === 'uncategorized') {
+                $documentsQuery->whereNull('folder_id');
+            } else {
+                $documentsQuery->where('folder_id', $folderFilter);
+            }
+        }
+        
+        $documents = $documentsQuery->paginate(15)->appends($request->query());
         $recentDocuments = DocumentView::getRecentDocuments(auth()->id(), 5);
         $favoriteDocuments = auth()->user()->documentFavorites()->with('document')->get()->pluck('document');
+        $categories = ['Policies', 'Forms', 'Reports', 'Memos', 'Research Papers', 'Other'];
         
-        return view('coordinator.documents', compact('documents', 'recentDocuments', 'favoriteDocuments'));
+        return view('coordinator.documents', compact('documents', 'recentDocuments', 'favoriteDocuments', 'categories', 'categoryFilter', 'folders', 'folderFilter'));
     }
 
     public function uploadDocument(Request $request)
@@ -213,6 +234,7 @@ class CoordinatorController extends Controller
                 : 'required|file|max:10240|mimes:jpg,jpeg,png|mimetypes:image/jpeg,image/png',
             'category' => 'required|in:Policies,Forms,Reports,Memos,Research Papers,Other',
             'tags' => 'nullable|string',
+            'folder_id' => 'nullable|exists:folders,folder_id',
         ]);
 
         // Parse tags
@@ -225,6 +247,7 @@ class CoordinatorController extends Controller
 
             Document::create([
                 'uploaded_by' => auth()->id(),
+                'folder_id' => $validated['folder_id'] ?? null,
                 'document_title' => $validated['document_title'] . ($uploadedCount > 0 ? ' (' . ($uploadedCount + 1) . ')' : ''),
                 'file_path' => 'documents/' . $filename,
                 'document_type' => $validated['document_type'],
@@ -377,6 +400,12 @@ class CoordinatorController extends Controller
             'byType' => $documents->groupBy('document_type')->map->count(),
         ];
 
+        // Fetch folders created by this employee
+        $folders = \App\Models\Folder::where('user_id', $employee->user_id)
+            ->withCount('documents')
+            ->orderBy('folder_name')
+            ->get();
+
         $reports = \App\Models\Report::where('submitted_by', $employee->user_id)
             ->orderBy('created_at', 'desc')
             ->get();
@@ -386,7 +415,7 @@ class CoordinatorController extends Controller
             'byCategory' => $reports->groupBy('report_category')->map->count(),
         ];
 
-        return view('employees.profile', compact('employee', 'performanceReports', 'tasks', 'taskStats', 'documents', 'documentStats', 'reports', 'reportStats'));
+        return view('employees.profile', compact('employee', 'performanceReports', 'tasks', 'taskStats', 'documents', 'documentStats', 'folders', 'reports', 'reportStats'));
     }
 
     public function viewDocument($id)

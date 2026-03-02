@@ -58,6 +58,12 @@ class LeaveRequest extends Model
         return $this->status === 'Rejected';
     }
 
+    // Check if leave is cancelled
+    public function isCancelled()
+    {
+        return $this->status === 'Cancelled';
+    }
+
     // Get leave duration in days
     public function getDuration()
     {

@@ -13,6 +13,7 @@ class Document extends Model
     
     protected $fillable = [
         'uploaded_by',
+        'folder_id',
         'document_title',
         'file_path',
         'document_type',
@@ -35,6 +36,11 @@ class Document extends Model
     public function category()
     {
         return $this->belongsTo(DocumentCategory::class, 'category_id', 'category_id');
+    }
+
+    public function folder()
+    {
+        return $this->belongsTo(Folder::class, 'folder_id', 'folder_id');
     }
 
     public function comments()
@@ -99,26 +105,31 @@ class Document extends Model
      * Faculty uploads are visible to: owner, coordinator, and dean
      * Coordinator uploads are visible to: owner and dean
      */
-    public static function getFilteredDocuments($user)
+    public static function getFilteredDocuments($user, $categoryFilter = null)
     {
         $query = self::with(['uploader.employee', 'category']);
 
         if ($user->isDean()) {
             // Dean sees all documents
-            return $query->latest();
         } elseif ($user->role_id === 2) { // Program Coordinator
             // Coordinator sees:
             // 1. Their own documents
             // 2. All faculty documents (role_id = 3)
-            return $query->where(function($q) use ($user) {
+            $query->where(function($q) use ($user) {
                 $q->where('uploaded_by', $user->id)
                   ->orWhereHas('uploader', function($subQ) {
                       $subQ->where('role_id', 3); // Faculty uploads
                   });
-            })->latest();
+            });
         } else { // Faculty
             // Faculty sees only their own documents
-            return $query->where('uploaded_by', $user->id)->latest();
+            $query->where('uploaded_by', $user->id);
         }
+
+        if ($categoryFilter) {
+            $query->where('category', $categoryFilter);
+        }
+
+        return $query->latest();
     }
 }

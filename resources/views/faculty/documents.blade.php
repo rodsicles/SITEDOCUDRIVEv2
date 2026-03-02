@@ -30,14 +30,31 @@
 @endsection
 
 @section('content')
+    {{-- Include Folder Management Section --}}
+    @include('partials.folder-section')
+
     <!-- Upload Document Section -->
     <div class="content-card">
         <div class="card-header">
-            <h3 class="card-title">Upload Document</h3>
+            <h3 class="card-title"><i class="fas fa-upload mr-2"></i> Upload Document</h3>
+            <button type="button" onclick="toggleUploadForm()" class="btn btn-sm bg-gray-200 dark:bg-gray-700 hover:bg-gray-300 dark:hover:bg-gray-600 text-gray-700 dark:text-gray-300 transition-colors duration-200">
+                <i id="toggleIcon" class="fas fa-chevron-down transition-transform duration-200"></i>
+                <span id="toggleText">Show Form</span>
+            </button>
         </div>
-        <form action="{{ route('faculty.upload-document') }}" method="POST" enctype="multipart/form-data" id="uploadForm">
+        <form action="{{ route('faculty.upload-document') }}" method="POST" enctype="multipart/form-data" id="uploadForm" class="hidden" style="transition: all 0.3s ease;">
             @csrf
             <div class="grid grid-cols-1 md:grid-cols-2 gap-5 mb-5">
+                <div class="form-group">
+                    <label class="form-label">Folder (Optional)</label>
+                    <select name="folder_id" class="form-control">
+                        <option value="">No Folder (Uncategorized)</option>
+                        @foreach($folders as $folder)
+                        <option value="{{ $folder->folder_id }}">{{ $folder->folder_name }}</option>
+                        @endforeach
+                    </select>
+                </div>
+            
                 <div class="form-group">
                     <label class="form-label">Document Title *</label>
                     <input type="text" name="document_title" class="form-control" placeholder="Enter document title" required>
@@ -175,12 +192,19 @@
                     <td>{{ $document->uploader->employee->full_name ?? $document->uploader->username }}</td>
                     <td>{{ $document->created_at->format('M d, Y') }}</td>
                     <td>
-                        <a href="{{ route('faculty.view-document', $document->document_id) }}" target="_blank" class="btn btn-primary text-xs mr-1.5">
-                            <i class="fas fa-eye"></i> View
-                        </a>
-                        <a href="{{ route('faculty.download-document', $document->document_id) }}" class="btn btn-success text-xs">
-                            <i class="fas fa-download"></i> Download
-                        </a>
+                        <div class="flex gap-1.5 flex-wrap">
+                            <a href="{{ route('faculty.view-document', $document->document_id) }}" target="_blank" class="btn btn-primary text-xs">
+                                <i class="fas fa-eye"></i> View
+                            </a>
+                            <a href="{{ route('faculty.download-document', $document->document_id) }}" class="btn btn-success text-xs">
+                                <i class="fas fa-download"></i> Download
+                            </a>
+                            @if($document->uploaded_by === auth()->id())
+                            <button onclick="openMoveDocumentModal({{ $document->document_id }})" class="move-folder-btn text-xs">
+                                <i class="fas fa-folder-open"></i> Move
+                            </button>
+                            @endif
+                        </div>
                     </td>
                 </tr>
                 @empty
@@ -201,6 +225,23 @@
 
 @push('scripts')
 <script>
+    // Toggle Upload Form visibility
+    function toggleUploadForm() {
+        const form = document.getElementById('uploadForm');
+        const icon = document.getElementById('toggleIcon');
+        const text = document.getElementById('toggleText');
+        
+        if (form.classList.contains('hidden')) {
+            form.classList.remove('hidden');
+            icon.classList.add('rotate-180');
+            text.textContent = 'Hide Form';
+        } else {
+            form.classList.add('hidden');
+            icon.classList.remove('rotate-180');
+            text.textContent = 'Show Form';
+        }
+    }
+
     document.getElementById('documentType').addEventListener('change', function() {
         const fileInput = document.getElementById('fileInput');
         const fileHelp = document.getElementById('fileHelp');
@@ -261,3 +302,6 @@
     });
 </script>
 @endpush
+
+{{-- Include Folder Modals --}}
+@include('partials.folder-modals')

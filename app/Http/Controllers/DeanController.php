@@ -127,10 +127,32 @@ class DeanController extends Controller
         ));
     }
 
-    public function documents()
+    public function documents(Request $request)
     {
-        $documents = Document::getFilteredDocuments(auth()->user())->paginate(15);
-        return view('dean.documents', compact('documents'));
+        $categoryFilter = $request->query('category');
+        $folderFilter = $request->query('folder');
+        
+        // Get user's folders
+        $folders = \App\Models\Folder::where('user_id', auth()->id())
+            ->withCount('documents')
+            ->orderBy('folder_name')
+            ->get();
+        
+        // Filter documents by folder if specified
+        $documentsQuery = Document::getFilteredDocuments(auth()->user(), $categoryFilter);
+        
+        if ($folderFilter !== null) {
+            if ($folderFilter === 'uncategorized') {
+                $documentsQuery->whereNull('folder_id');
+            } else {
+                $documentsQuery->where('folder_id', $folderFilter);
+            }
+        }
+        
+        $documents = $documentsQuery->paginate(15)->appends($request->query());
+        $categories = ['Policies', 'Forms', 'Reports', 'Memos', 'Research Papers', 'Other'];
+        
+        return view('dean.documents', compact('documents', 'categories', 'categoryFilter', 'folders', 'folderFilter'));
     }
 
     public function viewEmployeeProfile($id)
@@ -164,6 +186,12 @@ class DeanController extends Controller
             'byType' => $documents->groupBy('document_type')->map->count(),
         ];
 
+        // Fetch folders created by this employee
+        $folders = \App\Models\Folder::where('user_id', $employee->user_id)
+            ->withCount('documents')
+            ->orderBy('folder_name')
+            ->get();
+
         $reports = \App\Models\Report::where('submitted_by', $employee->user_id)
             ->orderBy('created_at', 'desc')
             ->get();
@@ -173,7 +201,7 @@ class DeanController extends Controller
             'byCategory' => $reports->groupBy('report_category')->map->count(),
         ];
 
-        return view('employees.profile', compact('employee', 'performanceReports', 'tasks', 'taskStats', 'documents', 'documentStats', 'reports', 'reportStats'));
+        return view('employees.profile', compact('employee', 'performanceReports', 'tasks', 'taskStats', 'documents', 'documentStats', 'folders', 'reports', 'reportStats'));
     }
 
     public function viewDocument($id)

@@ -16,7 +16,7 @@
         <i class="fas fa-calendar"></i> Calendar
     </a>
     <a href="{{ route('dean.employees') }}" class="menu-item">
-        <i class="fas fa-users"></i> Employees
+        <i class="fas fa-users"></i> Faculty Members
     </a>
     <a href="{{ route('dean.reports') }}" class="menu-item">
         <i class="fas fa-file-alt"></i> Performance Reports
@@ -37,7 +37,7 @@
                 <i class="fas fa-users"></i>
             </div>
             <div class="stat-value">{{ $totalEmployees }}</div>
-            <div class="stat-label">Total Employees</div>
+            <div class="stat-label">Faculty Members</div>
         </div>
 
         <div class="stat-card">

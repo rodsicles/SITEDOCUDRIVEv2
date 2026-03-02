@@ -7,69 +7,86 @@
     @vite(['resources/css/app.css', 'resources/js/app.js'])
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
 </head>
-<body class="flex flex-col justify-center items-center min-h-screen h-full p-4 sm:p-5 bg-gradient-to-br from-[#028a0f] to-[#026a0c] dark:from-[#0a1f0c] dark:to-[#051108] transition-colors duration-300" data-font-size="medium">
+<body class="login-page" data-font-size="medium">
 
     <!-- Loading Overlay -->
-    <div id="loadingOverlay" class="fixed inset-0 bg-white/85 dark:bg-black/85 backdrop-blur-sm z-[9999] hidden items-center justify-center animate-[fadeIn_0.3s_ease] transition-colors duration-300">
-        <div class="text-center bg-white dark:bg-[#2a2a2a] p-10 px-12 rounded-3xl shadow-[0_20px_60px_rgba(0,0,0,0.3)] animate-[bounceIn_0.5s_ease] transition-colors duration-300">
-            <div class="w-12 h-12 border-4 border-gray-300 dark:border-gray-600 border-t-[#028a0f] dark:border-t-[#02b815] rounded-full animate-spin mx-auto mb-5 transition-colors duration-300"></div>
-            <div class="text-lg font-semibold text-gray-800 dark:text-gray-200 mb-2 transition-colors duration-300">Logging in</div>
-            <div class="text-sm text-gray-600 dark:text-gray-400 transition-colors duration-300">Please wait...</div>
+    <div id="loadingOverlay" class="login-loading-overlay">
+        <div class="login-loading-box">
+            <div class="login-loading-spinner"></div>
+            <div class="text-lg font-semibold text-gray-800 dark:text-gray-200 mb-2">Logging in</div>
+            <div class="text-sm text-gray-600 dark:text-gray-400">Please wait...</div>
         </div>
     </div>
 
     <!-- Gray header bar -->
-    <div class="fixed top-0 left-0 right-0 h-6 bg-gray-500 dark:bg-gray-800 z-50"></div>
+    <div class="login-bar top-0"></div>
 
-    <div class="bg-white dark:bg-[#2a2a2a] rounded-3xl shadow-[0_20px_60px_rgba(0,0,0,0.3)] overflow-hidden max-w-md w-full animate-[slideUp_0.6s_ease] relative transition-colors duration-300">
-        <div class="p-10 px-8 bg-gradient-to-br from-[#028a0f] to-[#026a0c] dark:from-[#02b815] dark:to-[#028a0f] text-white text-center relative transition-colors duration-300">
-            <button id="themeToggle" type="button" class="absolute top-4 right-4 bg-white/20 dark:bg-white/10 border-none rounded-full w-10 h-10 flex items-center justify-center cursor-pointer transition-all duration-300 hover:bg-white/30 dark:hover:bg-white/20 hover:scale-110 text-white text-lg">
+    <div class="login-card">
+        <div class="login-header">
+            <button id="themeToggle" type="button" class="login-theme-toggle">
                 <i class="fas fa-moon"></i>
             </button>
-            <img src="{{ asset('uploads/documents/site_logo-removebg-preview.png') }}" alt="SITE Logo" class="w-20 h-20 mb-4 object-contain bg-white p-1 rounded-full shadow-lg border-2 border-white/90 mx-auto">
-            <h1 class="text-2xl leading-tight mb-2 font-semibold">Employee Dashboard with Data Analytics</h1>
-            <p class="text-sm mb-1">School of Information Technology and Engineering (SITE)</p>
-            <p class="text-sm opacity-90">Sign in to continue</p>
+            <img src="{{ asset('uploads/documents/site_logo-removebg-preview.png') }}" alt="SITE Logo" class="login-header-logo">
+            <h1 class="login-header-title">Employee Dashboard with Data Analytics</h1>
+            <p class="login-header-subtitle">School of Information Technology and Engineering (SITE)</p>
+            <p class="login-header-hint">Sign in to continue</p>
         </div>
-        <div class="p-6 sm:p-10 px-6 sm:px-8">
+        <div class="login-body">
             @if($errors->any())
-            <div class="px-3 py-3 rounded-lg mb-4 sm:mb-5 bg-red-100 dark:bg-red-900/30 text-red-800 dark:text-red-200 border-l-4 border-red-500 dark:border-red-400 text-sm transition-colors duration-300">
+            <div class="login-error">
                 {{ $errors->first() }}
             </div>
             @endif
 
             <form action="{{ route('login.post') }}" method="POST" id="loginForm">
                 @csrf
-                <div class="mb-4 sm:mb-6">
-                    <label class="block mb-2 font-medium text-gray-800 dark:text-gray-200 text-sm transition-colors duration-300">Username</label>
-                    <input type="text" name="username" class="w-full px-5 py-3.5 sm:py-4 border-2 border-gray-200 dark:border-gray-700 rounded-xl text-base transition-all duration-300 focus:outline-none focus:border-[#028a0f] dark:focus:border-[#02b815] focus:shadow-[0_0_0_4px_rgba(2,138,15,0.1)] bg-white dark:bg-[#1e1e1e] text-gray-800 dark:text-gray-200" placeholder="Enter your username" required autofocus>
+                <div class="mb-4 sm:mb-6 login-field">
+                    <label class="login-label">Username</label>
+                    <div class="login-input-wrapper">
+                        <i class="fas fa-user login-input-icon"></i>
+                        <input type="text" name="username" class="login-input" placeholder="Enter your username" required autofocus>
+                    </div>
                 </div>
 
-                <div class="mb-4 sm:mb-6">
-                    <label class="block mb-2 font-medium text-gray-800 dark:text-gray-200 text-sm transition-colors duration-300">Password</label>
-                    <div class="relative flex items-center">
-                        <input type="password" id="password" name="password" class="w-full px-5 py-3.5 sm:py-4 pr-14 border-2 border-gray-200 dark:border-gray-700 rounded-xl text-base transition-all duration-300 focus:outline-none focus:border-[#028a0f] dark:focus:border-[#02b815] focus:shadow-[0_0_0_4px_rgba(2,138,15,0.1)] bg-white dark:bg-[#1e1e1e] text-gray-800 dark:text-gray-200" placeholder="Enter your password" required>
-                        <button type="button" id="togglePassword" class="absolute right-4 text-gray-400 dark:text-gray-500 hover:text-[#028a0f] dark:hover:text-[#02b815] transition-colors duration-200 cursor-pointer p-1">
+                <div class="mb-4 sm:mb-6 login-field">
+                    <label class="login-label">Password</label>
+                    <div class="login-input-wrapper">
+                        <i class="fas fa-lock login-input-icon"></i>
+                        <input type="password" id="password" name="password" class="login-input has-toggle" placeholder="Enter your password" required>
+                        <button type="button" id="togglePassword" class="login-password-toggle">
                             <i class="fas fa-eye text-base" id="toggleIcon"></i>
                         </button>
+                    </div>
+                    <div id="capsLockWarning" class="login-capslock">
+                        <i class="fas fa-exclamation-triangle"></i> Caps Lock is on
                     </div>
                 </div>
 
                 <!-- Remember me -->
-                <div class="flex items-center gap-2.5 mb-4 sm:mb-6">
-                    <input type="checkbox" id="remember" name="remember" class="w-[18px] h-[18px] rounded border-2 border-gray-300 dark:border-gray-600 cursor-pointer accent-[#028a0f] shrink-0">
-                    <label for="remember" class="text-sm text-gray-600 dark:text-gray-400 cursor-pointer select-none leading-none">Remember me</label>
+                <div class="flex items-center gap-3 mb-5 sm:mb-6 login-field">
+                    <label class="login-toggle">
+                        <input type="checkbox" id="remember" name="remember">
+                        <span class="login-toggle-slider"></span>
+                    </label>
+                    <label for="remember" class="login-toggle-label">Remember me</label>
                 </div>
 
-                <button type="submit" class="w-full px-4 py-3.5 sm:py-4 bg-[#028a0f] dark:bg-[#02b815] text-white border-none rounded-xl text-base font-semibold cursor-pointer transition-all duration-300 hover:bg-[#026a0c] dark:hover:bg-[#028a0f] hover:-translate-y-0.5 hover:shadow-[0_8px_20px_rgba(2,138,15,0.3)] active:translate-y-0 sticky bottom-0">
-                    Sign In
-                </button>
+                <div class="login-field">
+                    <button type="submit" class="login-submit">
+                        SIGN IN <i class="fas fa-arrow-right login-submit-arrow"></i>
+                    </button>
+                </div>
             </form>
         </div>
     </div>
 
-    <!-- Gray footer bar -->
-    <div class="fixed bottom-0 left-0 right-0 h-6 bg-gray-500 dark:bg-gray-800 z-50"></div>
+    <!-- Footer branding -->
+    <div class="login-footer">
+        &copy; {{ date('Y') }} St. Paul University Philippines
+    </div>
+
+    <!-- Green footer bar -->
+    <div class="login-bar bottom-0"></div>
 
     <script>
         // Dark Mode Toggle
@@ -123,6 +140,19 @@
             const isPassword = passwordInput.type === 'password';
             passwordInput.type = isPassword ? 'text' : 'password';
             toggleIcon.className = isPassword ? 'fas fa-eye-slash' : 'fas fa-eye';
+        });
+
+        // Caps Lock Detection
+        const capsWarning = document.getElementById('capsLockWarning');
+        passwordInput.addEventListener('keyup', function(e) {
+            if (e.getModifierState && e.getModifierState('CapsLock')) {
+                capsWarning.classList.add('visible');
+            } else {
+                capsWarning.classList.remove('visible');
+            }
+        });
+        passwordInput.addEventListener('blur', function() {
+            capsWarning.classList.remove('visible');
         });
     </script>
 </body>

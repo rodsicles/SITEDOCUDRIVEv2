@@ -278,3 +278,570 @@ body {
         opacity: 1;
     }
 }
+
+/* ============================================
+   FullCalendar Global Styles
+   ============================================ */
+
+/* Calendar container */
+#calendar {
+    @apply p-4;
+}
+
+/* Toolbar buttons */
+.fc .fc-button {
+    @apply text-sm font-medium px-3.5 py-1.5 rounded-lg transition-all shadow-sm;
+    background: #028a0f;
+    border-color: #028a0f;
+}
+
+.fc .fc-button:hover {
+    background: #026a0c;
+    border-color: #026a0c;
+    transform: translateY(-1px);
+    box-shadow: 0 3px 8px rgba(2, 138, 15, 0.35);
+}
+
+.fc .fc-button:focus {
+    box-shadow: 0 0 0 3px rgba(2, 138, 15, 0.3);
+}
+
+.fc .fc-button-primary:not(:disabled).fc-button-active,
+.fc .fc-button-primary:not(:disabled):active {
+    background: #026a0c;
+    border-color: #026a0c;
+    box-shadow: inset 0 2px 4px rgba(0, 0, 0, 0.2);
+    transform: translateY(0);
+}
+
+[data-theme="dark"] .fc .fc-button {
+    background: #02b815;
+    border-color: #02b815;
+}
+
+[data-theme="dark"] .fc .fc-button:hover,
+[data-theme="dark"] .fc .fc-button-primary:not(:disabled).fc-button-active {
+    background: #028a0f;
+    border-color: #028a0f;
+}
+
+/* Calendar title */
+.fc .fc-toolbar-title {
+    @apply text-xl font-bold text-gray-800 dark:text-gray-100;
+}
+
+/* Column headers */
+.fc .fc-col-header-cell-cushion {
+    @apply font-semibold text-xs uppercase tracking-wider py-2;
+    color: #028a0f;
+}
+
+[data-theme="dark"] .fc .fc-col-header-cell-cushion {
+    color: #02b815;
+}
+
+/* Day numbers */
+.fc .fc-daygrid-day-number {
+    @apply text-sm font-medium text-gray-600 dark:text-gray-400 px-2 py-1.5;
+}
+
+/* Today cell */
+.fc .fc-day-today {
+    background: rgba(2, 138, 15, 0.06) !important;
+}
+
+[data-theme="dark"] .fc .fc-day-today {
+    background: rgba(2, 184, 21, 0.08) !important;
+}
+
+.fc .fc-day-today .fc-daygrid-day-number {
+    @apply text-white rounded-full w-7 h-7 flex items-center justify-center m-1;
+    background: #028a0f;
+}
+
+/* Weekend shading */
+.fc-weekend-cell {
+    background-color: rgba(0, 0, 0, 0.02) !important;
+}
+
+[data-theme="dark"] .fc-weekend-cell {
+    background-color: rgba(255, 255, 255, 0.02) !important;
+}
+
+/* Grid borders */
+.fc .fc-scrollgrid {
+    @apply rounded-lg overflow-hidden border-gray-200 dark:border-gray-700;
+}
+
+.fc th,
+.fc td {
+    @apply border-gray-200 dark:border-gray-700;
+}
+
+/* Events */
+.fc .fc-event {
+    @apply rounded-md text-xs font-semibold cursor-pointer transition-all;
+    border: none !important;
+    padding: 2px 6px !important;
+    box-shadow: 0 1px 3px rgba(0, 0, 0, 0.12);
+}
+
+.fc .fc-event:hover {
+    opacity: 0.88;
+    transform: translateY(-1px);
+    box-shadow: 0 3px 8px rgba(0, 0, 0, 0.2);
+}
+
+.fc .fc-daygrid-event-dot {
+    @apply hidden;
+}
+
+/* List view */
+.fc .fc-list-event:hover td {
+    background: rgba(2, 138, 15, 0.06);
+}
+
+.fc .fc-list-day-cushion {
+    @apply font-semibold;
+    background: rgba(2, 138, 15, 0.07);
+    color: #028a0f;
+}
+
+[data-theme="dark"] .fc .fc-list-day-cushion {
+    background: rgba(2, 184, 21, 0.1);
+    color: #02b815;
+}
+
+.fc .fc-list-empty {
+    @apply bg-transparent py-10 text-gray-400 italic;
+}
+
+/* ============================================
+   Calendar Legend (shared by event & leave)
+   ============================================ */
+
+.calendar-legend {
+    @apply flex flex-wrap gap-x-5 gap-y-2 p-3.5 bg-gray-50 dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-lg mx-4 mb-4;
+}
+
+.calendar-legend-title {
+    @apply w-full text-xs font-bold uppercase tracking-wider text-gray-500 dark:text-gray-400 mb-1;
+}
+
+.calendar-legend-item {
+    @apply flex items-center gap-1.5 text-xs text-gray-600 dark:text-gray-300 whitespace-nowrap;
+}
+
+.calendar-legend-dot {
+    @apply w-3 h-3 rounded-sm flex-shrink-0;
+    box-shadow: 0 1px 2px rgba(0, 0, 0, 0.15);
+}
+
+/* ============================================
+   Leave Event Detail Modal
+   ============================================ */
+
+.calendar-modal-overlay {
+    @apply fixed inset-0 z-[9999] hidden items-center justify-center;
+    background: rgba(0, 0, 0, 0.6);
+    backdrop-filter: blur(4px);
+    animation: fadeIn 0.2s ease;
+    padding: 20px;
+}
+
+.calendar-modal-overlay.active {
+    @apply flex;
+}
+
+.calendar-modal-card {
+    @apply bg-white dark:bg-gray-800 rounded-2xl shadow-2xl relative overflow-hidden;
+    max-width: 480px;
+    width: 100%;
+    animation: fadeInUp 0.3s cubic-bezier(0.16, 1, 0.3, 1);
+    border: 1px solid rgba(229, 231, 235, 0.5);
+}
+
+[data-theme="dark"] .calendar-modal-card {
+    border: 1px solid rgba(55, 65, 81, 0.5);
+}
+
+.calendar-modal-header {
+    @apply flex items-start gap-3 p-6 pb-5 bg-gradient-to-br from-gray-50 to-white dark:from-gray-700 dark:to-gray-800 border-b border-gray-200 dark:border-gray-600;
+}
+
+.calendar-modal-type-badge {
+    @apply px-3 py-1.5 rounded-full text-[0.7rem] font-bold text-white uppercase tracking-wide flex-shrink-0 shadow-sm;
+    letter-spacing: 0.5px;
+}
+
+.calendar-modal-title {
+    @apply text-xl font-bold text-gray-900 dark:text-gray-100 leading-tight flex items-center gap-2;
+}
+
+.calendar-modal-title::before {
+    content: '';
+    @apply inline-block w-1 h-5 rounded-full;
+    background: linear-gradient(to bottom, #028a0f, #02b815);
+}
+
+.calendar-modal-row {
+    @apply flex gap-3 items-start py-3 px-6;
+    transition: background 0.15s ease;
+}
+
+.calendar-modal-row:hover {
+    @apply bg-gray-50 dark:bg-gray-700/30;
+}
+
+.calendar-modal-row:last-child {
+    @apply pb-6;
+}
+
+.calendar-modal-label {
+    @apply font-bold text-gray-600 dark:text-gray-400 text-xs uppercase tracking-wider flex items-center gap-1.5;
+    min-width: 90px;
+}
+
+.calendar-modal-label::before {
+    content: '';
+    @apply inline-block w-1.5 h-1.5 rounded-full bg-gray-400 dark:bg-gray-500;
+}
+
+.calendar-modal-value {
+    @apply text-gray-900 dark:text-gray-100 flex-1 font-medium;
+}
+
+.calendar-modal-close {
+    @apply absolute top-3 right-3 bg-gray-100 dark:bg-gray-700 border-none w-8 h-8 rounded-full cursor-pointer text-gray-600 dark:text-gray-300 leading-none flex items-center justify-center text-xl transition-all hover:bg-red-500 hover:text-white hover:rotate-90 hover:scale-110;
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+}
+
+/* Calendar navigation hint */
+.calendar-nav-hint {
+    @apply mx-4 mt-2.5 mb-1 py-2 px-4 bg-blue-50 dark:bg-blue-900/20 border border-blue-200 dark:border-blue-700 rounded-lg text-xs text-blue-700 dark:text-blue-300 text-center;
+}
+
+/* ============================================
+   General Modal Styles
+   ============================================ */
+
+.search-modal {
+    @apply fixed inset-0 z-[9999] hidden justify-center;
+    background: rgba(0, 0, 0, 0.5);
+    backdrop-filter: blur(2px);
+    padding: 20px;
+    overflow-y: auto;
+}
+
+.search-modal.active {
+    @apply flex;
+}
+
+.search-modal-content {
+    @apply bg-white dark:bg-gray-800 rounded-2xl shadow-xl relative my-auto;
+    max-width: 600px;
+    width: 100%;
+    animation: fadeInUp 0.25s ease;
+}
+
+/* ===== Login Page ===== */
+.login-page {
+    @apply flex flex-col justify-center items-center min-h-screen h-full p-4;
+    background: #f5f5f5;
+    background-image: radial-gradient(circle, #d1d5db 1px, transparent 1px);
+    background-size: 24px 24px;
+    transition: background 0.3s ease;
+}
+
+.login-page.dark {
+    background: #121212;
+    background-image: radial-gradient(circle, #2a2a2a 1px, transparent 1px);
+    background-size: 24px 24px;
+}
+
+.login-card {
+    @apply bg-white dark:bg-[#2a2a2a] rounded-3xl overflow-hidden w-full relative;
+    max-width: 28rem;
+    box-shadow: 0 25px 80px rgba(0, 0, 0, 0.12), 0 8px 32px rgba(0, 0, 0, 0.08);
+    animation: slideUp 0.6s ease;
+    transition: background 0.3s ease, box-shadow 0.3s ease;
+}
+
+.dark .login-card {
+    box-shadow: 0 25px 80px rgba(0, 0, 0, 0.5), 0 8px 32px rgba(0, 0, 0, 0.3);
+}
+
+.login-header {
+    @apply p-10 px-8 text-white text-center relative;
+    background: linear-gradient(135deg, #028a0f, #026a0c);
+    transition: background 0.3s ease;
+}
+
+.dark .login-header {
+    background: linear-gradient(135deg, #02b815, #028a0f);
+}
+
+.login-header-logo {
+    @apply w-20 h-20 mb-4 object-contain bg-white p-1 rounded-full shadow-lg mx-auto;
+    border: 2px solid rgba(255, 255, 255, 0.9);
+    animation: logoBounce 0.8s cubic-bezier(0.34, 1.56, 0.64, 1) 0.4s both;
+}
+
+@keyframes logoBounce {
+    0% { transform: scale(0.3); opacity: 0; }
+    50% { transform: scale(1.08); }
+    70% { transform: scale(0.95); }
+    100% { transform: scale(1); opacity: 1; }
+}
+
+.login-header-title {
+    @apply text-2xl leading-tight mb-2 font-semibold;
+}
+
+.login-header-subtitle {
+    @apply text-sm mb-1;
+}
+
+.login-header-hint {
+    @apply text-sm opacity-90;
+}
+
+.login-theme-toggle {
+    @apply absolute top-4 right-4 border-none rounded-full w-10 h-10 flex items-center justify-center cursor-pointer text-white text-lg;
+    background: rgba(255, 255, 255, 0.2);
+    transition: all 0.3s ease;
+}
+
+.login-theme-toggle:hover {
+    background: rgba(255, 255, 255, 0.3);
+    transform: scale(1.1);
+}
+
+.login-body {
+    @apply p-6 px-6;
+}
+
+@media (min-width: 640px) {
+    .login-body {
+        @apply p-10 px-8;
+    }
+}
+
+.login-error {
+    @apply px-3 py-3 rounded-lg mb-4 text-sm;
+    @apply bg-red-100 dark:bg-red-900/30 text-red-800 dark:text-red-200 border-l-4 border-red-500 dark:border-red-400;
+    transition: colors 0.3s ease;
+}
+
+.login-label {
+    @apply block mb-2 font-medium text-gray-800 dark:text-gray-200 text-sm;
+    transition: color 0.3s ease;
+}
+
+.login-input-wrapper {
+    @apply relative flex items-center;
+}
+
+.login-input-icon {
+    @apply absolute left-4 text-gray-400 dark:text-gray-500 text-base pointer-events-none;
+    transition: color 0.3s ease;
+}
+
+.login-input-wrapper:focus-within .login-input-icon {
+    color: #028a0f;
+}
+
+.dark .login-input-wrapper:focus-within .login-input-icon {
+    color: #02b815;
+}
+
+.login-input {
+    @apply w-full py-3.5 border-2 border-gray-200 dark:border-gray-700 rounded-xl text-base bg-white dark:bg-[#1e1e1e] text-gray-800 dark:text-gray-200;
+    padding-left: 2.75rem;
+    padding-right: 1.25rem;
+    transition: all 0.3s ease;
+}
+
+.login-input.has-toggle {
+    padding-right: 3.5rem;
+}
+
+.login-input:focus {
+    @apply outline-none border-[#028a0f] dark:border-[#02b815];
+    animation: focusGlow 0.6s ease;
+}
+
+@keyframes focusGlow {
+    0% { box-shadow: 0 0 0 0 rgba(2, 138, 15, 0.3); }
+    50% { box-shadow: 0 0 0 6px rgba(2, 138, 15, 0.15); }
+    100% { box-shadow: 0 0 0 4px rgba(2, 138, 15, 0.1); }
+}
+
+.login-password-toggle {
+    @apply absolute right-4 text-gray-400 dark:text-gray-500 cursor-pointer p-1;
+    transition: color 0.2s ease;
+}
+
+.login-password-toggle:hover {
+    @apply text-[#028a0f] dark:text-[#02b815];
+}
+
+/* Modern toggle switch */
+.login-toggle {
+    @apply relative inline-block shrink-0 cursor-pointer;
+    width: 44px;
+    height: 24px;
+}
+
+.login-toggle input {
+    @apply opacity-0 w-0 h-0;
+}
+
+.login-toggle-slider {
+    @apply absolute inset-0 rounded-full;
+    background: #ccc;
+    transition: background 0.3s ease;
+}
+
+.dark .login-toggle-slider {
+    background: #555;
+}
+
+.login-toggle-slider::before {
+    content: '';
+    @apply absolute rounded-full bg-white;
+    width: 18px;
+    height: 18px;
+    left: 3px;
+    bottom: 3px;
+    transition: transform 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+    box-shadow: 0 1px 3px rgba(0, 0, 0, 0.2);
+}
+
+.login-toggle input:checked + .login-toggle-slider {
+    background: #028a0f;
+}
+
+.dark .login-toggle input:checked + .login-toggle-slider {
+    background: #02b815;
+}
+
+.login-toggle input:checked + .login-toggle-slider::before {
+    transform: translateX(20px);
+}
+
+.login-toggle-label {
+    @apply text-sm text-gray-600 dark:text-gray-400 cursor-pointer select-none leading-none;
+}
+
+.login-submit {
+    @apply w-full px-4 py-3.5 text-white border-none rounded-xl text-base font-semibold cursor-pointer flex items-center justify-center gap-2;
+    background: #028a0f;
+    transition: all 0.3s ease;
+    letter-spacing: 0.5px;
+}
+
+.login-submit:hover {
+    background: #026a0c;
+    transform: translateY(-2px);
+    box-shadow: 0 8px 20px rgba(2, 138, 15, 0.3);
+}
+
+.login-submit:hover .login-submit-arrow {
+    transform: translateX(4px);
+}
+
+.login-submit:active {
+    transform: translateY(0);
+}
+
+.login-submit-arrow {
+    transition: transform 0.3s ease;
+    font-size: 0.85em;
+}
+
+.dark .login-submit {
+    background: #02b815;
+}
+
+.dark .login-submit:hover {
+    background: #028a0f;
+}
+
+.login-loading-overlay {
+    @apply fixed inset-0 backdrop-blur-sm z-[9999] hidden items-center justify-center;
+    background: rgba(255, 255, 255, 0.85);
+    animation: fadeIn 0.3s ease;
+    transition: background 0.3s ease;
+}
+
+.dark .login-loading-overlay {
+    background: rgba(0, 0, 0, 0.85);
+}
+
+.login-loading-box {
+    @apply text-center p-10 px-12 rounded-3xl;
+    @apply bg-white dark:bg-[#2a2a2a];
+    box-shadow: 0 20px 60px rgba(0, 0, 0, 0.3);
+    animation: bounceIn 0.5s ease;
+    transition: background 0.3s ease;
+}
+
+.login-loading-spinner {
+    @apply w-12 h-12 border-4 border-gray-300 dark:border-gray-600 rounded-full mx-auto mb-5;
+    border-top-color: #028a0f;
+    animation: spin 1s linear infinite;
+}
+
+.dark .login-loading-spinner {
+    border-top-color: #02b815;
+}
+
+.login-bar {
+    @apply fixed left-0 right-0 h-6 z-50;
+    background: #028a0f;
+}
+
+.dark .login-bar {
+    background: #026a0c;
+}
+
+/* Caps Lock warning */
+.login-capslock {
+    @apply text-xs mt-2 px-3 py-1.5 rounded-lg hidden items-center gap-1.5;
+    background: #fff3cd;
+    color: #856404;
+    border: 1px solid #ffc107;
+    animation: fadeIn 0.2s ease;
+}
+
+.dark .login-capslock {
+    background: rgba(255, 193, 7, 0.15);
+    color: #ffc107;
+    border-color: rgba(255, 193, 7, 0.3);
+}
+
+.login-capslock.visible {
+    @apply flex;
+}
+
+/* Footer branding */
+.login-footer {
+    @apply mt-6 text-xs text-center;
+    color: #9ca3af;
+    animation: fadeIn 1s ease 0.8s both;
+}
+
+.dark .login-footer {
+    color: #6b7280;
+}
+
+/* Staggered form field animations */
+.login-field {
+    animation: fadeInUp 0.5s ease both;
+}
+
+.login-field:nth-child(1) { animation-delay: 0.3s; }
+.login-field:nth-child(2) { animation-delay: 0.4s; }
+.login-field:nth-child(3) { animation-delay: 0.5s; }
+.login-field:nth-child(4) { animation-delay: 0.6s; }

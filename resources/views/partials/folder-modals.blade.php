@@ -12,7 +12,7 @@
             <div class="modal-body">
                 <div class="form-group">
                     <label class="form-label">Folder Name *</label>
-                    <input type="text" name="folder_name" id="newFolderName" class="form-input" placeholder="Enter folder name" required maxlength="100" pattern="[a-zA-Z0-9\s\-_]+">
+                    <input type="text" name="folder_name" id="newFolderName" class="form-input" placeholder="Enter folder name" required maxlength="13" pattern="[a-zA-Z0-9\s\-_]+">
                     <small class="text-xs text-gray-500 dark:text-gray-400 mt-1 block">Only letters, numbers, spaces, hyphens, and underscores allowed</small>
                 </div>
                 <div class="form-group">
@@ -49,7 +49,7 @@
             <div class="modal-body">
                 <div class="form-group">
                     <label class="form-label">New Folder Name *</label>
-                    <input type="text" name="folder_name" id="renameFolderName" class="form-input" placeholder="Enter new folder name" required maxlength="100" pattern="[a-zA-Z0-9\s\-_]+">
+                    <input type="text" name="folder_name" id="renameFolderName" class="form-input" placeholder="Enter new folder name" required maxlength="13" pattern="[a-zA-Z0-9\s\-_]+">
                 </div>
                 <div class="form-group">
                     <label class="form-label">Color</label>
@@ -182,6 +182,8 @@ function showCreateFolderFromMove() {
 async function handleCreateFolder(event) {
     event.preventDefault();
     const form = event.target;
+    const submitBtn = form.querySelector('button[type="submit"]');
+    if (submitBtn) submitBtn.disabled = true;
     const formData = new FormData(form);
     
     try {
@@ -212,12 +214,15 @@ async function handleCreateFolder(event) {
     } catch (error) {
         showToast('An error occurred. Please try again.', 'error');
         console.error('Folder creation error:', error);
+        if (submitBtn) submitBtn.disabled = false;
     }
 }
 
 async function handleRenameFolder(event) {
     event.preventDefault();
     const form = event.target;
+    const submitBtn = form.querySelector('button[type="submit"]');
+    if (submitBtn) submitBtn.disabled = true;
     const formData = new FormData(form);
     const folderId = document.getElementById('renameFolderId').value;
     
@@ -251,6 +256,7 @@ async function handleRenameFolder(event) {
     } catch (error) {
         showToast('An error occurred. Please try again.', 'error');
         console.error('Folder rename error:', error);
+        if (submitBtn) submitBtn.disabled = false;
     }
 }
 

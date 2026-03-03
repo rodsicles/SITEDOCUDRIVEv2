@@ -40,7 +40,7 @@
     <div class="content-card">
         <div class="card-header">
             <h3 class="card-title">Event Details</h3>
-            <a href="{{ route('calendar.index') }}" class="btn bg-gray-200 dark:bg-gray-700">
+            <a href="{{ route('calendar.index') }}" class="btn bg-gray-200 dark:bg-gray-700 text-gray-700 dark:text-gray-200">
                 <i class="fas fa-arrow-left"></i> Back to Calendar
             </a>
         </div>
@@ -51,7 +51,7 @@
             <div class="form-group">
                 <label class="form-label">Event Title *</label>
                 <input type="text" name="title" class="form-control" required 
-                       placeholder="Enter event title" maxlength="200">
+                       placeholder="Enter event title" maxlength="30">
             </div>
 
             <div class="form-group">
@@ -71,7 +71,7 @@
             <div class="form-group">
                 <label class="form-label">Description</label>
                 <textarea name="description" class="form-control" rows="4" 
-                          placeholder="Event description, agenda, or notes..."></textarea>
+                          placeholder="Event description, agenda, or notes..." maxlength="150"></textarea>
             </div>
 
             <div class="grid grid-cols-1 md:grid-cols-2 gap-5">
@@ -96,7 +96,7 @@
             <div class="form-group">
                 <label class="form-label">Location</label>
                 <input type="text" name="location" class="form-control" 
-                       placeholder="e.g., Conference Room A, Zoom Link, etc.">
+                       placeholder="e.g., Conference Room A, Zoom Link, etc." maxlength="50">
             </div>
 
             <div class="form-group">
@@ -142,7 +142,7 @@
             </div>
 
             <div class="flex justify-end gap-2.5 mt-8">
-                <a href="{{ route('calendar.index') }}" class="btn bg-gray-200 dark:bg-gray-700">
+                <a href="{{ route('calendar.index') }}" class="btn bg-gray-200 dark:bg-gray-700 text-gray-700 dark:text-gray-200">
                     Cancel
                 </a>
                 <button type="submit" class="btn btn-success">

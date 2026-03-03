@@ -67,21 +67,21 @@
                     <label class="form-label">Full Name *</label>
                     <input type="text" name="full_name" class="form-control" 
                            value="{{ old('full_name', $employee->full_name) }}" 
-                           required maxlength="100" placeholder="Enter full name">
+                           required maxlength="45" placeholder="Enter full name">
                 </div>
 
                 <div class="form-group">
                     <label class="form-label">Employee Number</label>
                     <input type="text" name="employee_no" class="form-control" 
                            value="{{ old('employee_no', $employee->employee_no) }}" 
-                           maxlength="30" placeholder="e.g. FAC001">
+                           maxlength="15" pattern="[0-9]*" title="Numbers only" placeholder="e.g. FAC001">
                 </div>
 
                 <div class="form-group">
                     <label class="form-label">Email Address *</label>
                     <input type="email" name="email" class="form-control" 
                            value="{{ old('email', $employee->user->email) }}" 
-                           required maxlength="100" placeholder="faculty@example.com">
+                           required maxlength="45" placeholder="faculty@example.com">
                 </div>
 
                 <div class="form-group">
@@ -138,14 +138,14 @@
                 <div class="form-group">
                     <label class="form-label">New Password *</label>
                     <input type="password" name="new_password" class="form-control" 
-                           required minlength="8" placeholder="Enter new password">
+                           required minlength="8" maxlength="40" placeholder="Enter new password">
                     <small class="text-gray-600 dark:text-gray-400 text-xs mt-1.5 block">Minimum 8 characters</small>
                 </div>
 
                 <div class="form-group">
                     <label class="form-label">Confirm New Password *</label>
                     <input type="password" name="new_password_confirmation" class="form-control" 
-                           required minlength="8" placeholder="Confirm new password">
+                           required minlength="8" maxlength="40" placeholder="Confirm new password">
                     <small class="text-gray-600 dark:text-gray-400 text-xs mt-1.5 block">Must match the new password</small>
                 </div>
             </div>

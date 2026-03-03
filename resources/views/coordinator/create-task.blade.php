@@ -50,13 +50,13 @@
             <div class="form-group">
                 <label class="form-label">Task Title</label>
                 <input type="text" name="task_title" class="form-control" 
-                       placeholder="Enter task title" required maxlength="150">
+                       placeholder="Enter task title" required maxlength="15">
             </div>
 
             <div class="form-group">
                 <label class="form-label">Task Description</label>
                 <textarea name="task_description" class="form-control" rows="5" 
-                          placeholder="Enter detailed task description"></textarea>
+                          placeholder="Enter detailed task description" maxlength="150"></textarea>
             </div>
 
             <div class="form-group">

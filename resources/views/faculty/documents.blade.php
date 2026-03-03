@@ -57,7 +57,7 @@
             
                 <div class="form-group">
                     <label class="form-label">Document Title *</label>
-                    <input type="text" name="document_title" class="form-control" placeholder="Enter document title" required>
+                    <input type="text" name="document_title" class="form-control" placeholder="Enter document title" required maxlength="13">
                 </div>
 
                 <div class="form-group">
@@ -86,8 +86,8 @@
                 </div>
 
                 <div class="form-group">
-                    <label class="form-label">Tags (comma-separated)</label>
-                    <input type="text" name="tags" class="form-control" placeholder="e.g. urgent, confidential, review">
+                    <label class="form-label">Tags (max 15 characters)</label>
+                    <input type="text" name="tags" id="tagsInput" class="form-control" placeholder="e.g. urgent" maxlength="15">
                 </div>
             </div>
 
@@ -283,6 +283,12 @@
         }
 
         const files = fileInput.files;
+        // enforce maximum 3 files
+        if (files.length > 3) {
+            e.preventDefault();
+            alert('You can upload a maximum of 3 files per upload.');
+            return false;
+        }
         for (let i = 0; i < files.length; i++) {
             const fileName = files[i].name.toLowerCase();
             const fileExtension = fileName.split('.').pop();
@@ -299,6 +305,17 @@
                 return false;
             }
         }
+        // tags validation: max 15 characters
+        const tagsVal = document.getElementById('tagsInput')?.value || '';
+        if (tagsVal.trim().length > 15) {
+            e.preventDefault();
+            alert('Please limit tags to 15 characters maximum.');
+            return false;
+        }
+
+        // disable submit to prevent double submissions
+        const submitBtn = this.querySelector('button[type="submit"]');
+        if (submitBtn) submitBtn.disabled = true;
     });
 </script>
 @endpush

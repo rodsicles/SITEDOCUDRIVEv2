@@ -64,12 +64,12 @@ class CalendarController extends Controller
             return back()->with('error', 'Only Program Coordinators and Deans can create events.');
         }
         $validated = $request->validate([
-            'title' => 'required|string|max:200',
-            'description' => 'nullable|string',
+            'title' => 'required|string|max:30',
+            'description' => 'nullable|string|max:150',
             'event_type' => 'required|in:Meeting,Deadline,Training,Conference,Holiday,Seminar,Other',
             'start_datetime' => 'required|date',
             'end_datetime' => 'required|date|after:start_datetime',
-            'location' => 'nullable|string|max:255',
+            'location' => 'nullable|string|max:50',
             'all_day' => 'boolean',
             'visibility' => 'required|in:Public,Department,Private',
             'send_reminder' => 'boolean',
@@ -149,12 +149,12 @@ class CalendarController extends Controller
         }
 
         $validated = $request->validate([
-            'title' => 'required|string|max:200',
-            'description' => 'nullable|string',
+            'title' => 'required|string|max:30',
+            'description' => 'nullable|string|max:150',
             'event_type' => 'required|in:Meeting,Deadline,Training,Conference,Holiday,Seminar,Other',
             'start_datetime' => 'required|date',
             'end_datetime' => 'required|date|after:start_datetime',
-            'location' => 'nullable|string|max:255',
+            'location' => 'nullable|string|max:50',
             'all_day' => 'boolean',
             'visibility' => 'required|in:Public,Department,Private',
         ]);

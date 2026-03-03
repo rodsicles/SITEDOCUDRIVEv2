@@ -70,7 +70,7 @@ Route::middleware(['auth', 'role:Dean'])->prefix('dean')->name('dean.')->group(f
     Route::get('/documents/{id}/download', [DeanController::class, 'downloadDocument'])->name('download-document');
     
     // Folder Management
-    Route::post('/folders', [FolderController::class, 'store'])->name('folders.store');
+    Route::post('/folders', [FolderController::class, 'store'])->middleware('throttle:3,20')->name('folders.store');
     Route::patch('/folders/{folder}', [FolderController::class, 'update'])->name('folders.update');
     Route::delete('/folders/{folder}', [FolderController::class, 'destroy'])->name('folders.destroy');
     Route::get('/folders/list', [FolderController::class, 'getUserFolders'])->name('folders.list');
@@ -99,12 +99,12 @@ Route::middleware(['auth', 'role:Program Coordinator'])->prefix('coordinator')->
     
     // Documents
     Route::get('/documents', [CoordinatorController::class, 'documents'])->name('documents');
-    Route::post('/documents', [CoordinatorController::class, 'uploadDocument'])->name('upload-document');
+    Route::post('/documents', [CoordinatorController::class, 'uploadDocument'])->middleware('throttle:3,20')->name('upload-document');
     Route::get('/documents/{id}/view', [CoordinatorController::class, 'viewDocument'])->name('view-document');
     Route::get('/documents/{id}/download', [CoordinatorController::class, 'downloadDocument'])->name('download-document');
     
     // Folder Management
-    Route::post('/folders', [FolderController::class, 'store'])->name('folders.store');
+    Route::post('/folders', [FolderController::class, 'store'])->middleware('throttle:3,20')->name('folders.store');
     Route::patch('/folders/{folder}', [FolderController::class, 'update'])->name('folders.update');
     Route::delete('/folders/{folder}', [FolderController::class, 'destroy'])->name('folders.destroy');
     Route::get('/folders/list', [FolderController::class, 'getUserFolders'])->name('folders.list');
@@ -126,7 +126,7 @@ Route::middleware(['auth', 'role:Faculty Employee'])->prefix('faculty')->name('f
     Route::post('/documents/{document}/move', [FolderController::class, 'moveDocument'])->name('documents.move');
     Route::post('/notifications/{id}/read', [FacultyController::class, 'markNotificationRead'])->name('mark-notification-read');
     Route::get('/documents', [FacultyController::class, 'documents'])->name('documents');
-    Route::post('/documents', [FacultyController::class, 'uploadDocument'])->name('upload-document');
+    Route::post('/documents', [FacultyController::class, 'uploadDocument'])->middleware('throttle:3,20')->name('upload-document');
     Route::get('/documents/{id}/view', [FacultyController::class, 'viewDocument'])->name('view-document');
     Route::post('/documents/{id}/favorite', [FacultyController::class, 'toggleFavorite'])->name('toggle-favorite');
     Route::get('/documents/{id}/download', [FacultyController::class, 'downloadDocument'])->name('download-document');

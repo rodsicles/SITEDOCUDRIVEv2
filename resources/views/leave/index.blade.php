@@ -206,24 +206,26 @@
     <!-- Approve Modal -->
     <div class="modal-overlay" id="approveModal">
         <div class="modal-card max-w-md">
-            <div class="flex items-start gap-4 mb-5">
-                <div class="flex-shrink-0 w-12 h-12 bg-green-100 dark:bg-green-900/30 rounded-full flex items-center justify-center">
-                    <i class="fas fa-check-circle text-2xl text-green-600 dark:text-green-400"></i>
-                </div>
-                <div class="flex-1">
-                    <h3 class="text-xl font-bold text-gray-900 dark:text-white mb-2">Approve Leave Request</h3>
-                    <p class="text-gray-600 dark:text-gray-400 text-sm">
-                        Are you sure you want to approve this leave request? The employee will be notified of the approval.
-                    </p>
+            <div class="p-6">
+                <div class="flex items-start gap-4 mb-6">
+                    <div class="flex-shrink-0 w-12 h-12 bg-green-100 dark:bg-green-900/30 rounded-full flex items-center justify-center">
+                        <i class="fas fa-check-circle text-2xl text-green-600 dark:text-green-400"></i>
+                    </div>
+                    <div class="flex-1">
+                        <h3 class="text-xl font-bold text-gray-900 dark:text-white mb-2">Approve Leave Request</h3>
+                        <p class="text-gray-600 dark:text-gray-400 text-sm">
+                            Are you sure you want to approve this leave request? The employee will be notified of the approval.
+                        </p>
+                    </div>
                 </div>
             </div>
-            <div class="flex justify-end gap-3">
+            <div class="px-6 py-4 bg-gray-50 dark:bg-[#1f1f1f] border-t border-gray-200 dark:border-gray-700 flex gap-3 justify-end">
                 <button type="button" onclick="closeApproveModal()" 
                         class="px-4 py-2 text-sm font-medium text-gray-700 dark:text-gray-300 bg-white dark:bg-gray-700 border border-gray-300 dark:border-gray-600 rounded-lg hover:bg-gray-50 dark:hover:bg-gray-600 transition-colors">
                     Cancel
                 </button>
                 <button type="button" onclick="confirmApprove()" 
-                        class="px-4 py-2 text-sm font-medium text-white bg-green-600 hover:bg-green-700 rounded-lg transition-colors flex items-center gap-2">
+                        class="px-4 py-2 text-sm font-medium text-white bg-green-600 hover:bg-green-700 dark:bg-green-700 dark:hover:bg-green-800 rounded-lg transition-colors flex items-center gap-2">
                     <i class="fas fa-check"></i>
                     Yes, Approve
                 </button>
@@ -234,30 +236,32 @@
     <!-- Cancel Modal -->
     <div class="modal-overlay" id="cancelModal">
         <div class="modal-card max-w-md">
-            <div class="flex items-start gap-4 mb-5">
-                <div class="flex-shrink-0 w-12 h-12 bg-red-100 dark:bg-red-900/30 rounded-full flex items-center justify-center">
-                    <i class="fas fa-exclamation-triangle text-2xl text-red-600 dark:text-red-400"></i>
-                </div>
-                <div class="flex-1">
-                    <h3 class="text-xl font-bold text-gray-900 dark:text-white mb-2">Cancel Leave Request</h3>
-                    <p class="text-gray-600 dark:text-gray-400 text-sm mb-3">
-                        Are you sure you want to cancel this leave request?
-                    </p>
-                    <div class="bg-red-50 dark:bg-red-900/20 border border-red-200 dark:border-red-800 rounded-lg p-3">
-                        <p class="text-red-700 dark:text-red-300 text-xs font-medium flex items-center gap-2">
-                            <i class="fas fa-info-circle"></i>
-                            This action cannot be undone.
+            <div class="p-6">
+                <div class="flex items-start gap-4 mb-6">
+                    <div class="flex-shrink-0 w-12 h-12 bg-red-100 dark:bg-red-900/30 rounded-full flex items-center justify-center">
+                        <i class="fas fa-exclamation-triangle text-2xl text-red-600 dark:text-red-400"></i>
+                    </div>
+                    <div class="flex-1">
+                        <h3 class="text-xl font-bold text-gray-900 dark:text-white mb-2">Cancel Leave Request</h3>
+                        <p class="text-gray-600 dark:text-gray-400 text-sm mb-3">
+                            Are you sure you want to cancel this leave request?
                         </p>
+                        <div class="bg-red-50 dark:bg-red-900/20 border border-red-200 dark:border-red-800 rounded-lg p-3">
+                            <p class="text-red-700 dark:text-red-300 text-xs font-medium flex items-center gap-2">
+                                <i class="fas fa-info-circle"></i>
+                                This action cannot be undone.
+                            </p>
+                        </div>
                     </div>
                 </div>
             </div>
-            <div class="flex justify-end gap-3">
+            <div class="px-6 py-4 bg-gray-50 dark:bg-[#1f1f1f] border-t border-gray-200 dark:border-gray-700 flex gap-3 justify-end">
                 <button type="button" onclick="closeCancelModal()" 
                         class="px-4 py-2 text-sm font-medium text-gray-700 dark:text-gray-300 bg-white dark:bg-gray-700 border border-gray-300 dark:border-gray-600 rounded-lg hover:bg-gray-50 dark:hover:bg-gray-600 transition-colors">
                     Keep Request
                 </button>
                 <button type="button" onclick="confirmCancel()" 
-                        class="px-4 py-2 text-sm font-medium text-white bg-red-600 hover:bg-red-700 rounded-lg transition-colors flex items-center gap-2">
+                        class="px-4 py-2 text-sm font-medium text-white bg-red-600 hover:bg-red-700 dark:bg-red-700 dark:hover:bg-red-800 rounded-lg transition-colors flex items-center gap-2">
                     <i class="fas fa-times"></i>
                     Yes, Cancel Request
                 </button>

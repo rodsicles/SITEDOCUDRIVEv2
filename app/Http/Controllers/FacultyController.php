@@ -161,14 +161,14 @@ class FacultyController extends Controller
     public function uploadDocument(Request $request)
     {
         $validated = $request->validate([
-            'document_title' => 'required|string|max:150',
+            'document_title' => 'required|string|max:13',
             'document_type' => 'required|in:pdf,image',
-            'documents' => 'required|array',
+            'documents' => 'required|array|max:3',
             'documents.*' => $request->input('document_type') === 'pdf'
                 ? 'required|file|max:10240|mimes:pdf|mimetypes:application/pdf'
                 : 'required|file|max:10240|mimes:jpg,jpeg,png|mimetypes:image/jpeg,image/png',
             'category' => 'required|in:Policies,Forms,Reports,Memos,Research Papers,Other',
-            'tags' => 'nullable|string',
+            'tags' => 'nullable|string|max:15',
             'folder_id' => 'nullable|exists:folders,folder_id',
         ]);
 

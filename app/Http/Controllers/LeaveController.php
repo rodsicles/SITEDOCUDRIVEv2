@@ -48,7 +48,7 @@ class LeaveController extends Controller
             'leave_type' => 'required|in:Sick Leave,Vacation Leave,Emergency Leave,Personal Leave,Study Leave,Maternity Leave,Paternity Leave,Other',
             'start_date' => 'required|date|after_or_equal:today',
             'end_date' => 'required|date|after_or_equal:start_date',
-            'reason' => 'required|string|min:10',
+            'reason' => 'required|string|min:10|max:120',
         ]);
 
         $startDate = new \DateTime($validated['start_date']);
@@ -113,7 +113,7 @@ class LeaveController extends Controller
             'leave_type' => 'required|in:Sick Leave,Vacation Leave,Emergency Leave,Personal Leave,Study Leave,Maternity Leave,Paternity Leave,Other',
             'start_date' => 'required|date|after_or_equal:today',
             'end_date' => 'required|date|after_or_equal:start_date',
-            'reason' => 'required|string|min:10',
+            'reason' => 'required|string|min:10|max:120',
         ]);
 
         $startDate = new \DateTime($validated['start_date']);

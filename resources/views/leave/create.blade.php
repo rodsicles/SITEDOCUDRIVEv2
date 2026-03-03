@@ -93,7 +93,7 @@
                 <label class="form-label">Reason for Leave *</label>
                 <textarea name="reason" class="form-control" rows="5" required 
                           placeholder="Please provide a detailed reason for your leave request..." 
-                          minlength="10"></textarea>
+                          minlength="10" maxlength="120"></textarea>
                 <small class="text-gray-500 dark:text-gray-400">Minimum 10 characters</small>
             </div>
 
@@ -135,6 +135,12 @@
     // Update end date minimum when start date changes
     document.querySelector('[name="start_date"]').addEventListener('change', function() {
         document.querySelector('[name="end_date"]').min = this.value;
+    });
+
+    // Prevent double submit
+    document.querySelector('form[action="{{ route('leave.store') }}"]')?.addEventListener('submit', function() {
+        const btn = this.querySelector('button[type="submit"]');
+        if (btn) btn.disabled = true;
     });
 </script>
 @endpush

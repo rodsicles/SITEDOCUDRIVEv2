@@ -186,28 +186,7 @@
                 </div>
             </div>
 
-            <!-- Alerts -->
-            @if(session('success'))
-            <div class="px-5 py-4 rounded-lg mb-5 bg-green-100 text-green-800 border-l-4 border-green-500 animate-[slideDown_0.5s_ease]">
-                <i class="fas fa-check-circle"></i> {{ session('success') }}
-            </div>
-            @endif
-
-            @if(session('error'))
-            <div class="px-5 py-4 rounded-lg mb-5 bg-red-100 text-red-800 border-l-4 border-red-500 animate-[slideDown_0.5s_ease]">
-                <i class="fas fa-exclamation-circle"></i> {{ session('error') }}
-            </div>
-            @endif
-
-            @if($errors->any())
-            <div class="px-5 py-4 rounded-lg mb-5 bg-red-100 text-red-800 border-l-4 border-red-500 animate-[slideDown_0.5s_ease]">
-                <ul class="m-0 pl-5">
-                    @foreach($errors->all() as $error)
-                    <li>{{ $error }}</li>
-                    @endforeach
-                </ul>
-            </div>
-            @endif
+            <!-- Alerts removed - using toast only -->
 
             <!-- Page Content -->
             @yield('content')
@@ -218,7 +197,7 @@
     <div id="searchModal" class="hidden fixed inset-0 bg-black/70 z-[9999] items-start justify-center pt-24">
         <div class="bg-white dark:bg-[#2a2a2a] rounded-xl w-[90%] max-w-2xl shadow-xl animate-[slideDown_0.3s_ease]">
             <div class="p-5 border-b-2 border-gray-200 dark:border-gray-700">
-                <input type="text" id="globalSearchInput" placeholder="Search employees, tasks, documents..." autocomplete="off" class="w-full p-4 border-2 border-gray-200 dark:border-gray-700 rounded-lg text-base transition-colors focus:outline-none focus:border-[#028a0f] dark:focus:border-[#02b815] bg-white dark:bg-[#1e1e1e] text-gray-800 dark:text-gray-200">
+                <input type="text" id="globalSearchInput" placeholder="Search employees, tasks, documents..." autocomplete="off" maxlength="35" class="w-full p-4 border-2 border-gray-200 dark:border-gray-700 rounded-lg text-base transition-colors focus:outline-none focus:border-[#028a0f] dark:focus:border-[#02b815] bg-white dark:bg-[#1e1e1e] text-gray-800 dark:text-gray-200">
             </div>
             <div id="searchResults" class="max-h-96 overflow-y-auto p-2">
                 <p class="text-center text-gray-600 dark:text-gray-400 p-5">Type to search...</p>
@@ -236,9 +215,6 @@
             <iframe id="previewFrame" class="w-full h-[calc(100%-80px)] border-none bg-white"></iframe>
         </div>
     </div>
-
-    <!-- Toast Container -->
-    <div id="toastContainer" class="fixed top-20 right-5 z-[10000]"></div>
 
     <!-- Toast Container -->
     <div id="toastContainer" class="fixed top-20 right-5 z-[10000]"></div>

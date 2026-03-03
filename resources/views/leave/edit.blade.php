@@ -103,7 +103,7 @@
                 <label class="form-label">Reason for Leave *</label>
                 <textarea name="reason" class="form-control" rows="5" required 
                           placeholder="Please provide a detailed reason for your leave request..." 
-                          minlength="10">{{ old('reason', $leaveRequest->reason) }}</textarea>
+                          minlength="10" maxlength="120">{{ old('reason', $leaveRequest->reason) }}</textarea>
                 <small class="text-gray-500 dark:text-gray-400">Minimum 10 characters</small>
             </div>
 
@@ -149,5 +149,11 @@
 
     // Calculate on page load
     calculateDays();
+
+    // Prevent double submit
+    document.querySelector('form[action="{{ route('leave.update', $leaveRequest->leave_id) }}"]')?.addEventListener('submit', function() {
+        const btn = this.querySelector('button[type="submit"]');
+        if (btn) btn.disabled = true;
+    });
 </script>
 @endpush

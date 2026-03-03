@@ -84,8 +84,8 @@ class CoordinatorController extends Controller
     {
         $validated = $request->validate([
             'assigned_to' => 'required|exists:users,id',
-            'task_title' => 'required|string|max:150',
-            'task_description' => 'nullable|string',
+            'task_title' => 'required|string|max:15',
+            'task_description' => 'nullable|string|max:150',
             'due_date' => 'required|date',
         ]);
 
@@ -147,11 +147,11 @@ class CoordinatorController extends Controller
     public function storeFaculty(Request $request)
     {
         $validated = $request->validate([
-            'username' => 'required|string|unique:users,username|max:50',
-            'email' => 'required|email|unique:users,email|max:100',
-            'password' => 'required|string|min:8',
-            'full_name' => 'required|string|max:100',
-            'employee_no' => 'nullable|string|unique:employees,employee_no|max:30',
+            'username' => 'required|string|unique:users,username|max:20',
+            'email' => 'required|email|unique:users,email|max:45',
+            'password' => 'required|string|min:8|max:40',
+            'full_name' => 'required|string|max:45',
+            'employee_no' => 'nullable|string|unique:employees,employee_no|max:15|regex:/^[0-9]*$/',
             'department' => 'required|in:Engineering,Information Technology',
         ]);
 
@@ -226,14 +226,14 @@ class CoordinatorController extends Controller
     public function uploadDocument(Request $request)
     {
         $validated = $request->validate([
-            'document_title' => 'required|string|max:150',
+            'document_title' => 'required|string|max:13',
             'document_type' => 'required|in:pdf,image',
-            'documents' => 'required|array',
+            'documents' => 'required|array|max:3',
             'documents.*' => $request->input('document_type') === 'pdf'
                 ? 'required|file|max:10240|mimes:pdf|mimetypes:application/pdf'
                 : 'required|file|max:10240|mimes:jpg,jpeg,png|mimetypes:image/jpeg,image/png',
             'category' => 'required|in:Policies,Forms,Reports,Memos,Research Papers,Other',
-            'tags' => 'nullable|string',
+            'tags' => 'nullable|string|max:15',
             'folder_id' => 'nullable|exists:folders,folder_id',
         ]);
 
@@ -286,10 +286,10 @@ class CoordinatorController extends Controller
         }
 
         $validated = $request->validate([
-            'full_name' => 'required|string|max:100',
-            'employee_no' => 'nullable|string|max:30|unique:employees,employee_no,' . $employee->employee_id . ',employee_id',
+            'full_name' => 'required|string|max:45',
+            'employee_no' => 'nullable|string|max:15|regex:/^[0-9]*$/|unique:employees,employee_no,' . $employee->employee_id . ',employee_id',
             'department' => 'required|in:Information Technology,Engineering',
-            'email' => 'required|email|max:100|unique:users,email,' . $employee->user_id . ',id',
+            'email' => 'required|email|max:45|unique:users,email,' . $employee->user_id . ',id',
         ]);
 
         DB::beginTransaction();
@@ -337,7 +337,7 @@ class CoordinatorController extends Controller
         }
 
         $validated = $request->validate([
-            'new_password' => 'required|string|min:8|confirmed',
+            'new_password' => 'required|string|min:8|max:40|confirmed',
         ]);
 
         try {

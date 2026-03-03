@@ -38,13 +38,13 @@
             <div class="form-group">
                 <label class="form-label">Full Name</label>
                 <input type="text" name="full_name" class="form-control" 
-                       placeholder="Enter full name" required maxlength="100" value="{{ old('full_name') }}">
+                       placeholder="Enter full name" required maxlength="45" value="{{ old('full_name') }}">
             </div>
 
             <div class="form-group">
                 <label class="form-label">Employee Number</label>
                 <input type="text" name="employee_no" class="form-control" 
-                       placeholder="Enter employee number (optional)" maxlength="30" value="{{ old('employee_no') }}">
+                       placeholder="Enter employee number (optional)" maxlength="15" pattern="[0-9]*" title="Numbers only" value="{{ old('employee_no') }}">
             </div>
 
             <div class="form-group">
@@ -59,19 +59,19 @@
             <div class="form-group">
                 <label class="form-label">Username</label>
                 <input type="text" name="username" class="form-control" 
-                       placeholder="Enter username" required maxlength="50" value="{{ old('username') }}">
+                       placeholder="Enter username" required maxlength="20" value="{{ old('username') }}">
             </div>
 
             <div class="form-group">
                 <label class="form-label">Email Address</label>
                 <input type="email" name="email" class="form-control" 
-                       placeholder="Enter email address" required maxlength="100" value="{{ old('email') }}">
+                       placeholder="Enter email address" required maxlength="45" value="{{ old('email') }}">
             </div>
 
             <div class="form-group">
                 <label class="form-label">Password</label>
                 <input type="password" name="password" class="form-control" 
-                       placeholder="Enter password (min 8 characters)" required minlength="8">
+                       placeholder="Enter password (min 8 characters)" required minlength="8" maxlength="40">
             </div>
 
             <div class="flex gap-2.5">

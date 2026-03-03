@@ -266,18 +266,18 @@
         }
     });
 
-    document.getElementById('uploadForm').addEventListener('submit', function(e) {
+    document.getElementById('uploadForm').addEventListener('submit', async function(e) {
+        e.preventDefault(); // Prevent default form submission
+        
         const documentType = document.getElementById('documentType').value;
         const fileInput = document.getElementById('fileInput');
         
         if (!documentType) {
-            e.preventDefault();
             alert('Please select a Document Type first!');
             return false;
         }
 
         if (fileInput.files.length === 0) {
-            e.preventDefault();
             alert('Please select at least one file to upload!');
             return false;
         }
@@ -285,7 +285,6 @@
         const files = fileInput.files;
         // enforce maximum 3 files
         if (files.length > 3) {
-            e.preventDefault();
             alert('You can upload a maximum of 3 files per upload.');
             return false;
         }
@@ -294,13 +293,11 @@
             const fileExtension = fileName.split('.').pop();
             
             if (documentType === 'pdf' && fileExtension !== 'pdf') {
-                e.preventDefault();
                 alert('Error: You selected "PDF Document" but uploaded a non-PDF file (' + files[i].name + ')');
                 return false;
             }
             
             if (documentType === 'image' && !['jpg', 'jpeg', 'png'].includes(fileExtension)) {
-                e.preventDefault();
                 alert('Error: You selected "Image File" but uploaded an invalid file type (' + files[i].name + ')');
                 return false;
             }
@@ -308,14 +305,58 @@
         // tags validation: max 15 characters
         const tagsVal = document.getElementById('tagsInput')?.value || '';
         if (tagsVal.trim().length > 15) {
-            e.preventDefault();
             alert('Please limit tags to 15 characters maximum.');
             return false;
         }
 
-        // disable submit to prevent double submissions
+        // Disable submit button and show loading
         const submitBtn = this.querySelector('button[type="submit"]');
-        if (submitBtn) submitBtn.disabled = true;
+        const originalText = submitBtn ? submitBtn.innerHTML : '';
+        if (submitBtn) {
+            submitBtn.disabled = true;
+            submitBtn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Uploading...';
+        }
+
+        try {
+            const formData = new FormData(this);
+            const response = await fetch(this.action, {
+                method: 'POST',
+                body: formData,
+                headers: {
+                    'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]').content,
+                    'Accept': 'application/json',
+                }
+            });
+
+            if (response.status === 429) {
+                showToast('Upload limit reached! You can only upload 6 files per hour. Please try again later.', 'error');
+                if (submitBtn) {
+                    submitBtn.disabled = false;
+                    submitBtn.innerHTML = originalText;
+                }
+                return;
+            }
+
+            const data = await response.json();
+            
+            if (response.ok) {
+                showToast(data.message || 'Documents uploaded successfully!', 'success');
+                setTimeout(() => window.location.reload(), 1500);
+            } else {
+                showToast(data.message || 'Upload failed', 'error');
+                if (submitBtn) {
+                    submitBtn.disabled = false;
+                    submitBtn.innerHTML = originalText;
+                }
+            }
+        } catch (error) {
+            console.error('Upload error:', error);
+            showToast('An error occurred during upload. Please try again.', 'error');
+            if (submitBtn) {
+                submitBtn.disabled = false;
+                submitBtn.innerHTML = originalText;
+            }
+        }
     });
 </script>
 @endpush

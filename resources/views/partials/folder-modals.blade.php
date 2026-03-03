@@ -183,7 +183,11 @@ async function handleCreateFolder(event) {
     event.preventDefault();
     const form = event.target;
     const submitBtn = form.querySelector('button[type="submit"]');
-    if (submitBtn) submitBtn.disabled = true;
+    const originalText = submitBtn ? submitBtn.textContent : '';
+    if (submitBtn) {
+        submitBtn.disabled = true;
+        submitBtn.textContent = 'Processing...';
+    }
     const formData = new FormData(form);
     
     try {
@@ -202,6 +206,13 @@ async function handleCreateFolder(event) {
             showToast('Folder created successfully!', 'success');
             closeCreateFolderModal();
             setTimeout(() => window.location.reload(), 1000);
+        } else if (response.status === 429) {
+            // Rate limit exceeded
+            showToast('Too many folders created! Please wait 1 hour before creating more folders (Limit: 3 folders per hour)', 'error');
+            if (submitBtn) {
+                submitBtn.disabled = false;
+                submitBtn.textContent = originalText;
+            }
         } else {
             // Handle validation errors
             if (data.errors) {
@@ -210,11 +221,18 @@ async function handleCreateFolder(event) {
             } else {
                 showToast(data.message || 'Failed to create folder', 'error');
             }
+            if (submitBtn) {
+                submitBtn.disabled = false;
+                submitBtn.textContent = originalText;
+            }
         }
     } catch (error) {
         showToast('An error occurred. Please try again.', 'error');
         console.error('Folder creation error:', error);
-        if (submitBtn) submitBtn.disabled = false;
+        if (submitBtn) {
+            submitBtn.disabled = false;
+            submitBtn.textContent = originalText;
+        }
     }
 }
 

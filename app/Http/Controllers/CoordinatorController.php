@@ -257,6 +257,14 @@ class CoordinatorController extends Controller
             $uploadedCount++;
         }
 
+        // Return JSON response for AJAX requests
+        if ($request->expectsJson()) {
+            return response()->json([
+                'success' => true,
+                'message' => "$uploadedCount document(s) uploaded successfully"
+            ]);
+        }
+
         return redirect()->back()->with('success', "$uploadedCount document(s) uploaded successfully");
     }
 

@@ -10,6 +10,7 @@ use App\Http\Controllers\ProfileController;
 use App\Http\Controllers\LeaveController;
 use App\Http\Controllers\CalendarController;
 use App\Http\Controllers\FolderController;
+use App\Http\Controllers\AnnouncementController;
 
 // Authentication Routes
 Route::get('/', [AuthController::class, 'showLogin'])->name('login');
@@ -56,6 +57,22 @@ Route::middleware('auth')->prefix('calendar')->name('calendar.')->group(function
     // Show and respond routes - MUST come after /create to avoid conflicts
     Route::get('/{id}', [CalendarController::class, 'show'])->name('show');
     Route::post('/{id}/respond', [CalendarController::class, 'respond'])->name('respond');
+});
+
+// Announcements (All authenticated users can view, only Dean/Coordinator can create/edit/delete)
+Route::middleware('auth')->prefix('announcements')->name('announcements.')->group(function () {
+    Route::get('/', [AnnouncementController::class, 'index'])->name('index');
+    Route::post('/{id}/read', [AnnouncementController::class, 'markAsRead'])->name('read');
+    Route::post('/{id}/react', [AnnouncementController::class, 'toggleReaction'])->name('react');
+
+    // Only Dean and Coordinator can create/edit/delete announcements
+    Route::middleware('role:Dean,Program Coordinator')->group(function () {
+        Route::get('/create', [AnnouncementController::class, 'create'])->name('create');
+        Route::post('/', [AnnouncementController::class, 'store'])->middleware('throttle:10,60')->name('store');
+        Route::get('/{id}/edit', [AnnouncementController::class, 'edit'])->name('edit');
+        Route::put('/{id}', [AnnouncementController::class, 'update'])->name('update');
+        Route::delete('/{id}', [AnnouncementController::class, 'destroy'])->name('destroy');
+    });
 });
 
 // Dean Routes

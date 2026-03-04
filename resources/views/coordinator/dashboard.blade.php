@@ -18,6 +18,9 @@
     <a href="{{ route('calendar.index') }}" class="menu-item">
         <i class="fas fa-calendar"></i> Calendar
     </a>
+    <a href="{{ route('announcements.index') }}" class="menu-item">
+        <i class="fas fa-bullhorn"></i> Announcements
+    </a>
     <a href="{{ route('coordinator.faculty') }}" class="menu-item">
         <i class="fas fa-users"></i> Faculty Members
     </a>
@@ -62,6 +65,9 @@
             <div class="stat-label">Total Tasks</div>
         </div>
     </div>
+
+    <!-- Announcements Feed Widget -->
+    @include('partials.announcement-widget')
 
     <!-- Quick Actions -->
     <div class="content-card">

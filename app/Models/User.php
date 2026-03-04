@@ -114,6 +114,11 @@ class User extends Authenticatable
         return $this->hasMany(DocumentView::class, 'user_id');
     }
 
+    public function announcements()
+    {
+        return $this->hasMany(Announcement::class, 'author_id');
+    }
+
     public function isDean()
     {
         return $this->role->role_name === 'Dean';

@@ -7,6 +7,7 @@ use App\Models\Notification;
 use App\Models\Document;
 use App\Models\DocumentView;
 use App\Models\PerformanceReport;
+use App\Models\Announcement;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Storage;
 
@@ -58,6 +59,13 @@ class FacultyController extends Controller
         // Faculty sees only their own activities and notifications
         $recentActivities = \App\Models\DashboardLog::getFilteredLogs(auth()->user(), 10);
 
+        $announcements = Announcement::with(['author.employee', 'reads', 'reactions'])
+            ->active()
+            ->visibleTo(auth()->user())
+            ->ordered()
+            ->take(5)
+            ->get();
+
         return view('faculty.dashboard', compact(
             'totalDocuments',
             'leaveThisMonth',
@@ -67,7 +75,8 @@ class FacultyController extends Controller
             'unreadNotifications',
             'recentNotifications',
             'performanceReports',
-            'recentActivities'
+            'recentActivities',
+            'announcements'
         ));
     }
 

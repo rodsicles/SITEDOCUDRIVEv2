@@ -8,6 +8,7 @@ use App\Models\Task;
 use App\Models\PerformanceReport;
 use App\Models\Document;
 use App\Models\DashboardLog;
+use App\Models\Announcement;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Storage;
@@ -71,6 +72,13 @@ class DeanController extends Controller
             ->take(5)
             ->get();
 
+        $announcements = Announcement::with(['author.employee', 'reads', 'reactions'])
+            ->active()
+            ->visibleTo(auth()->user())
+            ->ordered()
+            ->take(5)
+            ->get();
+
         return view('dean.dashboard', compact(
             'totalEmployees',
             'totalDocuments',
@@ -81,7 +89,8 @@ class DeanController extends Controller
             'monthNames',
             'recentActivities',
             'performanceData',
-            'topPerformers'
+            'topPerformers',
+            'announcements'
         ));
     }
 

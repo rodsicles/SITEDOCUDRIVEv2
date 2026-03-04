@@ -18,6 +18,9 @@
     <a href="{{ route('calendar.index') }}" class="menu-item">
         <i class="fas fa-calendar"></i> Calendar
     </a>
+    <a href="{{ route('announcements.index') }}" class="menu-item">
+        <i class="fas fa-bullhorn"></i> Announcements
+    </a>
     <a href="{{ route('faculty.notifications') }}" class="menu-item">
         <i class="fas fa-bell"></i> Notifications
         @if($unreadNotifications > 0)
@@ -62,6 +65,9 @@
             <small style="display: block; font-size: 0.75rem; margin-top: 0.25rem; color: #6b7280;">All time</small>
         </div>
     </div>
+
+    <!-- Announcements Feed Widget -->
+    @include('partials.announcement-widget')
 
     <!-- Recent Tasks -->
     <div class="bg-white dark:bg-[#2a2a2a] rounded-xl p-6 mb-6 shadow-md border border-gray-200 dark:border-gray-700 animate-[fadeIn_0.5s_ease]">

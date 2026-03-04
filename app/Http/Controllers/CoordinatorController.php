@@ -9,6 +9,7 @@ use App\Models\Notification;
 use App\Models\Document;
 use App\Models\DocumentView;
 use App\Models\DashboardLog;
+use App\Models\Announcement;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Hash;
 use Illuminate\Support\Facades\DB;
@@ -50,6 +51,13 @@ class CoordinatorController extends Controller
         // Coordinator sees filtered activities (own + all faculty activities)
         $recentActivities = DashboardLog::getFilteredLogs(auth()->user(), 10);
 
+        $announcements = Announcement::with(['author.employee', 'reads', 'reactions'])
+            ->active()
+            ->visibleTo(auth()->user())
+            ->ordered()
+            ->take(5)
+            ->get();
+
         return view('coordinator.dashboard', compact(
             'totalFaculty',
             'totalDocuments',
@@ -58,7 +66,8 @@ class CoordinatorController extends Controller
             'totalTasks',
             'recentTasks',
             'facultyList',
-            'recentActivities'
+            'recentActivities',
+            'announcements'
         ));
     }
 

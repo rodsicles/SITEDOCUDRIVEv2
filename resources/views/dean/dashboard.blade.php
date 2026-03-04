@@ -15,6 +15,9 @@
     <a href="{{ route('calendar.index') }}" class="menu-item">
         <i class="fas fa-calendar"></i> Calendar
     </a>
+    <a href="{{ route('announcements.index') }}" class="menu-item">
+        <i class="fas fa-bullhorn"></i> Announcements
+    </a>
     <a href="{{ route('dean.employees') }}" class="menu-item">
         <i class="fas fa-users"></i> Faculty Members
     </a>
@@ -65,6 +68,9 @@
             <div class="stat-label">Total Tasks</div>
         </div>
     </div>
+
+    <!-- Announcements Feed Widget -->
+    @include('partials.announcement-widget')
 
     <!-- System Usage Analytics Chart -->
     <div class="bg-white dark:bg-[#2a2a2a] rounded-xl p-6 mb-6 shadow-md border border-gray-200 dark:border-gray-700 animate-[fadeIn_0.5s_ease]">

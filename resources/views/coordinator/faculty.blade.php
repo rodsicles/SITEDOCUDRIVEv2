@@ -30,10 +30,10 @@
     <!-- Tab Navigation -->
     <div class="mb-6">
         <div class="flex gap-2 border-b-2 border-gray-200 dark:border-gray-700">
-            <button class="tab-button inline-flex items-center gap-2 px-5 py-3.5 bg-transparent border-0 border-b-3 border-transparent text-gray-600 dark:text-gray-400 text-sm font-semibold cursor-pointer transition-all duration-300 hover:text-primary-600 hover:bg-primary-50 dark:hover:bg-primary-900/20 active:text-primary-600 active:border-primary-600 active:bg-primary-100 dark:active:bg-primary-900/30" onclick="switchTab('list')" id="listTab">
+            <button class="tab-button inline-flex items-center gap-2 px-5 py-3.5 bg-transparent border-0 border-b-3 border-transparent text-gray-600 dark:text-gray-400 text-sm font-semibold cursor-pointer hover:text-primary-600 hover:bg-primary-50 dark:hover:bg-primary-900/20 active:text-primary-600 active:border-primary-600 active:bg-primary-100 dark:active:bg-primary-900/30" onclick="switchTab('list')" id="listTab">
                 <i class="fas fa-users"></i> Faculty Directory
             </button>
-            <button class="tab-button inline-flex items-center gap-2 px-5 py-3.5 bg-transparent border-0 border-b-3 border-transparent text-gray-600 dark:text-gray-400 text-sm font-semibold cursor-pointer transition-all duration-300 hover:text-primary-600 hover:bg-primary-50 dark:hover:bg-primary-900/20" onclick="switchTab('create')" id="createTab">
+            <button class="tab-button inline-flex items-center gap-2 px-5 py-3.5 bg-transparent border-0 border-b-3 border-transparent text-gray-600 dark:text-gray-400 text-sm font-semibold cursor-pointer hover:text-primary-600 hover:bg-primary-50 dark:hover:bg-primary-900/20" onclick="switchTab('create')" id="createTab">
                 <i class="fas fa-user-plus"></i> Create New Faculty
             </button>
         </div>

@@ -63,7 +63,7 @@ Route::middleware('auth')->prefix('calendar')->name('calendar.')->group(function
 Route::middleware('auth')->prefix('announcements')->name('announcements.')->group(function () {
     Route::get('/', [AnnouncementController::class, 'index'])->name('index');
     Route::post('/{id}/read', [AnnouncementController::class, 'markAsRead'])->name('read');
-    Route::post('/{id}/react', [AnnouncementController::class, 'toggleReaction'])->name('react');
+
 
     // Only Dean and Coordinator can create/edit/delete announcements
     Route::middleware('role:Dean,Program Coordinator')->group(function () {

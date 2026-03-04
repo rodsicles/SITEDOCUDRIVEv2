@@ -98,7 +98,7 @@ body {
 }
 
 .btn {
-    @apply px-5 py-2 rounded-lg text-sm font-medium transition-all hover:-translate-y-0.5 hover:shadow-md no-underline inline-block;
+    @apply px-5 py-2 rounded-lg text-sm font-medium hover:shadow-md no-underline inline-block;
 }
 
 .btn-primary {
@@ -130,7 +130,7 @@ body {
 }
 
 .data-table tbody tr {
-    @apply transition-colors hover:bg-gray-50 dark:hover:bg-gray-800;
+    @apply hover:bg-gray-50 dark:hover:bg-gray-800;
 }
 
 .badge-success {
@@ -158,11 +158,11 @@ body {
 }
 
 .form-control {
-    @apply w-full px-5 py-4 border-2 border-gray-200 dark:border-gray-700 rounded-xl text-base transition-all focus:outline-none focus:border-[#028a0f] dark:focus:border-[#02b815] focus:shadow-[0_0_0_4px_rgba(2,138,15,0.1)] bg-white dark:bg-[#1e1e1e] text-gray-800 dark:text-gray-200;
+    @apply w-full px-5 py-4 border-2 border-gray-200 dark:border-gray-700 rounded-xl text-base focus:outline-none focus:border-[#028a0f] dark:focus:border-[#02b815] focus:shadow-[0_0_0_4px_rgba(2,138,15,0.1)] bg-white dark:bg-[#1e1e1e] text-gray-800 dark:text-gray-200;
 }
 
 .alert {
-    @apply px-5 py-4 rounded-lg mb-5 animate-[slideDown_0.5s_ease];
+    @apply px-5 py-4 rounded-lg mb-5;
 }
 
 .alert-success {
@@ -174,7 +174,7 @@ body {
 }
 
 .stat-card {
-    @apply bg-white dark:bg-[#2a2a2a] rounded-xl p-6 shadow-md transition-all hover:-translate-y-1 hover:shadow-lg border border-gray-200 dark:border-gray-700;
+    @apply bg-white dark:bg-[#2a2a2a] rounded-xl p-6 shadow-md hover:shadow-lg border border-gray-200 dark:border-gray-700;
 }
 
 .stat-icon {
@@ -193,89 +193,9 @@ body {
     @apply grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-5 mb-6;
 }
 
-/* Custom Animations */
-@keyframes slideUp {
-    from {
-        opacity: 0;
-        transform: translateY(50px);
-    }
-    to {
-        opacity: 1;
-        transform: translateY(0);
-    }
-}
-
-/* Custom Animations */
-@keyframes slideDown {
-    from {
-        opacity: 0;
-        transform: translateY(-20px);
-    }
-    to {
-        opacity: 1;
-        transform: translateY(0);
-    }
-}
-
-@keyframes slideIn {
-    from {
-        transform: translateX(400px);
-        opacity: 0;
-    }
-    to {
-        transform: translateX(0);
-        opacity: 1;
-    }
-}
-
-@keyframes slideOut {
-    from {
-        transform: translateX(0);
-        opacity: 1;
-    }
-    to {
-        transform: translateX(400px);
-        opacity: 0;
-    }
-}
-
-@keyframes fadeInUp {
-    from {
-        opacity: 0;
-        transform: translateY(30px);
-    }
-    to {
-        opacity: 1;
-        transform: translateY(0);
-    }
-}
-
-@keyframes fadeIn {
-    from {
-        opacity: 0;
-    }
-    to {
-        opacity: 1;
-    }
-}
-
 @keyframes spin {
     to {
         transform: rotate(360deg);
-    }
-}
-
-@keyframes bounceIn {
-    0% {
-        transform: scale(0.8);
-        opacity: 0;
-    }
-    50% {
-        transform: scale(1.05);
-    }
-    100% {
-        transform: scale(1);
-        opacity: 1;
     }
 }
 
@@ -290,7 +210,7 @@ body {
 
 /* Toolbar buttons */
 .fc .fc-button {
-    @apply text-sm font-medium px-3.5 py-1.5 rounded-lg transition-all shadow-sm;
+    @apply text-sm font-medium px-3.5 py-1.5 rounded-lg shadow-sm;
     background: #028a0f;
     border-color: #028a0f;
 }
@@ -298,7 +218,6 @@ body {
 .fc .fc-button:hover {
     background: #026a0c;
     border-color: #026a0c;
-    transform: translateY(-1px);
     box-shadow: 0 3px 8px rgba(2, 138, 15, 0.35);
 }
 
@@ -311,7 +230,6 @@ body {
     background: #026a0c;
     border-color: #026a0c;
     box-shadow: inset 0 2px 4px rgba(0, 0, 0, 0.2);
-    transform: translateY(0);
 }
 
 [data-theme="dark"] .fc .fc-button {
@@ -380,7 +298,7 @@ body {
 
 /* Events */
 .fc .fc-event {
-    @apply rounded-md text-xs font-semibold cursor-pointer transition-all;
+    @apply rounded-md text-xs font-semibold cursor-pointer;
     border: none !important;
     padding: 2px 6px !important;
     box-shadow: 0 1px 3px rgba(0, 0, 0, 0.12);
@@ -388,7 +306,6 @@ body {
 
 .fc .fc-event:hover {
     opacity: 0.88;
-    transform: translateY(-1px);
     box-shadow: 0 3px 8px rgba(0, 0, 0, 0.2);
 }
 
@@ -445,7 +362,6 @@ body {
     @apply fixed inset-0 z-[9999] hidden items-center justify-center;
     background: rgba(0, 0, 0, 0.6);
     backdrop-filter: blur(4px);
-    animation: fadeIn 0.2s ease;
     padding: 20px;
 }
 
@@ -457,7 +373,6 @@ body {
     @apply bg-white dark:bg-gray-800 rounded-2xl shadow-2xl relative overflow-hidden;
     max-width: 480px;
     width: 100%;
-    animation: fadeInUp 0.3s cubic-bezier(0.16, 1, 0.3, 1);
     border: 1px solid rgba(229, 231, 235, 0.5);
 }
 
@@ -486,7 +401,6 @@ body {
 
 .calendar-modal-row {
     @apply flex gap-3 items-start py-3 px-6;
-    transition: background 0.15s ease;
 }
 
 .calendar-modal-row:hover {
@@ -512,7 +426,7 @@ body {
 }
 
 .calendar-modal-close {
-    @apply absolute top-3 right-3 bg-gray-100 dark:bg-gray-700 border-none w-8 h-8 rounded-full cursor-pointer text-gray-600 dark:text-gray-300 leading-none flex items-center justify-center text-xl transition-all hover:bg-red-500 hover:text-white hover:rotate-90 hover:scale-110;
+    @apply absolute top-3 right-3 bg-gray-100 dark:bg-gray-700 border-none w-8 h-8 rounded-full cursor-pointer text-gray-600 dark:text-gray-300 leading-none flex items-center justify-center text-xl hover:bg-red-500 hover:text-white hover:rotate-90 hover:scale-110;
     box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
 }
 
@@ -541,7 +455,6 @@ body {
     @apply bg-white dark:bg-gray-800 rounded-2xl shadow-xl relative my-auto;
     max-width: 600px;
     width: 100%;
-    animation: fadeInUp 0.25s ease;
 }
 
 /* ===== Login Page ===== */
@@ -550,7 +463,6 @@ body {
     background: #f5f5f5;
     background-image: radial-gradient(circle, #d1d5db 1px, transparent 1px);
     background-size: 24px 24px;
-    transition: background 0.3s ease;
 }
 
 .login-page.dark {
@@ -563,8 +475,6 @@ body {
     @apply bg-white dark:bg-[#2a2a2a] rounded-3xl overflow-hidden w-full relative;
     max-width: 28rem;
     box-shadow: 0 25px 80px rgba(0, 0, 0, 0.12), 0 8px 32px rgba(0, 0, 0, 0.08);
-    animation: slideUp 0.6s ease;
-    transition: background 0.3s ease, box-shadow 0.3s ease;
 }
 
 .dark .login-card {
@@ -574,7 +484,6 @@ body {
 .login-header {
     @apply p-10 px-8 text-white text-center relative;
     background: linear-gradient(135deg, #028a0f, #026a0c);
-    transition: background 0.3s ease;
 }
 
 .dark .login-header {
@@ -584,15 +493,8 @@ body {
 .login-header-logo {
     @apply w-20 h-20 mb-4 object-contain bg-white p-1 rounded-full shadow-lg mx-auto;
     border: 2px solid rgba(255, 255, 255, 0.9);
-    animation: logoBounce 0.8s cubic-bezier(0.34, 1.56, 0.64, 1) 0.4s both;
 }
 
-@keyframes logoBounce {
-    0% { transform: scale(0.3); opacity: 0; }
-    50% { transform: scale(1.08); }
-    70% { transform: scale(0.95); }
-    100% { transform: scale(1); opacity: 1; }
-}
 
 .login-header-title {
     @apply text-2xl leading-tight mb-2 font-semibold;
@@ -609,7 +511,6 @@ body {
 .login-theme-toggle {
     @apply absolute top-4 right-4 border-none rounded-full w-10 h-10 flex items-center justify-center cursor-pointer text-white text-lg;
     background: rgba(255, 255, 255, 0.2);
-    transition: all 0.3s ease;
 }
 
 .login-theme-toggle:hover {
@@ -630,12 +531,10 @@ body {
 .login-error {
     @apply px-3 py-3 rounded-lg mb-4 text-sm;
     @apply bg-red-100 dark:bg-red-900/30 text-red-800 dark:text-red-200 border-l-4 border-red-500 dark:border-red-400;
-    transition: colors 0.3s ease;
 }
 
 .login-label {
     @apply block mb-2 font-medium text-gray-800 dark:text-gray-200 text-sm;
-    transition: color 0.3s ease;
 }
 
 .login-input-wrapper {
@@ -644,7 +543,6 @@ body {
 
 .login-input-icon {
     @apply absolute left-4 text-gray-400 dark:text-gray-500 text-base pointer-events-none;
-    transition: color 0.3s ease;
 }
 
 .login-input-wrapper:focus-within .login-input-icon {
@@ -659,7 +557,6 @@ body {
     @apply w-full py-3.5 border-2 border-gray-200 dark:border-gray-700 rounded-xl text-base bg-white dark:bg-[#1e1e1e] text-gray-800 dark:text-gray-200;
     padding-left: 2.75rem;
     padding-right: 1.25rem;
-    transition: all 0.3s ease;
 }
 
 .login-input.has-toggle {
@@ -668,18 +565,10 @@ body {
 
 .login-input:focus {
     @apply outline-none border-[#028a0f] dark:border-[#02b815];
-    animation: focusGlow 0.6s ease;
-}
-
-@keyframes focusGlow {
-    0% { box-shadow: 0 0 0 0 rgba(2, 138, 15, 0.3); }
-    50% { box-shadow: 0 0 0 6px rgba(2, 138, 15, 0.15); }
-    100% { box-shadow: 0 0 0 4px rgba(2, 138, 15, 0.1); }
 }
 
 .login-password-toggle {
     @apply absolute right-4 text-gray-400 dark:text-gray-500 cursor-pointer p-1;
-    transition: color 0.2s ease;
 }
 
 .login-password-toggle:hover {
@@ -700,7 +589,6 @@ body {
 .login-toggle-slider {
     @apply absolute inset-0 rounded-full;
     background: #ccc;
-    transition: background 0.3s ease;
 }
 
 .dark .login-toggle-slider {
@@ -714,7 +602,6 @@ body {
     height: 18px;
     left: 3px;
     bottom: 3px;
-    transition: transform 0.3s cubic-bezier(0.4, 0, 0.2, 1);
     box-shadow: 0 1px 3px rgba(0, 0, 0, 0.2);
 }
 
@@ -737,26 +624,15 @@ body {
 .login-submit {
     @apply w-full px-4 py-3.5 text-white border-none rounded-xl text-base font-semibold cursor-pointer flex items-center justify-center gap-2;
     background: #028a0f;
-    transition: all 0.3s ease;
     letter-spacing: 0.5px;
 }
 
 .login-submit:hover {
     background: #026a0c;
-    transform: translateY(-2px);
     box-shadow: 0 8px 20px rgba(2, 138, 15, 0.3);
 }
 
-.login-submit:hover .login-submit-arrow {
-    transform: translateX(4px);
-}
-
-.login-submit:active {
-    transform: translateY(0);
-}
-
 .login-submit-arrow {
-    transition: transform 0.3s ease;
     font-size: 0.85em;
 }
 
@@ -771,8 +647,6 @@ body {
 .login-loading-overlay {
     @apply fixed inset-0 backdrop-blur-sm z-[9999] hidden items-center justify-center;
     background: rgba(255, 255, 255, 0.85);
-    animation: fadeIn 0.3s ease;
-    transition: background 0.3s ease;
 }
 
 .dark .login-loading-overlay {
@@ -783,8 +657,6 @@ body {
     @apply text-center p-10 px-12 rounded-3xl;
     @apply bg-white dark:bg-[#2a2a2a];
     box-shadow: 0 20px 60px rgba(0, 0, 0, 0.3);
-    animation: bounceIn 0.5s ease;
-    transition: background 0.3s ease;
 }
 
 .login-loading-spinner {
@@ -812,7 +684,6 @@ body {
     background: #fff3cd;
     color: #856404;
     border: 1px solid #ffc107;
-    animation: fadeIn 0.2s ease;
 }
 
 .dark .login-capslock {
@@ -829,22 +700,13 @@ body {
 .login-footer {
     @apply mt-6 text-xs text-center;
     color: #9ca3af;
-    animation: fadeIn 1s ease 0.8s both;
 }
 
 .dark .login-footer {
     color: #6b7280;
 }
 
-/* Staggered form field animations */
-.login-field {
-    animation: fadeInUp 0.5s ease both;
-}
 
-.login-field:nth-child(1) { animation-delay: 0.3s; }
-.login-field:nth-child(2) { animation-delay: 0.4s; }
-.login-field:nth-child(3) { animation-delay: 0.5s; }
-.login-field:nth-child(4) { animation-delay: 0.6s; }
 
 /* ========================================
    Folder Management Styles
@@ -858,7 +720,7 @@ body {
 
 /* Folder Card */
 .folder-card {
-    @apply bg-white dark:bg-[#2a2a2a] rounded-xl p-5 border border-gray-200 dark:border-gray-700 cursor-pointer transition-all hover:shadow-lg hover:-translate-y-1;
+    @apply bg-white dark:bg-[#2a2a2a] rounded-xl p-5 border border-gray-200 dark:border-gray-700 cursor-pointer hover:shadow-lg;
 }
 
 .folder-card:hover {
@@ -886,11 +748,11 @@ body {
 }
 
 .folder-rename-btn {
-    @apply flex-1 px-3 py-2 text-xs font-medium rounded-lg transition-all bg-blue-50 dark:bg-blue-900/20 text-blue-600 dark:text-blue-400 hover:bg-blue-100 dark:hover:bg-blue-900/30;
+    @apply flex-1 px-3 py-2 text-xs font-medium rounded-lg bg-blue-50 dark:bg-blue-900/20 text-blue-600 dark:text-blue-400 hover:bg-blue-100 dark:hover:bg-blue-900/30;
 }
 
 .folder-delete-btn {
-    @apply flex-1 px-3 py-2 text-xs font-medium rounded-lg transition-all bg-red-50 dark:bg-red-900/20 text-red-600 dark:text-red-400 hover:bg-red-100 dark:hover:bg-red-900/30;
+    @apply flex-1 px-3 py-2 text-xs font-medium rounded-lg bg-red-50 dark:bg-red-900/20 text-red-600 dark:text-red-400 hover:bg-red-100 dark:hover:bg-red-900/30;
 }
 
 /* Uncategorized Section */
@@ -900,7 +762,7 @@ body {
 
 /* Document Card */
 .document-card {
-    @apply bg-white dark:bg-[#2a2a2a] rounded-lg p-4 border border-gray-200 dark:border-gray-700 transition-all hover:shadow-md;
+    @apply bg-white dark:bg-[#2a2a2a] rounded-lg p-4 border border-gray-200 dark:border-gray-700 hover:shadow-md;
 }
 
 .document-card-grid {
@@ -910,7 +772,7 @@ body {
 
 /* Move to Folder Button */
 .move-folder-btn {
-    @apply inline-flex items-center gap-2 px-3 py-1.5 text-sm font-medium text-blue-600 dark:text-blue-400 bg-blue-50 dark:bg-blue-900/20 rounded-lg hover:bg-blue-100 dark:hover:bg-blue-900/30 transition-all;
+    @apply inline-flex items-center gap-2 px-3 py-1.5 text-sm font-medium text-blue-600 dark:text-blue-400 bg-blue-50 dark:bg-blue-900/20 rounded-lg hover:bg-blue-100 dark:hover:bg-blue-900/30;
 }
 
 /* Modal Overlay */
@@ -925,18 +787,6 @@ body {
 /* Modal Card */
 .modal-card {
     @apply bg-white dark:bg-[#2a2a2a] rounded-2xl shadow-2xl max-w-md w-full mx-4 overflow-hidden;
-    animation: modalSlideIn 0.3s ease;
-}
-
-@keyframes modalSlideIn {
-    from {
-        opacity: 0;
-        transform: translateY(-20px) scale(0.95);
-    }
-    to {
-        opacity: 1;
-        transform: translateY(0) scale(1);
-    }
 }
 
 /* Modal Header */
@@ -949,7 +799,7 @@ body {
 }
 
 .modal-close {
-    @apply text-gray-400 hover:text-gray-600 dark:hover:text-gray-200 text-2xl cursor-pointer transition-colors;
+    @apply text-gray-400 hover:text-gray-600 dark:hover:text-gray-200 text-2xl cursor-pointer;
 }
 
 /* Modal Body */
@@ -968,7 +818,7 @@ body {
 }
 
 .folder-list-item {
-    @apply flex items-center gap-3 p-3 rounded-lg border border-gray-200 dark:border-gray-700 cursor-pointer transition-all hover:bg-gray-50 dark:hover:bg-[#1f1f1f] hover:border-[var(--color-primary)] dark:hover:border-[#02b815];
+    @apply flex items-center gap-3 p-3 rounded-lg border border-gray-200 dark:border-gray-700 cursor-pointer hover:bg-gray-50 dark:hover:bg-[#1f1f1f] hover:border-[var(--color-primary)] dark:hover:border-[#02b815];
 }
 
 .folder-list-item.selected {
@@ -985,7 +835,7 @@ body {
 }
 
 .form-input {
-    @apply w-full px-4 py-2.5 rounded-lg border border-gray-300 dark:border-gray-600 bg-white dark:bg-[#1f1f1f] text-gray-800 dark:text-gray-200 focus:ring-2 focus:ring-[var(--color-primary)] focus:border-transparent transition-all;
+    @apply w-full px-4 py-2.5 rounded-lg border border-gray-300 dark:border-gray-600 bg-white dark:bg-[#1f1f1f] text-gray-800 dark:text-gray-200 focus:ring-2 focus:ring-[var(--color-primary)] focus:border-transparent;
 }
 
 .form-input:focus {
@@ -994,7 +844,7 @@ body {
 
 /* Create Folder Card */
 .create-folder-card {
-    @apply bg-gradient-to-br from-green-50 to-green-100 dark:from-green-900/20 dark:to-green-800/20 rounded-xl p-5 border-2 border-dashed border-green-300 dark:border-green-700 cursor-pointer transition-all hover:shadow-lg hover:-translate-y-1 hover:border-[var(--color-primary)] dark:hover:border-[#02b815];
+    @apply bg-gradient-to-br from-green-50 to-green-100 dark:from-green-900/20 dark:to-green-800/20 rounded-xl p-5 border-2 border-dashed border-green-300 dark:border-green-700 cursor-pointer hover:shadow-lg hover:border-[var(--color-primary)] dark:hover:border-[#02b815];
 }
 
 .create-folder-icon {
@@ -1007,7 +857,7 @@ body {
 
 /* Toast Notifications */
 .toast {
-    @apply fixed top-20 right-5 z-[9999] px-5 py-3 rounded-lg shadow-xl flex items-center gap-3 min-w-[300px] animate-[slideIn_0.3s_ease];
+    @apply fixed top-20 right-5 z-[9999] px-5 py-3 rounded-lg shadow-xl flex items-center gap-3 min-w-[300px];
 }
 
 .toast.success {
@@ -1018,16 +868,6 @@ body {
     @apply bg-red-600 text-white;
 }
 
-@keyframes slideIn {
-    from {
-        opacity: 0;
-        transform: translateX(100%);
-    }
-    to {
-        opacity: 1;
-        transform: translateX(0);
-    }
-}
 
 /* Empty State */
 .empty-state {
@@ -1044,7 +884,7 @@ body {
 
 /* Folder filter buttons for employee profile */
 .folder-filter-btn {
-    @apply px-3 py-2 text-sm rounded-lg transition-all duration-200;
+    @apply px-3 py-2 text-sm rounded-lg;
     @apply bg-gray-200 dark:bg-gray-700 text-gray-700 dark:text-gray-300;
     @apply hover:bg-gray-300 dark:hover:bg-gray-600;
     @apply flex items-center gap-2;

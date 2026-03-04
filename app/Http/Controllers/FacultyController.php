@@ -59,7 +59,7 @@ class FacultyController extends Controller
         // Faculty sees only their own activities and notifications
         $recentActivities = \App\Models\DashboardLog::getFilteredLogs(auth()->user(), 10);
 
-        $announcements = Announcement::with(['author.employee', 'reads', 'reactions'])
+        $announcements = Announcement::with(['author.employee', 'reads'])
             ->active()
             ->visibleTo(auth()->user())
             ->ordered()

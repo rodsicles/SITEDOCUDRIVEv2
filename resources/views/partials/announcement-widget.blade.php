@@ -32,14 +32,7 @@
                     <span>{{ $announcement->author->employee->full_name ?? $announcement->author->username }}</span>
                     <span>&middot;</span>
                     <span>{{ $announcement->created_at->diffForHumans() }}</span>
-                    @if($announcement->reactions->count() > 0)
-                    <span>&middot;</span>
-                    <span>
-                        @foreach($announcement->reactions->groupBy('emoji')->take(3) as $emoji => $group)
-                            {{ $emoji }}{{ $group->count() > 1 ? $group->count() : '' }}
-                        @endforeach
-                    </span>
-                    @endif
+
                 </div>
             </div>
         </div>

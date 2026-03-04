@@ -33,13 +33,13 @@
     <div class="content-card">
         <div class="card-header">
             <h3 class="card-title"><i class="fas fa-upload mr-2"></i> Upload New Document</h3>
-            <button type="button" onclick="toggleUploadFormCoord()" class="btn btn-sm bg-gray-200 dark:bg-gray-700 hover:bg-gray-300 dark:hover:bg-gray-600 text-gray-700 dark:text-gray-300 transition-colors duration-200">
-                <i id="toggleIconCoord" class="fas fa-chevron-down transition-transform duration-200"></i>
+            <button type="button" onclick="toggleUploadFormCoord()" class="btn btn-sm bg-gray-200 dark:bg-gray-700 hover:bg-gray-300 dark:hover:bg-gray-600 text-gray-700 dark:text-gray-300">
+                <i id="toggleIconCoord" class="fas fa-chevron-down"></i>
                 <span id="toggleTextCoord">Show Form</span>
             </button>
         </div>
         
-        <form action="{{ route('coordinator.upload-document') }}" method="POST" enctype="multipart/form-data" id="uploadFormCoord" class="hidden" style="transition: all 0.3s ease;">
+            <form action="{{ route('coordinator.upload-document') }}" method="POST" enctype="multipart/form-data" id="uploadFormCoord" class="hidden">
             @csrf
             
             <div class="grid grid-cols-1 md:grid-cols-2 gap-5">

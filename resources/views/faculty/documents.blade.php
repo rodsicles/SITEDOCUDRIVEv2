@@ -37,12 +37,12 @@
     <div class="content-card">
         <div class="card-header">
             <h3 class="card-title"><i class="fas fa-upload mr-2"></i> Upload Document</h3>
-            <button type="button" onclick="toggleUploadForm()" class="btn btn-sm bg-gray-200 dark:bg-gray-700 hover:bg-gray-300 dark:hover:bg-gray-600 text-gray-700 dark:text-gray-300 transition-colors duration-200">
-                <i id="toggleIcon" class="fas fa-chevron-down transition-transform duration-200"></i>
+            <button type="button" onclick="toggleUploadForm()" class="btn btn-sm bg-gray-200 dark:bg-gray-700 hover:bg-gray-300 dark:hover:bg-gray-600 text-gray-700 dark:text-gray-300">
+                <i id="toggleIcon" class="fas fa-chevron-down"></i>
                 <span id="toggleText">Show Form</span>
             </button>
         </div>
-        <form action="{{ route('faculty.upload-document') }}" method="POST" enctype="multipart/form-data" id="uploadForm" class="hidden" style="transition: all 0.3s ease;">
+        <form action="{{ route('faculty.upload-document') }}" method="POST" enctype="multipart/form-data" id="uploadForm" class="hidden">
             @csrf
             <div class="grid grid-cols-1 md:grid-cols-2 gap-5 mb-5">
                 <div class="form-group">

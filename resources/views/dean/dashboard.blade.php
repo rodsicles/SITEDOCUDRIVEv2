@@ -73,7 +73,7 @@
     @include('partials.announcement-widget')
 
     <!-- System Usage Analytics Chart -->
-    <div class="bg-white dark:bg-[#2a2a2a] rounded-xl p-6 mb-6 shadow-md border border-gray-200 dark:border-gray-700 animate-[fadeIn_0.5s_ease]">
+    <div class="bg-white dark:bg-[#2a2a2a] rounded-xl p-6 mb-6 shadow-md border border-gray-200 dark:border-gray-700">
         <div class="flex justify-between items-center mb-5 pb-4 border-b-2 border-gray-200 dark:border-gray-700">
             <h3 class="text-lg font-semibold text-gray-800 dark:text-gray-200 m-0">
                 <i class="fas fa-chart-bar mr-2"></i>System Usage Analytics ({{ date('Y') }})

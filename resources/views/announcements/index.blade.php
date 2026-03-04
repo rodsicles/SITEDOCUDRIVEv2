@@ -112,7 +112,7 @@
         <div id="announcement-{{ $announcement->announcement_id }}"
              data-id="{{ $announcement->announcement_id }}"
              data-unread="{{ $announcement->isReadBy(auth()->user()) ? '0' : '1' }}"
-             class="mb-4 rounded-xl border transition-all duration-200
+             class="mb-4 rounded-xl border
                 {{ $announcement->is_pinned
                     ? 'border-l-4 border-[#028a0f] dark:border-[#02b815] bg-green-50 dark:bg-[#1a2a1a]'
                     : 'border-gray-200 dark:border-gray-700 bg-white dark:bg-[#1e1e1e]' }}
@@ -174,7 +174,7 @@
                     <div class="relative flex-shrink-0" id="menu-wrapper-{{ $announcement->announcement_id }}">
                         <button type="button"
                                 onclick="toggleMenu({{ $announcement->announcement_id }})"
-                                class="w-8 h-8 rounded-full flex items-center justify-center text-gray-400 dark:text-gray-500 hover:bg-gray-100 dark:hover:bg-gray-700 hover:text-gray-600 transition-colors bg-transparent border-none cursor-pointer">
+                                class="w-8 h-8 rounded-full flex items-center justify-center text-gray-400 dark:text-gray-500 hover:bg-gray-100 dark:hover:bg-gray-700 hover:text-gray-600 bg-transparent border-none cursor-pointer">
                             <i class="fas fa-ellipsis-v text-sm"></i>
                         </button>
                         <div id="menu-{{ $announcement->announcement_id }}"
@@ -209,28 +209,7 @@
                 </p>
 
                 {{-- Footer --}}
-                <div class="flex items-center justify-between pt-3 border-t border-gray-200 dark:border-gray-700 flex-wrap gap-2">
-
-                    {{-- Reactions --}}
-                    <div class="flex items-center gap-1.5 flex-wrap">
-                        @php
-                            $emojis = ['👍', '❤️', '🎉', '👏', '💡'];
-                            $reactionCounts = $announcement->reactions->groupBy('emoji')->map->count();
-                            $userReactions = $announcement->reactions->where('user_id', auth()->id())->pluck('emoji')->toArray();
-                        @endphp
-                        @foreach($emojis as $emoji)
-                        <button type="button"
-                                onclick="toggleReaction({{ $announcement->announcement_id }}, '{{ $emoji }}', this)"
-                                data-active="{{ in_array($emoji, $userReactions) ? '1' : '0' }}"
-                                class="inline-flex items-center gap-1 px-2.5 py-1 rounded-full text-xs border cursor-pointer transition-all bg-transparent
-                                    {{ in_array($emoji, $userReactions)
-                                        ? 'border-[#028a0f] dark:border-[#02b815] bg-green-50 dark:bg-green-900/20 font-bold text-[#028a0f] dark:text-[#02b815]'
-                                        : 'border-gray-200 dark:border-gray-700 text-gray-500 dark:text-gray-400 hover:bg-gray-50 dark:hover:bg-gray-700' }}">
-                            <span>{{ $emoji }}</span>
-                            <span class="reaction-count font-medium">{{ $reactionCounts[$emoji] ?? 0 }}</span>
-                        </button>
-                        @endforeach
-                    </div>
+                <div class="flex items-center justify-end pt-3 border-t border-gray-200 dark:border-gray-700 flex-wrap gap-2">
 
                     {{-- Read status --}}
                     <div class="flex items-center gap-3">
@@ -242,7 +221,7 @@
                         <button type="button"
                                 id="read-btn-{{ $announcement->announcement_id }}"
                                 onclick="markAsRead({{ $announcement->announcement_id }})"
-                                class="text-xs text-blue-600 dark:text-blue-400 hover:text-blue-800 dark:hover:text-blue-300 bg-transparent border-none cursor-pointer font-medium transition-colors">
+                                class="text-xs text-blue-600 dark:text-blue-400 hover:text-blue-800 dark:hover:text-blue-300 bg-transparent border-none cursor-pointer font-medium">
                             <i class="fas fa-check mr-0.5"></i> Mark as read
                         </button>
                         @endif
@@ -291,41 +270,6 @@
                     const dot = card.querySelector('.bg-blue-500');
                     if (dot) dot.remove();
                 }
-            });
-        }
-
-        // Toggle reaction
-        function toggleReaction(id, emoji, btn) {
-            fetch(`/announcements/${id}/react`, {
-                method: 'POST',
-                headers: {
-                    'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]').content,
-                    'Content-Type': 'application/json',
-                    'Accept': 'application/json',
-                },
-                body: JSON.stringify({ emoji })
-            }).then(r => r.json()).then(data => {
-                if (!data.success) return;
-                const isActive = data.action === 'added';
-                btn.dataset.active = isActive ? '1' : '0';
-
-                // Active styles
-                btn.classList.toggle('border-[#028a0f]', isActive);
-                btn.classList.toggle('dark:border-[#02b815]', isActive);
-                btn.classList.toggle('bg-green-50', isActive);
-                btn.classList.toggle('dark:bg-green-900/20', isActive);
-                btn.classList.toggle('font-bold', isActive);
-                btn.classList.toggle('text-[#028a0f]', isActive);
-                btn.classList.toggle('dark:text-[#02b815]', isActive);
-                // Inactive styles
-                btn.classList.toggle('border-gray-200', !isActive);
-                btn.classList.toggle('dark:border-gray-700', !isActive);
-                btn.classList.toggle('text-gray-500', !isActive);
-                btn.classList.toggle('dark:text-gray-400', !isActive);
-
-                const reaction = data.reactions.find(r => r.emoji === emoji);
-                const countEl = btn.querySelector('.reaction-count');
-                if (countEl) countEl.textContent = reaction ? reaction.count : 0;
             });
         }
 

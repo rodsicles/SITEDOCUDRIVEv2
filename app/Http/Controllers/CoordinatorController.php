@@ -51,7 +51,7 @@ class CoordinatorController extends Controller
         // Coordinator sees filtered activities (own + all faculty activities)
         $recentActivities = DashboardLog::getFilteredLogs(auth()->user(), 10);
 
-        $announcements = Announcement::with(['author.employee', 'reads', 'reactions'])
+        $announcements = Announcement::with(['author.employee', 'reads'])
             ->active()
             ->visibleTo(auth()->user())
             ->ordered()

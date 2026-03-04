@@ -4,7 +4,6 @@ namespace App\Http\Controllers;
 
 use App\Models\Announcement;
 use App\Models\AnnouncementRead;
-use App\Models\AnnouncementReaction;
 use App\Models\Notification;
 use App\Models\DashboardLog;
 use App\Models\User;
@@ -16,7 +15,7 @@ class AnnouncementController extends Controller
     {
         $user = auth()->user();
 
-        $announcements = Announcement::with(['author.employee', 'reads', 'reactions'])
+        $announcements = Announcement::with(['author.employee', 'reads'])
             ->active()
             ->visibleTo($user)
             ->ordered()
@@ -153,42 +152,6 @@ class AnnouncementController extends Controller
         ]);
 
         return response()->json(['success' => true]);
-    }
-
-    public function toggleReaction(Request $request, $id)
-    {
-        $validated = $request->validate([
-            'emoji' => 'required|string|max:20',
-        ]);
-
-        $existing = AnnouncementReaction::where([
-            'announcement_id' => $id,
-            'user_id' => auth()->id(),
-            'emoji' => $validated['emoji'],
-        ])->first();
-
-        if ($existing) {
-            $existing->delete();
-            $action = 'removed';
-        } else {
-            AnnouncementReaction::create([
-                'announcement_id' => $id,
-                'user_id' => auth()->id(),
-                'emoji' => $validated['emoji'],
-            ]);
-            $action = 'added';
-        }
-
-        $reactions = AnnouncementReaction::where('announcement_id', $id)
-            ->selectRaw('emoji, COUNT(*) as count')
-            ->groupBy('emoji')
-            ->get();
-
-        return response()->json([
-            'success' => true,
-            'action' => $action,
-            'reactions' => $reactions,
-        ]);
     }
 
     private function getRolePrefix(): string

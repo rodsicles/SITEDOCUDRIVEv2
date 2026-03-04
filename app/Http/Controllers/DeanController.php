@@ -72,7 +72,7 @@ class DeanController extends Controller
             ->take(5)
             ->get();
 
-        $announcements = Announcement::with(['author.employee', 'reads', 'reactions'])
+        $announcements = Announcement::with(['author.employee', 'reads'])
             ->active()
             ->visibleTo(auth()->user())
             ->ordered()

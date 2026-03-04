@@ -42,7 +42,7 @@
                         <span class="text-sm text-gray-500 dark:text-gray-400">{{ $status->count }} tasks</span>
                     </div>
                     <div class="bg-gray-200 dark:bg-gray-700 h-2.5 rounded-lg overflow-hidden">
-                        <div class="bg-gradient-to-r from-[#4caf50] to-[#028a0f] h-full transition-all duration-500 rounded-lg" style="width: {{ ($status->count / $taskStatusData->sum('count')) * 100 }}%;"></div>
+                        <div class="bg-gradient-to-r from-[#4caf50] to-[#028a0f] h-full rounded-lg" style="width: {{ ($status->count / $taskStatusData->sum('count')) * 100 }}%;"></div>
                     </div>
                 </div>
             @empty

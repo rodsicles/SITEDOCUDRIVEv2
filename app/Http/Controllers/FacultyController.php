@@ -115,8 +115,21 @@ class FacultyController extends Controller
                 : 'required|file|max:10240|mimes:jpg,jpeg,png|mimetypes:image/jpeg,image/png',
             'category' => 'required|in:Policies,Forms,Reports,Memos,Research Papers,Other',
             'tags' => 'nullable|string|max:15',
-            'folder_id' => 'nullable|exists:folders,folder_id',
+            'folder_id' => [
+                'nullable',
+                \Illuminate\Validation\Rule::exists('folders', 'folder_id')->where(function ($query) {
+                    $query->where('user_id', auth()->id());
+                }),
+            ],
         ]);
+
+        // Block dangerous file extensions (double-extension attack prevention)
+        foreach ($request->file('documents') as $file) {
+            $originalName = $file->getClientOriginalName();
+            if (preg_match('/\.(php|phtml|phar|exe|sh|bat|cmd|com|cgi|pl|py|jsp|asp|aspx|htaccess)/i', pathinfo($originalName, PATHINFO_FILENAME))) {
+                return back()->with('error', 'File contains a forbidden extension in its name.');
+            }
+        }
 
         $uploadedCount = $this->documentService->uploadDocuments(
             $validated, $request->file('documents'), auth()->id()

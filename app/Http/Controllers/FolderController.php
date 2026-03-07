@@ -32,7 +32,7 @@ class FolderController extends Controller
             \Log::error('Folder creation error: ' . $e->getMessage());
             return response()->json([
                 'success' => false,
-                'message' => 'Failed to create folder: ' . $e->getMessage(),
+                'message' => 'Failed to create folder. Please try again.',
             ], 500);
         }
     }
@@ -53,7 +53,7 @@ class FolderController extends Controller
             \Log::error('Folder update error: ' . $e->getMessage());
             return response()->json([
                 'success' => false,
-                'message' => 'Failed to update folder: ' . $e->getMessage(),
+                'message' => 'Failed to update folder. Please try again.',
             ], 500);
         }
     }
@@ -73,7 +73,7 @@ class FolderController extends Controller
             \Log::error('Folder deletion error: ' . $e->getMessage());
             return response()->json([
                 'success' => false,
-                'message' => 'Failed to delete folder: ' . $e->getMessage(),
+                'message' => 'Failed to delete folder. Please try again.',
             ], 500);
         }
     }

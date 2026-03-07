@@ -75,12 +75,30 @@ class DocumentService
             abort(403, 'Unauthorized access');
         }
 
+        // Path traversal protection
+        if (str_contains($document->file_path, '..') || str_contains($document->file_path, './')) {
+            abort(403, 'Invalid file path');
+        }
+
+        $allowedDir = Storage::disk('local')->path('documents');
+        $realFilePath = realpath(Storage::disk('local')->path($document->file_path));
+        if (!$realFilePath || !str_starts_with($realFilePath, realpath($allowedDir))) {
+            abort(403, 'Unauthorized file access');
+        }
+
         if (!Storage::disk('local')->exists($document->file_path)) {
             abort(404, 'File not found');
         }
 
         if ($trackView) {
             DocumentView::trackView($user->id, $documentId);
+
+            DashboardLog::create([
+                'user_id' => $user->id,
+                'activity' => 'Viewed document: ' . $document->document_title,
+                'activity_type' => 'document_viewed',
+                'visibility' => 'own',
+            ]);
         }
 
         $mimeType = Storage::disk('local')->mimeType($document->file_path);
@@ -106,9 +124,27 @@ class DocumentService
             abort(403, 'Unauthorized access');
         }
 
+        // Path traversal protection
+        if (str_contains($document->file_path, '..') || str_contains($document->file_path, './')) {
+            abort(403, 'Invalid file path');
+        }
+
+        $allowedDir = Storage::disk('local')->path('documents');
+        $realFilePath = realpath(Storage::disk('local')->path($document->file_path));
+        if (!$realFilePath || !str_starts_with($realFilePath, realpath($allowedDir))) {
+            abort(403, 'Unauthorized file access');
+        }
+
         if (!Storage::disk('local')->exists($document->file_path)) {
             abort(404, 'File not found');
         }
+
+        DashboardLog::create([
+            'user_id' => $user->id,
+            'activity' => 'Downloaded document: ' . $document->document_title,
+            'activity_type' => 'document_downloaded',
+            'visibility' => 'own',
+        ]);
 
         return Storage::disk('local')->download($document->file_path, basename($document->file_path));
     }
@@ -122,6 +158,7 @@ class DocumentService
 
         $uploadedCount = 0;
         foreach ($files as $index => $file) {
+            // Sanitize filename: use hash only, no original name
             $filename = time() . '_' . $index . '_' . $file->hashName();
             Storage::disk('local')->putFileAs('documents', $file, $filename);
 
@@ -154,6 +191,13 @@ class DocumentService
     {
         $document = Document::findOrFail($documentId);
         $isFavorited = $document->toggleFavorite($userId);
+
+        DashboardLog::create([
+            'user_id' => $userId,
+            'activity' => ($isFavorited ? 'Favorited' : 'Unfavorited') . ' document: ' . $document->document_title,
+            'activity_type' => $isFavorited ? 'document_favorited' : 'document_unfavorited',
+            'visibility' => 'own',
+        ]);
 
         return [
             'favorited' => $isFavorited,

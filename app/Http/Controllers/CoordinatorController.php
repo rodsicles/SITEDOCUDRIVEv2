@@ -125,7 +125,8 @@ class CoordinatorController extends Controller
             return redirect()->route('coordinator.faculty')
                 ->with('success', 'Faculty account created successfully');
         } catch (\Exception $e) {
-            return back()->withErrors(['error' => 'Failed to create faculty account: ' . $e->getMessage()])
+            \Log::error('Faculty creation error: ' . $e->getMessage());
+            return back()->withErrors(['error' => 'Failed to create faculty account. Please try again.'])
                 ->withInput();
         }
     }
@@ -157,8 +158,21 @@ class CoordinatorController extends Controller
                 : 'required|file|max:10240|mimes:jpg,jpeg,png|mimetypes:image/jpeg,image/png',
             'category' => 'required|in:Policies,Forms,Reports,Memos,Research Papers,Other',
             'tags' => 'nullable|string|max:15',
-            'folder_id' => 'nullable|exists:folders,folder_id',
+            'folder_id' => [
+                'nullable',
+                \Illuminate\Validation\Rule::exists('folders', 'folder_id')->where(function ($query) {
+                    $query->where('user_id', auth()->id());
+                }),
+            ],
         ]);
+
+        // Block dangerous file extensions (double-extension attack prevention)
+        foreach ($request->file('documents') as $file) {
+            $originalName = $file->getClientOriginalName();
+            if (preg_match('/\.(php|phtml|phar|exe|sh|bat|cmd|com|cgi|pl|py|jsp|asp|aspx|htaccess)/i', pathinfo($originalName, PATHINFO_FILENAME))) {
+                return back()->with('error', 'File contains a forbidden extension in its name.');
+            }
+        }
 
         $uploadedCount = $this->documentService->uploadDocuments(
             $validated, $request->file('documents'), auth()->id()
@@ -210,7 +224,8 @@ class CoordinatorController extends Controller
             return redirect()->route('coordinator.faculty-profile', $id)
                 ->with('success', 'Faculty information updated successfully');
         } catch (\Exception $e) {
-            return back()->withErrors(['error' => 'Failed to update faculty information: ' . $e->getMessage()])
+            \Log::error('Faculty update error: ' . $e->getMessage());
+            return back()->withErrors(['error' => 'Failed to update faculty information. Please try again.'])
                 ->withInput();
         }
     }
@@ -235,7 +250,8 @@ class CoordinatorController extends Controller
             return redirect()->route('coordinator.faculty-profile', $id)
                 ->with('success', 'Password reset successfully. A notification has been sent to the faculty member.');
         } catch (\Exception $e) {
-            return back()->withErrors(['error' => 'Failed to reset password: ' . $e->getMessage()]);
+            \Log::error('Password reset error: ' . $e->getMessage());
+            return back()->withErrors(['error' => 'Failed to reset password. Please try again.']);
         }
     }
 

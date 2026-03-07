@@ -32,7 +32,7 @@ class StoreFolderRequest extends FormRequest
     {
         return [
             'folder_name.required' => 'Folder name is required',
-            'folder_name.max' => 'Folder name cannot exceed 100 characters',
+            'folder_name.max' => 'Folder name cannot exceed 13 characters',
             'folder_name.regex' => 'Folder name can only contain letters, numbers, spaces, hyphens, and underscores',
             'folder_name.unique' => 'You already have a folder with this name',
             'color.regex' => 'Color must be a valid hex color code',

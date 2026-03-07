@@ -5,6 +5,7 @@ namespace App\Http\Controllers;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Hash;
 use Illuminate\Validation\Rules\Password;
+use App\Models\DashboardLog;
 
 class ProfileController extends Controller
 {
@@ -38,6 +39,13 @@ class ProfileController extends Controller
             'department' => $validated['department'],
         ]);
 
+        DashboardLog::create([
+            'user_id' => auth()->id(),
+            'activity' => 'Updated own profile',
+            'activity_type' => 'profile_update',
+            'visibility' => 'own',
+        ]);
+
         return redirect()->back()->with('success', 'Profile updated successfully');
     }
 
@@ -54,6 +62,13 @@ class ProfileController extends Controller
 
         auth()->user()->update([
             'password' => Hash::make($validated['new_password']),
+        ]);
+
+        DashboardLog::create([
+            'user_id' => auth()->id(),
+            'activity' => 'Changed own password',
+            'activity_type' => 'password_change',
+            'visibility' => 'own',
         ]);
 
         return redirect()->back()->with('success', 'Password changed successfully');

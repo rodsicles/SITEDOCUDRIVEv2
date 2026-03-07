@@ -5,6 +5,7 @@ namespace App\Services;
 use App\Models\LeaveRequest;
 use App\Models\LeaveBalance;
 use App\Models\Notification;
+use App\Models\DashboardLog;
 use App\Models\User;
 
 class LeaveService
@@ -55,6 +56,13 @@ class LeaveService
             $user->username . ' filed a ' . $validated['leave_type'] . ' request (' . $daysCount . ' days)'
         );
 
+        DashboardLog::create([
+            'user_id' => $user->id,
+            'activity' => 'Filed leave request: ' . $validated['leave_type'] . ' (' . $validated['start_date'] . ' to ' . $validated['end_date'] . ')',
+            'activity_type' => 'leave_requested',
+            'visibility' => 'coordinator',
+        ]);
+
         return $leaveRequest;
     }
 
@@ -83,6 +91,13 @@ class LeaveService
     {
         $leaveRequest->update(['status' => 'Cancelled']);
 
+        DashboardLog::create([
+            'user_id' => $user->id,
+            'activity' => 'Cancelled leave request: ' . $leaveRequest->leave_type . ' (' . $leaveRequest->days_count . ' days)',
+            'activity_type' => 'leave_cancelled',
+            'visibility' => 'coordinator',
+        ]);
+
         $this->notifySupervisors(
             $user->username . ' cancelled a ' . $leaveRequest->leave_type . ' request (' . $leaveRequest->days_count . ' days)'
         );
@@ -106,6 +121,14 @@ class LeaveService
             'user_id' => $leaveRequest->user_id,
             'message' => 'Your ' . $leaveRequest->leave_type . ' request has been APPROVED by ' . $reviewer->username,
         ]);
+
+        DashboardLog::create([
+            'user_id' => $reviewer->id,
+            'target_user_id' => $leaveRequest->user_id,
+            'activity' => 'Approved leave request: ' . $leaveRequest->leave_type . ' (' . $leaveRequest->days_count . ' days)',
+            'activity_type' => 'leave_approved',
+            'visibility' => 'coordinator',
+        ]);
     }
 
     /**
@@ -123,6 +146,14 @@ class LeaveService
         Notification::create([
             'user_id' => $leaveRequest->user_id,
             'message' => 'Your ' . $leaveRequest->leave_type . ' request has been REJECTED by ' . $reviewer->username . '. Reason: ' . $reviewNotes,
+        ]);
+
+        DashboardLog::create([
+            'user_id' => $reviewer->id,
+            'target_user_id' => $leaveRequest->user_id,
+            'activity' => 'Rejected leave request: ' . $leaveRequest->leave_type . ' (' . $leaveRequest->days_count . ' days)',
+            'activity_type' => 'leave_rejected',
+            'visibility' => 'coordinator',
         ]);
     }
 

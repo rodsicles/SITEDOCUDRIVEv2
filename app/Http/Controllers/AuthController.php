@@ -41,6 +41,13 @@ class AuthController extends Controller
             };
         }
 
+        DashboardLog::create([
+            'user_id' => null,
+            'activity' => 'Failed login attempt for username: ' . $credentials['username'],
+            'activity_type' => 'login_failed',
+            'visibility' => 'dean',
+        ]);
+
         return back()->withErrors([
             'username' => 'Invalid credentials.',
         ]);

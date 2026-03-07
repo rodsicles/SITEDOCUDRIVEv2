@@ -17,12 +17,22 @@ class DashboardLog extends Model
         'activity',
         'activity_type',
         'visibility',
+        'ip_address',
         'log_date',
     ];
 
     protected $casts = [
         'log_date' => 'datetime',
     ];
+
+    protected static function booted(): void
+    {
+        static::creating(function (DashboardLog $log) {
+            if (empty($log->ip_address) && request()) {
+                $log->ip_address = request()->ip();
+            }
+        });
+    }
 
     public function user()
     {

@@ -4,6 +4,7 @@ namespace App\Services;
 
 use App\Models\Folder;
 use App\Models\Document;
+use App\Models\DashboardLog;
 
 class FolderService
 {
@@ -12,11 +13,20 @@ class FolderService
      */
     public function createFolder(int $userId, string $folderName, string $color = '#028a0f'): Folder
     {
-        return Folder::create([
+        $folder = Folder::create([
             'user_id' => $userId,
             'folder_name' => $folderName,
             'color' => $color,
         ]);
+
+        DashboardLog::create([
+            'user_id' => $userId,
+            'activity' => 'Created folder: ' . $folderName,
+            'activity_type' => 'folder_created',
+            'visibility' => 'own',
+        ]);
+
+        return $folder;
     }
 
     /**
@@ -30,9 +40,18 @@ class FolderService
             abort(403, 'Unauthorized action.');
         }
 
+        $oldName = $folder->folder_name;
+
         $folder->update([
             'folder_name' => $folderName,
             'color' => $color ?? $folder->color,
+        ]);
+
+        DashboardLog::create([
+            'user_id' => $userId,
+            'activity' => "Renamed folder from '{$oldName}' to '{$folderName}'",
+            'activity_type' => 'folder_updated',
+            'visibility' => 'own',
         ]);
 
         return $folder;
@@ -49,8 +68,18 @@ class FolderService
             abort(403, 'Unauthorized action.');
         }
 
+        $folderName = $folder->folder_name;
+        $docCount = Document::where('folder_id', $folderId)->count();
+
         Document::where('folder_id', $folderId)->update(['folder_id' => null]);
         $folder->delete();
+
+        DashboardLog::create([
+            'user_id' => $userId,
+            'activity' => "Deleted folder '{$folderName}' ({$docCount} documents moved to uncategorized)",
+            'activity_type' => 'folder_deleted',
+            'visibility' => 'own',
+        ]);
     }
 
     /**
@@ -73,9 +102,18 @@ class FolderService
 
         $document->update(['folder_id' => $folderId]);
 
-        return $folderId
+        $folderName = $folderId
             ? Folder::find($folderId)->folder_name
             : 'Uncategorized';
+
+        DashboardLog::create([
+            'user_id' => $userId,
+            'activity' => "Moved document '{$document->document_title}' to folder '{$folderName}'",
+            'activity_type' => 'document_moved',
+            'visibility' => 'own',
+        ]);
+
+        return $folderName;
     }
 
     /**

@@ -10,7 +10,6 @@ class DocumentFavorite extends Model
     use HasFactory;
 
     protected $fillable = [
-        'user_id',
         'document_id',
     ];
 

@@ -73,10 +73,9 @@ class Document extends Model
             $favorite->delete();
             return false; // Unfavorited
         } else {
-            DocumentFavorite::create([
-                'user_id' => $userId,
-                'document_id' => $this->document_id,
-            ]);
+            $fav = new DocumentFavorite(['document_id' => $this->document_id]);
+            $fav->user_id = $userId;
+            $fav->save();
             return true; // Favorited
         }
     }

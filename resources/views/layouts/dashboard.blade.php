@@ -81,6 +81,7 @@
         @media (max-width: 768px) {
             .sidebar {
                 transform: translateX(-100%);
+                transition: transform 0.3s ease;
             }
 
             .sidebar.active {
@@ -90,6 +91,61 @@
             .main-content {
                 margin-left: 0 !important;
                 width: 100% !important;
+                padding: 1rem !important;
+            }
+
+            .top-bar {
+                padding: 0.75rem 1rem !important;
+                margin-bottom: 1rem !important;
+            }
+
+            .top-bar h1 {
+                font-size: 1.25rem !important;
+            }
+
+            .top-bar p {
+                font-size: 0.75rem !important;
+            }
+
+            .stats-grid {
+                grid-template-columns: 1fr 1fr !important;
+                gap: 0.75rem !important;
+            }
+
+            .stat-card {
+                padding: 1rem !important;
+            }
+
+            .stat-value {
+                font-size: 1.5rem !important;
+            }
+
+            .stat-label {
+                font-size: 0.7rem !important;
+            }
+
+            .content-card {
+                padding: 1rem !important;
+                margin-bottom: 1rem !important;
+            }
+
+            .data-table {
+                font-size: 0.8rem;
+            }
+
+            .data-table thead th {
+                font-size: 0.65rem;
+                padding: 0.5rem 0.5rem;
+            }
+
+            .data-table tbody td {
+                padding: 0.6rem 0.5rem;
+            }
+        }
+
+        @media (max-width: 480px) {
+            .stats-grid {
+                grid-template-columns: 1fr !important;
             }
         }
     </style>
@@ -106,6 +162,9 @@
     </div>
 
     <div class="flex min-h-screen">
+        <!-- Sidebar Overlay (mobile) -->
+        <div id="sidebarOverlay" class="fixed inset-0 bg-black/50 z-[999] hidden md:hidden"></div>
+
         <!-- Sidebar -->
         <aside class="w-64 bg-white dark:bg-[#2a2a2a] shadow-md fixed h-screen overflow-y-auto z-[1000] sidebar">
             <div class="p-6 bg-gradient-to-br from-[#028a0f] to-[#026a0c] text-white text-center">
@@ -122,14 +181,20 @@
         <!-- Main Content -->
         <main class="ml-64 flex-1 p-8 w-[calc(100%-16rem)] main-content">
             <!-- Top Bar -->
-            <div class="bg-white dark:bg-[#2a2a2a] p-5 px-8 rounded-xl shadow-md mb-8 flex justify-between items-center">
-                <div>
-                    <h1 class="text-3xl text-gray-800 dark:text-gray-200 mb-1 font-semibold">@yield('page-title', 'Dashboard')</h1>
-                    <p class="text-gray-600 dark:text-gray-400 text-sm">@yield('page-subtitle', 'Welcome back!')</p>
+            <div class="bg-white dark:bg-[#2a2a2a] p-5 px-8 rounded-xl shadow-md mb-8 flex justify-between items-center top-bar">
+                <div class="flex items-center gap-3 min-w-0">
+                    <!-- Mobile Hamburger Menu -->
+                    <button id="mobileMenuToggle" class="hidden max-md:block text-2xl text-gray-800 dark:text-gray-200 bg-transparent border-none cursor-pointer flex-shrink-0 p-1">
+                        <i class="fas fa-bars"></i>
+                    </button>
+                    <div class="min-w-0">
+                        <h1 class="text-3xl max-md:text-xl text-gray-800 dark:text-gray-200 mb-1 font-semibold truncate">@yield('page-title', 'Dashboard')</h1>
+                        <p class="text-gray-600 dark:text-gray-400 text-sm max-md:text-xs truncate">@yield('page-subtitle', 'Welcome back!')</p>
+                    </div>
                 </div>
-                <div class="flex items-center gap-4">
+                <div class="flex items-center gap-4 max-md:gap-2 flex-shrink-0">
                     @if(auth()->user()->isFaculty())
-                    <a href="{{ route('faculty.notifications') }}" class="relative text-2xl text-gray-600 dark:text-gray-400 hover:text-[#028a0f] dark:hover:text-[#02b815]">
+                    <a href="{{ route('faculty.notifications') }}" class="relative text-2xl max-md:text-lg text-gray-600 dark:text-gray-400 hover:text-[#028a0f] dark:hover:text-[#02b815]">
                         <i class="fas fa-bell"></i>
                         @if(isset($unreadNotifications) && $unreadNotifications > 0)
                         <span class="absolute -top-2 -right-2 bg-red-600 text-white rounded-full w-[18px] h-[18px] text-[11px] flex items-center justify-center font-bold">{{ $unreadNotifications }}</span>
@@ -138,9 +203,9 @@
                     @endif
                     
                     <!-- Theme & Settings Controls -->
-                    <div class="flex gap-2 items-center">
-                        <!-- Font Size -->
-                        <div class="relative">
+                    <div class="flex gap-2 max-md:gap-1 items-center">
+                        <!-- Font Size (hidden on mobile) -->
+                        <div class="relative max-md:hidden">
                             <button id="fontSizeBtn" class="bg-transparent border-none text-gray-600 dark:text-gray-400 text-xl p-2 rounded-full hover:bg-[rgba(2,138,15,0.1)] hover:text-[#026a0c] dark:hover:text-[#02b815] cursor-pointer" title="Font Size">
                                 <i class="fas fa-text-height"></i>
                             </button>
@@ -152,24 +217,24 @@
                         </div>
                         
                         <!-- Dark Mode Toggle -->
-                        <button id="darkModeToggle" class="bg-transparent border-none text-gray-600 dark:text-gray-400 text-xl p-2 rounded-full hover:bg-[rgba(2,138,15,0.1)] hover:text-[#026a0c] dark:hover:text-[#02b815] cursor-pointer" title="Toggle Dark Mode">
+                        <button id="darkModeToggle" class="bg-transparent border-none text-gray-600 dark:text-gray-400 text-xl max-md:text-lg p-2 max-md:p-1 rounded-full hover:bg-[rgba(2,138,15,0.1)] hover:text-[#026a0c] dark:hover:text-[#02b815] cursor-pointer" title="Toggle Dark Mode">
                             <i class="fas fa-moon"></i>
                         </button>
                         
                         <!-- Global Search -->
-                        <button id="globalSearchBtn" class="bg-transparent border-none text-gray-600 dark:text-gray-400 text-xl p-2 rounded-full hover:bg-[rgba(2,138,15,0.1)] hover:text-[#026a0c] dark:hover:text-[#02b815] cursor-pointer" title="Search">
+                        <button id="globalSearchBtn" class="bg-transparent border-none text-gray-600 dark:text-gray-400 text-xl max-md:text-lg p-2 max-md:p-1 rounded-full hover:bg-[rgba(2,138,15,0.1)] hover:text-[#026a0c] dark:hover:text-[#02b815] cursor-pointer" title="Search">
                             <i class="fas fa-search"></i>
                         </button>
                     </div>
                     
-                    <div class="w-11 h-11 rounded-full bg-gradient-to-br from-[#028a0f] to-[#026a0c] text-white flex items-center justify-center font-semibold text-lg">
+                    <div class="w-11 h-11 max-md:w-9 max-md:h-9 rounded-full bg-gradient-to-br from-[#028a0f] to-[#026a0c] text-white flex items-center justify-center font-semibold text-lg max-md:text-sm flex-shrink-0">
                         {{ strtoupper(substr(auth()->user()->username, 0, 2)) }}
                     </div>
                     
                     <!-- User Dropdown Menu -->
                     <div class="relative">
-                        <button id="userMenuBtn" class="bg-transparent border-none text-gray-800 dark:text-gray-200 text-sm px-3 py-2 rounded-lg cursor-pointer hover:bg-gray-100 dark:hover:bg-gray-700">
-                            {{ auth()->user()->username }} <i class="fas fa-chevron-down text-xs ml-1"></i>
+                        <button id="userMenuBtn" class="bg-transparent border-none text-gray-800 dark:text-gray-200 text-sm px-3 py-2 max-md:px-1 max-md:py-1 rounded-lg cursor-pointer hover:bg-gray-100 dark:hover:bg-gray-700">
+                            <span class="max-md:hidden">{{ auth()->user()->username }}</span> <i class="fas fa-chevron-down text-xs ml-1"></i>
                         </button>
                         <div id="userMenu" class="hidden absolute top-full right-0 bg-white dark:bg-[#2a2a2a] rounded-lg shadow-xl p-2 min-w-[180px] z-[1000] mt-1">
                             <a href="{{ route('profile.edit') }}" class="block px-4 py-2 text-gray-800 dark:text-gray-200 no-underline rounded hover:bg-[rgba(2,138,15,0.1)]">
@@ -447,6 +512,54 @@
             const modal = document.getElementById('documentPreviewModal');
             if (e.key === 'Escape' && !modal.classList.contains('hidden')) {
                 closePreview();
+            }
+        });
+
+        // Mobile Sidebar Toggle
+        const mobileMenuToggle = document.getElementById('mobileMenuToggle');
+        const sidebar = document.querySelector('.sidebar');
+        const sidebarOverlay = document.getElementById('sidebarOverlay');
+
+        function openSidebar() {
+            sidebar.classList.add('active');
+            sidebarOverlay.classList.remove('hidden');
+            document.body.style.overflow = 'hidden';
+        }
+
+        function closeSidebar() {
+            sidebar.classList.remove('active');
+            sidebarOverlay.classList.add('hidden');
+            document.body.style.overflow = '';
+        }
+
+        if (mobileMenuToggle) {
+            mobileMenuToggle.addEventListener('click', () => {
+                if (sidebar.classList.contains('active')) {
+                    closeSidebar();
+                } else {
+                    openSidebar();
+                }
+            });
+        }
+
+        if (sidebarOverlay) {
+            sidebarOverlay.addEventListener('click', closeSidebar);
+        }
+
+        // Close sidebar on resize to desktop
+        window.addEventListener('resize', () => {
+            if (window.innerWidth >= 768) {
+                closeSidebar();
+            }
+        });
+
+        // Auto-wrap data tables for mobile horizontal scrolling
+        document.querySelectorAll('.data-table').forEach(table => {
+            if (!table.parentElement.classList.contains('overflow-x-auto')) {
+                const wrapper = document.createElement('div');
+                wrapper.className = 'overflow-x-auto';
+                table.parentNode.insertBefore(wrapper, table);
+                wrapper.appendChild(table);
             }
         });
     </script>

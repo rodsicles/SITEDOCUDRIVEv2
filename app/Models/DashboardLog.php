@@ -45,15 +45,22 @@ class DashboardLog extends Model
             // Dean sees everything
             $query->latest('log_date');
         } elseif ($user->role_id === 2) { // Program Coordinator
+            $coordinatorDept = optional($user->employee)->department;
+
             // Coordinator sees:
             // 1. Their own activities
-            // 2. All faculty activities
-            // 3. Activities where they are the target
-            $query->where(function($q) use ($user) {
+            // 2. Activities where they are the target
+            // 3. Faculty activities from the SAME DEPARTMENT only
+            $query->where(function($q) use ($user, $coordinatorDept) {
                 $q->where('user_id', $user->id)
                   ->orWhere('target_user_id', $user->id)
-                  ->orWhereHas('user', function($subQ) {
-                      $subQ->where('role_id', 3); // Faculty activities
+                  ->orWhereHas('user', function($subQ) use ($coordinatorDept) {
+                      $subQ->where('role_id', 3);
+                      if ($coordinatorDept) {
+                          $subQ->whereHas('employee', function($empQ) use ($coordinatorDept) {
+                              $empQ->where('department', $coordinatorDept);
+                          });
+                      }
                   });
             });
         } else { // Faculty

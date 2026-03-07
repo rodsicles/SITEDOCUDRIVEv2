@@ -1,0 +1,171 @@
+<?php
+
+namespace App\Services;
+
+use App\Models\Document;
+use App\Models\DocumentView;
+use App\Models\DocumentFavorite;
+use App\Models\DashboardLog;
+use App\Models\Folder;
+use App\Models\User;
+use Illuminate\Support\Facades\Storage;
+use Illuminate\Support\Collection;
+use Illuminate\Pagination\LengthAwarePaginator;
+
+class DocumentService
+{
+    /**
+     * Document categories available in the system.
+     */
+    const CATEGORIES = ['Policies', 'Forms', 'Reports', 'Memos', 'Research Papers', 'Other'];
+
+    /**
+     * Get filtered and paginated documents for a user.
+     */
+    public function getFilteredDocuments(User $user, ?string $categoryFilter, ?string $folderFilter, array $queryParams = [], int $perPage = 15): LengthAwarePaginator
+    {
+        $query = Document::getFilteredDocuments($user, $categoryFilter);
+
+        if ($folderFilter !== null) {
+            if ($folderFilter === 'uncategorized') {
+                $query->whereNull('folder_id');
+            } else {
+                $query->where('folder_id', $folderFilter);
+            }
+        }
+
+        return $query->paginate($perPage)->appends($queryParams);
+    }
+
+    /**
+     * Get user's folders with document counts.
+     */
+    public function getUserFolders(int $userId): Collection
+    {
+        return Folder::where('user_id', $userId)
+            ->withCount('documents')
+            ->orderBy('folder_name')
+            ->get();
+    }
+
+    /**
+     * Get recently viewed documents for a user.
+     */
+    public function getRecentDocuments(int $userId, int $limit = 5): Collection
+    {
+        return DocumentView::getRecentDocuments($userId, $limit);
+    }
+
+    /**
+     * Get user's favorite documents.
+     */
+    public function getFavoriteDocuments(User $user): Collection
+    {
+        return $user->documentFavorites()->with('document')->get()->pluck('document');
+    }
+
+    /**
+     * View a document (returns file response).
+     */
+    public function viewDocument(int $documentId, User $user, bool $trackView = false)
+    {
+        $document = Document::findOrFail($documentId);
+
+        if (!$document->canView($user)) {
+            abort(403, 'Unauthorized access');
+        }
+
+        if (!Storage::disk('local')->exists($document->file_path)) {
+            abort(404, 'File not found');
+        }
+
+        if ($trackView) {
+            DocumentView::trackView($user->id, $documentId);
+        }
+
+        $mimeType = Storage::disk('local')->mimeType($document->file_path);
+        $allowedMimes = ['application/pdf', 'image/jpeg', 'image/png'];
+        if (!in_array($mimeType, $allowedMimes)) {
+            $mimeType = 'application/octet-stream';
+        }
+
+        return Storage::disk('local')->response($document->file_path, null, [
+            'Content-Type' => $mimeType,
+            'Content-Disposition' => 'inline; filename="' . basename($document->file_path) . '"',
+        ]);
+    }
+
+    /**
+     * Download a document.
+     */
+    public function downloadDocument(int $documentId, User $user)
+    {
+        $document = Document::findOrFail($documentId);
+
+        if (!$document->canView($user)) {
+            abort(403, 'Unauthorized access');
+        }
+
+        if (!Storage::disk('local')->exists($document->file_path)) {
+            abort(404, 'File not found');
+        }
+
+        return Storage::disk('local')->download($document->file_path, basename($document->file_path));
+    }
+
+    /**
+     * Upload one or more documents and return the count of uploaded files.
+     */
+    public function uploadDocuments(array $validated, array $files, int $userId): int
+    {
+        $tags = !empty($validated['tags']) ? implode(',', array_map('trim', explode(',', $validated['tags']))) : '';
+
+        $uploadedCount = 0;
+        foreach ($files as $index => $file) {
+            $filename = time() . '_' . $index . '_' . $file->hashName();
+            Storage::disk('local')->putFileAs('documents', $file, $filename);
+
+            Document::create([
+                'uploaded_by' => $userId,
+                'folder_id' => $validated['folder_id'] ?? null,
+                'document_title' => $validated['document_title'] . ($uploadedCount > 0 ? ' (' . ($uploadedCount + 1) . ')' : ''),
+                'file_path' => 'documents/' . $filename,
+                'document_type' => $validated['document_type'],
+                'category' => $validated['category'],
+                'tags' => $tags,
+            ]);
+            $uploadedCount++;
+        }
+
+        DashboardLog::create([
+            'user_id' => $userId,
+            'activity' => 'Uploaded ' . $uploadedCount . ' document(s): ' . $validated['document_title'],
+            'activity_type' => 'document_upload',
+            'visibility' => 'own',
+        ]);
+
+        return $uploadedCount;
+    }
+
+    /**
+     * Toggle document favorite for a user.
+     */
+    public function toggleFavorite(int $documentId, int $userId): array
+    {
+        $document = Document::findOrFail($documentId);
+        $isFavorited = $document->toggleFavorite($userId);
+
+        return [
+            'favorited' => $isFavorited,
+            'message' => $isFavorited ? 'Document added to favorites' : 'Document removed from favorites',
+        ];
+    }
+
+    /**
+     * Get all document categories.
+     */
+    public function getCategories(): array
+    {
+        return self::CATEGORIES;
+    }
+}

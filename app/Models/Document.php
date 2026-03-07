@@ -91,9 +91,19 @@ class Document extends Model
         }
 
         if ($user->role_id === 2) { // Program Coordinator
-            // Own documents + faculty uploads
-            return $this->uploaded_by === $user->id
-                || optional($this->uploader)->role_id === 3;
+            if ($this->uploaded_by === $user->id) {
+                return true;
+            }
+
+            // Faculty uploads from same department only
+            if (optional($this->uploader)->role_id === 3) {
+                $coordinatorDept = optional($user->employee)->department;
+                $uploaderDept = optional(optional($this->uploader)->employee)->department;
+
+                return $coordinatorDept && $uploaderDept && $coordinatorDept === $uploaderDept;
+            }
+
+            return false;
         }
 
         // Faculty – own documents only
@@ -110,16 +120,23 @@ class Document extends Model
         $query = self::with(['uploader.employee', 'category']);
 
         if ($user->isDean()) {
-            // Dean sees all documents
+            // Dean sees all documents from both departments
         } elseif ($user->role_id === 2) { // Program Coordinator
-            // Coordinator sees:
-            // 1. Their own documents
-            // 2. All faculty documents (role_id = 3)
-            $query->where(function($q) use ($user) {
-                $q->where('uploaded_by', $user->id)
-                  ->orWhereHas('uploader', function($subQ) {
-                      $subQ->where('role_id', 3); // Faculty uploads
-                  });
+            $coordinatorDept = optional($user->employee)->department;
+
+            $query->where(function($q) use ($user, $coordinatorDept) {
+                // Own documents
+                $q->where('uploaded_by', $user->id);
+
+                // Faculty documents from same department only
+                if ($coordinatorDept) {
+                    $q->orWhereHas('uploader', function($subQ) use ($coordinatorDept) {
+                        $subQ->where('role_id', 3)
+                             ->whereHas('employee', function($empQ) use ($coordinatorDept) {
+                                 $empQ->where('department', $coordinatorDept);
+                             });
+                    });
+                }
             });
         } else { // Faculty
             // Faculty sees only their own documents

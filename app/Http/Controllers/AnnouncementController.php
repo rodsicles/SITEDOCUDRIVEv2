@@ -3,14 +3,16 @@
 namespace App\Http\Controllers;
 
 use App\Models\Announcement;
-use App\Models\AnnouncementRead;
 use App\Models\Notification;
-use App\Models\DashboardLog;
-use App\Models\User;
+use App\Services\AnnouncementService;
 use Illuminate\Http\Request;
 
 class AnnouncementController extends Controller
 {
+    public function __construct(
+        protected AnnouncementService $announcementService
+    ) {}
+
     public function index()
     {
         $user = auth()->user();
@@ -46,34 +48,9 @@ class AnnouncementController extends Controller
             'expires_at' => 'nullable|date|after:now',
         ]);
 
-        $validated['author_id'] = auth()->id();
         $validated['is_pinned'] = $request->boolean('is_pinned');
 
-        $announcement = Announcement::create($validated);
-
-        // Notify target users
-        $targetUsers = User::where('id', '!=', auth()->id())
-            ->where('status', 'Active')
-            ->when($validated['visibility'] !== 'All', function ($q) use ($validated) {
-                $q->whereHas('role', function ($r) use ($validated) {
-                    $r->where('role_name', $validated['visibility']);
-                });
-            })
-            ->get();
-
-        foreach ($targetUsers as $targetUser) {
-            Notification::create([
-                'user_id' => $targetUser->id,
-                'message' => 'New announcement: ' . $validated['title'],
-            ]);
-        }
-
-        DashboardLog::create([
-            'user_id' => auth()->id(),
-            'activity' => 'Posted announcement: "' . $validated['title'] . '"',
-            'activity_type' => 'announcement',
-            'visibility' => 'all',
-        ]);
+        $this->announcementService->createAnnouncement($validated, auth()->user());
 
         return redirect()->route('announcements.index')
             ->with('success', 'Announcement posted successfully');
@@ -107,14 +84,8 @@ class AnnouncementController extends Controller
         ]);
 
         $validated['is_pinned'] = $request->boolean('is_pinned');
-        $announcement->update($validated);
 
-        DashboardLog::create([
-            'user_id' => auth()->id(),
-            'activity' => 'Updated announcement: "' . $validated['title'] . '"',
-            'activity_type' => 'announcement',
-            'visibility' => 'all',
-        ]);
+        $this->announcementService->updateAnnouncement($announcement, $validated, auth()->id());
 
         return redirect()->route('announcements.index')
             ->with('success', 'Announcement updated successfully');
@@ -125,20 +96,11 @@ class AnnouncementController extends Controller
         $user = auth()->user();
         $announcement = Announcement::where('announcement_id', $id)->firstOrFail();
 
-        // Only author or Dean can delete
         if ($announcement->author_id !== $user->id && !$user->isDean()) {
             abort(403);
         }
 
-        $title = $announcement->title;
-        $announcement->delete();
-
-        DashboardLog::create([
-            'user_id' => auth()->id(),
-            'activity' => 'Deleted announcement: "' . $title . '"',
-            'activity_type' => 'announcement',
-            'visibility' => 'all',
-        ]);
+        $this->announcementService->deleteAnnouncement($announcement, auth()->id());
 
         return redirect()->route('announcements.index')
             ->with('success', 'Announcement deleted successfully');
@@ -146,10 +108,7 @@ class AnnouncementController extends Controller
 
     public function markAsRead($id)
     {
-        AnnouncementRead::firstOrCreate([
-            'announcement_id' => $id,
-            'user_id' => auth()->id(),
-        ]);
+        $this->announcementService->markAsRead($id, auth()->id());
 
         return response()->json(['success' => true]);
     }

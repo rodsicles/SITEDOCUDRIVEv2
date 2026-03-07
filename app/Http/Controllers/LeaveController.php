@@ -4,26 +4,26 @@ namespace App\Http\Controllers;
 
 use App\Models\LeaveRequest;
 use App\Models\LeaveBalance;
-use App\Models\Notification;
 use App\Models\User;
+use App\Services\LeaveService;
 use Illuminate\Http\Request;
-use Illuminate\Support\Facades\DB;
 
 class LeaveController extends Controller
 {
-    // Faculty: View leave requests
+    public function __construct(
+        protected LeaveService $leaveService
+    ) {}
+
     public function index()
     {
         $user = auth()->user();
-        
+
         if ($user->isFaculty()) {
-            // Faculty sees only their own leaves
             $leaveRequests = LeaveRequest::where('user_id', $user->id)
                 ->with('reviewer.employee')
                 ->orderBy('created_at', 'desc')
                 ->paginate(15);
         } else {
-            // Coordinator/Dean sees all leave requests
             $leaveRequests = LeaveRequest::with(['user.employee', 'reviewer.employee'])
                 ->orderBy('created_at', 'desc')
                 ->paginate(15);
@@ -34,14 +34,12 @@ class LeaveController extends Controller
         return view('leave.index', compact('leaveRequests', 'leaveBalance'));
     }
 
-    // Faculty: Create leave request form
     public function create()
     {
         $leaveBalance = LeaveBalance::getOrCreateBalance(auth()->id());
         return view('leave.create', compact('leaveBalance'));
     }
 
-    // Faculty: Store leave request
     public function store(Request $request)
     {
         $validated = $request->validate([
@@ -51,46 +49,21 @@ class LeaveController extends Controller
             'reason' => 'required|string|min:10|max:120',
         ]);
 
-        $startDate = new \DateTime($validated['start_date']);
-        $endDate = new \DateTime($validated['end_date']);
-        $daysCount = $startDate->diff($endDate)->days + 1;
+        $daysCount = $this->leaveService->calculateDays($validated['start_date'], $validated['end_date']);
 
-        // Check leave balance
-        $balance = LeaveBalance::getOrCreateBalance(auth()->id());
-        
-        if ((str_contains($validated['leave_type'], 'Sick') && $daysCount > $balance->getRemainingSickLeave()) ||
-            (!str_contains($validated['leave_type'], 'Sick') && $daysCount > $balance->getRemainingVacationLeave())) {
+        if (!$this->leaveService->hasSufficientBalance(auth()->id(), $validated['leave_type'], $daysCount)) {
             return back()->with('error', 'Insufficient leave balance for this request.');
         }
 
-        $leaveRequest = LeaveRequest::create([
-            'user_id' => auth()->id(),
-            'leave_type' => $validated['leave_type'],
-            'start_date' => $validated['start_date'],
-            'end_date' => $validated['end_date'],
-            'days_count' => $daysCount,
-            'reason' => $validated['reason'],
-            'status' => 'Pending',
-        ]);
-
-        // Notify coordinators and dean
-        $coordinatorsAndDeans = User::whereIn('role_id', [1, 2])->get();
-        foreach ($coordinatorsAndDeans as $supervisor) {
-            Notification::create([
-                'user_id' => $supervisor->id,
-                'message' => auth()->user()->username . ' filed a ' . $validated['leave_type'] . ' request (' . $daysCount . ' days)',
-            ]);
-        }
+        $this->leaveService->createLeaveRequest($validated, auth()->user());
 
         return redirect()->route('leave.index')->with('success', 'Leave request submitted successfully.');
     }
 
-    // Faculty: Edit leave request (only pending)
     public function edit($id)
     {
         $leaveRequest = LeaveRequest::findOrFail($id);
 
-        // Only the owner can edit their pending request
         if ($leaveRequest->user_id !== auth()->id() || !$leaveRequest->isPending()) {
             return redirect()->route('leave.index')->with('error', 'Cannot edit this leave request.');
         }
@@ -99,12 +72,10 @@ class LeaveController extends Controller
         return view('leave.edit', compact('leaveRequest', 'leaveBalance'));
     }
 
-    // Faculty: Update leave request
     public function update(Request $request, $id)
     {
         $leaveRequest = LeaveRequest::findOrFail($id);
 
-        // Only the owner can update their pending request
         if ($leaveRequest->user_id !== auth()->id() || !$leaveRequest->isPending()) {
             return redirect()->route('leave.index')->with('error', 'Cannot update this leave request.');
         }
@@ -116,34 +87,21 @@ class LeaveController extends Controller
             'reason' => 'required|string|min:10|max:120',
         ]);
 
-        $startDate = new \DateTime($validated['start_date']);
-        $endDate = new \DateTime($validated['end_date']);
-        $daysCount = $startDate->diff($endDate)->days + 1;
+        $daysCount = $this->leaveService->calculateDays($validated['start_date'], $validated['end_date']);
 
-        // Check leave balance
-        $balance = LeaveBalance::getOrCreateBalance(auth()->id());
-        if ((str_contains($validated['leave_type'], 'Sick') && $daysCount > $balance->getRemainingSickLeave()) ||
-            (!str_contains($validated['leave_type'], 'Sick') && $daysCount > $balance->getRemainingVacationLeave())) {
+        if (!$this->leaveService->hasSufficientBalance(auth()->id(), $validated['leave_type'], $daysCount)) {
             return back()->with('error', 'Insufficient leave balance for this request.');
         }
 
-        $leaveRequest->update([
-            'leave_type' => $validated['leave_type'],
-            'start_date' => $validated['start_date'],
-            'end_date' => $validated['end_date'],
-            'days_count' => $daysCount,
-            'reason' => $validated['reason'],
-        ]);
+        $this->leaveService->updateLeaveRequest($leaveRequest, $validated);
 
         return redirect()->route('leave.index')->with('success', 'Leave request updated successfully.');
     }
 
-    // Faculty: Cancel leave request (only pending)
     public function cancel($id)
     {
         $leaveRequest = LeaveRequest::findOrFail($id);
 
-        // Only the owner can cancel their pending request
         if ($leaveRequest->user_id !== auth()->id()) {
             return back()->with('error', 'Unauthorized action.');
         }
@@ -152,21 +110,11 @@ class LeaveController extends Controller
             return back()->with('error', 'Only pending leave requests can be cancelled.');
         }
 
-        $leaveRequest->update(['status' => 'Cancelled']);
-
-        // Notify coordinators and dean
-        $coordinatorsAndDeans = User::whereIn('role_id', [1, 2])->get();
-        foreach ($coordinatorsAndDeans as $supervisor) {
-            Notification::create([
-                'user_id' => $supervisor->id,
-                'message' => auth()->user()->username . ' cancelled a ' . $leaveRequest->leave_type . ' request (' . $leaveRequest->days_count . ' days)',
-            ]);
-        }
+        $this->leaveService->cancelLeaveRequest($leaveRequest, auth()->user());
 
         return back()->with('success', 'Leave request cancelled successfully.');
     }
 
-    // Coordinator/Dean: Approve leave
     public function approve($id)
     {
         $leaveRequest = LeaveRequest::findOrFail($id);
@@ -175,26 +123,11 @@ class LeaveController extends Controller
             return back()->with('error', 'Unauthorized action.');
         }
 
-        $leaveRequest->update([
-            'status' => 'Approved',
-            'reviewed_by' => auth()->id(),
-            'reviewed_at' => now(),
-        ]);
-
-        // Deduct from leave balance
-        $balance = LeaveBalance::getOrCreateBalance($leaveRequest->user_id);
-        $balance->deductLeave($leaveRequest->leave_type, $leaveRequest->days_count);
-
-        // Notify the faculty
-        Notification::create([
-            'user_id' => $leaveRequest->user_id,
-            'message' => 'Your ' . $leaveRequest->leave_type . ' request has been APPROVED by ' . auth()->user()->username,
-        ]);
+        $this->leaveService->approveLeaveRequest($leaveRequest, auth()->user());
 
         return back()->with('success', 'Leave request approved.');
     }
 
-    // Coordinator/Dean: Reject leave
     public function reject(Request $request, $id)
     {
         $validated = $request->validate([
@@ -207,58 +140,42 @@ class LeaveController extends Controller
             return back()->with('error', 'Unauthorized action.');
         }
 
-        $leaveRequest->update([
-            'status' => 'Rejected',
-            'reviewed_by' => auth()->id(),
-            'reviewed_at' => now(),
-            'review_notes' => $validated['review_notes'],
-        ]);
-
-        // Notify the faculty
-        Notification::create([
-            'user_id' => $leaveRequest->user_id,
-            'message' => 'Your ' . $leaveRequest->leave_type . ' request has been REJECTED by ' . auth()->user()->username . '. Reason: ' . $validated['review_notes'],
-        ]);
+        $this->leaveService->rejectLeaveRequest($leaveRequest, auth()->user(), $validated['review_notes']);
 
         return back()->with('success', 'Leave request rejected.');
     }
 
-    // Leave Calendar View
     public function calendar()
     {
         $user = auth()->user();
 
         if ($user->isFaculty()) {
-            // Faculty sees only their own approved leaves
             $leaves = LeaveRequest::where('user_id', $user->id)
                 ->where('status', 'Approved')
                 ->with('user.employee')
                 ->get();
         } else {
-            // Coordinator/Dean sees all approved leaves
             $leaves = LeaveRequest::where('status', 'Approved')
                 ->with('user.employee')
                 ->get();
         }
 
-        // Format for calendar with better colors and info
         $events = $leaves->map(function($leave) {
-            // Different colors based on leave type
             $colors = [
-                'Sick Leave' => '#ef4444',      // Red-500
-                'Vacation Leave' => '#3b82f6',   // Blue-500  
-                'Emergency Leave' => '#f97316',  // Orange-500
-                'Personal Leave' => '#8b5cf6',   // Violet-500
-                'Study Leave' => '#f59e0b',      // Amber-500
-                'Maternity Leave' => '#ec4899',  // Pink-500
-                'Paternity Leave' => '#06b6d4',  // Cyan-500
-                'Other' => '#6b7280'             // Gray-500
+                'Sick Leave' => '#ef4444',
+                'Vacation Leave' => '#3b82f6',
+                'Emergency Leave' => '#f97316',
+                'Personal Leave' => '#8b5cf6',
+                'Study Leave' => '#f59e0b',
+                'Maternity Leave' => '#ec4899',
+                'Paternity Leave' => '#06b6d4',
+                'Other' => '#6b7280'
             ];
 
             return [
                 'title' => $leave->user->username . ' - ' . $leave->leave_type,
                 'start' => $leave->start_date->format('Y-m-d'),
-                'end' => $leave->end_date->addDay()->format('Y-m-d'), // FullCalendar end is exclusive
+                'end' => $leave->end_date->addDay()->format('Y-m-d'),
                 'color' => $colors[$leave->leave_type] ?? '#dc2626',
                 'description' => $leave->reason,
                 'textColor' => '#ffffff',

@@ -5,40 +5,31 @@ namespace App\Http\Controllers;
 use App\Models\User;
 use App\Models\Employee;
 use App\Models\Task;
-use App\Models\Notification;
 use App\Models\Document;
 use App\Models\DocumentView;
-use App\Models\DashboardLog;
-use App\Models\Announcement;
+use App\Services\DashboardService;
+use App\Services\DocumentService;
+use App\Services\TaskService;
+use App\Services\EmployeeService;
 use Illuminate\Http\Request;
-use Illuminate\Support\Facades\Hash;
 use Illuminate\Support\Facades\DB;
-use Illuminate\Support\Facades\Storage;
 
 class CoordinatorController extends Controller
 {
+    public function __construct(
+        protected DashboardService $dashboardService,
+        protected DocumentService $documentService,
+        protected TaskService $taskService,
+        protected EmployeeService $employeeService
+    ) {}
+
     public function dashboard()
     {
-        $totalFaculty = User::where('role_id', 3)->count();
-        
-        // Total Documents submitted by coordinator
-        $totalDocuments = Document::where('uploaded_by', auth()->id())->count();
-        
-        // Coordinator's leave requests this month and year
-        $leaveThisMonth = \App\Models\LeaveRequest::where('user_id', auth()->id())
-            ->whereYear('start_date', date('Y'))
-            ->whereMonth('start_date', date('m'))
-            ->count();
-        
-        $leaveThisYear = \App\Models\LeaveRequest::where('user_id', auth()->id())
-            ->whereYear('start_date', date('Y'))
-            ->count();
-        
-        // Total tasks created by coordinator
-        $totalTasks = Task::where('assigned_by', auth()->id())->count();
+        $user = auth()->user();
+        $stats = $this->dashboardService->getCoordinatorStats($user->id);
 
         $recentTasks = Task::with(['assignedTo.employee'])
-            ->where('assigned_by', auth()->id())
+            ->where('assigned_by', $user->id)
             ->latest()
             ->take(5)
             ->get();
@@ -48,27 +39,15 @@ class CoordinatorController extends Controller
             ->take(10)
             ->get();
 
-        // Coordinator sees filtered activities (own + all faculty activities)
-        $recentActivities = DashboardLog::getFilteredLogs(auth()->user(), 10);
+        $recentActivities = $this->dashboardService->getRecentActivities($user, 10);
+        $announcements = $this->dashboardService->getAnnouncements($user, 5);
 
-        $announcements = Announcement::with(['author.employee', 'reads'])
-            ->active()
-            ->visibleTo(auth()->user())
-            ->ordered()
-            ->take(5)
-            ->get();
-
-        return view('coordinator.dashboard', compact(
-            'totalFaculty',
-            'totalDocuments',
-            'leaveThisMonth',
-            'leaveThisYear',
-            'totalTasks',
+        return view('coordinator.dashboard', array_merge($stats, compact(
             'recentTasks',
             'facultyList',
             'recentActivities',
             'announcements'
-        ));
+        )));
     }
 
     public function tasks()
@@ -98,27 +77,7 @@ class CoordinatorController extends Controller
             'due_date' => 'required|date',
         ]);
 
-        $task = Task::create([
-            'assigned_by' => auth()->id(),
-            'assigned_to' => $validated['assigned_to'],
-            'task_title' => $validated['task_title'],
-            'task_description' => $validated['task_description'],
-            'due_date' => $validated['due_date'],
-            'status' => 'Pending',
-        ]);
-
-        Notification::create([
-            'user_id' => $validated['assigned_to'],
-            'message' => 'New task assigned: ' . $validated['task_title'],
-        ]);
-
-        DashboardLog::create([
-            'user_id' => auth()->id(),
-            'target_user_id' => $validated['assigned_to'],
-            'activity' => 'Created task: ' . $validated['task_title'],
-            'activity_type' => 'task_created',
-            'visibility' => 'coordinator',
-        ]);
+        $this->taskService->createTask($validated, auth()->id());
 
         return redirect()->route('coordinator.tasks')
             ->with('success', 'Task created successfully');
@@ -126,15 +85,11 @@ class CoordinatorController extends Controller
 
     public function updateTask(Request $request, $id)
     {
-        $task = Task::where('task_id', $id)
-            ->where('assigned_by', auth()->id())
-            ->firstOrFail();
-
         $validated = $request->validate([
             'status' => 'required|in:Pending,In Progress,Completed',
         ]);
 
-        $task->update($validated);
+        $this->taskService->updateTaskByCoordinator($id, $validated['status'], auth()->id());
 
         return redirect()->back()->with('success', 'Task updated successfully');
     }
@@ -164,39 +119,12 @@ class CoordinatorController extends Controller
             'department' => 'required|in:Engineering,Information Technology',
         ]);
 
-        DB::beginTransaction();
         try {
-            $user = User::create([
-                'role_id' => 3,
-                'name' => $validated['full_name'],
-                'username' => $validated['username'],
-                'email' => $validated['email'],
-                'password' => Hash::make($validated['password']),
-                'status' => 'Active',
-            ]);
+            $this->employeeService->createFaculty($validated, auth()->id());
 
-            Employee::create([
-                'user_id' => $user->id,
-                'employee_no' => $validated['employee_no'],
-                'full_name' => $validated['full_name'],
-                'department' => $validated['department'],
-                'position' => 'Faculty Employee',
-                'hire_date' => now(),
-            ]);
-
-            DashboardLog::create([
-                'user_id' => auth()->id(),
-                'target_user_id' => $user->id,
-                'activity' => 'Created faculty account: ' . $validated['full_name'],
-                'activity_type' => 'account_created',
-                'visibility' => 'coordinator',
-            ]);
-
-            DB::commit();
             return redirect()->route('coordinator.faculty')
                 ->with('success', 'Faculty account created successfully');
         } catch (\Exception $e) {
-            DB::rollBack();
             return back()->withErrors(['error' => 'Failed to create faculty account: ' . $e->getMessage()])
                 ->withInput();
         }
@@ -206,29 +134,15 @@ class CoordinatorController extends Controller
     {
         $categoryFilter = $request->query('category');
         $folderFilter = $request->query('folder');
-        
-        // Get user's folders
-        $folders = \App\Models\Folder::where('user_id', auth()->id())
-            ->withCount('documents')
-            ->orderBy('folder_name')
-            ->get();
-        
-        // Filter documents by folder if specified
-        $documentsQuery = Document::getFilteredDocuments(auth()->user(), $categoryFilter);
-        
-        if ($folderFilter !== null) {
-            if ($folderFilter === 'uncategorized') {
-                $documentsQuery->whereNull('folder_id');
-            } else {
-                $documentsQuery->where('folder_id', $folderFilter);
-            }
-        }
-        
-        $documents = $documentsQuery->paginate(15)->appends($request->query());
-        $recentDocuments = DocumentView::getRecentDocuments(auth()->id(), 5);
-        $favoriteDocuments = auth()->user()->documentFavorites()->with('document')->get()->pluck('document');
-        $categories = ['Policies', 'Forms', 'Reports', 'Memos', 'Research Papers', 'Other'];
-        
+
+        $folders = $this->documentService->getUserFolders(auth()->id());
+        $documents = $this->documentService->getFilteredDocuments(
+            auth()->user(), $categoryFilter, $folderFilter, $request->query()
+        );
+        $recentDocuments = $this->documentService->getRecentDocuments(auth()->id(), 5);
+        $favoriteDocuments = $this->documentService->getFavoriteDocuments(auth()->user());
+        $categories = $this->documentService->getCategories();
+
         return view('coordinator.documents', compact('documents', 'recentDocuments', 'favoriteDocuments', 'categories', 'categoryFilter', 'folders', 'folderFilter'));
     }
 
@@ -246,27 +160,10 @@ class CoordinatorController extends Controller
             'folder_id' => 'nullable|exists:folders,folder_id',
         ]);
 
-        // Parse tags
-        $tags = !empty($validated['tags']) ? implode(',', array_map('trim', explode(',', $validated['tags']))) : '';
+        $uploadedCount = $this->documentService->uploadDocuments(
+            $validated, $request->file('documents'), auth()->id()
+        );
 
-        $uploadedCount = 0;
-        foreach ($request->file('documents') as $index => $file) {
-            $filename = time() . '_' . $index . '_' . $file->hashName();
-            Storage::disk('local')->putFileAs('documents', $file, $filename);
-
-            Document::create([
-                'uploaded_by' => auth()->id(),
-                'folder_id' => $validated['folder_id'] ?? null,
-                'document_title' => $validated['document_title'] . ($uploadedCount > 0 ? ' (' . ($uploadedCount + 1) . ')' : ''),
-                'file_path' => 'documents/' . $filename,
-                'document_type' => $validated['document_type'],
-                'category' => $validated['category'],
-                'tags' => $tags,
-            ]);
-            $uploadedCount++;
-        }
-
-        // Return JSON response for AJAX requests
         if ($request->expectsJson()) {
             return response()->json([
                 'success' => true,
@@ -283,7 +180,6 @@ class CoordinatorController extends Controller
             ->where('employee_id', $id)
             ->firstOrFail();
 
-        // Only allow editing faculty employees
         if ($employee->user->role_id !== 3) {
             abort(403, 'Unauthorized access');
         }
@@ -297,7 +193,6 @@ class CoordinatorController extends Controller
             ->where('employee_id', $id)
             ->firstOrFail();
 
-        // Only allow editing faculty employees
         if ($employee->user->role_id !== 3) {
             abort(403, 'Unauthorized access');
         }
@@ -309,34 +204,12 @@ class CoordinatorController extends Controller
             'email' => 'required|email|max:45|unique:users,email,' . $employee->user_id . ',id',
         ]);
 
-        DB::beginTransaction();
         try {
-            // Update employee information
-            $employee->update([
-                'full_name' => $validated['full_name'],
-                'employee_no' => $validated['employee_no'],
-                'department' => $validated['department'],
-            ]);
+            $this->employeeService->updateFaculty($employee, $validated, auth()->id());
 
-            // Update user information
-            $employee->user->update([
-                'name' => $validated['full_name'],
-                'email' => $validated['email'],
-            ]);
-
-            DashboardLog::create([
-                'user_id' => auth()->id(),
-                'target_user_id' => $employee->user_id,
-                'activity' => 'Updated faculty information: ' . $validated['full_name'],
-                'activity_type' => 'profile_update',
-                'visibility' => 'coordinator',
-            ]);
-
-            DB::commit();
             return redirect()->route('coordinator.faculty-profile', $id)
                 ->with('success', 'Faculty information updated successfully');
         } catch (\Exception $e) {
-            DB::rollBack();
             return back()->withErrors(['error' => 'Failed to update faculty information: ' . $e->getMessage()])
                 ->withInput();
         }
@@ -348,7 +221,6 @@ class CoordinatorController extends Controller
             ->where('employee_id', $id)
             ->firstOrFail();
 
-        // Only allow resetting password for faculty employees
         if ($employee->user->role_id !== 3) {
             abort(403, 'Unauthorized access');
         }
@@ -358,24 +230,7 @@ class CoordinatorController extends Controller
         ]);
 
         try {
-            $employee->user->update([
-                'password' => Hash::make($validated['new_password']),
-            ]);
-
-            // Create notification for faculty
-            Notification::create([
-                'user_id' => $employee->user_id,
-                'message' => 'Your password has been reset by ' . auth()->user()->employee->full_name . ' (Program Coordinator). Please use your new password to login.',
-            ]);
-
-            // Log activity visible to Dean, Coordinator, and affected Faculty
-            DashboardLog::create([
-                'user_id' => auth()->id(),
-                'target_user_id' => $employee->user_id,
-                'activity' => 'Reset password for faculty: ' . $employee->full_name,
-                'activity_type' => 'password_reset',
-                'visibility' => 'coordinator',
-            ]);
+            $this->employeeService->resetFacultyPassword($employee, $validated['new_password'], auth()->user());
 
             return redirect()->route('coordinator.faculty-profile', $id)
                 ->with('success', 'Password reset successfully. A notification has been sent to the faculty member.');
@@ -390,100 +245,27 @@ class CoordinatorController extends Controller
             ->where('employee_id', $id)
             ->firstOrFail();
 
-        // Only allow viewing faculty employees
         if ($employee->user->role_id !== 3) {
             abort(403, 'Unauthorized access');
         }
 
-        $performanceReports = collect(); // Coordinator cannot see performance reports
-
-        $tasks = Task::with('assignedBy.employee')
-            ->where('assigned_to', $employee->user_id)
-            ->orderBy('created_at', 'desc')
-            ->get();
-
-        $taskStats = [
-            'total' => $tasks->count(),
-            'completed' => $tasks->where('status', 'Completed')->count(),
-            'pending' => $tasks->where('status', 'Pending')->count(),
-        ];
-
-        $documents = Document::where('uploaded_by', $employee->user_id)
-            ->orderBy('created_at', 'desc')
-            ->get();
-
-        $documentStats = [
-            'total' => $documents->count(),
-            'byType' => $documents->groupBy('document_type')->map->count(),
-        ];
-
-        // Fetch folders created by this employee
-        $folders = \App\Models\Folder::where('user_id', $employee->user_id)
-            ->withCount('documents')
-            ->orderBy('folder_name')
-            ->get();
-
-        $reports = \App\Models\Report::where('submitted_by', $employee->user_id)
-            ->orderBy('created_at', 'desc')
-            ->get();
-
-        $reportStats = [
-            'total' => $reports->count(),
-            'byCategory' => $reports->groupBy('report_category')->map->count(),
-        ];
-
-        return view('employees.profile', compact('employee', 'performanceReports', 'tasks', 'taskStats', 'documents', 'documentStats', 'folders', 'reports', 'reportStats'));
+        $profileData = $this->employeeService->getEmployeeProfileForCoordinator($id);
+        return view('employees.profile', $profileData);
     }
 
     public function viewDocument($id)
     {
-        $document = Document::findOrFail($id);
-
-        if (!$document->canView(auth()->user())) {
-            abort(403, 'Unauthorized access');
-        }
-
-        if (!Storage::disk('local')->exists($document->file_path)) {
-            abort(404, 'File not found');
-        }
-
-        // Track document view
-        DocumentView::trackView(auth()->id(), $id);
-
-        $mimeType = Storage::disk('local')->mimeType($document->file_path);
-        $allowedMimes = ['application/pdf', 'image/jpeg', 'image/png'];
-        if (!in_array($mimeType, $allowedMimes)) {
-            $mimeType = 'application/octet-stream';
-        }
-
-        return Storage::disk('local')->response($document->file_path, null, [
-            'Content-Type' => $mimeType,
-            'Content-Disposition' => 'inline; filename="' . basename($document->file_path) . '"',
-        ]);
+        return $this->documentService->viewDocument($id, auth()->user(), true);
     }
 
     public function downloadDocument($id)
     {
-        $document = Document::findOrFail($id);
-
-        if (!$document->canView(auth()->user())) {
-            abort(403, 'Unauthorized access');
-        }
-
-        if (!Storage::disk('local')->exists($document->file_path)) {
-            abort(404, 'File not found');
-        }
-
-        return Storage::disk('local')->download($document->file_path, basename($document->file_path));
+        return $this->documentService->downloadDocument($id, auth()->user());
     }
 
-    // Toggle document favorite
     public function toggleFavorite($id)
     {
-        $document = Document::findOrFail($id);
-        $isFavorited = $document->toggleFavorite(auth()->id());
-        
-        $message = $isFavorited ? 'Document added to favorites' : 'Document removed from favorites';
-        return response()->json(['success' => true, 'favorited' => $isFavorited, 'message' => $message]);
+        $result = $this->documentService->toggleFavorite($id, auth()->id());
+        return response()->json(['success' => true, 'favorited' => $result['favorited'], 'message' => $result['message']]);
     }
 }

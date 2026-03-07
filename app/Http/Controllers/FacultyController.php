@@ -4,51 +4,36 @@ namespace App\Http\Controllers;
 
 use App\Models\Task;
 use App\Models\Notification;
-use App\Models\Document;
-use App\Models\DocumentView;
 use App\Models\PerformanceReport;
-use App\Models\Announcement;
+use App\Services\DashboardService;
+use App\Services\DocumentService;
+use App\Services\TaskService;
+use App\Services\NotificationService;
 use Illuminate\Http\Request;
-use Illuminate\Support\Facades\Storage;
 
 class FacultyController extends Controller
 {
+    public function __construct(
+        protected DashboardService $dashboardService,
+        protected DocumentService $documentService,
+        protected TaskService $taskService,
+        protected NotificationService $notificationService
+    ) {}
+
     public function dashboard()
     {
-        // NEW METRICS: Total Documents, Leave Requests, Task Completed
-        $totalDocuments = Document::where('uploaded_by', auth()->id())->count();
-        
-        // Leave requests this month
-        $employee = auth()->user()->employee;
-        $leaveThisMonth = \App\Models\LeaveRequest::where('user_id', auth()->id())
-            ->whereYear('start_date', date('Y'))
-            ->whereMonth('start_date', date('m'))
-            ->count();
-        
-        // Leave requests this year
-        $leaveThisYear = \App\Models\LeaveRequest::where('user_id', auth()->id())
-            ->whereYear('start_date', date('Y'))
-            ->count();
-        
-        // Task completed
-        $completedTasks = Task::where('assigned_to', auth()->id())
-            ->where('status', 'Completed')
-            ->count();
+        $user = auth()->user();
+        $employee = $user->employee;
+        $stats = $this->dashboardService->getFacultyStats($user->id);
 
         $recentTasks = Task::with('assignedBy')
-            ->where('assigned_to', auth()->id())
+            ->where('assigned_to', $user->id)
             ->latest()
             ->take(5)
             ->get();
 
-        $unreadNotifications = Notification::where('user_id', auth()->id())
-            ->where('is_read', false)
-            ->count();
-
-        $recentNotifications = Notification::where('user_id', auth()->id())
-            ->latest()
-            ->take(5)
-            ->get();
+        $unreadNotifications = $this->dashboardService->getUnreadNotificationCount($user->id);
+        $recentNotifications = $this->dashboardService->getRecentNotifications($user->id, 5);
 
         $performanceReports = PerformanceReport::with('evaluator')
             ->where('employee_id', $employee->employee_id)
@@ -56,28 +41,17 @@ class FacultyController extends Controller
             ->take(5)
             ->get();
 
-        // Faculty sees only their own activities and notifications
-        $recentActivities = \App\Models\DashboardLog::getFilteredLogs(auth()->user(), 10);
+        $recentActivities = $this->dashboardService->getRecentActivities($user, 10);
+        $announcements = $this->dashboardService->getAnnouncements($user, 5);
 
-        $announcements = Announcement::with(['author.employee', 'reads'])
-            ->active()
-            ->visibleTo(auth()->user())
-            ->ordered()
-            ->take(5)
-            ->get();
-
-        return view('faculty.dashboard', compact(
-            'totalDocuments',
-            'leaveThisMonth',
-            'leaveThisYear',
-            'completedTasks',
+        return view('faculty.dashboard', array_merge($stats, compact(
             'recentTasks',
             'unreadNotifications',
             'recentNotifications',
             'performanceReports',
             'recentActivities',
             'announcements'
-        ));
+        )));
     }
 
     public function tasks()
@@ -91,29 +65,11 @@ class FacultyController extends Controller
 
     public function updateTaskStatus(Request $request, $id)
     {
-        $task = Task::where('task_id', $id)
-            ->where('assigned_to', auth()->id())
-            ->firstOrFail();
-
         $validated = $request->validate([
             'status' => 'required|in:Pending,In Progress,Completed',
         ]);
 
-        $task->update($validated);
-
-        Notification::create([
-            'user_id' => $task->assigned_by,
-            'message' => 'Task "' . $task->task_title . '" status updated to: ' . $validated['status'],
-        ]);
-
-        // Log task status update
-        \App\Models\DashboardLog::create([
-            'user_id' => auth()->id(),
-            'target_user_id' => $task->assigned_by,
-            'activity' => 'Updated task status: "' . $task->task_title . '" to ' . $validated['status'],
-            'activity_type' => 'task_update',
-            'visibility' => 'own',
-        ]);
+        $this->taskService->updateTaskByFaculty($id, $validated['status'], auth()->id());
 
         return redirect()->back()->with('success', 'Task status updated successfully');
     }
@@ -128,12 +84,7 @@ class FacultyController extends Controller
 
     public function markNotificationRead($id)
     {
-        $notification = Notification::where('notification_id', $id)
-            ->where('user_id', auth()->id())
-            ->firstOrFail();
-
-        $notification->update(['is_read' => true]);
-
+        $this->notificationService->markAsRead($id, auth()->id());
         return redirect()->back();
     }
 
@@ -141,29 +92,15 @@ class FacultyController extends Controller
     {
         $categoryFilter = $request->query('category');
         $folderFilter = $request->query('folder');
-        
-        // Get user's folders
-        $folders = \App\Models\Folder::where('user_id', auth()->id())
-            ->withCount('documents')
-            ->orderBy('folder_name')
-            ->get();
-        
-        // Filter documents by folder if specified
-        $documentsQuery = Document::getFilteredDocuments(auth()->user(), $categoryFilter);
-        
-        if ($folderFilter !== null) {
-            if ($folderFilter === 'uncategorized') {
-                $documentsQuery->whereNull('folder_id');
-            } else {
-                $documentsQuery->where('folder_id', $folderFilter);
-            }
-        }
-        
-        $documents = $documentsQuery->paginate(15)->appends($request->query());
-        $recentDocuments = DocumentView::getRecentDocuments(auth()->id(), 5);
-        $favoriteDocuments = auth()->user()->documentFavorites()->with('document')->get()->pluck('document');
-        $categories = ['Policies', 'Forms', 'Reports', 'Memos', 'Research Papers', 'Other'];
-        
+
+        $folders = $this->documentService->getUserFolders(auth()->id());
+        $documents = $this->documentService->getFilteredDocuments(
+            auth()->user(), $categoryFilter, $folderFilter, $request->query()
+        );
+        $recentDocuments = $this->documentService->getRecentDocuments(auth()->id(), 5);
+        $favoriteDocuments = $this->documentService->getFavoriteDocuments(auth()->user());
+        $categories = $this->documentService->getCategories();
+
         return view('faculty.documents', compact('documents', 'recentDocuments', 'favoriteDocuments', 'categories', 'categoryFilter', 'folders', 'folderFilter'));
     }
 
@@ -181,35 +118,10 @@ class FacultyController extends Controller
             'folder_id' => 'nullable|exists:folders,folder_id',
         ]);
 
-        // Parse tags
-        $tags = !empty($validated['tags']) ? implode(',', array_map('trim', explode(',', $validated['tags']))) : '';
+        $uploadedCount = $this->documentService->uploadDocuments(
+            $validated, $request->file('documents'), auth()->id()
+        );
 
-        $uploadedCount = 0;
-        foreach ($request->file('documents') as $index => $file) {
-            $filename = time() . '_' . $index . '_' . $file->hashName();
-            Storage::disk('local')->putFileAs('documents', $file, $filename);
-
-            Document::create([
-                'uploaded_by' => auth()->id(),
-                'folder_id' => $validated['folder_id'] ?? null,
-                'document_title' => $validated['document_title'] . ($uploadedCount > 0 ? ' (' . ($uploadedCount + 1) . ')' : ''),
-                'file_path' => 'documents/' . $filename,
-                'document_type' => $validated['document_type'],
-                'category' => $validated['category'],
-                'tags' => $tags,
-            ]);
-            $uploadedCount++;
-        }
-
-        // Log document upload activity (visible to Faculty, Coordinator, Dean)
-        \App\Models\DashboardLog::create([
-            'user_id' => auth()->id(),
-            'activity' => 'Uploaded ' . $uploadedCount . ' document(s): ' . $validated['document_title'],
-            'activity_type' => 'document_upload',
-            'visibility' => 'own',
-        ]);
-
-        // Return JSON response for AJAX requests
         if ($request->expectsJson()) {
             return response()->json([
                 'success' => true,
@@ -222,44 +134,12 @@ class FacultyController extends Controller
 
     public function viewDocument($id)
     {
-        $document = Document::findOrFail($id);
-
-        if (!$document->canView(auth()->user())) {
-            abort(403, 'Unauthorized access');
-        }
-
-        if (!Storage::disk('local')->exists($document->file_path)) {
-            abort(404, 'File not found');
-        }
-
-        // Track document view
-        DocumentView::trackView(auth()->id(), $id);
-
-        $mimeType = Storage::disk('local')->mimeType($document->file_path);
-        $allowedMimes = ['application/pdf', 'image/jpeg', 'image/png'];
-        if (!in_array($mimeType, $allowedMimes)) {
-            $mimeType = 'application/octet-stream';
-        }
-
-        return Storage::disk('local')->response($document->file_path, null, [
-            'Content-Type' => $mimeType,
-            'Content-Disposition' => 'inline; filename="' . basename($document->file_path) . '"',
-        ]);
+        return $this->documentService->viewDocument($id, auth()->user(), true);
     }
 
     public function downloadDocument($id)
     {
-        $document = Document::findOrFail($id);
-
-        if (!$document->canView(auth()->user())) {
-            abort(403, 'Unauthorized access');
-        }
-
-        if (!Storage::disk('local')->exists($document->file_path)) {
-            abort(404, 'File not found');
-        }
-
-        return Storage::disk('local')->download($document->file_path, basename($document->file_path));
+        return $this->documentService->downloadDocument($id, auth()->user());
     }
 
     public function profile()
@@ -273,13 +153,9 @@ class FacultyController extends Controller
         return view('faculty.profile', compact('employee', 'performanceReports'));
     }
 
-    // Toggle document favorite
     public function toggleFavorite($id)
     {
-        $document = Document::findOrFail($id);
-        $isFavorited = $document->toggleFavorite(auth()->id());
-        
-        $message = $isFavorited ? 'Document added to favorites' : 'Document removed from favorites';
-        return response()->json(['success' => true, 'favorited' => $isFavorited, 'message' => $message]);
+        $result = $this->documentService->toggleFavorite($id, auth()->id());
+        return response()->json(['success' => true, 'favorited' => $result['favorited'], 'message' => $result['message']]);
     }
 }

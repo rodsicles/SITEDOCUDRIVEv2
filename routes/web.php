@@ -19,17 +19,17 @@ Route::post('/login', [AuthController::class, 'login'])->middleware('throttle:5,
 Route::post('/logout', [AuthController::class, 'logout'])->name('logout')->middleware('auth');
 
 // Global Search (All authenticated users)
-Route::get('/search', [SearchController::class, 'search'])->middleware('auth');
+Route::get('/search', [SearchController::class, 'search'])->middleware(['auth', 'no.back']);
 
 // Profile Management (All authenticated users)
-Route::middleware('auth')->prefix('profile')->name('profile.')->group(function () {
+Route::middleware(['auth', 'no.back'])->prefix('profile')->name('profile.')->group(function () {
     Route::get('/edit', [ProfileController::class, 'edit'])->name('edit');
     Route::post('/update', [ProfileController::class, 'update'])->name('update');
     Route::post('/change-password', [ProfileController::class, 'changePassword'])->name('change-password');
 });
 
 // Leave Management (All authenticated users)
-Route::middleware('auth')->prefix('leave')->name('leave.')->group(function () {
+Route::middleware(['auth', 'no.back'])->prefix('leave')->name('leave.')->group(function () {
     Route::get('/', [LeaveController::class, 'index'])->name('index');
     Route::get('/create', [LeaveController::class, 'create'])->name('create');
     Route::post('/', [LeaveController::class, 'store'])->name('store');
@@ -42,7 +42,7 @@ Route::middleware('auth')->prefix('leave')->name('leave.')->group(function () {
 });
 
 // Calendar/Events (All authenticated users can view, only Dean/Coordinator can create/edit)
-Route::middleware('auth')->prefix('calendar')->name('calendar.')->group(function () {
+Route::middleware(['auth', 'no.back'])->prefix('calendar')->name('calendar.')->group(function () {
     Route::get('/', [CalendarController::class, 'index'])->name('index');
     Route::get('/events/json', [CalendarController::class, 'getEvents'])->name('events.json');
     
@@ -60,7 +60,7 @@ Route::middleware('auth')->prefix('calendar')->name('calendar.')->group(function
 });
 
 // Announcements (All authenticated users can view, only Dean/Coordinator can create/edit/delete)
-Route::middleware('auth')->prefix('announcements')->name('announcements.')->group(function () {
+Route::middleware(['auth', 'no.back'])->prefix('announcements')->name('announcements.')->group(function () {
     Route::get('/', [AnnouncementController::class, 'index'])->name('index');
     Route::post('/{id}/read', [AnnouncementController::class, 'markAsRead'])->name('read');
 
@@ -76,7 +76,7 @@ Route::middleware('auth')->prefix('announcements')->name('announcements.')->grou
 });
 
 // Dean Routes
-Route::middleware(['auth', 'role:Dean'])->prefix('dean')->name('dean.')->group(function () {
+Route::middleware(['auth', 'no.back', 'role:Dean'])->prefix('dean')->name('dean.')->group(function () {
     Route::get('/dashboard', [DeanController::class, 'dashboard'])->name('dashboard');
     Route::get('/employees', [DeanController::class, 'employees'])->name('employees');
     Route::get('/employees/{id}/profile', [DeanController::class, 'viewEmployeeProfile'])->name('employee-profile');
@@ -95,7 +95,7 @@ Route::middleware(['auth', 'role:Dean'])->prefix('dean')->name('dean.')->group(f
 });
 
 // Program Coordinator Routes
-Route::middleware(['auth', 'role:Program Coordinator'])->prefix('coordinator')->name('coordinator.')->group(function () {
+Route::middleware(['auth', 'no.back', 'role:Program Coordinator'])->prefix('coordinator')->name('coordinator.')->group(function () {
     Route::post('/documents/{id}/favorite', [CoordinatorController::class, 'toggleFavorite'])->name('toggle-favorite');
     Route::get('/dashboard', [CoordinatorController::class, 'dashboard'])->name('dashboard');
     
@@ -129,7 +129,7 @@ Route::middleware(['auth', 'role:Program Coordinator'])->prefix('coordinator')->
 });
 
 // Faculty Employee Routes
-Route::middleware(['auth', 'role:Faculty Employee'])->prefix('faculty')->name('faculty.')->group(function () {
+Route::middleware(['auth', 'no.back', 'role:Faculty Employee'])->prefix('faculty')->name('faculty.')->group(function () {
     Route::get('/dashboard', [FacultyController::class, 'dashboard'])->name('dashboard');
     Route::get('/tasks', [FacultyController::class, 'tasks'])->name('tasks');
     Route::patch('/tasks/{id}/status', [FacultyController::class, 'updateTaskStatus'])->name('update-task-status');

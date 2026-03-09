@@ -12,7 +12,21 @@ class AuthController extends Controller
 {
     public function showLogin()
     {
-        return view('auth.login');
+        if (Auth::check()) {
+            $role = Auth::user()->role->role_name;
+            return match($role) {
+                'Dean'                => redirect()->route('dean.dashboard'),
+                'Program Coordinator' => redirect()->route('coordinator.dashboard'),
+                'Faculty Employee'    => redirect()->route('faculty.dashboard'),
+                default               => redirect()->route('login'),
+            };
+        }
+
+        return response()->view('auth.login')->withHeaders([
+            'Cache-Control' => 'no-store, no-cache, must-revalidate, max-age=0',
+            'Pragma'        => 'no-cache',
+            'Expires'       => '0',
+        ]);
     }
 
     public function login(Request $request)

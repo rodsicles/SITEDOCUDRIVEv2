@@ -1,24 +1,7 @@
 import './bootstrap';
 
-// Smooth scroll animations
+// Page ready - instant load, no slide-down animations
 document.addEventListener('DOMContentLoaded', function() {
-    // Animate stats cards on load
-    const statCards = document.querySelectorAll('.stat-card');
-    statCards.forEach((card, index) => {
-        setTimeout(() => {
-            card.style.opacity = '1';
-            card.style.transform = 'translateY(0)';
-        }, index * 100);
-    });
-
-    // Animate content cards
-    const contentCards = document.querySelectorAll('.content-card');
-    contentCards.forEach((card, index) => {
-        setTimeout(() => {
-            card.style.opacity = '1';
-            card.style.transform = 'translateY(0)';
-        }, (statCards.length * 100) + (index * 150));
-    });
 
     // Table row hover effect
     const tableRows = document.querySelectorAll('.data-table tbody tr');
@@ -136,8 +119,8 @@ style.textContent = `
     }
 
     .stat-card, .content-card {
-        opacity: 0;
-        transform: translateY(30px);
+        opacity: 1 !important;
+        transform: translateY(0) !important;
     }
 
     /* Smooth transitions */

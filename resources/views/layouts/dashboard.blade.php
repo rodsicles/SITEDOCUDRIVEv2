@@ -152,14 +152,7 @@
     @stack('styles')
 </head>
 <body class="overflow-x-hidden bg-gray-100 dark:bg-[#121212] text-gray-800 dark:text-gray-200" data-font-size="medium">
-    <!-- Loading Overlay -->
-    <div id="loadingOverlay" class="fixed inset-0 bg-white/85 dark:bg-black/85 backdrop-blur-sm z-[99999] hidden items-center justify-center">
-        <div class="text-center bg-white dark:bg-[#2a2a2a] p-10 px-12 rounded-3xl shadow-[0_20px_60px_rgba(0,0,0,0.3)]">
-            <div class="w-12 h-12 border-4 border-gray-300 dark:border-gray-600 border-t-[#028a0f] dark:border-t-[#02b815] rounded-full animate-spin mx-auto mb-5"></div>
-            <div id="loadingText" class="text-lg font-semibold text-gray-800 dark:text-gray-200 mb-2">Please wait</div>
-            <div id="loadingSubtext" class="text-sm text-gray-600 dark:text-gray-400">Processing...</div>
-        </div>
-    </div>
+
 
     <div class="flex min-h-screen">
         <!-- Sidebar Overlay (mobile) -->
@@ -439,21 +432,6 @@
                 searchInput.focus();
             }
         });
-
-        // Logout Form Loading Effect
-        const logoutForm = document.getElementById('logoutForm');
-        const loadingOverlay = document.getElementById('loadingOverlay');
-        const loadingText = document.getElementById('loadingText');
-        const loadingSubtext = document.getElementById('loadingSubtext');
-        
-        if (logoutForm) {
-            logoutForm.addEventListener('submit', function(e) {
-                loadingText.textContent = 'Logging out';
-                loadingSubtext.textContent = 'Please wait...';
-                loadingOverlay.classList.remove('hidden');
-                loadingOverlay.classList.add('flex');
-            });
-        }
 
         // Toast Notification System
         function showToast(message, type = 'success') {

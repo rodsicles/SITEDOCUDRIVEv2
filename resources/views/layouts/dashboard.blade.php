@@ -161,7 +161,7 @@
         <!-- Sidebar -->
         <aside class="w-64 bg-white dark:bg-[#2a2a2a] shadow-md fixed h-screen overflow-y-auto z-[1000] sidebar">
             <div class="p-6 bg-gradient-to-br from-[#028a0f] to-[#026a0c] text-white text-center">
-                <img src="{{ asset('uploads/documents/site_logo-removebg-preview.png') }}" alt="SITE Logo" class="w-16 h-16 mb-2 object-contain bg-white p-1 rounded-full shadow-lg border-2 border-white/80 mx-auto">
+                <img src="{{ asset('images/site-logo.png') }}" alt="SITE Logo" class="w-16 h-16 mb-2 object-contain bg-white p-1 rounded-full shadow-lg border-2 border-white/80 mx-auto">
                 <h2 class="text-base leading-tight mb-2 font-semibold">Employee Dashboard with Data Analytics</h2>
                 <p class="text-xs opacity-95 mb-1">School of Information Technology and Engineering</p>
                 <p class="text-xs font-semibold">{{ auth()->user()->role->role_name }}</p>

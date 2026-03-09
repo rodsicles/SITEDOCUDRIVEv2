@@ -26,7 +26,7 @@
             <button id="themeToggle" type="button" class="login-theme-toggle">
                 <i class="fas fa-moon"></i>
             </button>
-            <img src="{{ asset('uploads/documents/site_logo-removebg-preview.png') }}" alt="SITE Logo" class="login-header-logo">
+            <img src="{{ asset('images/site-logo.png') }}" alt="SITE Logo" class="login-header-logo">
             <h1 class="login-header-title">Employee Dashboard with Data Analytics</h1>
             <p class="login-header-subtitle">School of Information Technology and Engineering (SITE)</p>
             <p class="login-header-hint">Sign in to continue</p>

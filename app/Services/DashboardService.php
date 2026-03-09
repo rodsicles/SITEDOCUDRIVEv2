@@ -11,6 +11,7 @@ use App\Models\DashboardLog;
 use App\Models\PerformanceReport;
 use App\Models\Announcement;
 use App\Models\Notification;
+use Illuminate\Support\Facades\Cache;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Collection;
 
@@ -36,13 +37,15 @@ class DashboardService
      */
     public function getDeanStats(int $userId): array
     {
-        return [
-            'totalEmployees' => Employee::count(),
-            'totalDocuments' => Document::count(),
-            'leaveThisMonth' => $this->getLeaveCount($userId, 'month'),
-            'leaveThisYear' => $this->getLeaveCount($userId, 'year'),
-            'totalTasks' => Task::count(),
-        ];
+        return Cache::remember("dean_stats_{$userId}", now()->addMinutes(5), function () use ($userId) {
+            return [
+                'totalEmployees' => Employee::count(),
+                'totalDocuments' => Document::count(),
+                'leaveThisMonth' => $this->getLeaveCount($userId, 'month'),
+                'leaveThisYear' => $this->getLeaveCount($userId, 'year'),
+                'totalTasks' => Task::count(),
+            ];
+        });
     }
 
     /**
@@ -50,13 +53,15 @@ class DashboardService
      */
     public function getCoordinatorStats(int $userId): array
     {
-        return [
-            'totalFaculty' => User::where('role_id', 3)->count(),
-            'totalDocuments' => Document::where('uploaded_by', $userId)->count(),
-            'leaveThisMonth' => $this->getLeaveCount($userId, 'month'),
-            'leaveThisYear' => $this->getLeaveCount($userId, 'year'),
-            'totalTasks' => Task::where('assigned_by', $userId)->count(),
-        ];
+        return Cache::remember("coordinator_stats_{$userId}", now()->addMinutes(5), function () use ($userId) {
+            return [
+                'totalFaculty' => User::where('role_id', 3)->count(),
+                'totalDocuments' => Document::where('uploaded_by', $userId)->count(),
+                'leaveThisMonth' => $this->getLeaveCount($userId, 'month'),
+                'leaveThisYear' => $this->getLeaveCount($userId, 'year'),
+                'totalTasks' => Task::where('assigned_by', $userId)->count(),
+            ];
+        });
     }
 
     /**
@@ -64,14 +69,16 @@ class DashboardService
      */
     public function getFacultyStats(int $userId): array
     {
-        return [
-            'totalDocuments' => Document::where('uploaded_by', $userId)->count(),
-            'leaveThisMonth' => $this->getLeaveCount($userId, 'month'),
-            'leaveThisYear' => $this->getLeaveCount($userId, 'year'),
-            'completedTasks' => Task::where('assigned_to', $userId)
-                ->where('status', 'Completed')
-                ->count(),
-        ];
+        return Cache::remember("faculty_stats_{$userId}", now()->addMinutes(5), function () use ($userId) {
+            return [
+                'totalDocuments' => Document::where('uploaded_by', $userId)->count(),
+                'leaveThisMonth' => $this->getLeaveCount($userId, 'month'),
+                'leaveThisYear' => $this->getLeaveCount($userId, 'year'),
+                'completedTasks' => Task::where('assigned_to', $userId)
+                    ->where('status', 'Completed')
+                    ->count(),
+            ];
+        });
     }
 
     /**
@@ -79,14 +86,16 @@ class DashboardService
      */
     public function getMonthlyUsage(int $year): array
     {
-        $systemUsageData = DashboardLog::select(
-                DB::raw('MONTH(log_date) as month'),
-                DB::raw('COUNT(*) as activity_count')
-            )
-            ->whereYear('log_date', $year)
-            ->groupBy('month')
-            ->orderBy('month')
-            ->get();
+        $systemUsageData = Cache::remember("monthly_usage_{$year}", now()->addMinutes(15), function () use ($year) {
+            return DashboardLog::select(
+                    DB::raw('MONTH(log_date) as month'),
+                    DB::raw('COUNT(*) as activity_count')
+                )
+                ->whereYear('log_date', $year)
+                ->groupBy('month')
+                ->orderBy('month')
+                ->get();
+        });
 
         $monthlyUsage = array_fill(1, 12, 0);
         foreach ($systemUsageData as $data) {
@@ -157,26 +166,28 @@ class DashboardService
      */
     public function getAnalyticsData(): array
     {
-        $taskStatusData = Task::select('status', DB::raw('count(*) as count'))
-            ->groupBy('status')
-            ->get();
+        return Cache::remember('analytics_data', now()->addMinutes(10), function () {
+            $taskStatusData = Task::select('status', DB::raw('count(*) as count'))
+                ->groupBy('status')
+                ->get();
 
-        $departmentData = Employee::select('department', DB::raw('count(*) as count'))
-            ->whereNotNull('department')
-            ->groupBy('department')
-            ->get();
+            $departmentData = Employee::select('department', DB::raw('count(*) as count'))
+                ->whereNotNull('department')
+                ->groupBy('department')
+                ->get();
 
-        $monthlyPerformance = PerformanceReport::select(
-                DB::raw('DATE_FORMAT(report_date, "%Y-%m") as month'),
-                DB::raw('AVG(rating) as avg_rating'),
-                DB::raw('COUNT(*) as total_reports')
-            )
-            ->groupBy('month')
-            ->orderBy('month', 'desc')
-            ->take(12)
-            ->get();
+            $monthlyPerformance = PerformanceReport::select(
+                    DB::raw('DATE_FORMAT(report_date, "%Y-%m") as month'),
+                    DB::raw('AVG(rating) as avg_rating'),
+                    DB::raw('COUNT(*) as total_reports')
+                )
+                ->groupBy('month')
+                ->orderBy('month', 'desc')
+                ->take(12)
+                ->get();
 
-        return compact('taskStatusData', 'departmentData', 'monthlyPerformance');
+            return compact('taskStatusData', 'departmentData', 'monthlyPerformance');
+        });
     }
 
     /**

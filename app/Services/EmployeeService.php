@@ -12,6 +12,7 @@ use App\Models\Notification;
 use App\Models\DashboardLog;
 use App\Models\PerformanceReport;
 use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\Cache;
 use Illuminate\Support\Facades\Hash;
 
 class EmployeeService
@@ -139,7 +140,8 @@ class EmployeeService
             'pending' => $tasks->where('status', 'Pending')->count(),
         ];
 
-        $documents = Document::where('uploaded_by', $employee->user_id)
+        $documents = Document::select('document_id', 'uploaded_by', 'document_title', 'document_type', 'created_at')
+            ->where('uploaded_by', $employee->user_id)
             ->orderBy('created_at', 'desc')
             ->get();
 
@@ -148,12 +150,15 @@ class EmployeeService
             'byType' => $documents->groupBy('document_type')->map->count(),
         ];
 
-        $folders = Folder::where('user_id', $employee->user_id)
-            ->withCount('documents')
-            ->orderBy('folder_name')
-            ->get();
+        $folders = Cache::remember("employee_folders_{$employeeId}", now()->addMinutes(10), function () use ($employee) {
+            return Folder::where('user_id', $employee->user_id)
+                ->withCount('documents')
+                ->orderBy('folder_name')
+                ->get();
+        });
 
-        $reports = Report::where('submitted_by', $employee->user_id)
+        $reports = Report::select('report_id', 'submitted_by', 'report_category', 'created_at')
+            ->where('submitted_by', $employee->user_id)
             ->orderBy('created_at', 'desc')
             ->get();
 

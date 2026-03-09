@@ -19,16 +19,24 @@ class NotificationService
     }
 
     /**
-     * Notify multiple users with the same message.
+     * Notify multiple users with the same message (bulk insert).
      */
     public function notifyMany(array $userIds, string $message): void
     {
-        foreach ($userIds as $userId) {
-            Notification::create([
-                'user_id' => $userId,
-                'message' => $message,
-            ]);
+        if (empty($userIds)) {
+            return;
         }
+
+        $now = now();
+        $notifications = array_map(fn($userId) => [
+            'user_id' => $userId,
+            'message' => $message,
+            'is_read' => false,
+            'created_at' => $now,
+            'updated_at' => $now,
+        ], $userIds);
+
+        Notification::insert($notifications);
     }
 
     /**

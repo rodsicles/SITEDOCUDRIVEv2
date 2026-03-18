@@ -9,16 +9,6 @@
 
     @if($folders->count() > 0)
     <div class="folder-container p-6">
-        {{-- Create New Folder Card --}}
-        <div class="create-folder-card" onclick="openCreateFolderModal()">
-            <div class="text-center">
-                <div class="create-folder-icon">
-                    <i class="fas fa-folder-plus"></i>
-                </div>
-                <div class="create-folder-text">Create Folder</div>
-            </div>
-        </div>
-
         {{-- Uncategorized Folder --}}
         <a href="{{ request()->fullUrlWithQuery(['folder' => 'uncategorized']) }}" class="folder-card {{ $folderFilter === 'uncategorized' ? 'ring-2 ring-green-500' : '' }}">
             <div class="folder-icon text-gray-400">

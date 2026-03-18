@@ -6,27 +6,7 @@
 @section('page-subtitle', 'View all uploaded documents')
 
 @section('sidebar')
-    <a href="{{ route('dean.dashboard') }}" class="menu-item">
-        <i class="fas fa-chart-line"></i> Dashboard
-    </a>
-    <a href="{{ route('leave.index') }}" class="menu-item">
-        <i class="fas fa-calendar-alt"></i> Leave Requests
-    </a>
-    <a href="{{ route('calendar.index') }}" class="menu-item">
-        <i class="fas fa-calendar"></i> Calendar
-    </a>
-    <a href="{{ route('dean.employees') }}" class="menu-item">
-        <i class="fas fa-users"></i> Faculty Members
-    </a>
-    <a href="{{ route('dean.reports') }}" class="menu-item">
-        <i class="fas fa-file-alt"></i> Performance Reports
-    </a>
-    <a href="{{ route('dean.analytics') }}" class="menu-item">
-        <i class="fas fa-chart-pie"></i> Analytics
-    </a>
-    <a href="{{ route('dean.documents') }}" class="menu-item active">
-        <i class="fas fa-folder"></i> Documents
-    </a>
+    @include('partials.dean-sidebar')
 @endsection
 
 @section('content')
@@ -35,38 +15,26 @@
 
     <div class="content-card">
         <div class="card-header">
-            <h3 class="card-title"><i class="fas fa-folder-open mr-2"></i> All Documents</h3>
-            <span class="badge-info">{{ $documents->total() }} Files</span>
+            <h3 class="card-title">Available Documents</h3>
+            <span class="badge badge-info">{{ $documents->total() }} Files</span>
         </div>
 
-        <!-- Category Filter -->
-        <div class="flex flex-wrap gap-2 px-4 pb-4">
-            <a href="{{ route('dean.documents') }}" 
-               class="btn text-xs py-1.5 px-3 {{ !$categoryFilter ? 'btn-primary' : 'bg-gray-200 dark:bg-gray-700 text-gray-700 dark:text-gray-300' }}">
-                <i class="fas fa-th-list mr-1"></i> All
-            </a>
-            @foreach($categories as $cat)
-                @php
-                    $catColors = [
-                        'Policies' => '#1976d2',
-                        'Forms' => '#388e3c',
-                        'Reports' => '#d32f2f',
-                        'Memos' => '#f57c00',
-                        'Research Papers' => '#7b1fa2',
-                        'Other' => '#616161',
-                    ];
-                @endphp
-                <a href="{{ route('dean.documents', ['category' => $cat]) }}" 
-                   class="btn text-xs py-1.5 px-3 {{ $categoryFilter === $cat ? 'text-white' : 'bg-gray-200 dark:bg-gray-700 text-gray-700 dark:text-gray-300' }}"
-                   @if($categoryFilter === $cat) style="background: {{ $catColors[$cat] ?? '#616161' }}" @endif>
-                    {{ $cat }}
-                </a>
-            @endforeach
+        <!-- Category Filter Dropdown -->
+        <div class="documents-filter">
+            <label>Filter by Type:</label>
+            <select onchange="window.location.href = this.value" class="form-control text-sm max-w-xs">
+                <option value="{{ route('dean.documents') }}">All Documents</option>
+                @foreach($categories as $cat)
+                    <option value="{{ route('dean.documents', ['category' => $cat]) }}" {{ $categoryFilter === $cat ? 'selected' : '' }}>
+                        {{ $cat }}
+                    </option>
+                @endforeach
+            </select>
         </div>
         <table class="data-table">
             <thead>
                 <tr>
-                    <th style="width: 50px;"></th>
+                    <th class="w-12"></th>
                     <th>Document Title</th>
                     <th>Type</th>
                     <th>Uploaded By</th>
@@ -77,64 +45,55 @@
             <tbody>
                 @forelse($documents as $document)
                 <tr>
-                    <td class="text-center text-xl">
-                        @php
-                            $extension = strtolower(pathinfo($document->file_path, PATHINFO_EXTENSION));
-                        @endphp
-                        @if($extension === 'pdf')
-                            <i class="fas fa-file-pdf" style="color: #d32f2f;"></i>
-                        @elseif(in_array($extension, ['png', 'jpg', 'jpeg']))
-                            <i class="fas fa-file-image" style="color: #1976d2;"></i>
-                        @else
-                            <i class="fas fa-file" style="color: #757575;"></i>
-                        @endif
+                    <td>
+                        <div class="documents-icon">
+                            @php
+                                $extension = strtolower(pathinfo($document->file_path, PATHINFO_EXTENSION));
+                            @endphp
+                            @if($extension === 'pdf')
+                                <i class="fas fa-file-pdf"></i>
+                            @elseif(in_array($extension, ['png', 'jpg', 'jpeg']))
+                                <i class="fas fa-file-image"></i>
+                            @else
+                                <i class="fas fa-file"></i>
+                            @endif
+                        </div>
                     </td>
                     <td><strong>{{ $document->document_title }}</strong></td>
                     <td>
                         @if($document->category)
-                            @php
-                                $categoryColors = [
-                                    'Policies' => '#1976d2',
-                                    'Forms' => '#388e3c',
-                                    'Reports' => '#d32f2f',
-                                    'Memos' => '#f57c00',
-                                    'Research Papers' => '#7b1fa2',
-                                    'Other' => '#616161',
-                                ];
-                                $color = $categoryColors[$document->category] ?? '#616161';
-                            @endphp
-                            <span class="badge" style="background: {{ $color }}20; color: {{ $color }};">
-                                {{ $document->category }}
-                            </span>
+                            <span class="doc-category-badge">{{ $document->category }}</span>
                         @elseif($document->document_type === 'pdf')
-                            <span class="badge badge-danger">PDF Document</span>
+                            <span class="doc-category-badge">PDF Document</span>
                         @elseif($document->document_type === 'image')
-                            <span class="badge badge-info">Image File</span>
+                            <span class="doc-category-badge">Image File</span>
                         @else
-                            <span class="badge badge-info">{{ $document->document_type ?? 'General' }}</span>
+                            <span class="doc-category-badge">{{ $document->document_type ?? 'General' }}</span>
                         @endif
                     </td>
                     <td>{{ $document->uploader->employee->full_name ?? $document->uploader->username }}</td>
-                    <td>{{ $document->created_at->format('M d, Y h:i A') }}</td>
+                    <td>{{ $document->created_at->format('M d, Y') }}</td>
                     <td>
-                        <a href="{{ route('dean.view-document', $document->document_id) }}" target="_blank" class="btn btn-primary text-xs mr-1.5">
-                            <i class="fas fa-eye"></i> View
-                        </a>
-                        <a href="{{ route('dean.download-document', $document->document_id) }}" class="btn btn-success text-xs">
-                            <i class="fas fa-download"></i> Download
-                        </a>
+                        <div class="doc-action-btns">
+                            <a href="{{ route('dean.view-document', $document->document_id) }}" target="_blank" class="btn btn-primary text-xs">
+                                <i class="fas fa-eye"></i> View
+                            </a>
+                            <a href="{{ route('dean.download-document', $document->document_id) }}" class="btn btn-success text-xs">
+                                <i class="fas fa-download"></i> Download
+                            </a>
+                        </div>
                     </td>
                 </tr>
                 @empty
                 <tr>
-                    <td colspan="6" class="text-center text-gray-500 dark:text-gray-400">
+                    <td colspan="6" class="text-center text-gray-500 dark:text-gray-400 py-8">
                         No documents available
                     </td>
                 </tr>
                 @endforelse
             </tbody>
         </table>
-        
+
         <div class="mt-5">
             {{ $documents->links() }}
         </div>

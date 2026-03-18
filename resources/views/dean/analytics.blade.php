@@ -6,27 +6,7 @@
 @section('page-subtitle', 'Comprehensive insights and trends')
 
 @section('sidebar')
-    <a href="{{ route('dean.dashboard') }}" class="menu-item">
-        <i class="fas fa-chart-line"></i> Dashboard
-    </a>
-    <a href="{{ route('leave.index') }}" class="menu-item">
-        <i class="fas fa-calendar-alt"></i> Leave Requests
-    </a>
-    <a href="{{ route('calendar.index') }}" class="menu-item">
-        <i class="fas fa-calendar"></i> Calendar
-    </a>
-    <a href="{{ route('dean.employees') }}" class="menu-item">
-        <i class="fas fa-users"></i> Faculty Members
-    </a>
-    <a href="{{ route('dean.reports') }}" class="menu-item">
-        <i class="fas fa-file-alt"></i> Performance Reports
-    </a>
-    <a href="{{ route('dean.analytics') }}" class="menu-item active">
-        <i class="fas fa-chart-pie"></i> Analytics
-    </a>
-    <a href="{{ route('dean.documents') }}" class="menu-item">
-        <i class="fas fa-folder"></i> Documents
-    </a>
+    @include('partials.dean-sidebar')
 @endsection
 
 @section('content')
@@ -41,8 +21,8 @@
                         <span class="font-semibold text-sm text-gray-800 dark:text-gray-200">{{ $status->status }}</span>
                         <span class="text-sm text-gray-500 dark:text-gray-400">{{ $status->count }} tasks</span>
                     </div>
-                    <div class="bg-gray-200 dark:bg-gray-700 h-2.5 rounded-lg overflow-hidden">
-                        <div class="bg-gradient-to-r from-[#4caf50] to-[#028a0f] h-full rounded-lg" style="width: {{ ($status->count / $taskStatusData->sum('count')) * 100 }}%;"></div>
+                    <div class="bg-gray-200 dark:bg-gray-700 h-2.5 overflow-hidden">
+                        <div class="bg-gradient-to-r from-[#4caf50] to-[#028a0f] h-full" style="width: {{ ($status->count / $taskStatusData->sum('count')) * 100 }}%;"></div>
                     </div>
                 </div>
             @empty

@@ -6,27 +6,7 @@
 @section('page-subtitle', 'View and manage your assigned tasks')
 
 @section('sidebar')
-    <a href="{{ route('faculty.dashboard') }}" class="menu-item">
-        <i class="fas fa-chart-line"></i> Dashboard
-    </a>
-    <a href="{{ route('faculty.tasks') }}" class="menu-item active">
-        <i class="fas fa-tasks"></i> My Tasks
-    </a>
-    <a href="{{ route('leave.index') }}" class="menu-item">
-        <i class="fas fa-calendar-alt"></i> Leave Requests
-    </a>
-    <a href="{{ route('calendar.index') }}" class="menu-item">
-        <i class="fas fa-calendar"></i> Calendar
-    </a>
-    <a href="{{ route('faculty.notifications') }}" class="menu-item">
-        <i class="fas fa-bell"></i> Notifications
-    </a>
-    <a href="{{ route('faculty.profile') }}" class="menu-item">
-        <i class="fas fa-user"></i> My Profile
-    </a>
-    <a href="{{ route('faculty.documents') }}" class="menu-item">
-        <i class="fas fa-folder"></i> Documents
-    </a>
+    @include('partials.faculty-sidebar')
 @endsection
 
 @section('content')

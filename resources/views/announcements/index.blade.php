@@ -6,81 +6,12 @@
 @section('page-subtitle', 'Stay updated with the latest news and updates')
 
 @section('sidebar')
-    @if($sidebar['rolePrefix'] === 'dean')
-        <a href="{{ route('dean.dashboard') }}" class="menu-item">
-            <i class="fas fa-chart-line"></i> Dashboard
-        </a>
-        <a href="{{ route('leave.index') }}" class="menu-item">
-            <i class="fas fa-calendar-alt"></i> Leave Requests
-        </a>
-        <a href="{{ route('calendar.index') }}" class="menu-item">
-            <i class="fas fa-calendar"></i> Calendar
-        </a>
-        <a href="{{ route('announcements.index') }}" class="menu-item active">
-            <i class="fas fa-bullhorn"></i> Announcements
-        </a>
-        <a href="{{ route('dean.employees') }}" class="menu-item">
-            <i class="fas fa-users"></i> Faculty Members
-        </a>
-        <a href="{{ route('dean.reports') }}" class="menu-item">
-            <i class="fas fa-file-alt"></i> Performance Reports
-        </a>
-        <a href="{{ route('dean.analytics') }}" class="menu-item">
-            <i class="fas fa-chart-pie"></i> Analytics
-        </a>
-        <a href="{{ route('dean.documents') }}" class="menu-item">
-            <i class="fas fa-folder"></i> Documents
-        </a>
-    @elseif($sidebar['rolePrefix'] === 'coordinator')
-        <a href="{{ route('coordinator.dashboard') }}" class="menu-item">
-            <i class="fas fa-chart-line"></i> Dashboard
-        </a>
-        <a href="{{ route('coordinator.tasks') }}" class="menu-item">
-            <i class="fas fa-tasks"></i> Tasks
-        </a>
-        <a href="{{ route('leave.index') }}" class="menu-item">
-            <i class="fas fa-calendar-alt"></i> Leave Requests
-        </a>
-        <a href="{{ route('calendar.index') }}" class="menu-item">
-            <i class="fas fa-calendar"></i> Calendar
-        </a>
-        <a href="{{ route('announcements.index') }}" class="menu-item active">
-            <i class="fas fa-bullhorn"></i> Announcements
-        </a>
-        <a href="{{ route('coordinator.faculty') }}" class="menu-item">
-            <i class="fas fa-users"></i> Faculty Members
-        </a>
-        <a href="{{ route('coordinator.documents') }}" class="menu-item">
-            <i class="fas fa-folder"></i> Documents
-        </a>
+    @if(auth()->user()->isFaculty())
+        @include('partials.faculty-sidebar')
+    @elseif(auth()->user()->isProgramCoordinator())
+        @include('partials.coordinator-sidebar')
     @else
-        <a href="{{ route('faculty.dashboard') }}" class="menu-item">
-            <i class="fas fa-chart-line"></i> Dashboard
-        </a>
-        <a href="{{ route('faculty.tasks') }}" class="menu-item">
-            <i class="fas fa-tasks"></i> My Tasks
-        </a>
-        <a href="{{ route('leave.index') }}" class="menu-item">
-            <i class="fas fa-calendar-alt"></i> Leave Requests
-        </a>
-        <a href="{{ route('calendar.index') }}" class="menu-item">
-            <i class="fas fa-calendar"></i> Calendar
-        </a>
-        <a href="{{ route('announcements.index') }}" class="menu-item active">
-            <i class="fas fa-bullhorn"></i> Announcements
-        </a>
-        <a href="{{ route('faculty.notifications') }}" class="menu-item">
-            <i class="fas fa-bell"></i> Notifications
-            @if($sidebar['unreadNotifications'] > 0)
-            <span class="badge badge-danger ml-auto">{{ $sidebar['unreadNotifications'] }}</span>
-            @endif
-        </a>
-        <a href="{{ route('faculty.profile') }}" class="menu-item">
-            <i class="fas fa-user"></i> My Profile
-        </a>
-        <a href="{{ route('faculty.documents') }}" class="menu-item">
-            <i class="fas fa-folder"></i> Documents
-        </a>
+        @include('partials.dean-sidebar')
     @endif
 @endsection
 
@@ -112,7 +43,7 @@
         <div id="announcement-{{ $announcement->announcement_id }}"
              data-id="{{ $announcement->announcement_id }}"
              data-unread="{{ $announcement->isReadBy(auth()->user()) ? '0' : '1' }}"
-             class="mb-4 rounded-xl border
+             class="mb-4 border
                 {{ $announcement->is_pinned
                     ? 'border-l-4 border-[#028a0f] dark:border-[#02b815] bg-green-50 dark:bg-[#1a2a1a]'
                     : 'border-gray-200 dark:border-gray-700 bg-white dark:bg-[#1e1e1e]' }}
@@ -131,7 +62,7 @@
                 <div class="flex items-start justify-between gap-3 mb-3">
                     <div class="flex items-center gap-3 min-w-0">
                         {{-- Avatar --}}
-                        <div class="w-10 h-10 rounded-full flex items-center justify-center text-white text-sm font-bold flex-shrink-0"
+                        <div class="w-10 h-10 flex items-center justify-center text-white text-sm font-bold flex-shrink-0"
                              style="background:linear-gradient(135deg,#028a0f,#026a0c);">
                             {{ strtoupper(substr($announcement->author->username ?? 'A', 0, 2)) }}
                         </div>
@@ -140,11 +71,11 @@
                                 <span class="text-sm font-semibold text-gray-900 dark:text-gray-100 truncate">
                                     {{ $announcement->author->employee->full_name ?? $announcement->author->username }}
                                 </span>
-                                <span class="px-2 py-0.5 text-[0.65rem] font-semibold rounded-full bg-gray-100 dark:bg-gray-700 text-gray-600 dark:text-gray-300">
+                                <span class="px-2 py-0.5 text-[0.65rem] font-semibold bg-gray-100 dark:bg-gray-700 text-gray-600 dark:text-gray-300">
                                     {{ $announcement->author->role->role_name }}
                                 </span>
                                 @if(!$announcement->isReadBy(auth()->user()))
-                                <span class="w-2 h-2 rounded-full bg-blue-500 flex-shrink-0"></span>
+                                <span class="w-2 h-2 bg-blue-500 flex-shrink-0"></span>
                                 @endif
                             </div>
                             <div class="flex items-center gap-2 mt-1 flex-wrap text-xs text-gray-500 dark:text-gray-400">
@@ -155,12 +86,12 @@
                                 </span>
                                 @endif
                                 @if($announcement->department !== 'All')
-                                <span class="px-2 py-0.5 rounded-full bg-purple-100 dark:bg-purple-900/30 text-purple-700 dark:text-purple-300 text-[0.65rem] font-semibold">
+                                <span class="px-2 py-0.5 bg-purple-100 dark:bg-purple-900/30 text-purple-700 dark:text-purple-300 text-[0.65rem] font-semibold">
                                     <i class="fas fa-building mr-0.5"></i>{{ $announcement->department }}
                                 </span>
                                 @endif
                                 @if($announcement->expires_at)
-                                <span class="px-2 py-0.5 rounded-full bg-orange-100 dark:bg-orange-900/30 text-orange-700 dark:text-orange-300 text-[0.65rem] font-semibold"
+                                <span class="px-2 py-0.5 bg-orange-100 dark:bg-orange-900/30 text-orange-700 dark:text-orange-300 text-[0.65rem] font-semibold"
                                       title="Expires {{ $announcement->expires_at->format('M d, Y h:i A') }}">
                                     <i class="fas fa-hourglass-half mr-0.5"></i>Expires {{ $announcement->expires_at->diffForHumans() }}
                                 </span>
@@ -174,11 +105,11 @@
                     <div class="relative flex-shrink-0" id="menu-wrapper-{{ $announcement->announcement_id }}">
                         <button type="button"
                                 onclick="toggleMenu({{ $announcement->announcement_id }})"
-                                class="w-8 h-8 rounded-full flex items-center justify-center text-gray-400 dark:text-gray-500 hover:bg-gray-100 dark:hover:bg-gray-700 hover:text-gray-600 bg-transparent border-none cursor-pointer">
+                                class="w-8 h-8 flex items-center justify-center text-gray-400 dark:text-gray-500 hover:bg-gray-100 dark:hover:bg-gray-700 hover:text-gray-600 bg-transparent border-none cursor-pointer">
                             <i class="fas fa-ellipsis-v text-sm"></i>
                         </button>
                         <div id="menu-{{ $announcement->announcement_id }}"
-                             class="hidden absolute right-0 top-full mt-1 w-32 bg-white dark:bg-[#2a2a2a] rounded-lg shadow-xl border border-gray-200 dark:border-gray-700 z-50 overflow-hidden">
+                             class="hidden absolute right-0 top-full mt-1 w-32 bg-white dark:bg-[#2a2a2a] border border-gray-200 dark:border-gray-700 z-50 overflow-hidden">
                             @if($announcement->author_id === auth()->id())
                             <a href="{{ route('announcements.edit', $announcement->announcement_id) }}"
                                class="flex items-center gap-2 px-4 py-2.5 text-sm text-gray-700 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-gray-700 no-underline">

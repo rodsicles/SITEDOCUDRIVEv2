@@ -125,7 +125,7 @@
             <h3 class="card-title">Reset Password</h3>
         </div>
 
-        <div class="bg-orange-50 dark:bg-orange-900/20 p-4 rounded-lg mb-5 border-l-4 border-orange-500">
+        <div class="bg-orange-50 dark:bg-orange-900/20 p-4 mb-5 border-l-4 border-orange-500">
             <p class="m-0 text-orange-800 dark:text-orange-400 text-sm">
                 <i class="fas fa-exclamation-triangle"></i> <strong>Warning:</strong> Resetting the password will immediately change the faculty member's login credentials. Make sure to inform them of the new password.
             </p>

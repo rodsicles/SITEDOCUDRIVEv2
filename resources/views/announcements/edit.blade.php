@@ -123,7 +123,7 @@
                 <div class="form-group flex items-end pb-2">
                     <label class="flex items-center gap-3 cursor-pointer select-none">
                         <input type="hidden" name="is_pinned" value="0">
-                        <input type="checkbox" name="is_pinned" value="1" class="w-5 h-5 rounded border-gray-300 dark:border-gray-600 text-[#028a0f] focus:ring-[#028a0f]" {{ old('is_pinned', $announcement->is_pinned) ? 'checked' : '' }}>
+                        <input type="checkbox" name="is_pinned" value="1" class="w-5 h-5 border-gray-300 dark:border-gray-600 text-[#028a0f] focus:ring-[#028a0f]" {{ old('is_pinned', $announcement->is_pinned) ? 'checked' : '' }}>
                         <span class="form-label mb-0">
                             <i class="fas fa-thumbtack mr-1 text-[#028a0f]"></i> Pin this announcement
                         </span>

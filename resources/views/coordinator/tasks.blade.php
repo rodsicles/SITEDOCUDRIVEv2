@@ -6,24 +6,7 @@
 @section('page-subtitle', 'View and manage all assigned tasks')
 
 @section('sidebar')
-    <a href="{{ route('coordinator.dashboard') }}" class="menu-item">
-        <i class="fas fa-chart-line"></i> Dashboard
-    </a>
-    <a href="{{ route('coordinator.tasks') }}" class="menu-item active">
-        <i class="fas fa-tasks"></i> Tasks
-    </a>
-    <a href="{{ route('leave.index') }}" class="menu-item">
-        <i class="fas fa-calendar-alt"></i> Leave Requests
-    </a>
-    <a href="{{ route('calendar.index') }}" class="menu-item">
-        <i class="fas fa-calendar"></i> Calendar
-    </a>
-    <a href="{{ route('coordinator.faculty') }}" class="menu-item">
-        <i class="fas fa-users"></i> Faculty Members
-    </a>
-    <a href="{{ route('coordinator.documents') }}" class="menu-item">
-        <i class="fas fa-folder"></i> Documents
-    </a>
+    @include('partials.coordinator-sidebar')
 @endsection
 
 @section('content')

@@ -7,44 +7,11 @@
 
 @section('sidebar')
     @if(auth()->user()->isFaculty())
-    <a href="{{ route('faculty.dashboard') }}" class="menu-item">
-        <i class="fas fa-chart-line"></i> Dashboard
-    </a>
-    <a href="{{ route('faculty.tasks') }}" class="menu-item">
-        <i class="fas fa-tasks"></i> My Tasks
-    </a>
-    <a href="{{ route('leave.index') }}" class="menu-item active">
-        <i class="fas fa-calendar-alt"></i> Leave Requests
-    </a>
-    <a href="{{ route('calendar.index') }}" class="menu-item">
-        <i class="fas fa-calendar"></i> Calendar
-    </a>
-    <a href="{{ route('faculty.documents') }}" class="menu-item">
-        <i class="fas fa-folder"></i> Documents
-    </a>
+    @include('partials.faculty-sidebar')
     @elseif(auth()->user()->isProgramCoordinator())
-    <a href="{{ route('coordinator.dashboard') }}" class="menu-item">
-        <i class="fas fa-chart-line"></i> Dashboard
-    </a>
-    <a href="{{ route('coordinator.tasks') }}" class="menu-item">
-        <i class="fas fa-tasks"></i> Tasks
-    </a>
-    <a href="{{ route('leave.index') }}" class="menu-item active">
-        <i class="fas fa-calendar-alt"></i> Leave Requests
-    </a>
-    <a href="{{ route('calendar.index') }}" class="menu-item">
-        <i class="fas fa-calendar"></i> Calendar
-    </a>
+    @include('partials.coordinator-sidebar')
     @else
-    <a href="{{ route('dean.dashboard') }}" class="menu-item">
-        <i class="fas fa-chart-line"></i> Dashboard
-    </a>
-    <a href="{{ route('leave.index') }}" class="menu-item active">
-        <i class="fas fa-calendar-alt"></i> Leave Requests
-    </a>
-    <a href="{{ route('calendar.index') }}" class="menu-item">
-        <i class="fas fa-calendar"></i> Calendar
-    </a>
+    @include('partials.dean-sidebar')
     @endif
 @endsection
 
@@ -208,7 +175,7 @@
         <div class="modal-card max-w-md">
             <div class="p-6">
                 <div class="flex items-start gap-4 mb-6">
-                    <div class="flex-shrink-0 w-12 h-12 bg-green-100 dark:bg-green-900/30 rounded-full flex items-center justify-center">
+                    <div class="flex-shrink-0 w-12 h-12 bg-green-100 dark:bg-green-900/30 flex items-center justify-center">
                         <i class="fas fa-check-circle text-2xl text-green-600 dark:text-green-400"></i>
                     </div>
                     <div class="flex-1">
@@ -220,12 +187,12 @@
                 </div>
             </div>
             <div class="px-6 py-4 bg-gray-50 dark:bg-[#1f1f1f] border-t border-gray-200 dark:border-gray-700 flex gap-3 justify-end">
-                <button type="button" onclick="closeApproveModal()" 
-                        class="px-4 py-2 text-sm font-medium text-gray-700 dark:text-gray-300 bg-white dark:bg-gray-700 border border-gray-300 dark:border-gray-600 rounded-lg hover:bg-gray-50 dark:hover:bg-gray-600">
+                <button type="button" onclick="closeApproveModal()"
+                        class="px-4 py-2 text-sm font-medium text-gray-700 dark:text-gray-300 bg-white dark:bg-gray-700 border border-gray-300 dark:border-gray-600 hover:bg-gray-50 dark:hover:bg-gray-600">
                     Cancel
                 </button>
-                <button type="button" onclick="confirmApprove()" 
-                        class="px-4 py-2 text-sm font-medium text-white bg-green-600 hover:bg-green-700 dark:bg-green-700 dark:hover:bg-green-800 rounded-lg flex items-center gap-2">
+                <button type="button" onclick="confirmApprove()"
+                        class="px-4 py-2 text-sm font-medium text-white bg-green-600 hover:bg-green-700 dark:bg-green-700 dark:hover:bg-green-800 flex items-center gap-2">
                     <i class="fas fa-check"></i>
                     Yes, Approve
                 </button>
@@ -238,7 +205,7 @@
         <div class="modal-card max-w-md">
             <div class="p-6">
                 <div class="flex items-start gap-4 mb-6">
-                    <div class="flex-shrink-0 w-12 h-12 bg-red-100 dark:bg-red-900/30 rounded-full flex items-center justify-center">
+                    <div class="flex-shrink-0 w-12 h-12 bg-red-100 dark:bg-red-900/30 flex items-center justify-center">
                         <i class="fas fa-exclamation-triangle text-2xl text-red-600 dark:text-red-400"></i>
                     </div>
                     <div class="flex-1">
@@ -246,7 +213,7 @@
                         <p class="text-gray-600 dark:text-gray-400 text-sm mb-3">
                             Are you sure you want to cancel this leave request?
                         </p>
-                        <div class="bg-red-50 dark:bg-red-900/20 border border-red-200 dark:border-red-800 rounded-lg p-3">
+                        <div class="bg-red-50 dark:bg-red-900/20 border border-red-200 dark:border-red-800 p-3">
                             <p class="text-red-700 dark:text-red-300 text-xs font-medium flex items-center gap-2">
                                 <i class="fas fa-info-circle"></i>
                                 This action cannot be undone.
@@ -256,12 +223,12 @@
                 </div>
             </div>
             <div class="px-6 py-4 bg-gray-50 dark:bg-[#1f1f1f] border-t border-gray-200 dark:border-gray-700 flex gap-3 justify-end">
-                <button type="button" onclick="closeCancelModal()" 
-                        class="px-4 py-2 text-sm font-medium text-gray-700 dark:text-gray-300 bg-white dark:bg-gray-700 border border-gray-300 dark:border-gray-600 rounded-lg hover:bg-gray-50 dark:hover:bg-gray-600">
+                <button type="button" onclick="closeCancelModal()"
+                        class="px-4 py-2 text-sm font-medium text-gray-700 dark:text-gray-300 bg-white dark:bg-gray-700 border border-gray-300 dark:border-gray-600 hover:bg-gray-50 dark:hover:bg-gray-600">
                     Keep Request
                 </button>
-                <button type="button" onclick="confirmCancel()" 
-                        class="px-4 py-2 text-sm font-medium text-white bg-red-600 hover:bg-red-700 dark:bg-red-700 dark:hover:bg-red-800 rounded-lg flex items-center gap-2">
+                <button type="button" onclick="confirmCancel()"
+                        class="px-4 py-2 text-sm font-medium text-white bg-red-600 hover:bg-red-700 dark:bg-red-700 dark:hover:bg-red-800 flex items-center gap-2">
                     <i class="fas fa-times"></i>
                     Yes, Cancel Request
                 </button>

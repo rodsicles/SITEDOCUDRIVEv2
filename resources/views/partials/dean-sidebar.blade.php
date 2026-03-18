@@ -1,0 +1,25 @@
+{{-- Consistent Dean Sidebar - Appears on ALL Dean Pages --}}
+<a href="{{ route('dean.dashboard') }}" class="menu-item {{ request()->routeIs('dean.dashboard') ? 'active' : '' }}">
+    <i class="fas fa-chart-line"></i> Dashboard
+</a>
+<a href="{{ route('leave.index') }}" class="menu-item {{ request()->routeIs('leave.index', 'leave.create', 'leave.edit') ? 'active' : '' }}">
+    <i class="fas fa-calendar-alt"></i> Leave Requests
+</a>
+<a href="{{ route('calendar.index') }}" class="menu-item {{ request()->routeIs('calendar.index') ? 'active' : '' }}">
+    <i class="fas fa-calendar"></i> Calendar
+</a>
+<a href="{{ route('announcements.index') }}" class="menu-item {{ request()->routeIs('announcements.index', 'announcements.show') ? 'active' : '' }}">
+    <i class="fas fa-bullhorn"></i> Announcements
+</a>
+<a href="{{ route('dean.employees') }}" class="menu-item {{ request()->routeIs('dean.employees') ? 'active' : '' }}">
+    <i class="fas fa-users"></i> Faculty Members
+</a>
+<a href="{{ route('dean.reports') }}" class="menu-item {{ request()->routeIs('dean.reports') ? 'active' : '' }}">
+    <i class="fas fa-file-alt"></i> Performance Reports
+</a>
+<a href="{{ route('dean.analytics') }}" class="menu-item {{ request()->routeIs('dean.analytics') ? 'active' : '' }}">
+    <i class="fas fa-chart-pie"></i> Analytics
+</a>
+<a href="{{ route('dean.documents') }}" class="menu-item {{ request()->routeIs('dean.documents') ? 'active' : '' }}">
+    <i class="fas fa-folder"></i> Documents
+</a>

@@ -6,27 +6,7 @@
 @section('page-subtitle', 'Manage and view all faculty information')
 
 @section('sidebar')
-    <a href="{{ route('dean.dashboard') }}" class="menu-item">
-        <i class="fas fa-chart-line"></i> Dashboard
-    </a>
-    <a href="{{ route('leave.index') }}" class="menu-item">
-        <i class="fas fa-calendar-alt"></i> Leave Requests
-    </a>
-    <a href="{{ route('calendar.index') }}" class="menu-item">
-        <i class="fas fa-calendar"></i> Calendar
-    </a>
-    <a href="{{ route('dean.employees') }}" class="menu-item active">
-        <i class="fas fa-users"></i> Faculty Members
-    </a>
-    <a href="{{ route('dean.reports') }}" class="menu-item">
-        <i class="fas fa-file-alt"></i> Performance Reports
-    </a>
-    <a href="{{ route('dean.analytics') }}" class="menu-item">
-        <i class="fas fa-chart-pie"></i> Analytics
-    </a>
-    <a href="{{ route('dean.documents') }}" class="menu-item">
-        <i class="fas fa-folder"></i> Documents
-    </a>
+    @include('partials.dean-sidebar')
 @endsection
 
 @section('content')

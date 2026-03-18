@@ -185,9 +185,9 @@
             @endif
 
             <!-- Document Stats by Type -->
-            <div class="flex flex-wrap gap-2.5 mb-5 p-2.5 bg-gray-100 dark:bg-gray-800 rounded-lg">
+            <div class="flex flex-wrap gap-2.5 mb-5 p-2.5 bg-gray-100 dark:bg-gray-800">
                 @foreach($documentStats['byType'] as $type => $count)
-                    <div class="py-2 px-4 bg-[#028a0f] text-white rounded-full text-sm">
+                    <div class="py-2 px-4 bg-[#028a0f] text-white text-sm">
                         <i class="fas fa-file-alt"></i> {{ $type ?? 'Other' }}: <strong>{{ $count }}</strong>
                     </div>
                 @endforeach
@@ -210,7 +210,7 @@
                         <td><strong>{{ $document->document_title }}</strong></td>
                         <td>
                             @if($document->folder)
-                                <span class="px-2 py-1 rounded text-xs" style="background: {{ $document->folder->color }}20; color: {{ $document->folder->color }}; border: 1px solid {{ $document->folder->color }}">
+                                <span class="px-2 py-1 text-xs" style="background: {{ $document->folder->color }}20; color: {{ $document->folder->color }}; border: 1px solid {{ $document->folder->color }}">
                                     <i class="fas fa-folder"></i> {{ $document->folder->folder_name }}
                                 </span>
                             @else
@@ -257,9 +257,9 @@
         
         @if(isset($reports) && $reports->count() > 0)
             <!-- Report Stats by Category -->
-            <div class="flex flex-wrap gap-2.5 mb-5 p-2.5 bg-gray-100 dark:bg-gray-800 rounded-lg">
+            <div class="flex flex-wrap gap-2.5 mb-5 p-2.5 bg-gray-100 dark:bg-gray-800">
                 @foreach($reportStats['byCategory'] as $category => $count)
-                    <div class="py-2 px-4 bg-[#028a0f] text-white rounded-full text-sm">
+                    <div class="py-2 px-4 bg-[#028a0f] text-white text-sm">
                         <i class="fas fa-file-pdf"></i> {{ $category ?? 'Other' }}: <strong>{{ $count }}</strong>
                     </div>
                 @endforeach

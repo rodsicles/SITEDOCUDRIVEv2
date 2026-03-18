@@ -6,66 +6,47 @@
 @section('page-subtitle', 'Comprehensive overview of system analytics')
 
 @section('sidebar')
-    <a href="{{ route('dean.dashboard') }}" class="menu-item active">
-        <i class="fas fa-chart-line"></i> Dashboard
-    </a>
-    <a href="{{ route('leave.index') }}" class="menu-item">
-        <i class="fas fa-calendar-alt"></i> Leave Requests
-    </a>
-    <a href="{{ route('calendar.index') }}" class="menu-item">
-        <i class="fas fa-calendar"></i> Calendar
-    </a>
-    <a href="{{ route('announcements.index') }}" class="menu-item">
-        <i class="fas fa-bullhorn"></i> Announcements
-    </a>
-    <a href="{{ route('dean.employees') }}" class="menu-item">
-        <i class="fas fa-users"></i> Faculty Members
-    </a>
-    <a href="{{ route('dean.reports') }}" class="menu-item">
-        <i class="fas fa-file-alt"></i> Performance Reports
-    </a>
-    <a href="{{ route('dean.analytics') }}" class="menu-item">
-        <i class="fas fa-chart-pie"></i> Analytics
-    </a>
-    <a href="{{ route('dean.documents') }}" class="menu-item">
-        <i class="fas fa-folder"></i> Documents
-    </a>
+    @include('partials.dean-sidebar')
 @endsection
 
 @section('content')
-    <!-- Stats Grid -->
-    <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-5 mb-6">
-        <div class="stat-card">
-            <div class="stat-icon">
+    <!-- Minimalist Horizontal Stats -->
+    <div class="stats-grid-horizontal">
+        <div class="stat-item-horizontal">
+            <div class="stat-icon-horizontal">
                 <i class="fas fa-users"></i>
             </div>
-            <div class="stat-value">{{ $totalEmployees }}</div>
-            <div class="stat-label">Faculty Members</div>
+            <div class="stat-content-horizontal">
+                <div class="stat-number-label"><strong>{{ $totalEmployees }}</strong> Faculty Members</div>
+            </div>
         </div>
 
-        <div class="stat-card">
-            <div class="stat-icon">
+        <div class="stat-item-horizontal">
+            <div class="stat-icon-horizontal">
                 <i class="fas fa-file-alt"></i>
             </div>
-            <div class="stat-value">{{ $totalDocuments }}</div>
-            <div class="stat-label">Total Documents</div>
+            <div class="stat-content-horizontal">
+                <div class="stat-number-label"><strong>{{ $totalDocuments }}</strong> Total Documents</div>
+            </div>
         </div>
 
-        <div class="stat-card">
-            <div class="stat-icon">
+        <div class="stat-item-horizontal">
+            <div class="stat-icon-horizontal">
                 <i class="fas fa-calendar-times"></i>
             </div>
-            <div class="stat-value">{{ $leaveThisMonth }}</div>
-            <div class="stat-label">Total Leave</div>
-            <small class="block text-xs mt-1 text-gray-500 dark:text-gray-400">This month | {{ $leaveThisYear }} this year</small>
+            <div class="stat-content-horizontal">
+                <div class="stat-number-label"><strong>{{ $leaveThisMonth }}</strong> Total Leave</div>
+                <div class="stat-description">This month | {{ $leaveThisYear }} this year</div>
+            </div>
         </div>
 
-        <div class="stat-card">
-            <div class="stat-icon">
+        <div class="stat-item-horizontal">
+            <div class="stat-icon-horizontal">
                 <i class="fas fa-tasks"></i>
             </div>
-            <div class="stat-value">{{ $totalTasks }}</div>
-            <div class="stat-label">Total Tasks</div>
+            <div class="stat-content-horizontal">
+                <div class="stat-number-label"><strong>{{ $totalTasks }}</strong> Total Tasks</div>
+            </div>
         </div>
     </div>
 
@@ -73,12 +54,12 @@
     @include('partials.announcement-widget')
 
     <!-- System Usage Analytics Chart -->
-    <div class="bg-white dark:bg-[#2a2a2a] rounded-xl p-6 mb-6 shadow-md border border-gray-200 dark:border-gray-700">
+    <div class="bg-white dark:bg-[#2a2a2a] p-6 mb-6 border border-gray-200 dark:border-gray-700">
         <div class="flex justify-between items-center mb-5 pb-4 border-b-2 border-gray-200 dark:border-gray-700">
             <h3 class="text-lg font-semibold text-gray-800 dark:text-gray-200 m-0">
                 <i class="fas fa-chart-bar mr-2"></i>System Usage Analytics ({{ date('Y') }})
             </h3>
-            <span class="inline-block px-3 py-1 text-xs font-semibold rounded-md bg-green-100 dark:bg-green-900/30 text-green-800 dark:text-green-300">Monthly Activity</span>
+            <span class="inline-block px-3 py-1 text-xs font-semibold bg-green-100 dark:bg-green-900/30 text-green-800 dark:text-green-300">Monthly Activity</span>
         </div>
         
         <!-- Bar Chart -->
@@ -112,7 +93,6 @@
                     backgroundColor: 'rgba(2, 138, 15, 0.65)',
                     borderColor: '#028a0f',
                     borderWidth: 2,
-                    borderRadius: 8,
                     hoverBackgroundColor: '#028a0f'
                 }]
             },

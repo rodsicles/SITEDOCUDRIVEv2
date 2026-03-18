@@ -6,24 +6,7 @@
 @section('page-subtitle', 'Upload and manage documents')
 
 @section('sidebar')
-    <a href="{{ route('coordinator.dashboard') }}" class="menu-item">
-        <i class="fas fa-chart-line"></i> Dashboard
-    </a>
-    <a href="{{ route('coordinator.tasks') }}" class="menu-item">
-        <i class="fas fa-tasks"></i> Tasks
-    </a>
-    <a href="{{ route('leave.index') }}" class="menu-item">
-        <i class="fas fa-calendar-alt"></i> Leave Requests
-    </a>
-    <a href="{{ route('calendar.index') }}" class="menu-item">
-        <i class="fas fa-calendar"></i> Calendar
-    </a>
-    <a href="{{ route('coordinator.faculty') }}" class="menu-item">
-        <i class="fas fa-users"></i> Faculty Members
-    </a>
-    <a href="{{ route('coordinator.documents') }}" class="menu-item active">
-        <i class="fas fa-folder"></i> Documents
-    </a>
+    @include('partials.coordinator-sidebar')
 @endsection
 
 @section('content')
@@ -106,38 +89,26 @@
 
     <div class="content-card">
         <div class="card-header">
-            <h3 class="card-title">All Documents</h3>
+            <h3 class="card-title">Available Documents</h3>
             <span class="badge badge-info">{{ $documents->total() }} Files</span>
         </div>
 
-        <!-- Category Filter -->
-        <div class="flex flex-wrap gap-2 px-4 pb-4">
-            <a href="{{ route('coordinator.documents') }}" 
-               class="btn text-xs py-1.5 px-3 {{ !$categoryFilter ? 'btn-primary' : 'bg-gray-200 dark:bg-gray-700 text-gray-700 dark:text-gray-300' }}">
-                <i class="fas fa-th-list mr-1"></i> All
-            </a>
-            @foreach($categories as $cat)
-                @php
-                    $catColors = [
-                        'Policies' => '#1976d2',
-                        'Forms' => '#388e3c',
-                        'Reports' => '#d32f2f',
-                        'Memos' => '#f57c00',
-                        'Research Papers' => '#7b1fa2',
-                        'Other' => '#616161',
-                    ];
-                @endphp
-                <a href="{{ route('coordinator.documents', ['category' => $cat]) }}" 
-                   class="btn text-xs py-1.5 px-3 {{ $categoryFilter === $cat ? 'text-white' : 'bg-gray-200 dark:bg-gray-700 text-gray-700 dark:text-gray-300' }}"
-                   @if($categoryFilter === $cat) style="background: {{ $catColors[$cat] ?? '#616161' }}" @endif>
-                    {{ $cat }}
-                </a>
-            @endforeach
+        <!-- Category Filter Dropdown -->
+        <div class="documents-filter">
+            <label>Filter by Type:</label>
+            <select onchange="window.location.href = this.value" class="form-control text-sm max-w-xs">
+                <option value="{{ route('coordinator.documents') }}">All Documents</option>
+                @foreach($categories as $cat)
+                    <option value="{{ route('coordinator.documents', ['category' => $cat]) }}" {{ $categoryFilter === $cat ? 'selected' : '' }}>
+                        {{ $cat }}
+                    </option>
+                @endforeach
+            </select>
         </div>
         <table class="data-table">
             <thead>
                 <tr>
-                    <th style="width: 50px;"></th>
+                    <th class="w-12"></th>
                     <th>Document Title</th>
                     <th>Type</th>
                     <th>Uploaded By</th>
@@ -148,51 +119,40 @@
             <tbody>
                 @forelse($documents as $document)
                 <tr>
-                    <td style="text-align: center; font-size: 20px;">
-                        @php
-                            $extension = strtolower(pathinfo($document->file_path, PATHINFO_EXTENSION));
-                        @endphp
-                        @if($extension === 'pdf')
-                            <i class="fas fa-file-pdf text-red-700"></i>
-                        @elseif(in_array($extension, ['png', 'jpg', 'jpeg']))
-                            <i class="fas fa-file-image text-blue-700"></i>
-                        @else
-                            <i class="fas fa-file text-gray-600"></i>
-                        @endif
+                    <td>
+                        <div class="documents-icon">
+                            @php
+                                $extension = strtolower(pathinfo($document->file_path, PATHINFO_EXTENSION));
+                            @endphp
+                            @if($extension === 'pdf')
+                                <i class="fas fa-file-pdf"></i>
+                            @elseif(in_array($extension, ['png', 'jpg', 'jpeg']))
+                                <i class="fas fa-file-image"></i>
+                            @else
+                                <i class="fas fa-file"></i>
+                            @endif
+                        </div>
                     </td>
                     <td><strong>{{ $document->document_title }}</strong></td>
                     <td>
                         @if($document->category)
-                            @php
-                                $categoryColors = [
-                                    'Policies' => '#1976d2',
-                                    'Forms' => '#388e3c',
-                                    'Reports' => '#d32f2f',
-                                    'Memos' => '#f57c00',
-                                    'Research Papers' => '#7b1fa2',
-                                    'Other' => '#616161',
-                                ];
-                                $color = $categoryColors[$document->category] ?? '#616161';
-                            @endphp
-                            <span class="badge" style="background: {{ $color }}; color: white">
-                                {{ $document->category }}
-                            </span>
+                            <span class="doc-category-badge">{{ $document->category }}</span>
                         @elseif($document->document_type === 'pdf')
-                            <span class="badge" style="background: #d32f2f; color: white">PDF Document</span>
+                            <span class="doc-category-badge">PDF Document</span>
                         @elseif($document->document_type === 'image')
-                            <span class="badge" style="background: #1976d2; color: white">Image File</span>
+                            <span class="doc-category-badge">Image File</span>
                         @else
-                            <span class="badge badge-info">{{ $document->document_type ?? 'General' }}</span>
+                            <span class="doc-category-badge">{{ $document->document_type ?? 'General' }}</span>
                         @endif
                     </td>
                     <td>{{ $document->uploader->employee->full_name ?? $document->uploader->username }}</td>
                     <td>{{ $document->created_at->format('M d, Y') }}</td>
                     <td>
-                        <div class="flex gap-1.5 flex-wrap">
-                            <a href="{{ route('coordinator.view-document', $document->document_id) }}" target="_blank" class="btn btn-primary text-xs px-4 py-1.5">
+                        <div class="doc-action-btns">
+                            <a href="{{ route('coordinator.view-document', $document->document_id) }}" target="_blank" class="btn btn-primary text-xs">
                                 <i class="fas fa-eye"></i> View
                             </a>
-                            <a href="{{ route('coordinator.download-document', $document->document_id) }}" class="btn btn-success text-xs px-4 py-1.5">
+                            <a href="{{ route('coordinator.download-document', $document->document_id) }}" class="btn btn-success text-xs">
                                 <i class="fas fa-download"></i> Download
                             </a>
                             @if($document->uploaded_by === auth()->id())
@@ -205,14 +165,14 @@
                 </tr>
                 @empty
                 <tr>
-                    <td colspan="6" class="text-center text-gray-600 dark:text-gray-400">
-                        No documents uploaded yet
+                    <td colspan="6" class="text-center text-gray-500 dark:text-gray-400 py-8">
+                        No documents available
                     </td>
                 </tr>
                 @endforelse
             </tbody>
         </table>
-        
+
         <div class="mt-5">
             {{ $documents->links() }}
         </div>

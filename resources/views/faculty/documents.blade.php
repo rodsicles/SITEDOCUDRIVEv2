@@ -6,27 +6,7 @@
 @section('page-subtitle', 'Access shared documents')
 
 @section('sidebar')
-    <a href="{{ route('faculty.dashboard') }}" class="menu-item">
-        <i class="fas fa-chart-line"></i> Dashboard
-    </a>
-    <a href="{{ route('faculty.tasks') }}" class="menu-item">
-        <i class="fas fa-tasks"></i> My Tasks
-    </a>
-    <a href="{{ route('leave.index') }}" class="menu-item">
-        <i class="fas fa-calendar-alt"></i> Leave Requests
-    </a>
-    <a href="{{ route('calendar.index') }}" class="menu-item">
-        <i class="fas fa-calendar"></i> Calendar
-    </a>
-    <a href="{{ route('faculty.notifications') }}" class="menu-item">
-        <i class="fas fa-bell"></i> Notifications
-    </a>
-    <a href="{{ route('faculty.profile') }}" class="menu-item">
-        <i class="fas fa-user"></i> My Profile
-    </a>
-    <a href="{{ route('faculty.documents') }}" class="menu-item active">
-        <i class="fas fa-folder"></i> Documents
-    </a>
+    @include('partials.faculty-sidebar')
 @endsection
 
 @section('content')
@@ -112,29 +92,17 @@
             <span class="badge badge-info">{{ $documents->total() }} Files</span>
         </div>
 
-        <!-- Category Filter -->
-        <div class="flex flex-wrap gap-2 px-4 pb-4">
-            <a href="{{ route('faculty.documents') }}" 
-               class="btn text-xs py-1.5 px-3 {{ !$categoryFilter ? 'btn-primary' : 'bg-gray-200 dark:bg-gray-700 text-gray-700 dark:text-gray-300' }}">
-                <i class="fas fa-th-list mr-1"></i> All
-            </a>
-            @foreach($categories as $cat)
-                @php
-                    $catColors = [
-                        'Policies' => '#1976d2',
-                        'Forms' => '#388e3c',
-                        'Reports' => '#d32f2f',
-                        'Memos' => '#f57c00',
-                        'Research Papers' => '#7b1fa2',
-                        'Other' => '#616161',
-                    ];
-                @endphp
-                <a href="{{ route('faculty.documents', ['category' => $cat]) }}" 
-                   class="btn text-xs py-1.5 px-3 {{ $categoryFilter === $cat ? 'text-white' : 'bg-gray-200 dark:bg-gray-700 text-gray-700 dark:text-gray-300' }}"
-                   @if($categoryFilter === $cat) style="background: {{ $catColors[$cat] ?? '#616161' }}" @endif>
-                    {{ $cat }}
-                </a>
-            @endforeach
+        <!-- Category Filter Dropdown -->
+        <div class="px-4 pb-4 flex items-center gap-3">
+            <label class="text-sm font-medium text-gray-700 dark:text-gray-300 whitespace-nowrap">Filter by Type:</label>
+            <select onchange="window.location.href = this.value" class="form-control text-sm max-w-xs">
+                <option value="{{ route('faculty.documents') }}">All Documents</option>
+                @foreach($categories as $cat)
+                    <option value="{{ route('faculty.documents', ['category' => $cat]) }}" {{ $categoryFilter === $cat ? 'selected' : '' }}>
+                        {{ $cat }}
+                    </option>
+                @endforeach
+            </select>
         </div>
         <table class="data-table">
             <thead>
@@ -151,7 +119,7 @@
                 @forelse($documents as $document)
                 <tr>
                     <td>
-                        <div class="w-9 h-9 flex items-center justify-center text-lg rounded-lg bg-gray-100 dark:bg-gray-700">
+                        <div class="w-9 h-9 flex items-center justify-center text-lg bg-gray-100 dark:bg-gray-700">
                             @php
                                 $extension = strtolower(pathinfo($document->file_path, PATHINFO_EXTENSION));
                             @endphp
@@ -169,14 +137,14 @@
                         @if($document->category)
                             @php
                                 $categoryColors = [
-                                    'Policies' => '#1976d2',
-                                    'Forms' => '#388e3c',
-                                    'Reports' => '#d32f2f',
-                                    'Memos' => '#f57c00',
-                                    'Research Papers' => '#7b1fa2',
-                                    'Other' => '#616161',
+                                    'Policies' => '#028a0f',
+                                    'Forms' => '#028a0f',
+                                    'Reports' => '#028a0f',
+                                    'Memos' => '#028a0f',
+                                    'Research Papers' => '#028a0f',
+                                    'Other' => '#028a0f',
                                 ];
-                                $color = $categoryColors[$document->category] ?? '#616161';
+                                $color = $categoryColors[$document->category] ?? '#028a0f';
                             @endphp
                             <span class="badge" style="background: {{ $color }}; color: white;">
                                 {{ $document->category }}
@@ -266,7 +234,7 @@
         }
     });
 
-    document.getElementById('uploadForm').addEventListener('submit', async function(e) {
+-    document.getElementById('uploadForm').addEventListener('submit', async function(e) {
         e.preventDefault(); // Prevent default form submission
         
         const documentType = document.getElementById('documentType').value;

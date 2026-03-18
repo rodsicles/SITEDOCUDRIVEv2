@@ -6,63 +6,47 @@
 @section('page-subtitle', 'Manage tasks and faculty performance')
 
 @section('sidebar')
-    <a href="{{ route('coordinator.dashboard') }}" class="menu-item active">
-        <i class="fas fa-chart-line"></i> Dashboard
-    </a>
-    <a href="{{ route('coordinator.tasks') }}" class="menu-item">
-        <i class="fas fa-tasks"></i> Tasks
-    </a>
-    <a href="{{ route('leave.index') }}" class="menu-item">
-        <i class="fas fa-calendar-alt"></i> Leave Requests
-    </a>
-    <a href="{{ route('calendar.index') }}" class="menu-item">
-        <i class="fas fa-calendar"></i> Calendar
-    </a>
-    <a href="{{ route('announcements.index') }}" class="menu-item">
-        <i class="fas fa-bullhorn"></i> Announcements
-    </a>
-    <a href="{{ route('coordinator.faculty') }}" class="menu-item">
-        <i class="fas fa-users"></i> Faculty Members
-    </a>
-    <a href="{{ route('coordinator.documents') }}" class="menu-item">
-        <i class="fas fa-folder"></i> Documents
-    </a>
+    @include('partials.coordinator-sidebar')
 @endsection
 
 @section('content')
-    <!-- Stats Grid -->
-    <div class="stats-grid">
-        <div class="stat-card">
-            <div class="stat-icon">
+    <!-- Minimalist Horizontal Stats -->
+    <div class="stats-grid-horizontal">
+        <div class="stat-item-horizontal">
+            <div class="stat-icon-horizontal">
                 <i class="fas fa-users"></i>
             </div>
-            <div class="stat-value">{{ $totalFaculty }}</div>
-            <div class="stat-label">Total Faculty</div>
+            <div class="stat-content-horizontal">
+                <div class="stat-number-label"><strong>{{ $totalFaculty }}</strong> Total Faculty</div>
+            </div>
         </div>
 
-        <div class="stat-card">
-            <div class="stat-icon">
+        <div class="stat-item-horizontal">
+            <div class="stat-icon-horizontal">
                 <i class="fas fa-file-alt"></i>
             </div>
-            <div class="stat-value">{{ $totalDocuments }}</div>
-            <div class="stat-label">Total Documents</div>
+            <div class="stat-content-horizontal">
+                <div class="stat-number-label"><strong>{{ $totalDocuments }}</strong> Total Documents</div>
+            </div>
         </div>
 
-        <div class="stat-card">
-            <div class="stat-icon">
+        <div class="stat-item-horizontal">
+            <div class="stat-icon-horizontal">
                 <i class="fas fa-calendar-times"></i>
             </div>
-            <div class="stat-value">{{ $leaveThisMonth }}</div>
-            <div class="stat-label">Total Leave</div>
-            <small style="display: block; font-size: 0.75rem; margin-top: 0.25rem; color: #6b7280;">This month | {{ $leaveThisYear }} this year</small>
+            <div class="stat-content-horizontal">
+                <div class="stat-number-label"><strong>{{ $leaveThisMonth }}</strong> Total Leave</div>
+                <div class="stat-description">This month | {{ $leaveThisYear }} this year</div>
+            </div>
         </div>
 
-        <div class="stat-card">
-            <div class="stat-icon">
+        <div class="stat-item-horizontal">
+            <div class="stat-icon-horizontal">
                 <i class="fas fa-tasks"></i>
             </div>
-            <div class="stat-value">{{ $totalTasks }}</div>
-            <div class="stat-label">Total Tasks</div>
+            <div class="stat-content-horizontal">
+                <div class="stat-number-label"><strong>{{ $totalTasks }}</strong> Total Tasks</div>
+            </div>
         </div>
     </div>
 
@@ -189,7 +173,7 @@
                     <td>
                         {{ $activity->activity }}
                         @if($activity->activity_type)
-                            <span class="inline-block px-2 py-1 text-xs font-semibold rounded bg-gray-100 dark:bg-gray-700 text-gray-700 dark:text-gray-300 ml-1">
+                            <span class="inline-block px-2 py-1 text-xs font-semibold bg-gray-100 dark:bg-gray-700 text-gray-700 dark:text-gray-300 ml-1">
                                 {{ ucfirst(str_replace('_', ' ', $activity->activity_type)) }}
                             </span>
                         @endif

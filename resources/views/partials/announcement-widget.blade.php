@@ -12,7 +12,7 @@
              {{ !$announcement->isReadBy(auth()->user()) ? 'bg-blue-50 dark:bg-blue-900/10' : '' }}">
 
             {{-- Avatar --}}
-            <div class="w-8 h-8 rounded-full flex items-center justify-center text-white text-xs font-bold flex-shrink-0"
+            <div class="w-8 h-8 flex items-center justify-center text-white text-xs font-bold flex-shrink-0"
                  style="background:linear-gradient(135deg,#028a0f,#026a0c);">
                 {{ strtoupper(substr($announcement->author->username ?? 'A', 0, 1)) }}
             </div>
@@ -24,7 +24,7 @@
                     @endif
                     <span class="font-semibold text-gray-800 dark:text-gray-200 text-sm truncate">{{ $announcement->title }}</span>
                     @if(!$announcement->isReadBy(auth()->user()))
-                    <span class="w-2 h-2 rounded-full bg-blue-500 flex-shrink-0"></span>
+                    <span class="w-2 h-2 bg-blue-500 flex-shrink-0"></span>
                     @endif
                 </div>
                 <p class="text-gray-500 dark:text-gray-400 text-xs mt-0.5 line-clamp-2 m-0">{{ Str::limit($announcement->body, 100) }}</p>

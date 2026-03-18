@@ -864,48 +864,59 @@ body {
    Folder Management Styles
    ======================================== */
 
-/* Folder Container */
+/* Folder Header Container - NEW COMPACT DESIGN (No New Folder Button) */
+.folder-header {
+    @apply flex items-center mb-3 pb-3 border-b border-gray-200 dark:border-gray-700;
+}
+
+/* Folder Title */
+.folder-title {
+    @apply text-base font-semibold text-gray-800 dark:text-gray-200;
+}
+
+/* Folder Container - Horizontal Compact Wrap */
 .folder-container {
-    @apply grid gap-4;
-    grid-template-columns: repeat(auto-fill, minmax(200px, 1fr));
+    @apply flex gap-2 flex-wrap p-0 m-0;
 }
 
-/* Folder Card */
+/* Folder Card - Horizontal Compact MINIMALIST */
 .folder-card {
-    @apply bg-white dark:bg-[#2a2a2a] p-5 border border-gray-200 dark:border-gray-700 cursor-pointer;
+    @apply bg-white dark:bg-[#2a2a2a] px-3 py-2 border border-gray-200 dark:border-gray-700;
+    @apply flex items-center gap-2 whitespace-nowrap flex-shrink-0;
+    @apply cursor-pointer;
 }
 
-/* Folder Card */
-.folder-card {
-    @apply bg-white dark:bg-[#2a2a2a] p-5 border border-gray-200 dark:border-gray-700 cursor-pointer;
-}
-
-/* Folder Icon */
+/* Folder Icon - Small */
 .folder-icon {
-    @apply text-5xl mb-3;
+    @apply text-xl flex-shrink-0;
+}
+
+/* Folder Info */
+.folder-info {
+    @apply flex flex-col gap-0 min-w-0;
 }
 
 /* Folder Name */
 .folder-name {
-    @apply text-base font-semibold text-gray-800 dark:text-gray-200 mb-1 truncate;
+    @apply text-sm font-bold text-gray-800 dark:text-gray-200 truncate;
 }
 
 /* Folder Count */
 .folder-count {
-    @apply text-sm text-gray-500 dark:text-gray-400;
+    @apply text-xs text-gray-500 dark:text-gray-400;
 }
 
 /* Folder Actions */
 .folder-actions {
-    @apply flex gap-2 mt-4 pt-3 border-t border-gray-100 dark:border-gray-700;
+    @apply flex gap-1 flex-shrink-0 ml-1;
 }
 
 .folder-rename-btn {
-    @apply flex-1 px-3 py-2 text-xs font-medium bg-blue-50 dark:bg-blue-900/20 text-blue-600 dark:text-blue-400;
+    @apply px-1.5 py-0.5 text-xs font-medium bg-blue-50 dark:bg-blue-900/20 text-blue-600 dark:text-blue-400 hover:bg-blue-100 dark:hover:bg-blue-900/30 transition-colors border border-blue-200 dark:border-blue-800;
 }
 
 .folder-delete-btn {
-    @apply flex-1 px-3 py-2 text-xs font-medium bg-red-50 dark:bg-red-900/20 text-red-600 dark:text-red-400;
+    @apply px-1.5 py-0.5 text-xs font-medium bg-red-50 dark:bg-red-900/20 text-red-600 dark:text-red-400 hover:bg-red-100 dark:hover:bg-red-900/30 transition-colors border border-red-200 dark:border-red-800;
 }
 
 /* Uncategorized Section */
@@ -1048,6 +1059,69 @@ body {
 
 .folder-filter-btn i {
     @apply text-sm;
+}
+
+/* ============================================
+   NEW FOLDER DESIGN - COMPACT HORIZONTAL CARDS
+   ============================================ */
+
+/* Header with Title and New Folder Button */
+.folder-header-new {
+    @apply flex items-center justify-between px-6 py-4;
+}
+
+.folder-title-new {
+    @apply text-lg font-semibold text-gray-800 dark:text-gray-200;
+}
+
+/* Container for horizontal folder cards */
+.folder-container-new {
+    @apply flex gap-3 flex-wrap px-6 py-4;
+}
+
+/* Individual folder card */
+.folder-card-new {
+    @apply bg-white dark:bg-[#2a2a2a] border border-gray-200 dark:border-gray-700;
+    @apply flex items-center gap-3 px-4 py-3 flex-shrink-0;
+    @apply min-w-max cursor-pointer;
+}
+
+/* Link inside folder card */
+.folder-card-link-new {
+    @apply flex items-center gap-3 no-underline flex-1;
+}
+
+/* Folder icon with background */
+.folder-icon-new {
+    @apply flex items-center justify-center text-xl w-10 h-10 flex-shrink-0;
+    background-color: #6c757d;
+    color: white;
+}
+
+/* Folder info (name and count) */
+.folder-info-new {
+    @apply flex flex-col gap-0.5 min-w-0;
+}
+
+/* Folder name */
+.folder-name-new {
+    @apply text-sm font-bold text-gray-800 dark:text-gray-200;
+}
+
+/* File count */
+.folder-count-new {
+    @apply text-xs text-gray-500 dark:text-gray-400;
+}
+
+/* Action buttons container */
+.folder-actions-new {
+    @apply flex gap-1.5 flex-shrink-0 ml-2 pl-2 border-l border-gray-200 dark:border-gray-700;
+}
+
+/* Individual action button */
+.folder-action-btn {
+    @apply text-gray-600 dark:text-gray-400 text-sm px-2 py-1 cursor-pointer;
+    @apply hover:text-blue-600 dark:hover:text-blue-400;
 }
 
 /* Line clamp utility */

@@ -1,59 +1,74 @@
 {{-- Folder Management Section --}}
 <div class="content-card mb-6">
-    <div class="card-header">
-        <h3 class="card-title"><i class="fas fa-folder-tree mr-2"></i> My Folders</h3>
+    {{-- Header with Title and New Folder Button --}}
+    <div class="folder-header-new px-6 py-4 flex items-center justify-between border-b border-gray-200 dark:border-gray-700">
+        <h3 class="folder-title-new"><i class="fas fa-folder-tree mr-2"></i> My Folders</h3>
         <button onclick="openCreateFolderModal()" class="btn btn-success">
-            <i class="fas fa-folder-plus"></i> New Folder
+            <i class="fas fa-plus mr-1"></i> New Folder
         </button>
     </div>
 
     @if($folders->count() > 0)
-    <div class="folder-container p-6">
+    <div class="folder-container-new px-6 py-4 flex gap-3 flex-wrap">
         {{-- Uncategorized Folder --}}
-        <a href="{{ request()->fullUrlWithQuery(['folder' => 'uncategorized']) }}" class="folder-card {{ $folderFilter === 'uncategorized' ? 'ring-2 ring-green-500' : '' }}">
-            <div class="folder-icon text-gray-400">
-                <i class="fas fa-folder-open"></i>
+        <div class="folder-card-new">
+            <a href="{{ request()->fullUrlWithQuery(['folder' => 'uncategorized']) }}" class="folder-card-link-new">
+                <div class="folder-icon-new text-gray-400">
+                    <i class="fas fa-folder-open"></i>
+                </div>
+                <div class="folder-info-new">
+                    <div class="folder-name-new">Uncategorized</div>
+                    <div class="folder-count-new">
+                        @php
+                            $uncategorizedCount = \App\Models\Document::where('uploaded_by', auth()->id())
+                                ->whereNull('folder_id')
+                                ->count();
+                        @endphp
+                        {{ $uncategorizedCount }} Files
+                    </div>
+                </div>
+            </a>
+            <div class="folder-actions-new">
+                <button onclick="event.stopPropagation(); openRenameFolderModal('uncategorized', 'Uncategorized', '#6c757d')" class="folder-action-btn" title="Rename">
+                    <i class="fas fa-edit"></i>
+                </button>
+                <button disabled class="folder-action-btn" style="opacity: 0.5; cursor: not-allowed;" title="Cannot delete">
+                    <i class="fas fa-trash"></i>
+                </button>
             </div>
-            <div class="folder-name">Uncategorized</div>
-            <div class="folder-count">
-                @php
-                    $uncategorizedCount = \App\Models\Document::where('uploaded_by', auth()->id())
-                        ->whereNull('folder_id')
-                        ->count();
-                @endphp
-                {{ $uncategorizedCount }} file(s)
-            </div>
-        </a>
+        </div>
 
         {{-- User Folders --}}
         @foreach($folders as $folder)
-        <div class="folder-card {{ $folder->folder_id == $folderFilter ? 'ring-2 ring-green-500' : '' }}">
-            <a href="{{ request()->fullUrlWithQuery(['folder' => $folder->folder_id]) }}" class="block">
-                <div class="folder-icon" style="color: {{ $folder->color }}">
+        <div class="folder-card-new">
+            <a href="{{ request()->fullUrlWithQuery(['folder' => $folder->folder_id]) }}" class="folder-card-link-new">
+                <div class="folder-icon-new" style="background-color: {{ $folder->color }}; color: white;">
                     <i class="fas fa-folder"></i>
                 </div>
-                <div class="folder-name">{{ $folder->folder_name }}</div>
-                <div class="folder-count">{{ $folder->documents_count }} file(s)</div>
+                <div class="folder-info-new">
+                    <div class="folder-name-new">{{ $folder->folder_name }}</div>
+                    <div class="folder-count-new">{{ $folder->documents_count }} Files</div>
+                </div>
             </a>
-            <div class="folder-actions">
-                <button onclick="event.stopPropagation(); openRenameFolderModal({{ $folder->folder_id }}, '{{ addslashes($folder->folder_name) }}', '{{ $folder->color }}')" class="folder-rename-btn">
-                    <i class="fas fa-edit mr-1"></i> Rename
+            <div class="folder-actions-new">
+                <button onclick="event.stopPropagation(); openRenameFolderModal({{ $folder->folder_id }}, '{{ addslashes($folder->folder_name) }}', '{{ $folder->color }}')" class="folder-action-btn" title="Rename">
+                    <i class="fas fa-edit"></i>
                 </button>
-                <button onclick="event.stopPropagation(); deleteFolder({{ $folder->folder_id }}, '{{ addslashes($folder->folder_name) }}')" class="folder-delete-btn">
-                    <i class="fas fa-trash mr-1"></i> Delete
+                <button onclick="event.stopPropagation(); deleteFolder({{ $folder->folder_id }}, '{{ addslashes($folder->folder_name) }}')" class="folder-action-btn" title="Delete">
+                    <i class="fas fa-trash"></i>
                 </button>
             </div>
         </div>
         @endforeach
     </div>
     @else
-    <div class="empty-state">
-        <div class="empty-state-icon">
+    <div class="empty-state p-12 text-center">
+        <div class="empty-state-icon mb-3 text-6xl text-gray-300 dark:text-gray-600">
             <i class="fas fa-folder-open"></i>
         </div>
-        <div class="empty-state-text mb-4">No folders yet. Create your first folder to organize documents.</div>
-        <button onclick="openCreateFolderModal()" class="btn btn-primary">
-            <i class="fas fa-folder-plus mr-2"></i> Create Your First Folder
+        <div class="empty-state-text mb-6 text-gray-600 dark:text-gray-400">No folders yet. Create your first folder to organize documents.</div>
+        <button onclick="openCreateFolderModal()" class="btn btn-success">
+            <i class="fas fa-plus mr-1"></i> Create Your First Folder
         </button>
     </div>
     @endif

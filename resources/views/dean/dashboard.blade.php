@@ -209,45 +209,77 @@
     <!-- Recent Activities -->
     <div class="content-card">
         <div class="card-header">
-            <h3 class="card-title">Recent Activities</h3>
-            <span class="badge badge-info">Last 10 Activities</span>
+            <div class="flex justify-between items-center w-full">
+                <h3 class="card-title">Recent Activities</h3>
+                <div class="flex gap-3 items-center">
+                    <span class="badge badge-info">Last 10 Activities</span>
+                    <button type="button" onclick="toggleDeanRecentActivities()" class="bg-gray-200 dark:bg-gray-700 text-gray-700 dark:text-gray-300 px-4 py-2 text-sm font-medium cursor-pointer border-0">
+                        <i id="deanRecentActivitiesIcon" class="fas fa-chevron-up"></i>
+                        <span id="deanRecentActivitiesText">Hide</span>
+                    </button>
+                </div>
+            </div>
         </div>
-        <table class="data-table">
-            <thead>
-                <tr>
-                    <th>User</th>
-                    <th>Activity</th>
-                    <th>Date & Time</th>
-                </tr>
-            </thead>
-            <tbody>
-                @forelse($recentActivities as $activity)
-                <tr>
-                    <td>
-                        <strong>{{ $activity->user->employee->full_name ?? $activity->user->username ?? 'System' }}</strong>
-                        @if($activity->targetUser)
-                            <i class="fas fa-arrow-right text-gray-500 dark:text-gray-400 mx-1.5"></i>
-                            <span class="text-gray-500 dark:text-gray-400">{{ $activity->targetUser->employee->full_name ?? $activity->targetUser->username }}</span>
-                        @endif
-                    </td>
-                    <td>
-                        {{ $activity->activity }}
-                        @if($activity->activity_type)
-                            <span class="badge badge-neutral text-[0.7rem] ml-1.5">
-                                {{ ucfirst(str_replace('_', ' ', $activity->activity_type)) }}
-                            </span>
-                        @endif
-                    </td>
-                    <td>{{ $activity->log_date->format('M d, Y h:i A') }}</td>
-                </tr>
-                @empty
-                <tr>
-                    <td colspan="3" class="text-center text-gray-500 dark:text-gray-400">
-                        No recent activities
-                    </td>
-                </tr>
-                @endforelse
-            </tbody>
-        </table>
+        <div id="deanRecentActivitiesContent" class="overflow-x-auto">
+            <table class="data-table">
+                <thead>
+                    <tr>
+                        <th>User</th>
+                        <th>Activity</th>
+                        <th>Date & Time</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    @forelse($recentActivities as $activity)
+                    <tr>
+                        <td>
+                            <strong>{{ $activity->user->employee->full_name ?? $activity->user->username ?? 'System' }}</strong>
+                            @if($activity->targetUser)
+                                <i class="fas fa-arrow-right text-gray-500 dark:text-gray-400 mx-1.5"></i>
+                                <span class="text-gray-500 dark:text-gray-400">{{ $activity->targetUser->employee->full_name ?? $activity->targetUser->username }}</span>
+                            @endif
+                        </td>
+                        <td>
+                            {{ $activity->activity }}
+                            @if($activity->activity_type)
+                                <span class="badge badge-neutral text-[0.7rem] ml-1.5">
+                                    {{ ucfirst(str_replace('_', ' ', $activity->activity_type)) }}
+                                </span>
+                            @endif
+                        </td>
+                        <td>{{ $activity->log_date->format('M d, Y h:i A') }}</td>
+                    </tr>
+                    @empty
+                    <tr>
+                        <td colspan="3" class="text-center text-gray-500 dark:text-gray-400">
+                            No recent activities
+                        </td>
+                    </tr>
+                    @endforelse
+                </tbody>
+            </table>
+        </div>
     </div>
 @endsection
+
+@push('scripts')
+<script>
+function toggleDeanRecentActivities() {
+    const content = document.getElementById('deanRecentActivitiesContent');
+    const icon = document.getElementById('deanRecentActivitiesIcon');
+    const text = document.getElementById('deanRecentActivitiesText');
+
+    if (content.style.display === 'none') {
+        content.style.display = 'block';
+        icon.classList.remove('fa-chevron-down');
+        icon.classList.add('fa-chevron-up');
+        text.textContent = 'Hide';
+    } else {
+        content.style.display = 'none';
+        icon.classList.remove('fa-chevron-up');
+        icon.classList.add('fa-chevron-down');
+        text.textContent = 'Show';
+    }
+}
+</script>
+@endpush

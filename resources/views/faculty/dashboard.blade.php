@@ -50,9 +50,15 @@
     <div class="bg-white dark:bg-[#2a2a2a] p-6 mb-6 border border-gray-200 dark:border-gray-700">
         <div class="flex justify-between items-center mb-5 pb-4 border-b-2 border-gray-200 dark:border-gray-700">
             <h3 class="text-lg font-semibold text-gray-800 dark:text-gray-200 m-0">My Recent Tasks</h3>
-            <a href="{{ route('faculty.tasks') }}" class="px-5 py-2 bg-[#028a0f] dark:bg-[#02b815] text-white text-sm font-medium hover:bg-[#026a0c] dark:hover:bg-[#028a0f] no-underline inline-block">View All Tasks</a>
+            <div class="flex gap-3 items-center">
+                <a href="{{ route('faculty.tasks') }}" class="px-5 py-2 bg-[#028a0f] dark:bg-[#02b815] text-white text-sm font-medium no-underline inline-block">View All Tasks</a>
+                <button type="button" onclick="toggleRecentTasks()" class="bg-gray-200 dark:bg-gray-700 text-gray-700 dark:text-gray-300 px-4 py-2 text-sm font-medium cursor-pointer border-0">
+                    <i id="recentTasksIcon" class="fas fa-chevron-up"></i>
+                    <span id="recentTasksText">Hide</span>
+                </button>
+            </div>
         </div>
-        <div class="overflow-x-auto">
+        <div id="recentTasksContent" class="overflow-x-auto">
             <table class="w-full border-separate border-spacing-0">
                 <thead>
                     <tr>
@@ -108,9 +114,15 @@
     <div class="bg-white dark:bg-[#2a2a2a] p-6 mb-6 shadow-sm border border-gray-200 dark:border-gray-700">
         <div class="flex justify-between items-center mb-5 pb-4 border-b border-gray-200 dark:border-gray-700">
             <h3 class="text-lg font-semibold text-gray-800 dark:text-gray-200 m-0">My Recent Activities</h3>
-            <span class="inline-block px-3 py-1 text-xs font-semibold bg-blue-100 dark:bg-blue-900/30 text-blue-800 dark:text-blue-300">Last 10 Activities</span>
+            <div class="flex gap-3 items-center">
+                <span class="px-3 py-1 text-xs font-semibold bg-blue-100 dark:bg-blue-900/30 text-blue-800 dark:text-blue-300">Last 10 Activities</span>
+                <button type="button" onclick="toggleRecentActivities()" class="bg-gray-200 dark:bg-gray-700 text-gray-700 dark:text-gray-300 px-4 py-2 text-sm font-medium cursor-pointer border-0">
+                    <i id="recentActivitiesIcon" class="fas fa-chevron-up"></i>
+                    <span id="recentActivitiesText">Hide</span>
+                </button>
+            </div>
         </div>
-        <div class="overflow-x-auto">
+        <div id="recentActivitiesContent" class="overflow-x-auto">
             <table class="w-full border-separate border-spacing-0">
                 <thead>
                     <tr>
@@ -147,4 +159,47 @@
             </table>
         </div>
     </div>
+
 @endsection
+
+@push('scripts')
+<script>
+    // Toggle Recent Tasks visibility
+    function toggleRecentTasks() {
+        const content = document.getElementById('recentTasksContent');
+        const icon = document.getElementById('recentTasksIcon');
+        const text = document.getElementById('recentTasksText');
+
+        if (content.style.display === 'none') {
+            content.style.display = 'block';
+            icon.classList.remove('fa-chevron-down');
+            icon.classList.add('fa-chevron-up');
+            text.textContent = 'Hide';
+        } else {
+            content.style.display = 'none';
+            icon.classList.remove('fa-chevron-up');
+            icon.classList.add('fa-chevron-down');
+            text.textContent = 'Show';
+        }
+    }
+
+    // Toggle Recent Activities visibility
+    function toggleRecentActivities() {
+        const content = document.getElementById('recentActivitiesContent');
+        const icon = document.getElementById('recentActivitiesIcon');
+        const text = document.getElementById('recentActivitiesText');
+
+        if (content.style.display === 'none') {
+            content.style.display = 'block';
+            icon.classList.remove('fa-chevron-down');
+            icon.classList.add('fa-chevron-up');
+            text.textContent = 'Hide';
+        } else {
+            content.style.display = 'none';
+            icon.classList.remove('fa-chevron-up');
+            icon.classList.add('fa-chevron-down');
+            text.textContent = 'Show';
+        }
+    }
+</script>
+@endpush

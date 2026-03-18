@@ -71,43 +71,53 @@
     <!-- Recent Tasks -->
     <div class="content-card">
         <div class="card-header">
-            <h3 class="card-title">Recent Tasks</h3>
-            <a href="{{ route('coordinator.tasks') }}" class="badge badge-info no-underline cursor-pointer">View All</a>
+            <div class="flex justify-between items-center w-full">
+                <h3 class="card-title">Recent Tasks</h3>
+                <div class="flex gap-3 items-center">
+                    <a href="{{ route('coordinator.tasks') }}" class="badge badge-info no-underline cursor-pointer">View All</a>
+                    <button type="button" onclick="toggleCoordinatorRecentTasks()" class="bg-gray-200 dark:bg-gray-700 text-gray-700 dark:text-gray-300 px-4 py-2 text-sm font-medium cursor-pointer border-0">
+                        <i id="coordRecentTasksIcon" class="fas fa-chevron-up"></i>
+                        <span id="coordRecentTasksText">Hide</span>
+                    </button>
+                </div>
+            </div>
         </div>
-        <table class="data-table">
-            <thead>
-                <tr>
-                    <th>Task Title</th>
-                    <th>Assigned To</th>
-                    <th>Due Date</th>
-                    <th>Status</th>
-                </tr>
-            </thead>
-            <tbody>
-                @forelse($recentTasks as $task)
-                <tr>
-                    <td><strong>{{ $task->task_title }}</strong></td>
-                    <td>{{ $task->assignedTo->employee->full_name ?? 'N/A' }}</td>
-                    <td>{{ $task->due_date ? $task->due_date->format('M d, Y') : 'N/A' }}</td>
-                    <td>
-                        @if($task->status === 'Completed')
-                            <span class="badge badge-success">Completed</span>
-                        @elseif($task->status === 'In Progress')
-                            <span class="badge badge-warning">In Progress</span>
-                        @else
-                            <span class="badge badge-danger">Pending</span>
-                        @endif
-                    </td>
-                </tr>
-                @empty
-                <tr>
-                    <td colspan="4" class="text-center text-gray-600 dark:text-gray-400">
-                        No tasks created yet
-                    </td>
-                </tr>
-                @endforelse
-            </tbody>
-        </table>
+        <div id="coordRecentTasksContent" class="overflow-x-auto">
+            <table class="data-table">
+                <thead>
+                    <tr>
+                        <th>Task Title</th>
+                        <th>Assigned To</th>
+                        <th>Due Date</th>
+                        <th>Status</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    @forelse($recentTasks as $task)
+                    <tr>
+                        <td><strong>{{ $task->task_title }}</strong></td>
+                        <td>{{ $task->assignedTo->employee->full_name ?? 'N/A' }}</td>
+                        <td>{{ $task->due_date ? $task->due_date->format('M d, Y') : 'N/A' }}</td>
+                        <td>
+                            @if($task->status === 'Completed')
+                                <span class="badge badge-success">Completed</span>
+                            @elseif($task->status === 'In Progress')
+                                <span class="badge badge-warning">In Progress</span>
+                            @else
+                                <span class="badge badge-danger">Pending</span>
+                            @endif
+                        </td>
+                    </tr>
+                    @empty
+                    <tr>
+                        <td colspan="4" class="text-center text-gray-600 dark:text-gray-400">
+                            No tasks created yet
+                        </td>
+                    </tr>
+                    @endforelse
+                </tbody>
+            </table>
+        </div>
     </div>
 
     <!-- Faculty List -->
@@ -149,10 +159,19 @@
     <!-- Recent Activities -->
     <div class="content-card">
         <div class="card-header">
-            <h3 class="card-title">Recent Activities</h3>
-            <span class="badge badge-info">Last 10 Activities</span>
+            <div class="flex justify-between items-center w-full">
+                <h3 class="card-title">Recent Activities</h3>
+                <div class="flex gap-3 items-center">
+                    <span class="badge badge-info">Last 10 Activities</span>
+                    <button type="button" onclick="toggleCoordinatorRecentActivities()" class="bg-gray-200 dark:bg-gray-700 text-gray-700 dark:text-gray-300 px-4 py-2 text-sm font-medium cursor-pointer border-0">
+                        <i id="coordRecentActivitiesIcon" class="fas fa-chevron-up"></i>
+                        <span id="coordRecentActivitiesText">Hide</span>
+                    </button>
+                </div>
+            </div>
         </div>
-        <table class="data-table">
+        <div id="coordRecentActivitiesContent" class="overflow-x-auto">
+            <table class="data-table">
             <thead>
                 <tr>
                     <th>User</th>
@@ -189,5 +208,46 @@
                 @endforelse
             </tbody>
         </table>
+        </div>
     </div>
 @endsection
+
+@push('scripts')
+<script>
+function toggleCoordinatorRecentTasks() {
+    const content = document.getElementById('coordRecentTasksContent');
+    const icon = document.getElementById('coordRecentTasksIcon');
+    const text = document.getElementById('coordRecentTasksText');
+
+    if (content.style.display === 'none') {
+        content.style.display = 'block';
+        icon.classList.remove('fa-chevron-down');
+        icon.classList.add('fa-chevron-up');
+        text.textContent = 'Hide';
+    } else {
+        content.style.display = 'none';
+        icon.classList.remove('fa-chevron-up');
+        icon.classList.add('fa-chevron-down');
+        text.textContent = 'Show';
+    }
+}
+
+function toggleCoordinatorRecentActivities() {
+    const content = document.getElementById('coordRecentActivitiesContent');
+    const icon = document.getElementById('coordRecentActivitiesIcon');
+    const text = document.getElementById('coordRecentActivitiesText');
+
+    if (content.style.display === 'none') {
+        content.style.display = 'block';
+        icon.classList.remove('fa-chevron-down');
+        icon.classList.add('fa-chevron-up');
+        text.textContent = 'Hide';
+    } else {
+        content.style.display = 'none';
+        icon.classList.remove('fa-chevron-up');
+        icon.classList.add('fa-chevron-down');
+        text.textContent = 'Show';
+    }
+}
+</script>
+@endpush

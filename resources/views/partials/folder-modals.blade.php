@@ -24,7 +24,7 @@
                 </div>
             </div>
             <div class="modal-footer">
-                <button type="button" onclick="closeCreateFolderModal()" class="btn bg-gray-200 dark:bg-gray-700 text-gray-700 dark:text-gray-300 hover:bg-gray-300 dark:hover:bg-gray-600">
+                <button type="button" onclick="closeCreateFolderModal()" class="btn btn-secondary">
                     Cancel
                 </button>
                 <button type="submit" class="btn btn-primary">
@@ -60,7 +60,7 @@
                 </div>
             </div>
             <div class="modal-footer">
-                <button type="button" onclick="closeRenameFolderModal()" class="btn bg-gray-200 dark:bg-gray-700 text-gray-700 dark:text-gray-300 hover:bg-gray-300 dark:hover:bg-gray-600">
+                <button type="button" onclick="closeRenameFolderModal()" class="btn btn-secondary">
                     Cancel
                 </button>
                 <button type="submit" class="btn btn-primary">
@@ -111,7 +111,7 @@
                 </div>
             </div>
             <div class="modal-footer">
-                <button type="button" onclick="closeMoveDocumentModal()" class="btn bg-gray-200 dark:bg-gray-700 text-gray-700 dark:text-gray-300 hover:bg-gray-300 dark:hover:bg-gray-600">
+                <button type="button" onclick="closeMoveDocumentModal()" class="btn btn-secondary">
                     Cancel
                 </button>
                 <button type="submit" class="btn btn-primary">
@@ -126,32 +126,48 @@
 <script>
 // Modal Functions
 function openCreateFolderModal() {
-    document.getElementById('createFolderModal').classList.add('active');
-    document.getElementById('newFolderName').focus();
+    const modal = document.getElementById('createFolderModal');
+    const input = document.getElementById('newFolderName');
+    if (modal) modal.classList.add('active');
+    if (input) input.focus();
 }
 
 function closeCreateFolderModal() {
-    document.getElementById('createFolderModal').classList.remove('active');
-    document.getElementById('createFolderForm').reset();
+    const modal = document.getElementById('createFolderModal');
+    const form = document.getElementById('createFolderForm');
+    if (modal) modal.classList.remove('active');
+    if (form) form.reset();
 }
 
 function openRenameFolderModal(folderId, folderName, folderColor) {
-    document.getElementById('renameFolderId').value = folderId;
-    document.getElementById('renameFolderName').value = folderName;
-    document.getElementById('renameFolderColor').value = folderColor;
-    document.getElementById('renameFolderColorText').value = folderColor;
-    document.getElementById('renameFolderModal').classList.add('active');
-    document.getElementById('renameFolderName').focus();
+    const modal = document.getElementById('renameFolderModal');
+    const idInput = document.getElementById('renameFolderId');
+    const nameInput = document.getElementById('renameFolderName');
+    const colorInput = document.getElementById('renameFolderColor');
+    const colorText = document.getElementById('renameFolderColorText');
+
+    if (idInput) idInput.value = folderId;
+    if (nameInput) nameInput.value = folderName;
+    if (colorInput) colorInput.value = folderColor;
+    if (colorText) colorText.value = folderColor;
+    if (modal) modal.classList.add('active');
+    if (nameInput) nameInput.focus();
 }
 
 function closeRenameFolderModal() {
-    document.getElementById('renameFolderModal').classList.remove('active');
-    document.getElementById('renameFolderForm').reset();
+    const modal = document.getElementById('renameFolderModal');
+    const form = document.getElementById('renameFolderForm');
+    if (modal) modal.classList.remove('active');
+    if (form) form.reset();
 }
 
 function openMoveDocumentModal(documentId) {
-    document.getElementById('moveDocumentId').value = documentId;
-    document.getElementById('moveDocumentModal').classList.add('active');
+    const modal = document.getElementById('moveDocumentModal');
+    const idInput = document.getElementById('moveDocumentId');
+
+    if (idInput) idInput.value = documentId;
+    if (modal) modal.classList.add('active');
+
     // Clear previous selection
     document.querySelectorAll('#folderListForMove .folder-list-item').forEach(item => {
         item.classList.remove('selected');
@@ -159,8 +175,11 @@ function openMoveDocumentModal(documentId) {
 }
 
 function closeMoveDocumentModal() {
-    document.getElementById('moveDocumentModal').classList.remove('active');
-    document.getElementById('selectedFolderId').value = '';
+    const modal = document.getElementById('moveDocumentModal');
+    const folderIdInput = document.getElementById('selectedFolderId');
+
+    if (modal) modal.classList.remove('active');
+    if (folderIdInput) folderIdInput.value = '';
 }
 
 function selectFolderForMove(folderId, element) {
@@ -183,13 +202,15 @@ async function handleCreateFolder(event) {
     event.preventDefault();
     const form = event.target;
     const submitBtn = form.querySelector('button[type="submit"]');
-    const originalText = submitBtn ? submitBtn.textContent : '';
+    const originalHTML = submitBtn ? submitBtn.innerHTML : '';
+
     if (submitBtn) {
         submitBtn.disabled = true;
-        submitBtn.textContent = 'Processing...';
+        submitBtn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Creating...';
     }
+
     const formData = new FormData(form);
-    
+
     try {
         const response = await fetch('{{ route(auth()->user()->isDean() ? "dean.folders.store" : (auth()->user()->isProgramCoordinator() ? "coordinator.folders.store" : "faculty.folders.store")) }}', {
             method: 'POST',
@@ -199,9 +220,9 @@ async function handleCreateFolder(event) {
             },
             body: formData
         });
-        
+
         const data = await response.json();
-        
+
         if (response.ok && data.success) {
             showToast('Folder created successfully!', 'success');
             closeCreateFolderModal();
@@ -211,7 +232,7 @@ async function handleCreateFolder(event) {
             showToast('Too many folders created! Please wait 1 hour before creating more folders (Limit: 3 folders per hour)', 'error');
             if (submitBtn) {
                 submitBtn.disabled = false;
-                submitBtn.textContent = originalText;
+                submitBtn.innerHTML = originalHTML;
             }
         } else {
             // Handle validation errors
@@ -223,7 +244,7 @@ async function handleCreateFolder(event) {
             }
             if (submitBtn) {
                 submitBtn.disabled = false;
-                submitBtn.textContent = originalText;
+                submitBtn.innerHTML = originalHTML;
             }
         }
     } catch (error) {
@@ -231,7 +252,7 @@ async function handleCreateFolder(event) {
         console.error('Folder creation error:', error);
         if (submitBtn) {
             submitBtn.disabled = false;
-            submitBtn.textContent = originalText;
+            submitBtn.innerHTML = originalHTML;
         }
     }
 }
@@ -240,13 +261,30 @@ async function handleRenameFolder(event) {
     event.preventDefault();
     const form = event.target;
     const submitBtn = form.querySelector('button[type="submit"]');
-    if (submitBtn) submitBtn.disabled = true;
+    const originalHTML = submitBtn ? submitBtn.innerHTML : '';
+
+    if (submitBtn) {
+        submitBtn.disabled = true;
+        submitBtn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Saving...';
+    }
+
     const formData = new FormData(form);
-    const folderId = document.getElementById('renameFolderId').value;
-    
+    const folderIdInput = document.getElementById('renameFolderId');
+
+    if (!folderIdInput || !folderIdInput.value) {
+        showToast('Invalid folder ID', 'error');
+        if (submitBtn) {
+            submitBtn.disabled = false;
+            submitBtn.innerHTML = originalHTML;
+        }
+        return;
+    }
+
+    const folderId = folderIdInput.value;
+
     try {
         const route = '{{ url("/") }}/' + '{{ auth()->user()->isDean() ? "dean" : (auth()->user()->isProgramCoordinator() ? "coordinator" : "faculty") }}' + '/folders/' + folderId;
-        
+
         const response = await fetch(route, {
             method: 'POST',
             headers: {
@@ -256,9 +294,9 @@ async function handleRenameFolder(event) {
             },
             body: formData
         });
-        
+
         const data = await response.json();
-        
+
         if (response.ok && data.success) {
             showToast('Folder renamed successfully!', 'success');
             closeRenameFolderModal();
@@ -270,11 +308,18 @@ async function handleRenameFolder(event) {
             } else {
                 showToast(data.message || 'Failed to rename folder', 'error');
             }
+            if (submitBtn) {
+                submitBtn.disabled = false;
+                submitBtn.innerHTML = originalHTML;
+            }
         }
     } catch (error) {
         showToast('An error occurred. Please try again.', 'error');
         console.error('Folder rename error:', error);
-        if (submitBtn) submitBtn.disabled = false;
+        if (submitBtn) {
+            submitBtn.disabled = false;
+            submitBtn.innerHTML = originalHTML;
+        }
     }
 }
 
@@ -310,12 +355,33 @@ async function deleteFolder(folderId, folderName) {
 
 async function handleMoveDocument(event) {
     event.preventDefault();
-    const documentId = document.getElementById('moveDocumentId').value;
-    const folderId = document.getElementById('selectedFolderId').value;
-    
+    const form = event.target;
+    const submitBtn = form.querySelector('button[type="submit"]');
+    const originalHTML = submitBtn ? submitBtn.innerHTML : '';
+
+    if (submitBtn) {
+        submitBtn.disabled = true;
+        submitBtn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Moving...';
+    }
+
+    const docIdInput = document.getElementById('moveDocumentId');
+    const folderIdInput = document.getElementById('selectedFolderId');
+
+    if (!docIdInput || !docIdInput.value) {
+        showToast('Invalid document ID', 'error');
+        if (submitBtn) {
+            submitBtn.disabled = false;
+            submitBtn.innerHTML = originalHTML;
+        }
+        return;
+    }
+
+    const documentId = docIdInput.value;
+    const folderId = folderIdInput ? folderIdInput.value : '';
+
     try {
         const route = '{{ url("/") }}/' + '{{ auth()->user()->isDean() ? "dean" : (auth()->user()->isProgramCoordinator() ? "coordinator" : "faculty") }}' + '/documents/' + documentId + '/move';
-        
+
         const response = await fetch(route, {
             method: 'POST',
             headers: {
@@ -325,32 +391,28 @@ async function handleMoveDocument(event) {
             },
             body: JSON.stringify({ folder_id: folderId || null })
         });
-        
+
         const data = await response.json();
-        
+
         if (data.success) {
             showToast(data.message, 'success');
             closeMoveDocumentModal();
             setTimeout(() => window.location.reload(), 1000);
         } else {
             showToast(data.message || 'Failed to move document', 'error');
+            if (submitBtn) {
+                submitBtn.disabled = false;
+                submitBtn.innerHTML = originalHTML;
+            }
         }
     } catch (error) {
         showToast('An error occurred', 'error');
         console.error(error);
+        if (submitBtn) {
+            submitBtn.disabled = false;
+            submitBtn.innerHTML = originalHTML;
+        }
     }
-}
-
-// Toast Notification
-function showToast(message, type = 'success') {
-    const toast = document.createElement('div');
-    toast.className = `toast ${type}`;
-    toast.innerHTML = `
-        <i class="fas fa-${type === 'success' ? 'check-circle' : 'exclamation-circle'} text-xl"></i>
-        <span>${message}</span>
-    `;
-    document.body.appendChild(toast);
-    setTimeout(() => toast.remove(), 3000);
 }
 
 // Color picker sync

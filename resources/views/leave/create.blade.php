@@ -46,7 +46,7 @@
     <div class="content-card">
         <div class="card-header">
             <h3 class="card-title">New Leave Request</h3>
-            <a href="{{ route('leave.index') }}" class="btn bg-gray-200 dark:bg-gray-700">
+            <a href="{{ route('leave.index') }}" class="btn btn-secondary">
                 <i class="fas fa-arrow-left"></i> Back
             </a>
         </div>
@@ -98,7 +98,7 @@
             </div>
 
             <div class="flex justify-end gap-2.5 mt-8">
-                <a href="{{ route('leave.index') }}" class="btn bg-gray-200 dark:bg-gray-700">
+                <a href="{{ route('leave.index') }}" class="btn btn-secondary">
                     Cancel
                 </a>
                 <button type="submit" class="btn btn-primary">

@@ -44,7 +44,7 @@
             </div>
             <div class="stat-value">{{ $totalDocuments }}</div>
             <div class="stat-label">Total Documents</div>
-            <small style="display: block; font-size: 0.75rem; margin-top: 0.25rem; color: #6b7280;">Submitted by you</small>
+            <small class="block text-xs mt-1 text-gray-500 dark:text-gray-400">Submitted by you</small>
         </div>
 
         <div class="stat-card">
@@ -53,7 +53,7 @@
             </div>
             <div class="stat-value">{{ $leaveThisMonth }}</div>
             <div class="stat-label">Total Leave</div>
-            <small style="display: block; font-size: 0.75rem; margin-top: 0.25rem; color: #6b7280;">This month | {{ $leaveThisYear }} this year</small>
+            <small class="block text-xs mt-1 text-gray-500 dark:text-gray-400">This month | {{ $leaveThisYear }} this year</small>
         </div>
 
         <div class="stat-card">
@@ -62,7 +62,7 @@
             </div>
             <div class="stat-value">{{ $completedTasks }}</div>
             <div class="stat-label">Task Completed</div>
-            <small style="display: block; font-size: 0.75rem; margin-top: 0.25rem; color: #6b7280;">All time</small>
+            <small class="block text-xs mt-1 text-gray-500 dark:text-gray-400">All time</small>
         </div>
     </div>
 
@@ -171,7 +171,7 @@
     @if($performanceReports->count() > 0)
     <div class="bg-white dark:bg-[#2a2a2a] rounded-xl p-6 mb-6 shadow-md border border-gray-200 dark:border-gray-700">
         <div class="mb-5 pb-4 border-b-2 border-gray-200 dark:border-gray-700">
-            <h3 class="text-lg font-semiboldtext-gray-800 dark:text-gray-200 m-0">Recent Performance Reviews</h3>
+            <h3 class="text-lg font-semibold text-gray-800 dark:text-gray-200 m-0">Recent Performance Reviews</h3>
         </div>
         <div class="overflow-x-auto">
             <table class="w-full border-separate border-spacing-0">

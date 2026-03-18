@@ -134,3 +134,21 @@ style.textContent = `
     }
 `;
 document.head.appendChild(style);
+
+// ============================================
+// Lazy Loading for Heavy Libraries
+// ============================================
+
+// Lazy load Chart.js only if chart element exists
+if (document.getElementById('systemUsageChart')) {
+    import('./chart-loader.js').catch(err => {
+        console.error('Failed to load Chart.js:', err);
+    });
+}
+
+// Lazy load FullCalendar only if calendar element exists
+if (document.getElementById('calendar')) {
+    import('./calendar-loader.js').catch(err => {
+        console.error('Failed to load FullCalendar:', err);
+    });
+}

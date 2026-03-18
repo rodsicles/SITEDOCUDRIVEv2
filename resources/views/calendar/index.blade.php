@@ -49,7 +49,6 @@
 @endsection
 
 @push('styles')
-<link href="https://cdn.jsdelivr.net/npm/fullcalendar@6.1.10/index.global.min.css" rel="stylesheet">
 <style>
     :root {
         --fc-button-bg-color: #028a0f;
@@ -160,13 +159,20 @@
 @endsection
 
 @push('scripts')
-<script src="https://cdn.jsdelivr.net/npm/fullcalendar@6.1.10/index.global.min.js"></script>
 <script>
-    document.addEventListener('DOMContentLoaded', function() {
+    function initEventCalendar() {
+        if (typeof window.Calendar === 'undefined' || typeof window.dayGridPlugin === 'undefined') {
+            setTimeout(initEventCalendar, 100);
+            return;
+        }
+
         const calendarEl = document.getElementById('calendar');
+        if (!calendarEl) return;
+
         const events = @json($formattedEvents);
 
-        const calendar = new FullCalendar.Calendar(calendarEl, {
+        const calendar = new window.Calendar(calendarEl, {
+            plugins: [window.dayGridPlugin],
             initialView: 'dayGridMonth',
             headerToolbar: {
                 left: 'prev,next today',
@@ -187,6 +193,8 @@
         });
 
         calendar.render();
-    });
+    }
+
+    document.addEventListener('DOMContentLoaded', initEventCalendar);
 </script>
 @endpush

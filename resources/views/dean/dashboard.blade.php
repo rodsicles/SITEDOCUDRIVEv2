@@ -57,7 +57,7 @@
             </div>
             <div class="stat-value">{{ $leaveThisMonth }}</div>
             <div class="stat-label">Total Leave</div>
-            <small style="display: block; font-size: 0.75rem; margin-top: 0.25rem; color: #6b7280;">This month | {{ $leaveThisYear }} this year</small>
+            <small class="block text-xs mt-1 text-gray-500 dark:text-gray-400">This month | {{ $leaveThisYear }} this year</small>
         </div>
 
         <div class="stat-card">
@@ -87,16 +87,22 @@
         </div>
     </div>
 
-    <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js"></script>
     <script>
-        const ctx = document.getElementById('systemUsageChart').getContext('2d');
-        const monthlyData = @json(array_values($monthlyUsage));
-        const monthLabels = @json($monthNames);
-        
-        // Calculate total for percentage
-        const totalActivities = monthlyData.reduce((sum, val) => sum + val, 0);
-        
-        new Chart(ctx, {
+        // Wait for Chart.js to be loaded via lazy loading
+        function initChart() {
+            if (typeof Chart === 'undefined') {
+                setTimeout(initChart, 100);
+                return;
+            }
+
+            const ctx = document.getElementById('systemUsageChart').getContext('2d');
+            const monthlyData = @json(array_values($monthlyUsage));
+            const monthLabels = @json($monthNames);
+
+            // Calculate total for percentage
+            const totalActivities = monthlyData.reduce((sum, val) => sum + val, 0);
+
+            new Chart(ctx, {
             type: 'bar',
             data: {
                 labels: monthLabels,
@@ -175,6 +181,10 @@
                 }
             }
         });
+        }
+
+        // Start initializing the chart
+        initChart();
     </script>
 
     <!-- Top Performers -->

@@ -30,10 +30,10 @@
     <!-- Tab Navigation -->
     <div class="mb-6">
         <div class="flex gap-2 border-b-2 border-gray-200 dark:border-gray-700">
-            <button class="tab-button inline-flex items-center gap-2 px-5 py-3.5 bg-transparent border-0 border-b-3 border-transparent text-gray-600 dark:text-gray-400 text-sm font-semibold cursor-pointer hover:text-primary-600 hover:bg-primary-50 dark:hover:bg-primary-900/20 active:text-primary-600 active:border-primary-600 active:bg-primary-100 dark:active:bg-primary-900/30" onclick="switchTab('list')" id="listTab">
+            <button class="tab-button inline-flex items-center gap-2 px-5 py-3.5 bg-transparent border-0 border-b-[3px] border-transparent text-gray-600 dark:text-gray-400 text-sm font-semibold cursor-pointer hover:text-[#028a0f] hover:bg-[rgba(2,138,15,0.05)] dark:hover:bg-[rgba(2,184,21,0.1)] transition-all" onclick="switchTab('list')" id="listTab">
                 <i class="fas fa-users"></i> Faculty Directory
             </button>
-            <button class="tab-button inline-flex items-center gap-2 px-5 py-3.5 bg-transparent border-0 border-b-3 border-transparent text-gray-600 dark:text-gray-400 text-sm font-semibold cursor-pointer hover:text-primary-600 hover:bg-primary-50 dark:hover:bg-primary-900/20" onclick="switchTab('create')" id="createTab">
+            <button class="tab-button inline-flex items-center gap-2 px-5 py-3.5 bg-transparent border-0 border-b-[3px] border-transparent text-gray-600 dark:text-gray-400 text-sm font-semibold cursor-pointer hover:text-[#028a0f] hover:bg-[rgba(2,138,15,0.05)] dark:hover:bg-[rgba(2,184,21,0.1)] transition-all" onclick="switchTab('create')" id="createTab">
                 <i class="fas fa-user-plus"></i> Create New Faculty
             </button>
         </div>
@@ -167,7 +167,7 @@
                     <button type="submit" class="btn btn-success">
                         <i class="fas fa-user-plus"></i> Create Faculty Account
                     </button>
-                    <button type="button" class="btn bg-gray-600 hover:bg-gray-700 text-white"  onclick="switchTab('list')">
+                    <button type="button" class="btn btn-secondary" onclick="switchTab('list')">
                         <i class="fas fa-times"></i> Cancel
                     </button>
                 </div>
@@ -214,5 +214,24 @@
                 switchTab('create');
             });
         @endif
+
+        // Prevent double submit on create faculty form
+        document.addEventListener('DOMContentLoaded', function() {
+            const createForm = document.querySelector('form[action="{{ route('coordinator.store-faculty') }}"]');
+            if (createForm) {
+                createForm.addEventListener('submit', function(e) {
+                    const submitBtn = this.querySelector('button[type="submit"]');
+                    if (submitBtn && !submitBtn.disabled) {
+                        submitBtn.disabled = true;
+                        submitBtn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Creating Account...';
+                        // Re-enable after 5 seconds as a safety measure
+                        setTimeout(() => {
+                            submitBtn.disabled = false;
+                            submitBtn.innerHTML = '<i class="fas fa-user-plus"></i> Create Faculty Account';
+                        }, 5000);
+                    }
+                });
+            }
+        });
     </script>
 @endsection

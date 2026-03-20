@@ -38,8 +38,6 @@
     /* Custom Colors - Light Mode */
     --color-primary: #028a0f;
     --color-primary-dark: #026a0c;
-    --color-primary-light: rgba(2, 138, 15, 0.65);
-    --color-primary-lighter: rgba(2, 138, 15, 0.1);
 
     --color-surface: #ffffff;
     --color-background: #f8f9fa;
@@ -84,9 +82,8 @@
 /* Dark Mode Theme */
 @media (prefers-color-scheme: dark) {
     [data-theme="dark"] {
-        --color-primary: #02b815;
-        --color-primary-dark: #028a0f;
-        --color-primary-light: rgba(2, 184, 21, 0.65);
+        --color-primary: #028a0f;
+        --color-primary-dark: #026a0c;
         
         --color-surface: #2a2a2a;
         --color-background: #121212;

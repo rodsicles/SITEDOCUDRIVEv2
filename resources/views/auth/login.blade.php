@@ -145,6 +145,8 @@
                             <label for="remember" class="login-inline-toggle-label">Remember me</label>
                         </div>
 
+                        <input type="hidden" name="role" id="selectedRole" value="{{ old('role', 'dean') }}">
+
                         <button type="submit" class="login-inline-submit">
                             SIGN IN <i class="fas fa-arrow-right"></i>
                         </button>
@@ -213,6 +215,7 @@
                 'faculty': 'Faculty'
             };
             document.getElementById('roleLabel').textContent = roleNames[role];
+            document.getElementById('selectedRole').value = role;
 
             // Focus username input
             setTimeout(() => {
@@ -228,6 +231,11 @@
             document.getElementById('roleSelectionPanel').classList.remove('login-panel-hidden');
             document.getElementById('roleSelectionPanel').classList.add('login-panel-active');
         }
+
+        // Auto-show login panel on validation errors (after failed login)
+        @if($errors->any())
+            showLoginForm('{{ old('role', 'dean') }}');
+        @endif
 
         // Show/Hide Password Toggle
         const togglePassword = document.getElementById('togglePassword');

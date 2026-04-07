@@ -256,11 +256,7 @@ function toggleRecentTasks() {
 ### When Adding New Features:
 - [ ] Define CSS classes in `resources/css/app.css` only
 - [ ] Use Tailwind @apply for styling
-- [ ] Ensure `border-radius: 0` (globally enforced)
-- [ ] NO inline styles
-- [ ] NO hover effects or animations
-- [ ] Use flat design principles
-- [ ] Test on all three roles (Faculty, Dean, Coordinator)
+- [ ] Ensure `borde, Dean, Coordinator)
 - [ ] Ensure consistent appearance across roles
 - [ ] Use existing color palette
 - [ ] Follow component patterns above

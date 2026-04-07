@@ -27,8 +27,9 @@ class DeanController extends Controller
         $performanceData = $this->dashboardService->getPerformanceData();
         $topPerformers = $this->dashboardService->getTopPerformers(5);
         $announcements = $this->dashboardService->getAnnouncements($user, 5);
+        $docAnalyticsData = $this->dashboardService->getDeanDocumentAnalytics();
 
-        return view('dean.dashboard', array_merge($stats, compact(
+        return view('dean.dashboard', array_merge($stats, $docAnalyticsData, compact(
             'monthlyUsage',
             'monthNames',
             'recentActivities',

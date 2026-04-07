@@ -11,7 +11,7 @@
     @if($folders->count() > 0)
     <div class="folder-container-new px-6 py-4 flex gap-3 flex-wrap">
         {{-- Uncategorized Folder --}}
-        <div class="folder-card-new">
+        <div class="folder-card-new {{ request('folder') == 'uncategorized' ? 'folder-card-active' : '' }}">
             <a href="{{ request()->fullUrlWithQuery(['folder' => 'uncategorized']) }}" class="folder-card-link-new">
                 <div class="folder-icon-new text-gray-400">
                     <i class="fas fa-folder-open"></i>
@@ -40,7 +40,7 @@
 
         {{-- User Folders --}}
         @foreach($folders as $folder)
-        <div class="folder-card-new">
+        <div class="folder-card-new {{ request('folder') == $folder->folder_id ? 'folder-card-active' : '' }}">
             <a href="{{ request()->fullUrlWithQuery(['folder' => $folder->folder_id]) }}" class="folder-card-link-new">
                 <div class="folder-icon-new" style="background-color: {{ $folder->color }}; color: white;">
                     <i class="fas fa-folder"></i>

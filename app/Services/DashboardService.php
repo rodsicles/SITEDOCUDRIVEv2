@@ -6,6 +6,7 @@ use App\Models\User;
 use App\Models\Employee;
 use App\Models\Task;
 use App\Models\Document;
+use App\Models\Folder;
 use App\Models\LeaveRequest;
 use App\Models\DashboardLog;
 use App\Models\PerformanceReport;
@@ -209,5 +210,128 @@ class DashboardService
             ->latest()
             ->take($limit)
             ->get();
+    }
+
+    /**
+     * Get document analytics for Dean dashboard (system-wide).
+     */
+    public function getDeanDocumentAnalytics(): array
+    {
+        return Cache::remember('dean_document_analytics', now()->addMinutes(5), function () {
+            $docsThisMonth = Document::whereMonth('created_at', date('m'))
+                ->whereYear('created_at', date('Y'))
+                ->count();
+
+            $topType = Document::select('document_type', DB::raw('count(*) as count'))
+                ->whereNotNull('document_type')
+                ->where('document_type', '!=', '')
+                ->groupBy('document_type')
+                ->orderByDesc('count')
+                ->first();
+
+            $mostUsedFolder = Folder::withCount('documents')
+                ->having('documents_count', '>', 0)
+                ->orderByDesc('documents_count')
+                ->first();
+
+            $topUploader = Document::select('uploaded_by', DB::raw('count(*) as count'))
+                ->whereHas('uploader', function ($q) {
+                    $q->where('role_id', 3);
+                })
+                ->groupBy('uploaded_by')
+                ->orderByDesc('count')
+                ->with('uploader.employee')
+                ->first();
+
+            $totalFolders = Folder::count();
+            $totalDocs = Document::count();
+
+            return [
+                'docAnalytics' => [
+                    'docsThisMonth' => $docsThisMonth,
+                    'topDocType' => $topType ? ucfirst($topType->document_type) : 'N/A',
+                    'topDocTypeCount' => $topType ? $topType->count : 0,
+                    'mostUsedFolder' => $mostUsedFolder ? $mostUsedFolder->folder_name : 'N/A',
+                    'mostUsedFolderCount' => $mostUsedFolder ? $mostUsedFolder->documents_count : 0,
+                    'topUploaderName' => $topUploader ? ($topUploader->uploader->employee->full_name ?? 'Unknown') : 'N/A',
+                    'topUploaderCount' => $topUploader ? $topUploader->count : 0,
+                    'totalFolders' => $totalFolders,
+                    'totalDocs' => $totalDocs,
+                ],
+            ];
+        });
+    }
+
+    /**
+     * Get document analytics for Coordinator dashboard (dept-scoped).
+     */
+    public function getCoordinatorDocumentAnalytics(int $userId): array
+    {
+        return Cache::remember("coordinator_document_analytics_{$userId}", now()->addMinutes(5), function () use ($userId) {
+            $user = User::with('employee')->find($userId);
+            $coordinatorDept = optional($user->employee)->department;
+
+            // Build scoped query: own docs + faculty docs from same department
+            $scopedIds = Document::where(function ($q) use ($userId, $coordinatorDept) {
+                $q->where('uploaded_by', $userId);
+                if ($coordinatorDept) {
+                    $q->orWhereHas('uploader', function ($sq) use ($coordinatorDept) {
+                        $sq->where('role_id', 3)
+                           ->whereHas('employee', function ($eq) use ($coordinatorDept) {
+                               $eq->where('department', $coordinatorDept);
+                           });
+                    });
+                }
+            })->pluck('document_id');
+
+            $deptTotal = $scopedIds->count();
+
+            $docsThisMonth = Document::whereIn('document_id', $scopedIds)
+                ->whereMonth('created_at', date('m'))
+                ->whereYear('created_at', date('Y'))
+                ->count();
+
+            $topType = Document::whereIn('document_id', $scopedIds)
+                ->select('document_type', DB::raw('count(*) as count'))
+                ->whereNotNull('document_type')
+                ->where('document_type', '!=', '')
+                ->groupBy('document_type')
+                ->orderByDesc('count')
+                ->first();
+
+            $mostUsedFolder = Folder::where('user_id', $userId)
+                ->withCount('documents')
+                ->having('documents_count', '>', 0)
+                ->orderByDesc('documents_count')
+                ->first();
+
+            $topUploader = Document::whereIn('document_id', $scopedIds)
+                ->select('uploaded_by', DB::raw('count(*) as count'))
+                ->whereHas('uploader', function ($q) {
+                    $q->where('role_id', 3);
+                })
+                ->groupBy('uploaded_by')
+                ->orderByDesc('count')
+                ->with('uploader.employee')
+                ->first();
+
+            $myDocs = Document::where('uploaded_by', $userId)->count();
+            $myFolders = Folder::where('user_id', $userId)->count();
+
+            return [
+                'docAnalytics' => [
+                    'deptTotal' => $deptTotal,
+                    'myDocs' => $myDocs,
+                    'docsThisMonth' => $docsThisMonth,
+                    'topDocType' => $topType ? ucfirst($topType->document_type) : 'N/A',
+                    'topDocTypeCount' => $topType ? $topType->count : 0,
+                    'mostUsedFolder' => $mostUsedFolder ? $mostUsedFolder->folder_name : 'N/A',
+                    'mostUsedFolderCount' => $mostUsedFolder ? $mostUsedFolder->documents_count : 0,
+                    'topUploaderName' => $topUploader ? ($topUploader->uploader->employee->full_name ?? 'Unknown') : 'N/A',
+                    'topUploaderCount' => $topUploader ? $topUploader->count : 0,
+                    'myFolders' => $myFolders,
+                ],
+            ];
+        });
     }
 }

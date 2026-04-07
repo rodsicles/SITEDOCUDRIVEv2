@@ -50,6 +50,44 @@
         </div>
     </div>
 
+    <!-- Document Analytics -->
+    <div class="content-card">
+        <div class="card-header">
+            <h3 class="card-title"><i class="fas fa-file-alt mr-2"></i>Document Analytics</h3>
+            <span class="badge badge-success">{{ date('F Y') }}</span>
+        </div>
+        <div class="doc-analytics-grid">
+            <div class="doc-analytics-row">
+                <div class="doc-analytics-item">
+                    <div class="doc-analytics-label">My Documents</div>
+                    <div class="doc-analytics-value">{{ $docAnalytics['myDocs'] }}</div>
+                </div>
+                <div class="doc-analytics-item">
+                    <div class="doc-analytics-label">Dept. Documents</div>
+                    <div class="doc-analytics-value">{{ $docAnalytics['deptTotal'] }}</div>
+                </div>
+                <div class="doc-analytics-item">
+                    <div class="doc-analytics-label">Uploaded This Month</div>
+                    <div class="doc-analytics-value">{{ $docAnalytics['docsThisMonth'] }}</div>
+                </div>
+            </div>
+            <div class="doc-analytics-row">
+                <div class="doc-analytics-item">
+                    <div class="doc-analytics-label">Top Document Type</div>
+                    <div class="doc-analytics-value">{{ $docAnalytics['topDocType'] }} <span class="doc-analytics-sub">{{ $docAnalytics['topDocTypeCount'] > 0 ? '(' . $docAnalytics['topDocTypeCount'] . ' files)' : '' }}</span></div>
+                </div>
+                <div class="doc-analytics-item">
+                    <div class="doc-analytics-label">Most Used Folder</div>
+                    <div class="doc-analytics-value">{{ $docAnalytics['mostUsedFolder'] }} <span class="doc-analytics-sub">{{ $docAnalytics['mostUsedFolderCount'] > 0 ? '(' . $docAnalytics['mostUsedFolderCount'] . ' files)' : '' }}</span></div>
+                </div>
+                <div class="doc-analytics-item">
+                    <div class="doc-analytics-label">Most Active Faculty</div>
+                    <div class="doc-analytics-value">{{ $docAnalytics['topUploaderName'] }} <span class="doc-analytics-sub">{{ $docAnalytics['topUploaderCount'] > 0 ? '(' . $docAnalytics['topUploaderCount'] . ' uploads)' : '' }}</span></div>
+                </div>
+            </div>
+        </div>
+    </div>
+
     <!-- Announcements Feed Widget -->
     @include('partials.announcement-widget')
 

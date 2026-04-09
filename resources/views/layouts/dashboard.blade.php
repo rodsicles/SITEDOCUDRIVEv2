@@ -5,6 +5,7 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <meta name="csrf-token" content="{{ csrf_token() }}">
     <title>@yield('title', 'Employee Dashboard with Data Analytics - SITE')</title>
+    <link rel="icon" type="image/png" href="{{ asset('images/SPUP-final-logo.png') }}">
     @vite(['resources/css/app.css', 'resources/js/app.js'])
     <style>
         /* Menu Item Styles */

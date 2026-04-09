@@ -33,4 +33,28 @@ class Employee extends Model
     {
         return $this->hasMany(PerformanceReport::class, 'employee_id', 'employee_id');
     }
+
+    public function getYearsOfService(): ?int
+    {
+        if (!$this->hire_date) {
+            return null;
+        }
+        return (int) $this->hire_date->diffInYears(now());
+    }
+
+    public function getServiceMilestone(): ?int
+    {
+        $years = $this->getYearsOfService();
+        if ($years === null) {
+            return null;
+        }
+
+        $milestones = [30, 25, 20, 15, 10, 5];
+        foreach ($milestones as $milestone) {
+            if ($years >= $milestone) {
+                return $milestone;
+            }
+        }
+        return null;
+    }
 }

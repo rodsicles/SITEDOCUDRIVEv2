@@ -1450,21 +1450,29 @@ body {
     flex: 1;
     display: flex;
     flex-direction: column;
-    justify-content: space-between;
+    position: relative;
     padding: 4rem;
     background: #ffffff;
-    border-right: 1px solid #e0e0e0;
+    border-right: 3px solid #028a0f;
 }
 
 .dark .role-selection-left {
     background: #1f1f1f;
-    border-right-color: #374151;
+    border-right-color: #028a0f;
 }
 
 .role-selection-branding {
+    position: absolute;
+    top: 2rem;
+    left: 4rem;
     display: flex;
     align-items: center;
     gap: 1.25rem;
+}
+
+.role-selection-branding-text {
+    display: flex;
+    flex-direction: column;
 }
 
 .role-selection-logo-wrapper {
@@ -1472,32 +1480,33 @@ body {
 }
 
 .role-selection-logo {
-    width: 70px;
-    height: 70px;
+    width: 75px;
+    height: 75px;
     object-fit: contain;
 }
 
 .role-selection-university-name {
-    font-size: 1.3rem;
-    font-weight: 700;
-    color: #2c3e50;
+    font-family: 'Old English Text MT', 'UnifrakturMaguntia', serif;
+    font-size: 1.75rem;
+    font-weight: 400;
+    color: #028a0f;
     margin: 0;
     line-height: 1.3;
 }
 
 .dark .role-selection-university-name {
-    color: #e5e7eb;
+    color: #4ade80;
 }
 
 .role-selection-university-location {
-    font-size: 0.95rem;
+    font-size: 1.05rem;
     color: #6c757d;
     margin: 0.25rem 0 0 0;
-    letter-spacing: 0.03em;
+    letter-spacing: 0.05em;
 }
 
 .dark .role-selection-university-location {
-    color: #b0b0b0;
+    color: #4ade80;
 }
 
 .role-selection-tagline {
@@ -1505,13 +1514,14 @@ body {
     display: flex;
     flex-direction: column;
     justify-content: center;
+    padding-top: 2rem;
 }
 
 .role-selection-main-title {
-    font-size: 3rem;
+    font-size: 2.5rem;
     font-weight: 700;
     color: #2c3e50;
-    margin: 0 0 1.5rem 0;
+    margin: 0 0 1rem 0;
     line-height: 1.2;
     letter-spacing: -0.5px;
 }
@@ -1527,7 +1537,7 @@ body {
 .role-selection-description {
     font-size: 1.15rem;
     color: #6c757d;
-    margin: 0;
+    margin: 0 0 1.5rem 0;
     line-height: 1.6;
     max-width: 500px;
 }
@@ -1542,6 +1552,82 @@ body {
 }
 
 .dark .role-selection-footer-year {
+    color: #6b7280;
+}
+
+/* Title with logo */
+.role-selection-main-title-wrapper {
+    display: flex;
+    align-items: center;
+    gap: 1rem;
+    margin-bottom: 0.5rem;
+}
+
+.role-selection-title-logo {
+    width: 55px;
+    height: 55px;
+    object-fit: contain;
+    flex-shrink: 0;
+}
+
+/* 4 Features Section */
+.role-selection-features {
+    display: flex;
+    flex-direction: column;
+    gap: 0.75rem;
+}
+
+.role-selection-feature-item {
+    display: flex;
+    align-items: center;
+    gap: 0.75rem;
+    font-size: 1.05rem;
+    color: #4b5563;
+}
+
+.dark .role-selection-feature-item {
+    color: #b0b0b0;
+}
+
+.role-selection-feature-icon {
+    color: #028a0f;
+    font-size: 1.1rem;
+    width: 22px;
+    text-align: center;
+    flex-shrink: 0;
+}
+
+/* Login Page Footer */
+.login-page-footer {
+    background: #f0f0f0;
+    border-top: 1px solid #d0d0d0;
+    padding: 1rem 2rem;
+    text-align: center;
+}
+
+.dark .login-page-footer {
+    background: #2a2a2a;
+    border-top-color: #374151;
+}
+
+.login-footer-content {
+    font-size: 1rem;
+    color: #6c757d;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 0.75rem;
+}
+
+.dark .login-footer-content {
+    color: #9ca3af;
+}
+
+.login-footer-separator {
+    color: #9ca3af;
+}
+
+.dark .login-footer-separator {
     color: #6b7280;
 }
 
@@ -1565,7 +1651,7 @@ body {
 }
 
 .role-selection-title {
-    font-size: 1.875rem;
+    font-size: 1.75rem;
     font-weight: 700;
     color: #2c3e50;
     margin: 0 0 0.5rem 0;
@@ -1576,9 +1662,9 @@ body {
 }
 
 .role-selection-subtitle {
-    font-size: 1rem;
+    font-size: 0.95rem;
     color: #6c757d;
-    margin: 0 0 2.5rem 0;
+    margin: 0 0 2rem 0;
     line-height: 1.6;
 }
 
@@ -1615,7 +1701,7 @@ body {
 }
 
 .role-card-title {
-    font-size: 1.125rem;
+    font-size: 1.05rem;
     font-weight: 600;
     color: #2c3e50;
     margin: 0 0 0.25rem 0;
@@ -1719,13 +1805,19 @@ body {
 
     .role-selection-left {
         border-right: none;
-        border-bottom: 1px solid #e0e0e0;
+        border-bottom: 3px solid #028a0f;
         padding: 3rem 2rem;
+        padding-top: 5rem;
         min-height: auto;
     }
 
+    .role-selection-branding {
+        top: 1.5rem;
+        left: 2rem;
+    }
+
     .dark .role-selection-left {
-        border-bottom-color: #374151;
+        border-bottom-color: #028a0f;
     }
 
     .role-selection-right {
@@ -1735,11 +1827,22 @@ body {
     .role-selection-main-title {
         font-size: 2rem;
     }
+
+    .role-selection-title-logo {
+        width: 40px;
+        height: 40px;
+    }
 }
 
 @media (max-width: 768px) {
     .role-selection-left {
         padding: 2rem 1.5rem;
+        padding-top: 5rem;
+    }
+
+    .role-selection-branding {
+        top: 1.25rem;
+        left: 1.5rem;
     }
 
     .role-selection-right {
@@ -1760,6 +1863,21 @@ body {
 
     .role-card {
         padding: 1.25rem 1rem;
+    }
+
+    .role-selection-main-title-wrapper {
+        flex-direction: column;
+        align-items: flex-start;
+        gap: 0.5rem;
+    }
+
+    .role-selection-title-logo {
+        width: 35px;
+        height: 35px;
+    }
+
+    .role-selection-university-name {
+        font-size: 1.2rem;
     }
 }
 
@@ -2961,4 +3079,85 @@ body {
     .login-form-box {
         max-width: 100%;
     }
+}
+
+/* ========================================
+   PHASE 12+ NEW FEATURES CSS
+   ======================================== */
+
+/* Service Milestone Badges */
+.milestone-badge {
+    @apply inline-block px-2 py-0.5 text-xs font-bold ml-2 border;
+}
+
+.milestone-5 {
+    @apply bg-blue-100 dark:bg-blue-900/30 text-blue-800 dark:text-blue-300 border-blue-200 dark:border-blue-700;
+}
+
+.milestone-10 {
+    @apply bg-green-100 dark:bg-green-900/30 text-green-800 dark:text-green-300 border-green-200 dark:border-green-700;
+}
+
+.milestone-15 {
+    @apply bg-purple-100 dark:bg-purple-900/30 text-purple-800 dark:text-purple-300 border-purple-200 dark:border-purple-700;
+}
+
+.milestone-20 {
+    @apply bg-orange-100 dark:bg-orange-900/30 text-orange-800 dark:text-orange-300 border-orange-200 dark:border-orange-700;
+}
+
+.milestone-25 {
+    @apply bg-red-100 dark:bg-red-900/30 text-red-800 dark:text-red-300 border-red-200 dark:border-red-700;
+}
+
+.milestone-30 {
+    @apply bg-yellow-100 dark:bg-yellow-900/30 text-yellow-800 dark:text-yellow-300 border-yellow-200 dark:border-yellow-700;
+}
+
+/* Skill Tag Chips */
+.skill-tag {
+    @apply inline-flex items-center gap-1.5 px-3 py-1 text-xs font-semibold bg-green-100 dark:bg-green-900/30 text-green-800 dark:text-green-300 border border-green-200 dark:border-green-700 mr-2 mb-2;
+}
+
+.skill-tag-remove {
+    @apply text-green-600 dark:text-green-400 cursor-pointer text-sm ml-1 bg-transparent border-none p-0;
+}
+
+/* Certificate Status Indicators */
+.cert-status-uploaded {
+    @apply inline-flex items-center gap-1 px-2 py-0.5 text-xs font-semibold bg-green-100 dark:bg-green-900/30 text-green-700 dark:text-green-300 border border-green-200 dark:border-green-700;
+}
+
+.cert-status-pending {
+    @apply inline-flex items-center gap-1 px-2 py-0.5 text-xs font-semibold bg-orange-100 dark:bg-orange-900/30 text-orange-700 dark:text-orange-300 border border-orange-200 dark:border-orange-700;
+}
+
+/* Equipment Status Badges */
+.badge-borrowed {
+    @apply inline-block px-3 py-1 text-xs font-semibold bg-orange-100 dark:bg-orange-900/30 text-orange-800 dark:text-orange-300 border border-orange-200 dark:border-orange-700;
+}
+
+.badge-returned {
+    @apply inline-block px-3 py-1 text-xs font-semibold bg-green-100 dark:bg-green-900/30 text-green-800 dark:text-green-300 border border-green-200 dark:border-green-700;
+}
+
+.badge-overdue {
+    @apply inline-block px-3 py-1 text-xs font-semibold bg-red-100 dark:bg-red-900/30 text-red-800 dark:text-red-300 border border-red-200 dark:border-red-700;
+}
+
+.badge-available {
+    @apply inline-block px-3 py-1 text-xs font-semibold bg-green-100 dark:bg-green-900/30 text-green-800 dark:text-green-300 border border-green-200 dark:border-green-700;
+}
+
+.badge-unavailable {
+    @apply inline-block px-3 py-1 text-xs font-semibold bg-gray-200 dark:bg-gray-700 text-gray-700 dark:text-gray-300 border border-gray-300 dark:border-gray-600;
+}
+
+/* Backup Warning/Info Boxes */
+.backup-warning {
+    @apply p-4 mb-4 bg-red-50 dark:bg-red-900/20 border border-red-200 dark:border-red-700 text-red-700 dark:text-red-300 text-sm;
+}
+
+.backup-info {
+    @apply p-4 mb-4 bg-blue-50 dark:bg-blue-900/20 border border-blue-200 dark:border-blue-700 text-blue-700 dark:text-blue-300 text-sm;
 }

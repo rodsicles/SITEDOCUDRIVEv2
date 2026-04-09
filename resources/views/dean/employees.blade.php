@@ -22,6 +22,7 @@
                     <th>Full Name</th>
                     <th>Department</th>
                     <th>Position</th>
+                    <th>Service</th>
                     <th>Role</th>
                     <th>Action</th>
                     <th>Status</th>
@@ -34,6 +35,18 @@
                     <td>{{ $employee->full_name }}</td>
                     <td>{{ $employee->department ?? 'N/A' }}</td>
                     <td>{{ $employee->position ?? 'N/A' }}</td>
+                    <td>
+                        @if($employee->hire_date)
+                            {{ $employee->getYearsOfService() }} yr(s)
+                            @if($employee->getServiceMilestone())
+                                <span class="milestone-badge milestone-{{ $employee->getServiceMilestone() }}">
+                                    {{ $employee->getServiceMilestone() }}yr
+                                </span>
+                            @endif
+                        @else
+                            N/A
+                        @endif
+                    </td>
                     <td>
                         <span class="badge badge-info">
                             {{ $employee->user->role->role_name }}
@@ -54,7 +67,7 @@
                 </tr>
                 @empty
                 <tr>
-                    <td colspan="7" class="text-center text-gray-500 dark:text-gray-400">
+                    <td colspan="8" class="text-center text-gray-500 dark:text-gray-400">
                         No faculty members found
                     </td>
                 </tr>

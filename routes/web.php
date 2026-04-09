@@ -11,6 +11,10 @@ use App\Http\Controllers\LeaveController;
 use App\Http\Controllers\CalendarController;
 use App\Http\Controllers\FolderController;
 use App\Http\Controllers\AnnouncementController;
+use App\Http\Controllers\SkillTagController;
+use App\Http\Controllers\ProfessionalDevelopmentController;
+use App\Http\Controllers\EquipmentController;
+use App\Http\Controllers\BackupController;
 
 // Authentication Routes
 Route::get('/', [AuthController::class, 'showLogin'])->name('login');
@@ -75,6 +79,36 @@ Route::middleware(['auth', 'no.back'])->prefix('announcements')->name('announcem
     });
 });
 
+// Skill Tags (All authenticated users can view, Faculty manages own)
+Route::middleware(['auth', 'no.back'])->prefix('skill-tags')->name('skill-tags.')->group(function () {
+    Route::get('/', [SkillTagController::class, 'index'])->name('index');
+    Route::post('/', [SkillTagController::class, 'store'])->middleware('role:Faculty Employee')->name('store');
+    Route::delete('/{id}', [SkillTagController::class, 'destroy'])->middleware('role:Faculty Employee')->name('destroy');
+});
+
+// Professional Development (All roles view, Faculty manages own)
+Route::middleware(['auth', 'no.back'])->prefix('professional-development')->name('professional-development.')->group(function () {
+    Route::get('/', [ProfessionalDevelopmentController::class, 'index'])->name('index');
+    Route::post('/', [ProfessionalDevelopmentController::class, 'store'])->middleware('role:Faculty Employee')->name('store');
+    Route::put('/{id}', [ProfessionalDevelopmentController::class, 'update'])->middleware('role:Faculty Employee')->name('update');
+    Route::delete('/{id}', [ProfessionalDevelopmentController::class, 'destroy'])->middleware('role:Faculty Employee')->name('destroy');
+});
+
+// Equipment Borrowing (All authenticated users)
+Route::middleware(['auth', 'no.back'])->prefix('equipment')->name('equipment.')->group(function () {
+    Route::get('/', [EquipmentController::class, 'index'])->name('index');
+    Route::get('/borrow', [EquipmentController::class, 'borrow'])->name('borrow');
+    Route::post('/borrow', [EquipmentController::class, 'storeBorrow'])->name('store-borrow');
+    Route::post('/{id}/return', [EquipmentController::class, 'returnItem'])->name('return');
+
+    // Dean-only equipment item management
+    Route::middleware('role:Dean')->group(function () {
+        Route::post('/items', [EquipmentController::class, 'storeItem'])->name('store-item');
+        Route::put('/items/{id}', [EquipmentController::class, 'updateItem'])->name('update-item');
+        Route::delete('/items/{id}', [EquipmentController::class, 'destroyItem'])->name('destroy-item');
+    });
+});
+
 // Dean Routes
 Route::middleware(['auth', 'no.back', 'role:Dean'])->prefix('dean')->name('dean.')->group(function () {
     Route::get('/dashboard', [DeanController::class, 'dashboard'])->name('dashboard');
@@ -92,6 +126,13 @@ Route::middleware(['auth', 'no.back', 'role:Dean'])->prefix('dean')->name('dean.
     Route::delete('/folders/{folder}', [FolderController::class, 'destroy'])->name('folders.destroy');
     Route::get('/folders/list', [FolderController::class, 'getUserFolders'])->name('folders.list');
     Route::post('/documents/{document}/move', [FolderController::class, 'moveDocument'])->name('documents.move');
+
+    // Backup & Restore
+    Route::get('/backup', [BackupController::class, 'index'])->name('backup');
+    Route::post('/backup/create', [BackupController::class, 'create'])->name('backup.create');
+    Route::get('/backup/download/{filename}', [BackupController::class, 'download'])->name('backup.download');
+    Route::post('/backup/restore', [BackupController::class, 'restore'])->name('backup.restore');
+    Route::delete('/backup/{filename}', [BackupController::class, 'destroy'])->name('backup.destroy');
 });
 
 // Program Coordinator Routes

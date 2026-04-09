@@ -56,6 +56,21 @@
                 <p class="font-semibold text-base">{{ $employee->hire_date ? $employee->hire_date->format('M d, Y') : 'N/A' }}</p>
             </div>
             <div>
+                <p class="text-gray-500 dark:text-gray-400 mb-1.5 text-sm">Years of Service</p>
+                <p class="font-semibold text-base">
+                    @if($employee->getYearsOfService() !== null)
+                        {{ $employee->getYearsOfService() }} year(s)
+                        @if($employee->getServiceMilestone())
+                            <span class="milestone-badge milestone-{{ $employee->getServiceMilestone() }}">
+                                <i class="fas fa-award"></i> {{ $employee->getServiceMilestone() }} Years
+                            </span>
+                        @endif
+                    @else
+                        N/A
+                    @endif
+                </p>
+            </div>
+            <div>
                 <p class="text-gray-500 dark:text-gray-400 mb-1.5 text-sm">Email</p>
                 <p class="font-semibold text-base">{{ auth()->user()->email }}</p>
             </div>

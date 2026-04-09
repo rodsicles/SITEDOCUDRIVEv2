@@ -20,3 +20,12 @@
 <a href="{{ route('coordinator.documents') }}" class="menu-item {{ request()->routeIs('coordinator.documents', 'coordinator.upload-document') ? 'active' : '' }}">
     <i class="fas fa-folder"></i> Documents
 </a>
+<a href="{{ route('equipment.index') }}" class="menu-item {{ request()->routeIs('equipment.*') ? 'active' : '' }}">
+    <i class="fas fa-tools"></i> Equipment
+</a>
+<a href="{{ route('professional-development.index') }}" class="menu-item {{ request()->routeIs('professional-development.*') ? 'active' : '' }}">
+    <i class="fas fa-graduation-cap"></i> Prof. Development
+</a>
+<a href="{{ route('skill-tags.index') }}" class="menu-item {{ request()->routeIs('skill-tags.*') ? 'active' : '' }}">
+    <i class="fas fa-tags"></i> Skill Tags
+</a>

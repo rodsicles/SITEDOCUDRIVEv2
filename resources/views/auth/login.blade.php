@@ -4,6 +4,7 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0">
     <title>Login - Employee Dashboard with Data Analytics - SITE</title>
+    <link rel="icon" type="image/png" href="{{ asset('images/SPUP-final-logo.png') }}">
     @vite(['resources/css/app.css', 'resources/js/app.js'])
 </head>
 <body class="role-selection-page" data-font-size="medium">
@@ -23,19 +24,39 @@
         <div class="role-selection-left">
             <div class="role-selection-branding">
                 <div class="role-selection-logo-wrapper">
-                    <img src="{{ asset('images/site-logo.png') }}" alt="St. Paul University Philippines Logo" class="role-selection-logo">
+                    <img src="{{ asset('images/SPUP-final-logo.png') }}" alt="St. Paul University Philippines Logo" class="role-selection-logo">
                 </div>
-                <h2 class="role-selection-university-name">St. Paul University Philippines</h2>
-                <p class="role-selection-university-location">TUGUEGARAO CITY</p>
+                <div class="role-selection-branding-text">
+                    <h2 class="role-selection-university-name">St. Paul University Philippines</h2>
+                    <p class="role-selection-university-location">Tuguegarao City</p>
+                </div>
             </div>
 
             <div class="role-selection-tagline">
-                <h1 class="role-selection-main-title">Employee Dashboard with <span class="role-selection-accent">Data Analytics</span></h1>
+                <div class="role-selection-main-title-wrapper">
+                    <img src="{{ asset('images/site-logo.png') }}" alt="Logo" class="role-selection-title-logo">
+                    <h1 class="role-selection-main-title">Employee Dashboard with <span class="role-selection-accent">Data Analytics</span></h1>
+                </div>
                 <p class="role-selection-description">Manage documents, reports and credentials of SITE employees</p>
-            </div>
 
-            <div class="role-selection-footer-year">
-                A.Y. 2025-2026
+                <div class="role-selection-features">
+                    <div class="role-selection-feature-item">
+                        <i class="fas fa-file-alt role-selection-feature-icon"></i>
+                        <span>Document Management & Tracking</span>
+                    </div>
+                    <div class="role-selection-feature-item">
+                        <i class="fas fa-chart-bar role-selection-feature-icon"></i>
+                        <span>Analytics & Report Generation</span>
+                    </div>
+                    <div class="role-selection-feature-item">
+                        <i class="fas fa-id-card role-selection-feature-icon"></i>
+                        <span>Employee Credentials Management</span>
+                    </div>
+                    <div class="role-selection-feature-item">
+                        <i class="fas fa-shield-alt role-selection-feature-icon"></i>
+                        <span>Role-Based Access Control</span>
+                    </div>
+                </div>
             </div>
         </div>
 
@@ -88,7 +109,6 @@
                         </button>
                     </div>
 
-                    <div class="role-selection-footer-text">Cantas Christi Urget Nos</div>
                 </div>
 
                 <!-- PANEL 2: Login Form (hidden by default) -->
@@ -152,12 +172,20 @@
                         </button>
                     </form>
 
-                    <div class="role-selection-footer-text login-inline-footer">Cantas Christi Urget Nos</div>
                 </div>
 
             </div>
         </div>
     </div>
+
+    <!-- Footer -->
+    <footer class="login-page-footer">
+        <div class="login-footer-content">
+            <span>A.Y. 2025-2026</span>
+            <span class="login-footer-separator">|</span>
+            <span>Caritas Christi Urget Nos</span>
+        </div>
+    </footer>
 
     <script>
         // Dark Mode Toggle

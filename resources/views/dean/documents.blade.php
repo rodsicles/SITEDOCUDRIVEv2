@@ -52,6 +52,8 @@
                             @endphp
                             @if($extension === 'pdf')
                                 <i class="fas fa-file-pdf"></i>
+                            @elseif(in_array($extension, ['doc', 'docx']))
+                                <i class="fas fa-file-word"></i>
                             @elseif(in_array($extension, ['png', 'jpg', 'jpeg']))
                                 <i class="fas fa-file-image"></i>
                             @else
@@ -65,6 +67,8 @@
                             <span class="doc-category-badge">{{ $document->category }}</span>
                         @elseif($document->document_type === 'pdf')
                             <span class="doc-category-badge">PDF Document</span>
+                        @elseif($document->document_type === 'word')
+                            <span class="doc-category-badge">Word Document</span>
                         @elseif($document->document_type === 'image')
                             <span class="doc-category-badge">Image File</span>
                         @else

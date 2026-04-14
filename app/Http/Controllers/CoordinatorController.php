@@ -196,11 +196,13 @@ class CoordinatorController extends Controller
     {
         $validated = $request->validate([
             'document_title' => 'required|string|max:13',
-            'document_type' => 'required|in:pdf,image',
+            'document_type' => 'required|in:pdf,image,word',
             'documents' => 'required|array|max:3',
-            'documents.*' => $request->input('document_type') === 'pdf'
-                ? 'required|file|max:10240|mimes:pdf|mimetypes:application/pdf'
-                : 'required|file|max:10240|mimes:jpg,jpeg,png|mimetypes:image/jpeg,image/png',
+            'documents.*' => match($request->input('document_type')) {
+                'pdf' => 'required|file|max:10240|mimes:pdf|mimetypes:application/pdf',
+                'word' => 'required|file|max:10240|mimes:doc,docx',
+                default => 'required|file|max:10240|mimes:jpg,jpeg,png|mimetypes:image/jpeg,image/png',
+            },
             'category' => 'required|in:Policies,Forms,Reports,Memos,Research Papers,Other',
             'tags' => 'nullable|string|max:15',
             'folder_id' => [

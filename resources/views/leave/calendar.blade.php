@@ -3,7 +3,7 @@
 @section('title', 'Leave Calendar')
 
 @section('page-title', 'Leave Calendar')
-@section('page-subtitle', 'View all approved leaves in calendar format')
+@section('page-subtitle', 'View all logged leaves in calendar format')
 
 @section('sidebar')
     @if(auth()->user()->isFaculty())

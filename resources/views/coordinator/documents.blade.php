@@ -47,6 +47,7 @@
                     <select name="document_type" id="documentTypeCoord" class="form-control" required>
                         <option value="">Select Document Type</option>
                         <option value="pdf">PDF Document</option>
+                        <option value="word">Word Document</option>
                         <option value="image">Image File</option>
                     </select>
                     <small class="text-gray-600 dark:text-gray-400 text-xs mt-1.5 block">
@@ -126,6 +127,8 @@
                             @endphp
                             @if($extension === 'pdf')
                                 <i class="fas fa-file-pdf"></i>
+                            @elseif(in_array($extension, ['doc', 'docx']))
+                                <i class="fas fa-file-word"></i>
                             @elseif(in_array($extension, ['png', 'jpg', 'jpeg']))
                                 <i class="fas fa-file-image"></i>
                             @else
@@ -139,6 +142,8 @@
                             <span class="doc-category-badge">{{ $document->category }}</span>
                         @elseif($document->document_type === 'pdf')
                             <span class="doc-category-badge">PDF Document</span>
+                        @elseif($document->document_type === 'word')
+                            <span class="doc-category-badge">Word Document</span>
                         @elseif($document->document_type === 'image')
                             <span class="doc-category-badge">Image File</span>
                         @else
@@ -214,6 +219,11 @@
             fileInput.setAttribute('accept', '.pdf');
             fileHelp.innerHTML = '<i class="fas fa-file-pdf"></i> Allowed: PDF files only (Max: 10MB each)';
             fileHelp.className = 'text-red-700 dark:text-red-500 text-xs mt-1.5 block';
+        } else if (selectedType === 'word') {
+            fileInput.disabled = false;
+            fileInput.setAttribute('accept', '.doc,.docx');
+            fileHelp.innerHTML = '<i class="fas fa-file-word"></i> Allowed: DOC, DOCX files only (Max: 10MB each)';
+            fileHelp.className = 'text-blue-700 dark:text-blue-500 text-xs mt-1.5 block';
         } else if (selectedType === 'image') {
             fileInput.disabled = false;
             fileInput.setAttribute('accept', '.jpg,.jpeg,.png');
@@ -252,7 +262,12 @@
                 alert('Error: You selected "PDF Document" but uploaded a non-PDF file (' + files[i].name + ')');
                 return false;
             }
-            
+
+            if (documentType === 'word' && !['doc', 'docx'].includes(fileExtension)) {
+                alert('Error: You selected "Word Document" but uploaded an invalid file type (' + files[i].name + ')');
+                return false;
+            }
+
             if (documentType === 'image' && !['jpg', 'jpeg', 'png'].includes(fileExtension)) {
                 alert('Error: You selected "Image File" but uploaded an invalid file type (' + files[i].name + ')');
                 return false;

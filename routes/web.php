@@ -39,9 +39,7 @@ Route::middleware(['auth', 'no.back'])->prefix('leave')->name('leave.')->group(f
     Route::post('/', [LeaveController::class, 'store'])->name('store');
     Route::get('/{id}/edit', [LeaveController::class, 'edit'])->name('edit');
     Route::patch('/{id}', [LeaveController::class, 'update'])->name('update');
-    Route::post('/{id}/cancel', [LeaveController::class, 'cancel'])->name('cancel');
-    Route::post('/{id}/approve', [LeaveController::class, 'approve'])->name('approve');
-    Route::post('/{id}/reject', [LeaveController::class, 'reject'])->name('reject');
+    Route::delete('/{id}', [LeaveController::class, 'delete'])->name('delete');
     Route::get('/calendar', [LeaveController::class, 'calendar'])->name('calendar');
 });
 

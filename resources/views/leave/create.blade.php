@@ -1,12 +1,18 @@
 @extends('layouts.dashboard')
 
-@section('title', 'File Leave Request')
+@section('title', 'Log Leave')
 
-@section('page-title', 'File Leave Request')
-@section('page-subtitle', 'Submit a new leave request for approval')
+@section('page-title', 'Log Leave Record')
+@section('page-subtitle', 'Record a new leave entry')
 
 @section('sidebar')
+    @if(auth()->user()->isFaculty())
     @include('partials.faculty-sidebar')
+    @elseif(auth()->user()->isProgramCoordinator())
+    @include('partials.coordinator-sidebar')
+    @else
+    @include('partials.dean-sidebar')
+    @endif
 @endsection
 
 @section('content')
@@ -28,10 +34,10 @@
         </div>
     </div>
 
-    <!-- Leave Request Form -->
+    <!-- Leave Form -->
     <div class="content-card">
         <div class="card-header">
-            <h3 class="card-title">New Leave Request</h3>
+            <h3 class="card-title">New Leave Record</h3>
             <a href="{{ route('leave.index') }}" class="btn btn-secondary">
                 <i class="fas fa-arrow-left"></i> Back
             </a>
@@ -58,15 +64,15 @@
             <div class="grid grid-cols-1 md:grid-cols-2 gap-5">
                 <div class="form-group">
                     <label class="form-label">Start Date *</label>
-                    <input type="date" name="start_date" class="form-control" 
-                           min="{{ date('Y-m-d') }}" required 
+                    <input type="date" name="start_date" class="form-control"
+                           min="{{ date('Y-m-d') }}" required
                            onchange="calculateDays()">
                 </div>
 
                 <div class="form-group">
                     <label class="form-label">End Date *</label>
-                    <input type="date" name="end_date" class="form-control" 
-                           min="{{ date('Y-m-d') }}" required 
+                    <input type="date" name="end_date" class="form-control"
+                           min="{{ date('Y-m-d') }}" required
                            onchange="calculateDays()">
                 </div>
             </div>
@@ -77,8 +83,8 @@
 
             <div class="form-group">
                 <label class="form-label">Reason for Leave *</label>
-                <textarea name="reason" class="form-control" rows="5" required 
-                          placeholder="Please provide a detailed reason for your leave request..." 
+                <textarea name="reason" class="form-control" rows="5" required
+                          placeholder="Please provide a reason for this leave record..."
                           minlength="10" maxlength="120"></textarea>
                 <small class="text-gray-500 dark:text-gray-400">Minimum 10 characters</small>
             </div>
@@ -88,7 +94,7 @@
                     Cancel
                 </a>
                 <button type="submit" class="btn btn-primary">
-                    <i class="fas fa-paper-plane"></i> Submit Leave Request
+                    <i class="fas fa-save"></i> Log Leave
                 </button>
             </div>
         </form>
@@ -100,30 +106,28 @@
     function calculateDays() {
         const startDate = document.querySelector('[name="start_date"]').value;
         const endDate = document.querySelector('[name="end_date"]').value;
-        
+
         if (startDate && endDate) {
             const start = new Date(startDate);
             const end = new Date(endDate);
-            
+
             if (end >= start) {
                 const diffTime = Math.abs(end - start);
                 const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24)) + 1;
-                
+
                 document.getElementById('dayCount').classList.remove('hidden');
-                document.getElementById('dayCountText').textContent = 
-                    `This leave request is for ${diffDays} day(s)`;
+                document.getElementById('dayCountText').textContent =
+                    `This leave record is for ${diffDays} day(s)`;
             } else {
                 document.getElementById('dayCount').classList.add('hidden');
             }
         }
     }
-    
-    // Update end date minimum when start date changes
+
     document.querySelector('[name="start_date"]').addEventListener('change', function() {
         document.querySelector('[name="end_date"]').min = this.value;
     });
 
-    // Prevent double submit
     document.querySelector('form[action="{{ route('leave.store') }}"]')?.addEventListener('submit', function() {
         const btn = this.querySelector('button[type="submit"]');
         if (btn) btn.disabled = true;

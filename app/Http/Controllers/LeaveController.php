@@ -4,7 +4,6 @@ namespace App\Http\Controllers;
 
 use App\Models\LeaveRequest;
 use App\Models\LeaveBalance;
-use App\Models\User;
 use App\Services\LeaveService;
 use Illuminate\Http\Request;
 
@@ -20,11 +19,10 @@ class LeaveController extends Controller
 
         if ($user->isFaculty()) {
             $leaveRequests = LeaveRequest::where('user_id', $user->id)
-                ->with('reviewer.employee')
                 ->orderBy('created_at', 'desc')
                 ->paginate(15);
         } else {
-            $leaveRequests = LeaveRequest::with(['user.employee', 'reviewer.employee'])
+            $leaveRequests = LeaveRequest::with(['user.employee'])
                 ->orderBy('created_at', 'desc')
                 ->paginate(15);
         }
@@ -49,23 +47,17 @@ class LeaveController extends Controller
             'reason' => 'required|string|min:10|max:120',
         ]);
 
-        $daysCount = $this->leaveService->calculateDays($validated['start_date'], $validated['end_date']);
-
-        if (!$this->leaveService->hasSufficientBalance(auth()->id(), $validated['leave_type'], $daysCount)) {
-            return back()->with('error', 'Insufficient leave balance for this request.');
-        }
-
         $this->leaveService->createLeaveRequest($validated, auth()->user());
 
-        return redirect()->route('leave.index')->with('success', 'Leave request submitted successfully.');
+        return redirect()->route('leave.index')->with('success', 'Leave record logged successfully.');
     }
 
     public function edit($id)
     {
         $leaveRequest = LeaveRequest::findOrFail($id);
 
-        if ($leaveRequest->user_id !== auth()->id() || !$leaveRequest->isPending()) {
-            return redirect()->route('leave.index')->with('error', 'Cannot edit this leave request.');
+        if ($leaveRequest->user_id !== auth()->id()) {
+            return redirect()->route('leave.index')->with('error', 'Cannot edit this leave record.');
         }
 
         $leaveBalance = LeaveBalance::getOrCreateBalance(auth()->id());
@@ -76,8 +68,8 @@ class LeaveController extends Controller
     {
         $leaveRequest = LeaveRequest::findOrFail($id);
 
-        if ($leaveRequest->user_id !== auth()->id() || !$leaveRequest->isPending()) {
-            return redirect()->route('leave.index')->with('error', 'Cannot update this leave request.');
+        if ($leaveRequest->user_id !== auth()->id()) {
+            return redirect()->route('leave.index')->with('error', 'Cannot update this leave record.');
         }
 
         $validated = $request->validate([
@@ -87,18 +79,12 @@ class LeaveController extends Controller
             'reason' => 'required|string|min:10|max:120',
         ]);
 
-        $daysCount = $this->leaveService->calculateDays($validated['start_date'], $validated['end_date']);
-
-        if (!$this->leaveService->hasSufficientBalance(auth()->id(), $validated['leave_type'], $daysCount)) {
-            return back()->with('error', 'Insufficient leave balance for this request.');
-        }
-
         $this->leaveService->updateLeaveRequest($leaveRequest, $validated);
 
-        return redirect()->route('leave.index')->with('success', 'Leave request updated successfully.');
+        return redirect()->route('leave.index')->with('success', 'Leave record updated successfully.');
     }
 
-    public function cancel($id)
+    public function delete($id)
     {
         $leaveRequest = LeaveRequest::findOrFail($id);
 
@@ -106,43 +92,9 @@ class LeaveController extends Controller
             return back()->with('error', 'Unauthorized action.');
         }
 
-        if (!$leaveRequest->isPending()) {
-            return back()->with('error', 'Only pending leave requests can be cancelled.');
-        }
+        $this->leaveService->deleteLeaveRequest($leaveRequest, auth()->user());
 
-        $this->leaveService->cancelLeaveRequest($leaveRequest, auth()->user());
-
-        return back()->with('success', 'Leave request cancelled successfully.');
-    }
-
-    public function approve($id)
-    {
-        $leaveRequest = LeaveRequest::findOrFail($id);
-
-        if (!auth()->user()->isProgramCoordinator() && !auth()->user()->isDean()) {
-            return back()->with('error', 'Unauthorized action.');
-        }
-
-        $this->leaveService->approveLeaveRequest($leaveRequest, auth()->user());
-
-        return back()->with('success', 'Leave request approved.');
-    }
-
-    public function reject(Request $request, $id)
-    {
-        $validated = $request->validate([
-            'review_notes' => 'required|string|min:10',
-        ]);
-
-        $leaveRequest = LeaveRequest::findOrFail($id);
-
-        if (!auth()->user()->isProgramCoordinator() && !auth()->user()->isDean()) {
-            return back()->with('error', 'Unauthorized action.');
-        }
-
-        $this->leaveService->rejectLeaveRequest($leaveRequest, auth()->user(), $validated['review_notes']);
-
-        return back()->with('success', 'Leave request rejected.');
+        return back()->with('success', 'Leave record deleted and balance restored.');
     }
 
     public function calendar()

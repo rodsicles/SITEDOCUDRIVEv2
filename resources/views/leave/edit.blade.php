@@ -1,12 +1,18 @@
 @extends('layouts.dashboard')
 
-@section('title', 'Edit Leave Request')
+@section('title', 'Edit Leave Record')
 
-@section('page-title', 'Edit Leave Request')
-@section('page-subtitle', 'Update your leave request details')
+@section('page-title', 'Edit Leave Record')
+@section('page-subtitle', 'Update your leave record details')
 
 @section('sidebar')
+    @if(auth()->user()->isFaculty())
     @include('partials.faculty-sidebar')
+    @elseif(auth()->user()->isProgramCoordinator())
+    @include('partials.coordinator-sidebar')
+    @else
+    @include('partials.dean-sidebar')
+    @endif
 @endsection
 
 @section('content')
@@ -38,7 +44,7 @@
     <!-- Leave Request Form -->
     <div class="content-card">
         <div class="card-header">
-            <h3 class="card-title">Edit Leave Request</h3>
+            <h3 class="card-title">Edit Leave Record</h3>
             <a href="{{ route('leave.index') }}" class="btn bg-gray-200 dark:bg-gray-700">
                 <i class="fas fa-arrow-left"></i> Back
             </a>
@@ -82,7 +88,7 @@
             </div>
 
             <div class="alert alert-info" id="dayCount">
-                <i class="fas fa-info-circle"></i> <span id="dayCountText">This leave request is for {{ $leaveRequest->days_count }} day(s)</span>
+                <i class="fas fa-info-circle"></i> <span id="dayCountText">This leave record is for {{ $leaveRequest->days_count }} day(s)</span>
             </div>
 
             <div class="form-group">
@@ -98,7 +104,7 @@
                     Cancel
                 </a>
                 <button type="submit" class="btn btn-primary">
-                    <i class="fas fa-save"></i> Update Leave Request
+                    <i class="fas fa-save"></i> Update Leave Record
                 </button>
             </div>
         </form>
@@ -121,7 +127,7 @@
                 
                 document.getElementById('dayCount').classList.remove('hidden');
                 document.getElementById('dayCountText').textContent = 
-                    `This leave request is for ${diffDays} day(s)`;
+                    `This leave record is for ${diffDays} day(s)`;
             } else {
                 document.getElementById('dayCount').classList.add('hidden');
             }

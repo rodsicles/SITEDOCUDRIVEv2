@@ -4,7 +4,6 @@ namespace App\Services;
 
 use App\Models\LeaveRequest;
 use App\Models\LeaveBalance;
-use App\Models\Notification;
 use App\Models\DashboardLog;
 use App\Models\User;
 
@@ -21,22 +20,7 @@ class LeaveService
     }
 
     /**
-     * Check if the user has sufficient leave balance.
-     * Returns true if sufficient, false otherwise.
-     */
-    public function hasSufficientBalance(int $userId, string $leaveType, int $daysCount): bool
-    {
-        $balance = LeaveBalance::getOrCreateBalance($userId);
-
-        if (str_contains($leaveType, 'Sick')) {
-            return $daysCount <= $balance->getRemainingSickLeave();
-        }
-
-        return $daysCount <= $balance->getRemainingVacationLeave();
-    }
-
-    /**
-     * Create a leave request and notify supervisors.
+     * Create a leave record — auto-logged, balance deducted immediately.
      */
     public function createLeaveRequest(array $validated, User $user): LeaveRequest
     {
@@ -49,16 +33,16 @@ class LeaveService
             'end_date' => $validated['end_date'],
             'days_count' => $daysCount,
             'reason' => $validated['reason'],
-            'status' => 'Pending',
+            'status' => 'Approved',
         ]);
 
-        $this->notifySupervisors(
-            $user->username . ' filed a ' . $validated['leave_type'] . ' request (' . $daysCount . ' days)'
-        );
+        // Deduct balance immediately on filing
+        $balance = LeaveBalance::getOrCreateBalance($user->id);
+        $balance->deductLeave($validated['leave_type'], $daysCount);
 
         DashboardLog::create([
             'user_id' => $user->id,
-            'activity' => 'Filed leave request: ' . $validated['leave_type'] . ' (' . $validated['start_date'] . ' to ' . $validated['end_date'] . ')',
+            'activity' => 'Logged leave: ' . $validated['leave_type'] . ' (' . $validated['start_date'] . ' to ' . $validated['end_date'] . ')',
             'activity_type' => 'leave_requested',
             'visibility' => 'coordinator',
         ]);
@@ -67,17 +51,24 @@ class LeaveService
     }
 
     /**
-     * Update an existing pending leave request.
+     * Update an existing leave record. Adjusts balance if days/type changed.
      */
     public function updateLeaveRequest(LeaveRequest $leaveRequest, array $validated): LeaveRequest
     {
-        $daysCount = $this->calculateDays($validated['start_date'], $validated['end_date']);
+        $oldDaysCount = $leaveRequest->days_count;
+        $oldLeaveType = $leaveRequest->leave_type;
+        $newDaysCount = $this->calculateDays($validated['start_date'], $validated['end_date']);
+
+        // Restore old balance then deduct new
+        $balance = LeaveBalance::getOrCreateBalance($leaveRequest->user_id);
+        $balance->restoreLeave($oldLeaveType, $oldDaysCount);
+        $balance->deductLeave($validated['leave_type'], $newDaysCount);
 
         $leaveRequest->update([
             'leave_type' => $validated['leave_type'],
             'start_date' => $validated['start_date'],
             'end_date' => $validated['end_date'],
-            'days_count' => $daysCount,
+            'days_count' => $newDaysCount,
             'reason' => $validated['reason'],
         ]);
 
@@ -85,89 +76,21 @@ class LeaveService
     }
 
     /**
-     * Cancel a pending leave request and notify supervisors.
+     * Delete a leave record and restore balance.
      */
-    public function cancelLeaveRequest(LeaveRequest $leaveRequest, User $user): void
+    public function deleteLeaveRequest(LeaveRequest $leaveRequest, User $user): void
     {
-        $leaveRequest->update(['status' => 'Cancelled']);
+        // Restore balance since it was deducted on creation
+        $balance = LeaveBalance::getOrCreateBalance($leaveRequest->user_id);
+        $balance->restoreLeave($leaveRequest->leave_type, $leaveRequest->days_count);
 
         DashboardLog::create([
             'user_id' => $user->id,
-            'activity' => 'Cancelled leave request: ' . $leaveRequest->leave_type . ' (' . $leaveRequest->days_count . ' days)',
+            'activity' => 'Deleted leave record: ' . $leaveRequest->leave_type . ' (' . $leaveRequest->days_count . ' days)',
             'activity_type' => 'leave_cancelled',
             'visibility' => 'coordinator',
         ]);
 
-        $this->notifySupervisors(
-            $user->username . ' cancelled a ' . $leaveRequest->leave_type . ' request (' . $leaveRequest->days_count . ' days)'
-        );
-    }
-
-    /**
-     * Approve a leave request: update status, deduct balance, notify faculty.
-     */
-    public function approveLeaveRequest(LeaveRequest $leaveRequest, User $reviewer): void
-    {
-        $leaveRequest->update([
-            'status' => 'Approved',
-            'reviewed_by' => $reviewer->id,
-            'reviewed_at' => now(),
-        ]);
-
-        $balance = LeaveBalance::getOrCreateBalance($leaveRequest->user_id);
-        $balance->deductLeave($leaveRequest->leave_type, $leaveRequest->days_count);
-
-        Notification::create([
-            'user_id' => $leaveRequest->user_id,
-            'message' => 'Your ' . $leaveRequest->leave_type . ' request has been APPROVED by ' . $reviewer->username,
-        ]);
-
-        DashboardLog::create([
-            'user_id' => $reviewer->id,
-            'target_user_id' => $leaveRequest->user_id,
-            'activity' => 'Approved leave request: ' . $leaveRequest->leave_type . ' (' . $leaveRequest->days_count . ' days)',
-            'activity_type' => 'leave_approved',
-            'visibility' => 'coordinator',
-        ]);
-    }
-
-    /**
-     * Reject a leave request and notify faculty.
-     */
-    public function rejectLeaveRequest(LeaveRequest $leaveRequest, User $reviewer, string $reviewNotes): void
-    {
-        $leaveRequest->update([
-            'status' => 'Rejected',
-            'reviewed_by' => $reviewer->id,
-            'reviewed_at' => now(),
-            'review_notes' => $reviewNotes,
-        ]);
-
-        Notification::create([
-            'user_id' => $leaveRequest->user_id,
-            'message' => 'Your ' . $leaveRequest->leave_type . ' request has been REJECTED by ' . $reviewer->username . '. Reason: ' . $reviewNotes,
-        ]);
-
-        DashboardLog::create([
-            'user_id' => $reviewer->id,
-            'target_user_id' => $leaveRequest->user_id,
-            'activity' => 'Rejected leave request: ' . $leaveRequest->leave_type . ' (' . $leaveRequest->days_count . ' days)',
-            'activity_type' => 'leave_rejected',
-            'visibility' => 'coordinator',
-        ]);
-    }
-
-    /**
-     * Notify all coordinators and deans with a message.
-     */
-    private function notifySupervisors(string $message): void
-    {
-        $supervisors = User::whereIn('role_id', [1, 2])->get();
-        foreach ($supervisors as $supervisor) {
-            Notification::create([
-                'user_id' => $supervisor->id,
-                'message' => $message,
-            ]);
-        }
+        $leaveRequest->delete();
     }
 }

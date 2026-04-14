@@ -234,7 +234,7 @@
         }
     });
 
--    document.getElementById('uploadForm').addEventListener('submit', async function(e) {
+    document.getElementById('uploadForm').addEventListener('submit', async function(e) {
         e.preventDefault(); // Prevent default form submission
         
         const documentType = document.getElementById('documentType').value;

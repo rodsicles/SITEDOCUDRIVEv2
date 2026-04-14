@@ -7,34 +7,9 @@
 
 @section('sidebar')
     @if(auth()->user()->isDean())
-        <a href="{{ route('dean.dashboard') }}" class="menu-item">
-            <i class="fas fa-chart-line"></i> Dashboard
-        </a>
-        <a href="{{ route('dean.employees') }}" class="menu-item">
-            <i class="fas fa-users"></i> Faculty Members
-        </a>
-        <a href="{{ route('dean.reports') }}" class="menu-item">
-            <i class="fas fa-file-alt"></i> Performance Reports
-        </a>
-        <a href="{{ route('dean.analytics') }}" class="menu-item">
-            <i class="fas fa-chart-pie"></i> Analytics
-        </a>
-        <a href="{{ route('dean.documents') }}" class="menu-item">
-            <i class="fas fa-folder"></i> Documents
-        </a>
+        @include('partials.dean-sidebar')
     @else
-        <a href="{{ route('coordinator.dashboard') }}" class="menu-item">
-            <i class="fas fa-chart-line"></i> Dashboard
-        </a>
-        <a href="{{ route('coordinator.tasks') }}" class="menu-item">
-            <i class="fas fa-tasks"></i> Tasks
-        </a>
-        <a href="{{ route('coordinator.faculty') }}" class="menu-item">
-            <i class="fas fa-users"></i> Faculty Members
-        </a>
-        <a href="{{ route('coordinator.documents') }}" class="menu-item">
-            <i class="fas fa-folder"></i> Documents
-        </a>
+        @include('partials.coordinator-sidebar')
     @endif
 @endsection
 

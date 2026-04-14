@@ -7,41 +7,11 @@
 
 @section('sidebar')
     @if(auth()->user()->isFaculty())
-    <a href="{{ route('faculty.dashboard') }}" class="menu-item">
-        <i class="fas fa-chart-line"></i> Dashboard
-    </a>
-    <a href="{{ route('faculty.tasks') }}" class="menu-item">
-        <i class="fas fa-tasks"></i> My Tasks
-    </a>
-    <a href="{{ route('leave.index') }}" class="menu-item active">
-        <i class="fas fa-calendar-alt"></i> Leave Requests
-    </a>
-    <a href="{{ route('calendar.index') }}" class="menu-item">
-        <i class="fas fa-calendar"></i> Calendar
-    </a>
+    @include('partials.faculty-sidebar')
     @elseif(auth()->user()->isProgramCoordinator())
-    <a href="{{ route('coordinator.dashboard') }}" class="menu-item">
-        <i class="fas fa-chart-line"></i> Dashboard
-    </a>
-    <a href="{{ route('coordinator.tasks') }}" class="menu-item">
-        <i class="fas fa-tasks"></i> Tasks
-    </a>
-    <a href="{{ route('leave.index') }}" class="menu-item active">
-        <i class="fas fa-calendar-alt"></i> Leave Requests
-    </a>
-    <a href="{{ route('calendar.index') }}" class="menu-item">
-        <i class="fas fa-calendar"></i> Calendar
-    </a>
+    @include('partials.coordinator-sidebar')
     @else
-    <a href="{{ route('dean.dashboard') }}" class="menu-item">
-        <i class="fas fa-chart-line"></i> Dashboard
-    </a>
-    <a href="{{ route('leave.index') }}" class="menu-item active">
-        <i class="fas fa-calendar-alt"></i> Leave Requests
-    </a>
-    <a href="{{ route('calendar.index') }}" class="menu-item">
-        <i class="fas fa-calendar"></i> Calendar
-    </a>
+    @include('partials.dean-sidebar')
     @endif
 @endsection
 

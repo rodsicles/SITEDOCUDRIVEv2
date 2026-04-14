@@ -5,6 +5,16 @@
 @section('page-title', $event->title)
 @section('page-subtitle', $event->event_type)
 
+@section('sidebar')
+    @if(auth()->user()->isFaculty())
+    @include('partials.faculty-sidebar')
+    @elseif(auth()->user()->isProgramCoordinator())
+    @include('partials.coordinator-sidebar')
+    @else
+    @include('partials.dean-sidebar')
+    @endif
+@endsection
+
 @section('content')
     <div class="content-card">
         <div class="card-header">

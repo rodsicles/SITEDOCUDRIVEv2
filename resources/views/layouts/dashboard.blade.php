@@ -216,19 +216,32 @@
 
                     <!-- User Dropdown Menu -->
                     <div class="relative">
-                        <button id="userMenuBtn" class="bg-transparent border-none text-gray-800 dark:text-gray-200 text-xs px-2 py-1 max-md:px-1 max-md:py-1 cursor-pointer">
+                        <button id="userMenuBtn" class="bg-transparent border-none text-gray-800 dark:text-gray-200 text-sm px-2 py-1 max-md:px-1 max-md:py-1 cursor-pointer font-medium">
                             <span class="max-md:hidden">{{ auth()->user()->username }}</span> <i class="fas fa-chevron-down text-xs ml-1"></i>
                         </button>
-                        <div id="userMenu" class="hidden absolute top-full right-0 bg-white dark:bg-[#2a2a2a] border border-gray-200 dark:border-gray-700 p-2 min-w-[140px] z-[1000] mt-1">
-                            <a href="{{ route('profile.edit') }}" class="block px-3 py-1 text-gray-800 dark:text-gray-200 no-underline text-xs">
-                                <i class="fas fa-user-edit"></i> Edit Profile
-                            </a>
-                            <form action="{{ route('logout') }}" method="POST" class="m-0" id="logoutForm">
-                                @csrf
-                                <button type="submit" class="block w-full text-left px-3 py-1 bg-transparent border-none text-gray-800 dark:text-gray-200 cursor-pointer text-xs">
-                                    <i class="fas fa-sign-out-alt"></i> Logout
-                                </button>
-                            </form>
+                        <div id="userMenu" class="hidden absolute top-full right-0 bg-white dark:bg-[#2a2a2a] border border-gray-200 dark:border-gray-700 min-w-[200px] z-[1000] mt-1">
+                            <!-- User Info -->
+                            <div class="px-4 py-3 border-b border-gray-200 dark:border-gray-700">
+                                <p class="text-sm font-semibold text-gray-800 dark:text-gray-200 m-0">{{ auth()->user()->employee->full_name ?? auth()->user()->username }}</p>
+                                <p class="text-xs text-gray-500 dark:text-gray-400 m-0 mt-1">
+                                    <span class="inline-block px-2 py-0.5 bg-[#028a0f] text-white text-[10px] font-semibold">{{ auth()->user()->role->role_name }}</span>
+                                </p>
+                            </div>
+                            <!-- Menu Items -->
+                            <div class="py-1">
+                                <a href="{{ route('profile.edit') }}" class="flex items-center gap-2.5 px-4 py-2.5 text-gray-700 dark:text-gray-200 no-underline text-sm">
+                                    <i class="fas fa-user-edit text-gray-400 dark:text-gray-500 w-4 text-center"></i> Edit Profile
+                                </a>
+                            </div>
+                            <!-- Logout -->
+                            <div class="border-t border-gray-200 dark:border-gray-700 p-2">
+                                <form action="{{ route('logout') }}" method="POST" class="m-0" id="logoutForm">
+                                    @csrf
+                                    <button type="submit" class="flex items-center justify-center gap-2 w-full px-4 py-2.5 bg-red-600 text-white border-none cursor-pointer text-sm font-semibold">
+                                        <i class="fas fa-sign-out-alt"></i> Logout
+                                    </button>
+                                </form>
+                            </div>
                         </div>
                     </div>
                 </div>

@@ -60,119 +60,115 @@
             </div>
         </div>
 
-        <!-- Right Section: Role Selection + Login Form (same position) -->
+        <!-- Right Section: Single Login Form -->
         <div class="role-selection-right">
             <div class="login-right-wrapper">
 
-                <!-- PANEL 1: Role Selection -->
-                <div id="roleSelectionPanel" class="login-panel-active">
-                    <h3 class="role-selection-title">Select your role</h3>
-                    <p class="role-selection-subtitle">Choose how you want to log into the system.</p>
+                <!-- Theme Toggle -->
+                <div style="display: flex; justify-content: flex-end; margin-bottom: 12px;">
+                    <button id="themeToggle" type="button" class="login-inline-theme-toggle">
+                        <i class="fas fa-moon"></i>
+                    </button>
+                </div>
 
-                    <div class="role-selection-cards">
-                        <!-- Dean Role -->
-                        <button onclick="showLoginForm('dean')" class="role-card" style="width: 100%; text-align: left; background: none; border: none; cursor: pointer; padding: 0;">
-                            <div class="role-card-content">
-                                <div class="role-card-title">Dean</div>
-                            </div>
-                            <div class="role-card-arrow">
-                                <i class="fas fa-arrow-right"></i>
-                            </div>
-                        </button>
+                <!-- Header -->
+                <h3 class="role-selection-title" style="margin-bottom: 4px;">SITE Employee Portal</h3>
+                <p class="role-selection-subtitle" style="margin-bottom: 24px;">Select your role and enter your credentials to continue.</p>
 
-                        <!-- Coordinator Role with Submenu -->
-                        <div class="role-card-container">
-                            <button onclick="toggleCoordinatorMenu()" class="role-card" style="width: 100%; text-align: left; background: none; border: none; cursor: pointer; padding: 0;">
-                                <div class="role-card-content">
-                                    <div class="role-card-title">Coordinator</div>
-                                </div>
-                                <div class="role-card-arrow">
-                                    <i class="fas fa-chevron-down" id="coordinatorToggleIcon"></i>
-                                </div>
+                <!-- Error Message -->
+                @if($errors->any())
+                <div class="login-inline-error" style="margin-bottom: 16px;">
+                    {{ $errors->first() }}
+                </div>
+                @endif
+
+                <!-- Role Cards -->
+                <div style="margin-bottom: 24px;">
+                    <!-- Dean -->
+                    <div class="login-role-card" id="card-dean" onclick="selectRole('dean')" style="display: flex; justify-content: space-between; align-items: center; padding: 14px 16px; border: 1px solid #e5e7eb; margin-bottom: 8px; cursor: pointer; background: transparent;">
+                        <span style="font-weight: 600; font-size: 0.95rem; color: #1f2937;">Dean</span>
+                        <i class="fas fa-arrow-right" style="color: #9ca3af; font-size: 0.8rem;"></i>
+                    </div>
+
+                    <!-- Coordinator with submenu -->
+                    <div style="margin-bottom: 8px;">
+                        <div class="login-role-card" id="card-coordinator" onclick="toggleCoordinatorMenu()" style="display: flex; justify-content: space-between; align-items: center; padding: 14px 16px; border: 1px solid #e5e7eb; cursor: pointer; background: transparent;">
+                            <span style="font-weight: 600; font-size: 0.95rem; color: #1f2937;">Coordinator</span>
+                            <i class="fas fa-chevron-down" id="coordChevron" style="color: #9ca3af; font-size: 0.8rem;"></i>
+                        </div>
+                        <div id="coordinatorSubmenu" style="display: none; border: 1px solid #e5e7eb; border-top: none; background: #f9fafb; padding: 8px 0;">
+                            <div class="login-role-card" id="card-coordinator-engineering" onclick="selectRole('coordinator', 'Engineering')" style="display: flex; justify-content: space-between; align-items: center; padding: 10px 20px; cursor: pointer; background: transparent; border: none;">
+                                <span style="font-size: 0.9rem; color: #028a0f; font-weight: 500;">Coordinator of Engineering</span>
+                                <i class="fas fa-arrow-right" style="color: #028a0f; font-size: 0.75rem;"></i>
+                            </div>
+                            <div class="login-role-card" id="card-coordinator-it" onclick="selectRole('coordinator', 'Information Technology')" style="display: flex; justify-content: space-between; align-items: center; padding: 10px 20px; cursor: pointer; background: transparent; border: none; border-top: 1px solid #e5e7eb;">
+                                <span style="font-size: 0.9rem; color: #028a0f; font-weight: 500;">Coordinator of Information Technology</span>
+                                <i class="fas fa-arrow-right" style="color: #028a0f; font-size: 0.75rem;"></i>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Faculty with submenu -->
+                    <div style="margin-bottom: 8px;">
+                        <div class="login-role-card" id="card-faculty" onclick="toggleFacultyMenu()" style="display: flex; justify-content: space-between; align-items: center; padding: 14px 16px; border: 1px solid #e5e7eb; cursor: pointer; background: transparent;">
+                            <span style="font-weight: 600; font-size: 0.95rem; color: #1f2937;">Faculty</span>
+                            <i class="fas fa-chevron-down" id="facultyChevron" style="color: #9ca3af; font-size: 0.8rem;"></i>
+                        </div>
+                        <div id="facultySubmenu" style="display: none; border: 1px solid #e5e7eb; border-top: none; background: #f9fafb; padding: 8px 0;">
+                            <div class="login-role-card" id="card-faculty-engineering" onclick="selectRole('faculty', 'Engineering')" style="display: flex; justify-content: space-between; align-items: center; padding: 10px 20px; cursor: pointer; background: transparent; border: none;">
+                                <span style="font-size: 0.9rem; color: #028a0f; font-weight: 500;">Faculty of Engineering</span>
+                                <i class="fas fa-arrow-right" style="color: #028a0f; font-size: 0.75rem;"></i>
+                            </div>
+                            <div class="login-role-card" id="card-faculty-it" onclick="selectRole('faculty', 'Information Technology')" style="display: flex; justify-content: space-between; align-items: center; padding: 10px 20px; cursor: pointer; background: transparent; border: none; border-top: 1px solid #e5e7eb;">
+                                <span style="font-size: 0.9rem; color: #028a0f; font-weight: 500;">Faculty of Information Technology</span>
+                                <i class="fas fa-arrow-right" style="color: #028a0f; font-size: 0.75rem;"></i>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Login Form -->
+                <form action="{{ route('login.post') }}" method="POST" id="loginForm">
+                    @csrf
+
+                    <div class="login-inline-field">
+                        <label class="login-inline-label">Username</label>
+                        <div class="login-inline-input-wrapper">
+                            <i class="fas fa-user login-inline-input-icon"></i>
+                            <input type="text" name="username" class="login-inline-input" placeholder="Enter your username" required value="{{ old('username') }}">
+                        </div>
+                    </div>
+
+                    <div class="login-inline-field">
+                        <label class="login-inline-label">Password</label>
+                        <div class="login-inline-input-wrapper">
+                            <i class="fas fa-lock login-inline-input-icon"></i>
+                            <input type="password" id="password" name="password" class="login-inline-input has-toggle" placeholder="Enter your password" required>
+                            <button type="button" id="togglePassword" class="login-inline-password-toggle">
+                                <i class="fas fa-eye text-base" id="toggleIcon"></i>
                             </button>
-                            <div class="coordinator-submenu" id="coordinatorSubmenu">
-                                <button onclick="showLoginForm('coordinator')" class="coordinator-option" style="background: none; border: none; cursor: pointer; width: 100%; text-align: left; padding: 0;">
-                                    <span>IT & Engineering Coordinator</span>
-                                    <i class="fas fa-arrow-right"></i>
-                                </button>
-                            </div>
                         </div>
-
-                        <!-- Faculty Role -->
-                        <button onclick="showLoginForm('faculty')" class="role-card" style="width: 100%; text-align: left; background: none; border: none; cursor: pointer; padding: 0;">
-                            <div class="role-card-content">
-                                <div class="role-card-title">Faculty</div>
-                            </div>
-                            <div class="role-card-arrow">
-                                <i class="fas fa-arrow-right"></i>
-                            </div>
-                        </button>
+                        <div id="capsLockWarning" class="login-inline-capslock">
+                            <i class="fas fa-exclamation-triangle"></i> Caps Lock is on
+                        </div>
                     </div>
 
-                </div>
-
-                <!-- PANEL 2: Login Form (hidden by default) -->
-                <div id="loginFormPanel" class="login-panel-hidden">
-                    <div class="login-inline-controls">
-                        <button onclick="backToRoleSelection()" type="button" class="login-inline-back-btn" title="Back to role selection">
-                            <i class="fas fa-arrow-left"></i> Back
-                        </button>
-                        <button id="themeToggle" type="button" class="login-inline-theme-toggle">
-                            <i class="fas fa-moon"></i>
-                        </button>
+                    <!-- Remember me -->
+                    <div class="login-inline-remember">
+                        <label class="login-inline-toggle">
+                            <input type="checkbox" id="remember" name="remember">
+                            <span class="login-inline-toggle-slider"></span>
+                        </label>
+                        <label for="remember" class="login-inline-toggle-label">Remember me</label>
                     </div>
 
-                    <h3 class="login-inline-title">Sign In</h3>
-                    <p class="login-inline-role-label" id="roleLabel">Dean</p>
+                    <input type="hidden" name="role" id="selectedRole" value="{{ old('role', 'dean') }}">
+                    <input type="hidden" name="department" id="selectedDepartment" value="{{ old('department', '') }}">
 
-                    @if($errors->any())
-                    <div class="login-inline-error">
-                        {{ $errors->first() }}
-                    </div>
-                    @endif
-
-                    <form action="{{ route('login.post') }}" method="POST" id="loginForm">
-                        @csrf
-
-                        <div class="login-inline-field">
-                            <label class="login-inline-label">Username</label>
-                            <div class="login-inline-input-wrapper">
-                                <i class="fas fa-user login-inline-input-icon"></i>
-                                <input type="text" name="username" class="login-inline-input" placeholder="Enter your username" required>
-                            </div>
-                        </div>
-
-                        <div class="login-inline-field">
-                            <label class="login-inline-label">Password</label>
-                            <div class="login-inline-input-wrapper">
-                                <i class="fas fa-lock login-inline-input-icon"></i>
-                                <input type="password" id="password" name="password" class="login-inline-input has-toggle" placeholder="Enter your password" required>
-                                <button type="button" id="togglePassword" class="login-inline-password-toggle">
-                                    <i class="fas fa-eye text-base" id="toggleIcon"></i>
-                                </button>
-                            </div>
-                            <div id="capsLockWarning" class="login-inline-capslock">
-                                <i class="fas fa-exclamation-triangle"></i> Caps Lock is on
-                            </div>
-                        </div>
-
-                        <!-- Remember me -->
-                        <div class="login-inline-remember">
-                            <label class="login-inline-toggle">
-                                <input type="checkbox" id="remember" name="remember">
-                                <span class="login-inline-toggle-slider"></span>
-                            </label>
-                            <label for="remember" class="login-inline-toggle-label">Remember me</label>
-                        </div>
-
-                        <input type="hidden" name="role" id="selectedRole" value="{{ old('role', 'dean') }}">
-
-                        <button type="submit" class="login-inline-submit">
-                            SIGN IN <i class="fas fa-arrow-right"></i>
-                        </button>
-                    </form>
-
-                </div>
+                    <button type="submit" class="login-inline-submit">
+                        SIGN IN <i class="fas fa-arrow-right"></i>
+                    </button>
+                </form>
 
             </div>
         </div>
@@ -192,7 +188,6 @@
         const themeToggle = document.getElementById('themeToggle');
         const html = document.documentElement;
 
-        // Load saved theme on page load
         const savedTheme = localStorage.getItem('theme') || 'light';
         html.setAttribute('data-theme', savedTheme);
         if (savedTheme === 'dark') {
@@ -204,65 +199,116 @@
         themeToggle.addEventListener('click', () => {
             const currentTheme = html.getAttribute('data-theme');
             const newTheme = currentTheme === 'dark' ? 'light' : 'dark';
-
             html.setAttribute('data-theme', newTheme);
             localStorage.setItem('theme', newTheme);
-
             html.classList.toggle('dark');
             document.body.classList.toggle('dark');
-
             updateThemeIcon(newTheme);
         });
 
         function updateThemeIcon(theme) {
-            if (themeToggle) {
-                const icon = themeToggle.querySelector('i');
-                icon.className = theme === 'dark' ? 'fas fa-sun' : 'fas fa-moon';
+            const icon = themeToggle.querySelector('i');
+            icon.className = theme === 'dark' ? 'fas fa-sun' : 'fas fa-moon';
+        }
+
+        // Role Selection
+        function selectRole(role, department) {
+            // Clear all card highlights
+            document.querySelectorAll('.login-role-card').forEach(card => {
+                card.style.borderColor = '#e5e7eb';
+                card.style.background = 'transparent';
+                card.style.borderLeftWidth = '1px';
+            });
+
+            // Highlight selected card
+            let activeIds = [];
+            if (role === 'coordinator' && department === 'Engineering') {
+                activeIds = ['card-coordinator', 'card-coordinator-engineering'];
+            } else if (role === 'coordinator' && department === 'Information Technology') {
+                activeIds = ['card-coordinator', 'card-coordinator-it'];
+            } else if (role === 'faculty' && department === 'Engineering') {
+                activeIds = ['card-faculty', 'card-faculty-engineering'];
+            } else if (role === 'faculty' && department === 'Information Technology') {
+                activeIds = ['card-faculty', 'card-faculty-it'];
+            } else {
+                activeIds = ['card-' + role];
+            }
+
+            activeIds.forEach(id => {
+                const el = document.getElementById(id);
+                if (el) {
+                    el.style.borderColor = '#028a0f';
+                    el.style.background = 'rgba(2, 138, 15, 0.08)';
+                    // Only add thick left border to parent cards
+                    if (id === 'card-dean' || id === 'card-coordinator' || id === 'card-faculty') {
+                        el.style.borderLeftWidth = '4px';
+                    }
+                }
+            });
+
+            document.getElementById('selectedRole').value = role;
+            document.getElementById('selectedDepartment').value = department || '';
+        }
+
+        function toggleCoordinatorMenu() {
+            const submenu = document.getElementById('coordinatorSubmenu');
+            const chevron = document.getElementById('coordChevron');
+            const isOpen = submenu.style.display !== 'none';
+
+            submenu.style.display = isOpen ? 'none' : 'block';
+            chevron.style.transform = isOpen ? 'rotate(0deg)' : 'rotate(180deg)';
+
+            // If closing and coordinator was selected, deselect
+            if (isOpen && document.getElementById('selectedRole').value === 'coordinator') {
+                document.getElementById('selectedRole').value = '';
+                document.getElementById('selectedDepartment').value = '';
+                document.querySelectorAll('.login-role-card').forEach(card => {
+                    card.style.borderColor = '#e5e7eb';
+                    card.style.background = 'transparent';
+                    card.style.borderLeftWidth = '1px';
+                });
             }
         }
 
-        // Toggle Coordinator Menu
-        function toggleCoordinatorMenu() {
-            const submenu = document.getElementById('coordinatorSubmenu');
-            const icon = document.getElementById('coordinatorToggleIcon');
+        function toggleFacultyMenu() {
+            const submenu = document.getElementById('facultySubmenu');
+            const chevron = document.getElementById('facultyChevron');
+            const isOpen = submenu.style.display !== 'none';
 
-            submenu.classList.toggle('open');
-            icon.style.transform = submenu.classList.contains('open') ? 'rotate(180deg)' : 'rotate(0deg)';
+            submenu.style.display = isOpen ? 'none' : 'block';
+            chevron.style.transform = isOpen ? 'rotate(0deg)' : 'rotate(180deg)';
+
+            // If closing and faculty was selected, deselect
+            if (isOpen && document.getElementById('selectedRole').value === 'faculty') {
+                document.getElementById('selectedRole').value = '';
+                document.getElementById('selectedDepartment').value = '';
+                document.querySelectorAll('.login-role-card').forEach(card => {
+                    card.style.borderColor = '#e5e7eb';
+                    card.style.background = 'transparent';
+                    card.style.borderLeftWidth = '1px';
+                });
+            }
         }
 
-        // Show Login Form (swap panels in place)
-        function showLoginForm(role) {
-            document.getElementById('roleSelectionPanel').classList.remove('login-panel-active');
-            document.getElementById('roleSelectionPanel').classList.add('login-panel-hidden');
-            document.getElementById('loginFormPanel').classList.remove('login-panel-hidden');
-            document.getElementById('loginFormPanel').classList.add('login-panel-active');
+        // Default: highlight on load based on old values
+        @if(old('role') === 'coordinator' && old('department'))
+            selectRole('coordinator', '{{ old('department') }}');
+        @elseif(old('role') === 'faculty' && old('department'))
+            selectRole('faculty', '{{ old('department') }}');
+        @else
+            selectRole('{{ old('role', 'dean') }}');
+        @endif
 
-            const roleNames = {
-                'dean': 'Dean',
-                'coordinator': 'Coordinator',
-                'faculty': 'Faculty'
-            };
-            document.getElementById('roleLabel').textContent = roleNames[role];
-            document.getElementById('selectedRole').value = role;
+        // If old role was coordinator, open submenu
+        @if(old('role') === 'coordinator')
+            document.getElementById('coordinatorSubmenu').style.display = 'block';
+            document.getElementById('coordChevron').style.transform = 'rotate(180deg)';
+        @endif
 
-            // Focus username input
-            setTimeout(() => {
-                const usernameInput = document.querySelector('.login-inline-input');
-                if (usernameInput) usernameInput.focus();
-            }, 50);
-        }
-
-        // Back to Role Selection
-        function backToRoleSelection() {
-            document.getElementById('loginFormPanel').classList.remove('login-panel-active');
-            document.getElementById('loginFormPanel').classList.add('login-panel-hidden');
-            document.getElementById('roleSelectionPanel').classList.remove('login-panel-hidden');
-            document.getElementById('roleSelectionPanel').classList.add('login-panel-active');
-        }
-
-        // Auto-show login panel on validation errors (after failed login)
-        @if($errors->any())
-            showLoginForm('{{ old('role', 'dean') }}');
+        // If old role was faculty, open submenu
+        @if(old('role') === 'faculty')
+            document.getElementById('facultySubmenu').style.display = 'block';
+            document.getElementById('facultyChevron').style.transform = 'rotate(180deg)';
         @endif
 
         // Show/Hide Password Toggle
@@ -299,6 +345,22 @@
 
         if (loginForm) {
             loginForm.addEventListener('submit', function(e) {
+                // Validate a role is selected
+                const role = document.getElementById('selectedRole').value;
+                if (!role) {
+                    e.preventDefault();
+                    alert('Please select a role first.');
+                    return;
+                }
+                // Validate department is selected for coordinators and faculty
+                if (role === 'coordinator' || role === 'faculty') {
+                    const dept = document.getElementById('selectedDepartment').value;
+                    if (!dept) {
+                        e.preventDefault();
+                        alert('Please select your department (Engineering or Information Technology).');
+                        return;
+                    }
+                }
                 loadingOverlay.classList.remove('hidden');
                 loadingOverlay.classList.add('flex');
             });

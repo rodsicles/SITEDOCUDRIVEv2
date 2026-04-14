@@ -114,6 +114,14 @@ Route::middleware(['auth', 'no.back', 'role:Dean'])->prefix('dean')->name('dean.
     Route::get('/dashboard', [DeanController::class, 'dashboard'])->name('dashboard');
     Route::get('/employees', [DeanController::class, 'employees'])->name('employees');
     Route::get('/employees/{id}/profile', [DeanController::class, 'viewEmployeeProfile'])->name('employee-profile');
+
+    // Account Management
+    Route::post('/accounts/coordinator', [DeanController::class, 'storeCoordinator'])->name('store-coordinator');
+    Route::post('/accounts/faculty', [DeanController::class, 'storeFaculty'])->name('store-faculty');
+    Route::get('/accounts/{id}/edit', [DeanController::class, 'editEmployee'])->name('edit-employee');
+    Route::patch('/accounts/{id}', [DeanController::class, 'updateEmployee'])->name('update-employee');
+    Route::post('/accounts/{id}/reset-password', [DeanController::class, 'resetEmployeePassword'])->name('reset-password');
+
     Route::get('/reports', [DeanController::class, 'reports'])->name('reports');
     Route::get('/analytics', [DeanController::class, 'analytics'])->name('analytics');
     Route::get('/documents', [DeanController::class, 'documents'])->name('documents');

@@ -32,7 +32,11 @@
         <div class="card-header">
             <h3 class="card-title">Basic Information</h3>
             <div class="flex gap-2.5 items-center">
-                @if(auth()->user()->role_id === 2)
+                @if(auth()->user()->isDean() && $employee->user->role_id !== 1)
+                    <a href="{{ route('dean.edit-employee', $employee->employee_id) }}" class="btn btn-primary py-2 px-5 text-sm">
+                        <i class="fas fa-edit"></i> Edit Information
+                    </a>
+                @elseif(auth()->user()->role_id === 2)
                     <a href="{{ route('coordinator.edit-faculty', $employee->employee_id) }}" class="btn btn-primary py-2 px-5 text-sm">
                         <i class="fas fa-edit"></i> Edit Information
                     </a>

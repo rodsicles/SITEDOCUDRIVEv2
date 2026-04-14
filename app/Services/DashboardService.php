@@ -54,9 +54,19 @@ class DashboardService
      */
     public function getCoordinatorStats(int $userId): array
     {
-        return Cache::remember("coordinator_stats_{$userId}", now()->addMinutes(5), function () use ($userId) {
+        $user = User::with('employee')->find($userId);
+        $dept = optional($user->employee)->department;
+
+        return Cache::remember("coordinator_stats_{$userId}_{$dept}", now()->addMinutes(5), function () use ($userId, $dept) {
+            $facultyQuery = User::where('role_id', 3);
+            if ($dept) {
+                $facultyQuery->whereHas('employee', function ($q) use ($dept) {
+                    $q->where('department', $dept);
+                });
+            }
+
             return [
-                'totalFaculty' => User::where('role_id', 3)->count(),
+                'totalFaculty' => $facultyQuery->count(),
                 'totalDocuments' => Document::where('uploaded_by', $userId)->count(),
                 'leaveThisMonth' => $this->getLeaveCount($userId, 'month'),
                 'leaveThisYear' => $this->getLeaveCount($userId, 'year'),

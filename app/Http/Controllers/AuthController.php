@@ -56,16 +56,49 @@ class AuthController extends Controller
         ]);
 
         if (Auth::attempt(['username' => $credentials['username'], 'password' => $credentials['password'], 'status' => 'Active'])) {
+            $user = Auth::user();
+            $role = $user->role->role_name;
+            $selectedRole = $request->input('role');
+
+            // Validate selected role matches user's actual role
+            $roleMap = [
+                'dean' => 'Dean',
+                'coordinator' => 'Program Coordinator',
+                'faculty' => 'Faculty Employee',
+            ];
+
+            if ($selectedRole && isset($roleMap[$selectedRole]) && $roleMap[$selectedRole] !== $role) {
+                Auth::logout();
+                $request->session()->invalidate();
+                $request->session()->regenerateToken();
+                return back()->withErrors([
+                    'username' => 'Invalid credentials for the selected role.',
+                ])->withInput($request->only('username', 'role', 'department'));
+            }
+
+            // Validate department for coordinators and faculty
+            if ($role === 'Program Coordinator' || $role === 'Faculty Employee') {
+                $selectedDepartment = $request->input('department');
+                $userDepartment = optional($user->employee)->department;
+
+                if ($selectedDepartment && $userDepartment && $selectedDepartment !== $userDepartment) {
+                    Auth::logout();
+                    $request->session()->invalidate();
+                    $request->session()->regenerateToken();
+                    return back()->withErrors([
+                        'username' => 'Your account belongs to the ' . $userDepartment . ' department.',
+                    ])->withInput($request->only('username', 'role', 'department'));
+                }
+            }
+
             $request->session()->regenerate();
-            
+
             DashboardLog::create([
                 'user_id' => Auth::id(),
                 'activity' => 'User logged in',
                 'activity_type' => 'login',
             ]);
 
-            $role = Auth::user()->role->role_name;
-            
             return match($role) {
                 'Dean' => redirect()->route('dean.dashboard'),
                 'Program Coordinator' => redirect()->route('coordinator.dashboard'),
@@ -83,7 +116,7 @@ class AuthController extends Controller
 
         return back()->withErrors([
             'username' => 'Invalid credentials.',
-        ]);
+        ])->withInput($request->only('username', 'role', 'department'));
     }
 
     public function logout(Request $request)

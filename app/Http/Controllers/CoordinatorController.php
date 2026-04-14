@@ -23,6 +23,45 @@ class CoordinatorController extends Controller
         protected EmployeeService $employeeService
     ) {}
 
+    /**
+     * Get the authenticated coordinator's department.
+     */
+    private function getCoordinatorDepartment(): ?string
+    {
+        return optional(auth()->user()->employee)->department;
+    }
+
+    /**
+     * Scope a user query to only include faculty from the coordinator's department.
+     */
+    private function scopedFacultyQuery()
+    {
+        $dept = $this->getCoordinatorDepartment();
+
+        $query = User::with('employee')
+            ->where('role_id', 3);
+
+        if ($dept) {
+            $query->whereHas('employee', function ($q) use ($dept) {
+                $q->where('department', $dept);
+            });
+        }
+
+        return $query;
+    }
+
+    /**
+     * Verify that a faculty employee belongs to the coordinator's department.
+     */
+    private function verifyDepartmentAccess(Employee $employee): void
+    {
+        $dept = $this->getCoordinatorDepartment();
+
+        if ($dept && $employee->department && $employee->department !== $dept) {
+            abort(403, 'You do not have access to faculty members outside your department.');
+        }
+    }
+
     public function dashboard()
     {
         $user = auth()->user();
@@ -34,8 +73,7 @@ class CoordinatorController extends Controller
             ->take(5)
             ->get();
 
-        $facultyList = User::with('employee')
-            ->where('role_id', 3)
+        $facultyList = $this->scopedFacultyQuery()
             ->take(10)
             ->get();
 
@@ -62,8 +100,7 @@ class CoordinatorController extends Controller
 
     public function createTask()
     {
-        $facultyMembers = User::with('employee')
-            ->where('role_id', 3)
+        $facultyMembers = $this->scopedFacultyQuery()
             ->where('status', 'Active')
             ->get();
         return view('coordinator.create-task', compact('facultyMembers'));
@@ -97,8 +134,7 @@ class CoordinatorController extends Controller
 
     public function faculty()
     {
-        $facultyMembers = User::with('employee')
-            ->where('role_id', 3)
+        $facultyMembers = $this->scopedFacultyQuery()
             ->latest('created_at')
             ->paginate(15);
         return view('coordinator.faculty', compact('facultyMembers'));
@@ -111,6 +147,8 @@ class CoordinatorController extends Controller
 
     public function storeFaculty(Request $request)
     {
+        $coordDept = $this->getCoordinatorDepartment();
+
         $validated = $request->validate([
             'username' => 'required|string|unique:users,username|max:20',
             'email' => 'required|email|unique:users,email|max:45',
@@ -119,6 +157,12 @@ class CoordinatorController extends Controller
             'employee_no' => 'nullable|string|unique:employees,employee_no|max:15|regex:/^[0-9]*$/',
             'department' => 'required|in:Engineering,Information Technology',
         ]);
+
+        // Enforce coordinator can only create faculty in their own department
+        if ($coordDept && $validated['department'] !== $coordDept) {
+            return back()->withErrors(['department' => 'You can only create faculty members in your department (' . $coordDept . ').'])
+                ->withInput();
+        }
 
         try {
             $this->employeeService->createFaculty($validated, auth()->id());
@@ -199,6 +243,8 @@ class CoordinatorController extends Controller
             abort(403, 'Unauthorized access');
         }
 
+        $this->verifyDepartmentAccess($employee);
+
         return view('coordinator.edit-faculty', compact('employee'));
     }
 
@@ -212,12 +258,22 @@ class CoordinatorController extends Controller
             abort(403, 'Unauthorized access');
         }
 
+        $this->verifyDepartmentAccess($employee);
+
+        $coordDept = $this->getCoordinatorDepartment();
+
         $validated = $request->validate([
             'full_name' => 'required|string|max:45',
             'employee_no' => 'nullable|string|max:15|regex:/^[0-9]*$/|unique:employees,employee_no,' . $employee->employee_id . ',employee_id',
             'department' => 'required|in:Information Technology,Engineering',
             'email' => 'required|email|max:45|unique:users,email,' . $employee->user_id . ',id',
         ]);
+
+        // Enforce coordinator can only set department to their own
+        if ($coordDept && $validated['department'] !== $coordDept) {
+            return back()->withErrors(['department' => 'You can only assign faculty to your department (' . $coordDept . ').'])
+                ->withInput();
+        }
 
         try {
             $this->employeeService->updateFaculty($employee, $validated, auth()->id());
@@ -240,6 +296,8 @@ class CoordinatorController extends Controller
         if ($employee->user->role_id !== 3) {
             abort(403, 'Unauthorized access');
         }
+
+        $this->verifyDepartmentAccess($employee);
 
         $validated = $request->validate([
             'new_password' => 'required|string|min:8|max:40|confirmed',
@@ -265,6 +323,8 @@ class CoordinatorController extends Controller
         if ($employee->user->role_id !== 3) {
             abort(403, 'Unauthorized access');
         }
+
+        $this->verifyDepartmentAccess($employee);
 
         $profileData = $this->employeeService->getEmployeeProfileForCoordinator($id);
         return view('employees.profile', $profileData);

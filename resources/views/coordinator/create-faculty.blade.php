@@ -31,12 +31,10 @@
             </div>
 
             <div class="form-group">
-                <label class="form-label">Department *</label>
-                <select name="department" class="form-control" required>
-                    <option value="">Select Department</option>
-                    <option value="Engineering" {{ old('department') == 'Engineering' ? 'selected' : '' }}>Engineering</option>
-                    <option value="Information Technology" {{ old('department') == 'Information Technology' ? 'selected' : '' }}>Information Technology</option>
-                </select>
+                <label class="form-label">Department</label>
+                <input type="text" class="form-control" value="{{ auth()->user()->employee->department ?? 'N/A' }}" disabled>
+                <input type="hidden" name="department" value="{{ auth()->user()->employee->department }}">
+                <small class="text-xs text-gray-500 dark:text-gray-400 mt-1">Auto-assigned to your department</small>
             </div>
 
             <div class="form-group">

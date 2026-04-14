@@ -11,7 +11,7 @@
 <a href="{{ route('announcements.index') }}" class="menu-item {{ request()->routeIs('announcements.index', 'announcements.show') ? 'active' : '' }}">
     <i class="fas fa-bullhorn"></i> Announcements
 </a>
-<a href="{{ route('dean.employees') }}" class="menu-item {{ request()->routeIs('dean.employees') ? 'active' : '' }}">
+<a href="{{ route('dean.employees') }}" class="menu-item {{ request()->routeIs('dean.employees', 'dean.employee-profile', 'dean.edit-employee') ? 'active' : '' }}">
     <i class="fas fa-users"></i> Faculty Members
 </a>
 <a href="{{ route('dean.reports') }}" class="menu-item {{ request()->routeIs('dean.reports') ? 'active' : '' }}">

@@ -18,6 +18,47 @@ use Illuminate\Support\Facades\Hash;
 class EmployeeService
 {
     /**
+     * Create a coordinator account (user + employee) in a transaction.
+     */
+    public function createCoordinator(array $validated, int $creatorUserId): Employee
+    {
+        DB::beginTransaction();
+        try {
+            $user = User::create([
+                'role_id' => 2,
+                'name' => $validated['full_name'],
+                'username' => $validated['username'],
+                'email' => $validated['email'],
+                'password' => Hash::make($validated['password']),
+                'status' => 'Active',
+            ]);
+
+            $employee = Employee::create([
+                'user_id' => $user->id,
+                'employee_no' => $validated['employee_no'],
+                'full_name' => $validated['full_name'],
+                'department' => $validated['department'],
+                'position' => 'Program Coordinator',
+                'hire_date' => now(),
+            ]);
+
+            DashboardLog::create([
+                'user_id' => $creatorUserId,
+                'target_user_id' => $user->id,
+                'activity' => 'Created coordinator account: ' . $validated['full_name'],
+                'activity_type' => 'account_created',
+                'visibility' => 'dean',
+            ]);
+
+            DB::commit();
+            return $employee;
+        } catch (\Exception $e) {
+            DB::rollBack();
+            throw $e;
+        }
+    }
+
+    /**
      * Create a faculty account (user + employee) in a transaction.
      */
     public function createFaculty(array $validated, int $creatorUserId): Employee
@@ -112,6 +153,63 @@ class EmployeeService
             'activity' => 'Reset password for faculty: ' . $employee->full_name,
             'activity_type' => 'password_reset',
             'visibility' => 'coordinator',
+        ]);
+    }
+
+    /**
+     * Update an employee's information (used by Dean).
+     */
+    public function updateEmployee(Employee $employee, array $validated, int $updaterUserId): Employee
+    {
+        DB::beginTransaction();
+        try {
+            $employee->update([
+                'full_name' => $validated['full_name'],
+                'employee_no' => $validated['employee_no'],
+                'department' => $validated['department'],
+            ]);
+
+            $employee->user->update([
+                'name' => $validated['full_name'],
+                'email' => $validated['email'],
+            ]);
+
+            DashboardLog::create([
+                'user_id' => $updaterUserId,
+                'target_user_id' => $employee->user_id,
+                'activity' => 'Updated employee information: ' . $validated['full_name'],
+                'activity_type' => 'profile_update',
+                'visibility' => 'dean',
+            ]);
+
+            DB::commit();
+            return $employee->fresh();
+        } catch (\Exception $e) {
+            DB::rollBack();
+            throw $e;
+        }
+    }
+
+    /**
+     * Reset an employee's password (used by Dean).
+     */
+    public function resetEmployeePassword(Employee $employee, string $newPassword, User $resetter): void
+    {
+        $employee->user->update([
+            'password' => Hash::make($newPassword),
+        ]);
+
+        Notification::create([
+            'user_id' => $employee->user_id,
+            'message' => 'Your password has been reset by ' . ($resetter->employee->full_name ?? 'Dean') . '. Please use your new password to login.',
+        ]);
+
+        DashboardLog::create([
+            'user_id' => $resetter->id,
+            'target_user_id' => $employee->user_id,
+            'activity' => 'Reset password for: ' . $employee->full_name,
+            'activity_type' => 'password_reset',
+            'visibility' => 'dean',
         ]);
     }
 

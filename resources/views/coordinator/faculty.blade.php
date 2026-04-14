@@ -117,14 +117,11 @@
                 </div>
 
                 <div class="form-group">
-                    <label class="form-label">Department *</label>
-                    <select name="department" class="form-control" required>
-                        <option value="">Select Department</option>
-                        <option value="Engineering" {{ old('department') == 'Engineering' ? 'selected' : '' }}>Engineering</option>
-                        <option value="Information Technology" {{ old('department') == 'Information Technology' ? 'selected' : '' }}>Information Technology</option>
-                    </select>
+                    <label class="form-label">Department</label>
+                    <input type="text" class="form-control" value="{{ auth()->user()->employee->department ?? 'N/A' }}" disabled>
+                    <input type="hidden" name="department" value="{{ auth()->user()->employee->department }}">
                     <small class="text-gray-600 dark:text-gray-400 text-xs mt-1 block">
-                        <i class="fas fa-info-circle"></i> Only Engineering and Information Technology departments available
+                        <i class="fas fa-info-circle"></i> Auto-assigned to your department
                     </small>
                 </div>
 

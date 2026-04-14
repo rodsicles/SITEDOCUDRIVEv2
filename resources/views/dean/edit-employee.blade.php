@@ -1,18 +1,18 @@
 @extends('layouts.dashboard')
 
-@section('title', 'Edit Faculty - Coordinator')
+@section('title', 'Edit Employee - Dean')
 
-@section('page-title', 'Edit Faculty Information')
-@section('page-subtitle', 'Update faculty member details and reset password')
+@section('page-title', 'Edit Employee')
+@section('page-subtitle', 'Update employee details and reset password')
 
 @section('sidebar')
-    @include('partials.coordinator-sidebar')
+    @include('partials.dean-sidebar')
 @endsection
 
 @section('content')
     <!-- Back Button -->
     <div class="mb-5">
-        <a href="{{ route('coordinator.faculty-profile', $employee->employee_id) }}" class="btn bg-gray-600 hover:bg-gray-700 text-white">
+        <a href="{{ route('dean.employee-profile', $employee->employee_id) }}" class="btn btn-secondary">
             <i class="fas fa-arrow-left"></i> Back to Profile
         </a>
     </div>
@@ -35,52 +35,52 @@
         </div>
     @endif
 
-    <!-- Edit Faculty Information -->
+    <!-- Edit Employee Information -->
     <div class="content-card">
         <div class="card-header">
-            <h3 class="card-title">Edit Faculty Information</h3>
+            <h3 class="card-title">Edit Employee Information</h3>
+            <span class="badge badge-info">{{ $employee->user->role->role_name }}</span>
         </div>
 
-        <form action="{{ route('coordinator.update-faculty', $employee->employee_id) }}" method="POST">
+        <form action="{{ route('dean.update-employee', $employee->employee_id) }}" method="POST">
             @csrf
             @method('PATCH')
 
             <div class="grid grid-cols-1 md:grid-cols-2 gap-5">
                 <div class="form-group">
                     <label class="form-label">Full Name *</label>
-                    <input type="text" name="full_name" class="form-control" 
-                           value="{{ old('full_name', $employee->full_name) }}" 
+                    <input type="text" name="full_name" class="form-control"
+                           value="{{ old('full_name', $employee->full_name) }}"
                            required maxlength="45" placeholder="Enter full name">
                 </div>
 
                 <div class="form-group">
                     <label class="form-label">Employee Number</label>
-                    <input type="text" name="employee_no" class="form-control" 
-                           value="{{ old('employee_no', $employee->employee_no) }}" 
-                           maxlength="15" pattern="[0-9]*" title="Numbers only" placeholder="e.g. FAC001">
+                    <input type="text" name="employee_no" class="form-control"
+                           value="{{ old('employee_no', $employee->employee_no) }}"
+                           maxlength="15" pattern="[0-9]*" title="Numbers only" placeholder="e.g. 001">
                 </div>
 
                 <div class="form-group">
                     <label class="form-label">Email Address *</label>
-                    <input type="email" name="email" class="form-control" 
-                           value="{{ old('email', $employee->user->email) }}" 
-                           required maxlength="45" placeholder="faculty@example.com">
+                    <input type="email" name="email" class="form-control"
+                           value="{{ old('email', $employee->user->email) }}"
+                           required maxlength="45" placeholder="employee@example.com">
                 </div>
 
                 <div class="form-group">
-                    <label class="form-label">Department</label>
-                    <input type="text" class="form-control" value="{{ auth()->user()->employee->department ?? 'N/A' }}" disabled>
-                    <input type="hidden" name="department" value="{{ auth()->user()->employee->department }}">
-                    <small class="modern-help-text">
-                        <i class="fas fa-info-circle"></i> Auto-assigned to your department
-                    </small>
+                    <label class="form-label">Department *</label>
+                    <select name="department" class="form-control" required>
+                        <option value="">Select Department</option>
+                        <option value="Engineering" {{ old('department', $employee->department) === 'Engineering' ? 'selected' : '' }}>Engineering</option>
+                        <option value="Information Technology" {{ old('department', $employee->department) === 'Information Technology' ? 'selected' : '' }}>Information Technology</option>
+                    </select>
                 </div>
             </div>
 
             <div class="form-group">
                 <label class="form-label">Username (Read-only)</label>
-                <input type="text" class="form-control" 
-                       value="{{ $employee->user->username }}" disabled>
+                <input type="text" class="form-control" value="{{ $employee->user->username }}" disabled>
                 <small class="text-gray-600 dark:text-gray-400 text-xs mt-1.5 block">Username cannot be changed</small>
             </div>
 
@@ -88,7 +88,7 @@
                 <button type="submit" class="btn btn-primary">
                     <i class="fas fa-save"></i> Update Information
                 </button>
-                <a href="{{ route('coordinator.faculty-profile', $employee->employee_id) }}" class="btn bg-gray-600 hover:bg-gray-700 text-white">
+                <a href="{{ route('dean.employee-profile', $employee->employee_id) }}" class="btn btn-secondary">
                     <i class="fas fa-times"></i> Cancel
                 </a>
             </div>
@@ -103,24 +103,24 @@
 
         <div class="bg-orange-50 dark:bg-orange-900/20 p-4 mb-5 border-l-4 border-orange-500">
             <p class="m-0 text-orange-800 dark:text-orange-400 text-sm">
-                <i class="fas fa-exclamation-triangle"></i> <strong>Warning:</strong> Resetting the password will immediately change the faculty member's login credentials. Make sure to inform them of the new password.
+                <i class="fas fa-exclamation-triangle"></i> <strong>Warning:</strong> Resetting the password will immediately change this employee's login credentials. Make sure to inform them of the new password.
             </p>
         </div>
 
-        <form action="{{ route('coordinator.reset-faculty-password', $employee->employee_id) }}" method="POST" id="resetPasswordForm">
+        <form action="{{ route('dean.reset-password', $employee->employee_id) }}" method="POST" id="resetPasswordForm">
             @csrf
 
             <div class="grid grid-cols-1 md:grid-cols-2 gap-5">
                 <div class="form-group">
                     <label class="form-label">New Password *</label>
-                    <input type="password" name="new_password" class="form-control" 
+                    <input type="password" name="new_password" class="form-control"
                            required minlength="8" maxlength="40" placeholder="Enter new password">
                     <small class="text-gray-600 dark:text-gray-400 text-xs mt-1.5 block">Minimum 8 characters</small>
                 </div>
 
                 <div class="form-group">
                     <label class="form-label">Confirm New Password *</label>
-                    <input type="password" name="new_password_confirmation" class="form-control" 
+                    <input type="password" name="new_password_confirmation" class="form-control"
                            required minlength="8" maxlength="40" placeholder="Confirm new password">
                     <small class="text-gray-600 dark:text-gray-400 text-xs mt-1.5 block">Must match the new password</small>
                 </div>

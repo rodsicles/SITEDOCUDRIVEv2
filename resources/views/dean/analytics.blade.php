@@ -10,6 +10,9 @@
 @endsection
 
 @section('content')
+    <!-- Exam & Certification Trends -->
+    @include('partials.exam-trends')
+
     <div class="content-card">
         <div class="card-header">
             <h3 class="card-title">Task Status Distribution</h3>

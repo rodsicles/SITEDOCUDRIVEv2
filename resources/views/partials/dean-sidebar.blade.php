@@ -3,6 +3,9 @@
 <a href="{{ route('dean.dashboard') }}" class="menu-item {{ request()->routeIs('dean.dashboard') ? 'active' : '' }}">
     <i class="fas fa-chart-line"></i> Dashboard
 </a>
+<a href="{{ route('dean.tasks') }}" class="menu-item {{ request()->routeIs('dean.tasks', 'dean.create-task') ? 'active' : '' }}">
+    <i class="fas fa-tasks"></i> Tasks
+</a>
 
 <div class="sidebar-section-label">Schedule</div>
 <a href="{{ route('calendar.index') }}" class="menu-item {{ request()->routeIs('calendar.index') ? 'active' : '' }}">

@@ -122,6 +122,13 @@ Route::middleware(['auth', 'no.back', 'role:Dean'])->prefix('dean')->name('dean.
 
     Route::get('/reports', [DeanController::class, 'reports'])->name('reports');
     Route::get('/analytics', [DeanController::class, 'analytics'])->name('analytics');
+
+    // Tasks
+    Route::get('/tasks', [DeanController::class, 'tasks'])->name('tasks');
+    Route::get('/tasks/create', [DeanController::class, 'createTask'])->name('create-task');
+    Route::post('/tasks', [DeanController::class, 'storeTask'])->name('store-task');
+    Route::patch('/tasks/{id}', [DeanController::class, 'updateTask'])->name('update-task');
+
     Route::get('/documents', [DeanController::class, 'documents'])->name('documents');
     Route::post('/documents', [DeanController::class, 'uploadDocument'])->middleware('throttle:6,60')->name('upload-document');
     Route::post('/exam-records', [DeanController::class, 'storeExamRecord'])->middleware('throttle:10,60')->name('store-exam-record');
@@ -148,10 +155,8 @@ Route::middleware(['auth', 'no.back', 'role:Program Coordinator'])->prefix('coor
     Route::post('/documents/{id}/favorite', [CoordinatorController::class, 'toggleFavorite'])->name('toggle-favorite');
     Route::get('/dashboard', [CoordinatorController::class, 'dashboard'])->name('dashboard');
     
-    // Tasks
+    // Tasks (assigned to coordinator)
     Route::get('/tasks', [CoordinatorController::class, 'tasks'])->name('tasks');
-    Route::get('/tasks/create', [CoordinatorController::class, 'createTask'])->name('create-task');
-    Route::post('/tasks', [CoordinatorController::class, 'storeTask'])->name('store-task');
     Route::patch('/tasks/{id}', [CoordinatorController::class, 'updateTask'])->name('update-task');
     
     // Faculty Management

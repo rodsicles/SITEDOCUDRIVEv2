@@ -4,12 +4,14 @@ namespace App\Http\Controllers;
 
 use App\Models\Employee;
 use App\Models\PerformanceReport;
+use App\Models\Task;
 use App\Models\User;
 use App\Services\DashboardService;
 use App\Services\DocumentService;
 use App\Services\EmployeeService;
 use App\Services\ExamRecordService;
 use App\Services\FolderService;
+use App\Services\TaskService;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Hash;
 
@@ -20,7 +22,8 @@ class DeanController extends Controller
         protected DocumentService $documentService,
         protected EmployeeService $employeeService,
         protected FolderService $folderService,
-        protected ExamRecordService $examRecordService
+        protected ExamRecordService $examRecordService,
+        protected TaskService $taskService
     ) {}
 
     public function dashboard()
@@ -36,6 +39,11 @@ class DeanController extends Controller
         $docAnalyticsData = $this->dashboardService->getDeanDocumentAnalytics();
         $examTrends = $this->examRecordService->getTrends();
 
+        $recentTasks = Task::with(['assignedTo.employee'])
+            ->latest()
+            ->take(5)
+            ->get();
+
         return view('dean.dashboard', array_merge($stats, $docAnalyticsData, compact(
             'monthlyUsage',
             'monthNames',
@@ -43,7 +51,8 @@ class DeanController extends Controller
             'performanceData',
             'topPerformers',
             'announcements',
-            'examTrends'
+            'examTrends',
+            'recentTasks'
         )));
     }
 
@@ -64,7 +73,52 @@ class DeanController extends Controller
     public function analytics()
     {
         $data = $this->dashboardService->getAnalyticsData();
+        $data['examTrends'] = $this->examRecordService->getTrends();
         return view('dean.analytics', $data);
+    }
+
+    public function tasks()
+    {
+        $tasks = Task::with(['assignedTo.employee', 'assignedBy.employee'])
+            ->latest('created_at')
+            ->paginate(15);
+        return view('dean.tasks', compact('tasks'));
+    }
+
+    public function createTask()
+    {
+        $assignableUsers = User::with('employee')
+            ->whereIn('role_id', [2, 3])
+            ->where('status', 'Active')
+            ->get()
+            ->sortBy(fn($u) => $u->employee->full_name ?? $u->username);
+        return view('dean.create-task', compact('assignableUsers'));
+    }
+
+    public function storeTask(Request $request)
+    {
+        $validated = $request->validate([
+            'assigned_to' => 'required|exists:users,id',
+            'task_title' => 'required|string|max:15',
+            'task_description' => 'nullable|string|max:150',
+            'due_date' => 'required|date',
+        ]);
+
+        $this->taskService->createTask($validated, auth()->id());
+
+        return redirect()->route('dean.tasks')
+            ->with('success', 'Task created successfully');
+    }
+
+    public function updateTask(Request $request, $id)
+    {
+        $validated = $request->validate([
+            'status' => 'required|in:Pending,In Progress,Completed',
+        ]);
+
+        $this->taskService->updateTaskByDean($id, $validated['status']);
+
+        return redirect()->back()->with('success', 'Task updated successfully');
     }
 
     public function documents(Request $request)

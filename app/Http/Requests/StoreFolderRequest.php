@@ -20,11 +20,9 @@ class StoreFolderRequest extends FormRequest
                 'string',
                 'max:13',
                 'regex:/^[a-zA-Z0-9\s\-_]+$/',
-                Rule::unique('folders')->where(function ($query) {
-                    return $query->where('user_id', auth()->id());
-                }),
             ],
             'color' => 'nullable|string|regex:/^#[0-9A-Fa-f]{6}$/',
+            'parent_id' => 'nullable|integer|exists:folders,folder_id',
         ];
     }
 

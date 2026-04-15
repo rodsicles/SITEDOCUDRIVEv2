@@ -75,7 +75,7 @@ class FacultyController extends Controller
             'status' => 'required|in:Pending,In Progress,Completed',
         ]);
 
-        $this->taskService->updateTaskByFaculty($id, $validated['status'], auth()->id());
+        $this->taskService->updateTaskByAssignee($id, $validated['status'], auth()->id());
 
         return redirect()->back()->with('success', 'Task status updated successfully');
     }

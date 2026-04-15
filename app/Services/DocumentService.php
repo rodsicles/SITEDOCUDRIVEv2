@@ -43,6 +43,15 @@ class DocumentService
             }
         }
 
+        // Search by document title or tags
+        $search = $queryParams['search'] ?? null;
+        if ($search) {
+            $query->where(function ($q) use ($search) {
+                $q->where('document_title', 'like', "%{$search}%")
+                  ->orWhere('tags', 'like', "%{$search}%");
+            });
+        }
+
         return $query->paginate($perPage)->appends($queryParams);
     }
 

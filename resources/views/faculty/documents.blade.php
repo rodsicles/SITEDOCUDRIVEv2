@@ -20,17 +20,36 @@
             <span class="badge badge-info">{{ $documents->total() }} Files</span>
         </div>
 
-        <!-- Category Filter Dropdown -->
-        <div class="px-4 pb-4 flex items-center gap-3">
-            <label class="text-sm font-medium text-gray-700 dark:text-gray-300 whitespace-nowrap">Filter by Type:</label>
-            <select onchange="window.location.href = this.value" class="form-control text-sm max-w-xs">
-                <option value="{{ route('faculty.documents') }}">All Documents</option>
-                @foreach($categories as $cat)
-                    <option value="{{ route('faculty.documents', ['category' => $cat]) }}" {{ $categoryFilter === $cat ? 'selected' : '' }}>
-                        {{ $cat }}
-                    </option>
-                @endforeach
-            </select>
+        <!-- Category Filter + Search -->
+        <div class="documents-filter flex items-center gap-4 flex-wrap">
+            <div class="flex items-center gap-2">
+                <label class="text-sm font-medium text-gray-700 dark:text-gray-300 whitespace-nowrap">Filter by Type:</label>
+                <select onchange="window.location.href = this.value" class="form-control text-sm max-w-xs">
+                    <option value="{{ route('faculty.documents') }}">All Documents</option>
+                    @foreach($categories as $cat)
+                        <option value="{{ route('faculty.documents', ['category' => $cat]) }}" {{ $categoryFilter === $cat ? 'selected' : '' }}>
+                            {{ $cat }}
+                        </option>
+                    @endforeach
+                </select>
+            </div>
+            <form action="{{ route('faculty.documents') }}" method="GET" class="flex items-center gap-2 ml-auto">
+                @if($categoryFilter)
+                <input type="hidden" name="category" value="{{ $categoryFilter }}">
+                @endif
+                <div class="relative">
+                    <input type="text" name="search" value="{{ request('search') }}" class="form-control text-sm pl-9" placeholder="Search documents..." style="min-width: 220px;">
+                    <i class="fas fa-search absolute left-3 top-1/2 -translate-y-1/2 text-gray-400 text-xs"></i>
+                </div>
+                <button type="submit" class="btn btn-primary text-sm">
+                    <i class="fas fa-search"></i>
+                </button>
+                @if(request('search'))
+                <a href="{{ route('faculty.documents', $categoryFilter ? ['category' => $categoryFilter] : []) }}" class="btn bg-gray-200 dark:bg-gray-700 text-gray-700 dark:text-gray-300 text-sm">
+                    <i class="fas fa-times"></i>
+                </a>
+                @endif
+            </form>
         </div>
         <table class="data-table">
             <thead>

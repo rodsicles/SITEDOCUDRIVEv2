@@ -20,7 +20,8 @@ class FolderController extends Controller
             $folder = $this->folderService->createFolder(
                 auth()->id(),
                 $request->folder_name,
-                $request->color ?? '#028a0f'
+                $request->color ?? '#028a0f',
+                $request->parent_id
             );
 
             return response()->json([

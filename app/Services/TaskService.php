@@ -34,33 +34,29 @@ class TaskService
             'target_user_id' => $validated['assigned_to'],
             'activity' => 'Created task: ' . $validated['task_title'],
             'activity_type' => 'task_created',
-            'visibility' => 'coordinator',
+            'visibility' => 'dean',
         ]);
 
         return $task;
     }
 
     /**
-     * Update task status (by coordinator).
+     * Update task status (by Dean — can update any task).
      */
-    public function updateTaskByCoordinator(int $taskId, string $status, int $coordinatorId): Task
+    public function updateTaskByDean(int $taskId, string $status): Task
     {
-        $task = Task::where('task_id', $taskId)
-            ->where('assigned_by', $coordinatorId)
-            ->firstOrFail();
-
+        $task = Task::where('task_id', $taskId)->firstOrFail();
         $task->update(['status' => $status]);
-
         return $task;
     }
 
     /**
-     * Update task status (by faculty) with notification and logging.
+     * Update task status (by assignee — coordinator or faculty).
      */
-    public function updateTaskByFaculty(int $taskId, string $status, int $facultyUserId): Task
+    public function updateTaskByAssignee(int $taskId, string $status, int $userId): Task
     {
         $task = Task::where('task_id', $taskId)
-            ->where('assigned_to', $facultyUserId)
+            ->where('assigned_to', $userId)
             ->firstOrFail();
 
         $task->update(['status' => $status]);
@@ -71,7 +67,7 @@ class TaskService
         ]);
 
         DashboardLog::create([
-            'user_id' => $facultyUserId,
+            'user_id' => $userId,
             'target_user_id' => $task->assigned_by,
             'activity' => 'Updated task status: "' . $task->task_title . '" to ' . $status,
             'activity_type' => 'task_update',

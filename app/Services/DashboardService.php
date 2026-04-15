@@ -70,7 +70,7 @@ class DashboardService
                 'totalDocuments' => Document::where('uploaded_by', $userId)->count(),
                 'leaveThisMonth' => $this->getLeaveCount($userId, 'month'),
                 'leaveThisYear' => $this->getLeaveCount($userId, 'year'),
-                'totalTasks' => Task::where('assigned_by', $userId)->count(),
+                'totalTasks' => Task::where('assigned_to', $userId)->count(),
             ];
         });
     }

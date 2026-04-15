@@ -27,6 +27,3 @@
 <a href="{{ route('faculty.documents') }}" class="menu-item {{ request()->routeIs('faculty.documents', 'faculty.upload-document') ? 'active' : '' }}">
     <i class="fas fa-folder"></i> Documents
 </a>
-<a href="{{ route('skill-tags.index') }}" class="menu-item {{ request()->routeIs('skill-tags.*') ? 'active' : '' }}">
-    <i class="fas fa-tags"></i> Skill Tags
-</a>

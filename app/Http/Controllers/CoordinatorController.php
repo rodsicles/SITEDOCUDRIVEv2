@@ -71,8 +71,8 @@ class CoordinatorController extends Controller
         $user = auth()->user();
         $stats = $this->dashboardService->getCoordinatorStats($user->id);
 
-        $recentTasks = Task::with(['assignedTo.employee'])
-            ->where('assigned_by', $user->id)
+        $recentTasks = Task::with(['assignedBy.employee'])
+            ->where('assigned_to', $user->id)
             ->latest()
             ->take(5)
             ->get();
@@ -97,34 +97,11 @@ class CoordinatorController extends Controller
 
     public function tasks()
     {
-        $tasks = Task::with(['assignedTo.employee'])
-            ->where('assigned_by', auth()->id())
+        $tasks = Task::with(['assignedBy.employee'])
+            ->where('assigned_to', auth()->id())
             ->latest('created_at')
             ->paginate(15);
         return view('coordinator.tasks', compact('tasks'));
-    }
-
-    public function createTask()
-    {
-        $facultyMembers = $this->scopedFacultyQuery()
-            ->where('status', 'Active')
-            ->get();
-        return view('coordinator.create-task', compact('facultyMembers'));
-    }
-
-    public function storeTask(Request $request)
-    {
-        $validated = $request->validate([
-            'assigned_to' => 'required|exists:users,id',
-            'task_title' => 'required|string|max:15',
-            'task_description' => 'nullable|string|max:150',
-            'due_date' => 'required|date',
-        ]);
-
-        $this->taskService->createTask($validated, auth()->id());
-
-        return redirect()->route('coordinator.tasks')
-            ->with('success', 'Task created successfully');
     }
 
     public function updateTask(Request $request, $id)
@@ -133,9 +110,9 @@ class CoordinatorController extends Controller
             'status' => 'required|in:Pending,In Progress,Completed',
         ]);
 
-        $this->taskService->updateTaskByCoordinator($id, $validated['status'], auth()->id());
+        $this->taskService->updateTaskByAssignee($id, $validated['status'], auth()->id());
 
-        return redirect()->back()->with('success', 'Task updated successfully');
+        return redirect()->back()->with('success', 'Task status updated successfully');
     }
 
     public function faculty()

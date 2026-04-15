@@ -86,6 +86,38 @@ class FolderService
     }
 
     /**
+     * Create a folder. If parent_id is a system folder, create as system subfolder.
+     */
+    public function createFolder(int $userId, string $folderName, string $color = '#028a0f', ?int $parentId = null): Folder
+    {
+        $data = [
+            'user_id' => $userId,
+            'folder_name' => $folderName,
+            'color' => $color,
+        ];
+
+        if ($parentId) {
+            $parent = Folder::findOrFail($parentId);
+            $data['parent_id'] = $parentId;
+            $data['is_system'] = $parent->is_system;
+            $data['level'] = $parent->level + 1;
+            $data['sort_order'] = Folder::where('parent_id', $parentId)->max('sort_order') + 1;
+            $data['slug'] = \Illuminate\Support\Str::slug($folderName) . '-' . time();
+        }
+
+        $folder = Folder::create($data);
+
+        DashboardLog::create([
+            'user_id' => $userId,
+            'activity' => "Created folder: {$folderName}" . ($parentId ? ' (subfolder)' : ''),
+            'activity_type' => 'folder_created',
+            'visibility' => 'own',
+        ]);
+
+        return $folder;
+    }
+
+    /**
      * Get all folders for a user with document counts (legacy support).
      */
     public function getUserFolders(int $userId): Collection

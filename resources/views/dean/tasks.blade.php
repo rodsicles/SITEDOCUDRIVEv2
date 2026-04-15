@@ -1,28 +1,30 @@
 @extends('layouts.dashboard')
 
-@section('title', 'My Tasks - Coordinator')
+@section('title', 'All Tasks - Dean')
 
-@section('page-title', 'My Tasks')
-@section('page-subtitle', 'View and update your assigned tasks')
+@section('page-title', 'Task Management')
+@section('page-subtitle', 'Create and manage tasks for all roles')
 
 @section('sidebar')
-    @include('partials.coordinator-sidebar')
+    @include('partials.dean-sidebar')
 @endsection
 
 @section('content')
     <div class="content-card">
         <div class="card-header">
-            <h3 class="card-title">My Tasks</h3>
-            <span class="badge badge-info">{{ $tasks->total() }} Total</span>
+            <h3 class="card-title">All Tasks</h3>
+            <a href="{{ route('dean.create-task') }}" class="btn btn-primary">
+                <i class="fas fa-plus"></i> Create New Task
+            </a>
         </div>
         <table class="data-table">
             <thead>
                 <tr>
                     <th>Task Title</th>
-                    <th>Description</th>
-                    <th>Assigned By</th>
+                    <th>Assigned To</th>
                     <th>Due Date</th>
                     <th>Status</th>
+                    <th>Created</th>
                     <th>Action</th>
                 </tr>
             </thead>
@@ -30,8 +32,7 @@
                 @forelse($tasks as $task)
                 <tr>
                     <td><strong>{{ $task->task_title }}</strong></td>
-                    <td>{{ Str::limit($task->task_description, 50) }}</td>
-                    <td>{{ $task->assignedBy->employee->full_name ?? $task->assignedBy->username }}</td>
+                    <td>{{ $task->assignedTo->employee->full_name ?? 'N/A' }}</td>
                     <td>
                         {{ $task->due_date ? $task->due_date->format('M d, Y') : 'N/A' }}
                         @if($task->due_date && $task->due_date->isPast() && $task->status !== 'Completed')
@@ -47,9 +48,10 @@
                             <span class="badge badge-danger">Pending</span>
                         @endif
                     </td>
+                    <td>{{ $task->created_at->format('M d, Y') }}</td>
                     <td>
                         @if($task->status !== 'Completed')
-                        <form action="{{ route('coordinator.update-task', $task->task_id) }}" method="POST" class="inline">
+                        <form action="{{ route('dean.update-task', $task->task_id) }}" method="POST" class="inline">
                             @csrf
                             @method('PATCH')
                             <select name="status" onchange="this.form.submit()" class="px-2 py-1 border border-gray-200 dark:border-gray-700 text-sm bg-white dark:bg-[#1e1e1e] text-gray-800 dark:text-gray-200 cursor-pointer">
@@ -64,7 +66,7 @@
                 @empty
                 <tr>
                     <td colspan="6" class="text-center text-gray-600 dark:text-gray-400">
-                        No tasks assigned yet
+                        No tasks created yet
                     </td>
                 </tr>
                 @endforelse

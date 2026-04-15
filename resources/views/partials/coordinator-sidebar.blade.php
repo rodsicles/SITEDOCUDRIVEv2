@@ -3,8 +3,8 @@
 <a href="{{ route('coordinator.dashboard') }}" class="menu-item {{ request()->routeIs('coordinator.dashboard') ? 'active' : '' }}">
     <i class="fas fa-chart-line"></i> Dashboard
 </a>
-<a href="{{ route('coordinator.tasks') }}" class="menu-item {{ request()->routeIs('coordinator.tasks', 'coordinator.create-task') ? 'active' : '' }}">
-    <i class="fas fa-tasks"></i> Tasks
+<a href="{{ route('coordinator.tasks') }}" class="menu-item {{ request()->routeIs('coordinator.tasks') ? 'active' : '' }}">
+    <i class="fas fa-tasks"></i> My Tasks
 </a>
 
 <div class="sidebar-section-label">Schedule</div>

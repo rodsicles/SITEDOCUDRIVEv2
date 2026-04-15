@@ -150,11 +150,12 @@
 
         <!-- Sidebar -->
         <aside class="w-64 bg-white dark:bg-[#2a2a2a] border-r border-gray-200 dark:border-gray-700 fixed h-screen overflow-y-auto z-[1000] sidebar">
-            <div class="p-4 bg-[#028a0f] text-white text-center border-b border-[#026a0c]">
-                <img src="{{ asset('images/site-logo.png') }}" alt="SITE Logo" class="w-14 h-14 mb-2 object-contain bg-white p-1 border-2 border-white/80 mx-auto">
-                <h2 class="text-sm leading-tight mb-1 font-semibold">Employee Dashboard</h2>
-                <p class="text-xs opacity-95 mb-1">Data Analytics System</p>
-                <p class="text-xs font-semibold">{{ auth()->user()->role->role_name }}</p>
+            <div class="sidebar-brand">
+                <div class="sidebar-brand-line"></div>
+                <img src="{{ asset('images/site-logo.png') }}" alt="SITE Logo" class="sidebar-brand-logo">
+                <div class="sidebar-brand-line"></div>
+                <h2 class="sidebar-brand-title">EMPLOYEE DASHBOARD</h2>
+                <p class="sidebar-brand-welcome">Welcome, {{ auth()->user()->role->role_name }}</p>
             </div>
             <nav class="p-2">
                 @yield('sidebar')

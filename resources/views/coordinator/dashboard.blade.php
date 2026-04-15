@@ -100,9 +100,6 @@
             <h3 class="card-title">Quick Actions</h3>
         </div>
         <div class="flex gap-4 flex-wrap">
-            <a href="{{ route('coordinator.create-task') }}" class="btn btn-primary">
-                <i class="fas fa-plus"></i> Create New Task
-            </a>
             <a href="{{ route('coordinator.create-faculty') }}" class="btn btn-success">
                 <i class="fas fa-user-plus"></i> Add Faculty Member
             </a>
@@ -113,7 +110,7 @@
     <div class="content-card">
         <div class="card-header">
             <div class="flex justify-between items-center w-full">
-                <h3 class="card-title">Recent Tasks</h3>
+                <h3 class="card-title">My Recent Tasks</h3>
                 <div class="flex gap-3 items-center">
                     <a href="{{ route('coordinator.tasks') }}" class="badge badge-info no-underline cursor-pointer">View All</a>
                     <button type="button" onclick="toggleCoordinatorRecentTasks()" class="bg-gray-200 dark:bg-gray-700 text-gray-700 dark:text-gray-300 px-4 py-2 text-sm font-medium cursor-pointer border-0">
@@ -128,7 +125,7 @@
                 <thead>
                     <tr>
                         <th>Task Title</th>
-                        <th>Assigned To</th>
+                        <th>Assigned By</th>
                         <th>Due Date</th>
                         <th>Status</th>
                     </tr>
@@ -137,7 +134,7 @@
                     @forelse($recentTasks as $task)
                     <tr>
                         <td><strong>{{ $task->task_title }}</strong></td>
-                        <td>{{ $task->assignedTo->employee->full_name ?? 'N/A' }}</td>
+                        <td>{{ $task->assignedBy->employee->full_name ?? $task->assignedBy->username }}</td>
                         <td>{{ $task->due_date ? $task->due_date->format('M d, Y') : 'N/A' }}</td>
                         <td>
                             @if($task->status === 'Completed')
@@ -152,7 +149,7 @@
                     @empty
                     <tr>
                         <td colspan="4" class="text-center text-gray-600 dark:text-gray-400">
-                            No tasks created yet
+                            No tasks assigned yet
                         </td>
                     </tr>
                     @endforelse

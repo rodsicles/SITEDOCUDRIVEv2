@@ -27,6 +27,7 @@ class SystemFolderSeeder extends Seeder
                             ['name' => 'HTML & CSS', 'slug' => 'cert-html-css'],
                         ],
                     ],
+                    ['name' => 'Portfolios', 'slug' => 'accred-portfolios'],
                 ],
             ],
             [

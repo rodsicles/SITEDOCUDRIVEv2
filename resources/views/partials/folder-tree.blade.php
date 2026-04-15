@@ -81,12 +81,58 @@
                         <i class="fas fa-plus-circle mr-1"></i> Record Passers
                     </button>
                     @endif
+                    <button type="button" onclick="toggleCreateSubfolder()" class="btn btn-primary">
+                        <i class="fas fa-folder-plus mr-1"></i> Create Folder
+                    </button>
                     <button type="button" onclick="toggleFolderUpload()" class="btn btn-success">
                         <i class="fas fa-upload mr-1"></i> Upload to this Folder
                     </button>
                 </div>
                 @endif
             </div>
+
+            {{-- Search inside folder --}}
+            <div class="mb-4">
+                <form action="{{ route($docsRoute) }}" method="GET" class="flex gap-2 items-center">
+                    <input type="hidden" name="tab" value="{{ $tab }}">
+                    <input type="hidden" name="folder" value="{{ $currentFolder->folder_id }}">
+                    <div class="flex-1 relative">
+                        <input type="text" name="search" value="{{ request('search') }}" class="form-control text-sm pl-9" placeholder="Search documents in this folder...">
+                        <i class="fas fa-search absolute left-3 top-1/2 -translate-y-1/2 text-gray-400 text-xs"></i>
+                    </div>
+                    <button type="submit" class="btn btn-primary text-sm">
+                        <i class="fas fa-search"></i> Search
+                    </button>
+                    @if(request('search'))
+                    <a href="{{ route($docsRoute, ['tab' => $tab, 'folder' => $currentFolder->folder_id]) }}" class="btn bg-gray-200 dark:bg-gray-700 text-gray-700 dark:text-gray-300 text-sm">
+                        <i class="fas fa-times"></i> Clear
+                    </a>
+                    @endif
+                </form>
+            </div>
+
+            {{-- Create Subfolder Form --}}
+            @if($canUpload)
+            <form id="createSubfolderForm" class="hidden mb-4" style="border: 1px solid #e0e0e0; padding: 16px; background: #f9fafb;" onsubmit="return false;">
+                @csrf
+                <input type="hidden" name="parent_id" value="{{ $currentFolder->folder_id }}">
+                <h4 class="text-sm font-bold mb-3 text-gray-700 dark:text-gray-300">
+                    <i class="fas fa-folder-plus mr-1"></i> Create Subfolder in "{{ $currentFolder->folder_name }}"
+                </h4>
+                <div class="flex gap-3 items-end">
+                    <div class="form-group mb-0 flex-1">
+                        <label class="form-label">Folder Name *</label>
+                        <input type="text" name="folder_name" class="form-control" placeholder="Enter folder name" required maxlength="13">
+                    </div>
+                    <button type="button" onclick="submitCreateSubfolder()" class="btn btn-primary" id="subfolderSubmitBtn">
+                        <i class="fas fa-plus"></i> Create
+                    </button>
+                    <button type="button" onclick="toggleCreateSubfolder()" class="btn btn-sm bg-gray-200 dark:bg-gray-700 text-gray-700 dark:text-gray-300">
+                        Cancel
+                    </button>
+                </div>
+            </form>
+            @endif
 
             {{-- PRC Exam Results Form --}}
             @if($canUpload && isset($isPrcFolder) && $isPrcFolder)
@@ -290,6 +336,51 @@
     function toggleFolderUpload() {
         const form = document.getElementById('folderUploadForm');
         form.classList.toggle('hidden');
+    }
+
+    function toggleCreateSubfolder() {
+        const form = document.getElementById('createSubfolderForm');
+        if (form) form.classList.toggle('hidden');
+    }
+
+    async function submitCreateSubfolder() {
+        const form = document.getElementById('createSubfolderForm');
+        const btn = document.getElementById('subfolderSubmitBtn');
+        const originalText = btn.innerHTML;
+        const folderName = form.querySelector('[name="folder_name"]').value.trim();
+        const parentId = form.querySelector('[name="parent_id"]').value;
+
+        if (!folderName) { alert('Please enter a folder name.'); return; }
+
+        btn.disabled = true;
+        btn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Creating...';
+
+        try {
+            const response = await fetch("{{ route($role . '.folders.store') }}", {
+                method: 'POST',
+                body: JSON.stringify({ folder_name: folderName, parent_id: parseInt(parentId) }),
+                headers: {
+                    'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]').content,
+                    'Accept': 'application/json',
+                    'Content-Type': 'application/json',
+                }
+            });
+
+            const data = await response.json();
+            if (response.ok && data.success) {
+                showToast(data.message || 'Folder created!', 'success');
+                setTimeout(() => window.location.reload(), 1000);
+            } else {
+                const errors = data.errors ? Object.values(data.errors).flat().join(', ') : (data.message || 'Failed to create folder.');
+                showToast(errors, 'error');
+                btn.disabled = false;
+                btn.innerHTML = originalText;
+            }
+        } catch (error) {
+            showToast('Error creating folder. Please try again.', 'error');
+            btn.disabled = false;
+            btn.innerHTML = originalText;
+        }
     }
 
     function togglePrcForm() {

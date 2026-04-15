@@ -94,6 +94,62 @@
     <!-- Announcements Feed Widget -->
     @include('partials.announcement-widget')
 
+    <!-- Quick Actions -->
+    <div class="content-card">
+        <div class="card-header">
+            <h3 class="card-title">Quick Actions</h3>
+        </div>
+        <div class="flex gap-4 flex-wrap">
+            <a href="{{ route('dean.create-task') }}" class="btn btn-primary">
+                <i class="fas fa-plus"></i> Create New Task
+            </a>
+        </div>
+    </div>
+
+    <!-- Recent Tasks -->
+    <div class="content-card">
+        <div class="card-header">
+            <div class="flex justify-between items-center w-full">
+                <h3 class="card-title">Recent Tasks</h3>
+                <a href="{{ route('dean.tasks') }}" class="badge badge-info no-underline cursor-pointer">View All</a>
+            </div>
+        </div>
+        <table class="data-table">
+            <thead>
+                <tr>
+                    <th>Task Title</th>
+                    <th>Assigned To</th>
+                    <th>Due Date</th>
+                    <th>Status</th>
+                </tr>
+            </thead>
+            <tbody>
+                @forelse($recentTasks as $task)
+                <tr>
+                    <td><strong>{{ $task->task_title }}</strong></td>
+                    <td>{{ $task->assignedTo->employee->full_name ?? 'N/A' }}</td>
+                    <td>{{ $task->due_date ? $task->due_date->format('M d, Y') : 'N/A' }}</td>
+                    <td>
+                        @if($task->status === 'Completed')
+                            <span class="badge badge-success">Completed</span>
+                        @elseif($task->status === 'In Progress')
+                            <span class="badge badge-warning">In Progress</span>
+                        @else
+                            <span class="badge badge-danger">Pending</span>
+                        @endif
+                    </td>
+                </tr>
+                @empty
+                <tr>
+                    <td colspan="4" class="text-center text-gray-600 dark:text-gray-400">
+                        No tasks created yet
+                    </td>
+                </tr>
+                @endforelse
+            </tbody>
+        </table>
+    </div>
+
     <!-- System Usage Analytics Chart -->
     <div class="bg-white dark:bg-[#2a2a2a] p-6 mb-6 border border-gray-200 dark:border-gray-700">
         <div class="flex justify-between items-center mb-5 pb-4 border-b-2 border-gray-200 dark:border-gray-700">

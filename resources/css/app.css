@@ -155,6 +155,52 @@ body {
     padding-bottom: 2rem !important;
 }
 
+/* Sidebar Brand Header */
+.sidebar-brand {
+    padding: 24px 16px 18px;
+    text-align: center;
+    background: #dce3ea;
+    border-bottom: 1px solid #c5ced8;
+}
+.dark .sidebar-brand {
+    background: #1e2a38;
+    border-bottom-color: #2d3a4a;
+}
+.sidebar-brand-line {
+    height: 2px;
+    background: #6b7d8e;
+    margin: 0 20px;
+}
+.dark .sidebar-brand-line {
+    background: #4a5d6e;
+}
+.sidebar-brand-logo {
+    width: 72px;
+    height: 72px;
+    margin: 12px auto;
+    display: block;
+    object-fit: contain;
+}
+.sidebar-brand-title {
+    font-size: 0.8rem;
+    font-weight: 400;
+    letter-spacing: 0.18em;
+    color: #2c3e50;
+    margin: 6px 0 2px;
+}
+.dark .sidebar-brand-title {
+    color: #cfd8e0;
+}
+.sidebar-brand-welcome {
+    font-size: 1.1rem;
+    font-weight: 700;
+    color: #1a2a3a;
+    margin: 0;
+}
+.dark .sidebar-brand-welcome {
+    color: #e5e7eb;
+}
+
 /* Sidebar Section Labels */
 .sidebar-section-label {
     font-size: 0.65rem;

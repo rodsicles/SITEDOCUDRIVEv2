@@ -17,7 +17,7 @@ class DocumentService
     /**
      * Document categories available in the system.
      */
-    const CATEGORIES = ['Policies', 'Forms', 'Reports', 'Memos', 'Research Papers', 'Other'];
+    const CATEGORIES = ['Accreditation and Certifications', 'Academics'];
 
     /**
      * Get filtered and paginated documents for a user.
@@ -30,7 +30,16 @@ class DocumentService
             if ($folderFilter === 'uncategorized') {
                 $query->whereNull('folder_id');
             } else {
-                $query->where('folder_id', $folderFilter);
+                // Include documents in child folders
+                $folderIds = [(int) $folderFilter];
+                $childIds = Folder::where('parent_id', $folderFilter)->pluck('folder_id')->toArray();
+                $folderIds = array_merge($folderIds, $childIds);
+                // Also include grandchildren
+                if (!empty($childIds)) {
+                    $grandchildIds = Folder::whereIn('parent_id', $childIds)->pluck('folder_id')->toArray();
+                    $folderIds = array_merge($folderIds, $grandchildIds);
+                }
+                $query->whereIn('folder_id', $folderIds);
             }
         }
 
@@ -162,13 +171,22 @@ class DocumentService
             $filename = time() . '_' . $index . '_' . $file->hashName();
             Storage::disk('local')->putFileAs('documents', $file, $filename);
 
+            // Auto-derive category from folder's top-level ancestor
+            $category = 'Other';
+            if (!empty($validated['folder_id'])) {
+                $folder = Folder::find($validated['folder_id']);
+                if ($folder) {
+                    $category = $folder->top_level_category ?? 'Other';
+                }
+            }
+
             Document::create([
                 'uploaded_by' => $userId,
                 'folder_id' => $validated['folder_id'] ?? null,
                 'document_title' => $validated['document_title'] . ($uploadedCount > 0 ? ' (' . ($uploadedCount + 1) . ')' : ''),
                 'file_path' => 'documents/' . $filename,
                 'document_type' => $validated['document_type'],
-                'category' => $validated['category'],
+                'category' => $category,
                 'tags' => $tags,
             ]);
             $uploadedCount++;

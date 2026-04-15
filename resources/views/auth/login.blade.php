@@ -72,7 +72,6 @@
                 </div>
 
                 <!-- Header -->
-                <h3 class="role-selection-title" style="margin-bottom: 4px;">SITE Employee Portal</h3>
                 <p class="role-selection-subtitle" style="margin-bottom: 24px;">Enter your credentials to continue.</p>
 
                 <!-- Error Message -->

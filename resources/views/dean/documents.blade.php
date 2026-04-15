@@ -10,8 +10,8 @@
 @endsection
 
 @section('content')
-    {{-- Include Folder Management Section --}}
-    @include('partials.folder-section')
+    {{-- Include Folder Navigation --}}
+    @include('partials.folder-tree')
 
     <div class="content-card">
         <div class="card-header">
@@ -103,6 +103,3 @@
         </div>
     </div>
 @endsection
-
-{{-- Include Folder Modals --}}
-@include('partials.folder-modals')

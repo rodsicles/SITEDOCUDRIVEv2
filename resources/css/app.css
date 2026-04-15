@@ -1127,6 +1127,96 @@ body {
 }
 
 /* ============================================
+   CATEGORY TABS - DOCUMENT NAVIGATION
+   ============================================ */
+
+.category-tabs {
+    @apply flex border-b border-gray-200 dark:border-gray-700;
+}
+
+.category-tab {
+    @apply px-6 py-3 text-sm font-semibold text-gray-600 dark:text-gray-400 no-underline;
+    border-bottom: 3px solid transparent;
+    border-left: none;
+}
+
+.category-tab.active {
+    color: #028a0f;
+    border-bottom: 3px solid #028a0f;
+    background-color: rgba(2, 138, 15, 0.06);
+}
+.dark .category-tab.active {
+    background-color: rgba(2, 138, 15, 0.12);
+}
+
+/* ============================================
+   BREADCRUMB NAVIGATION
+   ============================================ */
+
+.breadcrumb-nav {
+    @apply flex items-center gap-2 px-6 py-3 text-sm border-b border-gray-200 dark:border-gray-700;
+    background-color: #f9fafb;
+}
+.dark .breadcrumb-nav {
+    background-color: #1a1a1a;
+}
+
+.breadcrumb-link {
+    @apply text-gray-600 dark:text-gray-400 no-underline;
+    color: #028a0f;
+}
+
+.breadcrumb-separator {
+    @apply text-gray-400 dark:text-gray-600 text-xs;
+}
+
+.breadcrumb-current {
+    @apply font-semibold text-gray-800 dark:text-gray-200;
+}
+
+/* Inline upload form inside leaf folder */
+.dark #folderUploadForm {
+    background-color: #2a2a2a !important;
+    border-color: #374151 !important;
+}
+
+/* Exam Record Forms (PRC + Certification) */
+.exam-form {
+    border: 1px solid #e0e0e0;
+    padding: 16px;
+    background: #f9fafb;
+}
+
+.dark .exam-form {
+    background-color: #2a2a2a !important;
+    border-color: #374151 !important;
+}
+
+/* Exam Summary Table (inside leaf folders) */
+.exam-summary-table {
+    @apply w-full text-sm;
+    border-collapse: collapse;
+}
+
+.exam-summary-table th {
+    @apply text-left text-xs font-semibold text-gray-500 dark:text-gray-400 uppercase px-3 py-2;
+    border-bottom: 2px solid #e0e0e0;
+}
+
+.dark .exam-summary-table th {
+    border-bottom-color: #374151;
+}
+
+.exam-summary-table td {
+    @apply px-3 py-2 text-gray-700 dark:text-gray-300;
+    border-bottom: 1px solid #f0f0f0;
+}
+
+.dark .exam-summary-table td {
+    border-bottom-color: #333;
+}
+
+/* ============================================
    NEW FOLDER DESIGN - COMPACT HORIZONTAL CARDS
    ============================================ */
 

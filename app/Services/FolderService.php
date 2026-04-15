@@ -5,85 +5,57 @@ namespace App\Services;
 use App\Models\Folder;
 use App\Models\Document;
 use App\Models\DashboardLog;
+use Illuminate\Support\Collection;
 
 class FolderService
 {
     /**
-     * Create a new folder for a user.
+     * Get the system folder tree: top-level categories with children eager-loaded.
      */
-    public function createFolder(int $userId, string $folderName, string $color = '#028a0f'): Folder
+    public function getSystemFolderTree(): Collection
     {
-        $folder = Folder::create([
-            'user_id' => $userId,
-            'folder_name' => $folderName,
-            'color' => $color,
-        ]);
-
-        DashboardLog::create([
-            'user_id' => $userId,
-            'activity' => 'Created folder: ' . $folderName,
-            'activity_type' => 'folder_created',
-            'visibility' => 'own',
-        ]);
-
-        return $folder;
+        return Folder::system()
+            ->topLevel()
+            ->with(['children' => function ($query) {
+                $query->system()->orderBy('sort_order')
+                    ->withCount('documents')
+                    ->with(['children' => function ($q) {
+                        $q->system()->orderBy('sort_order')->withCount('documents');
+                    }]);
+            }])
+            ->withCount('documents')
+            ->orderBy('sort_order')
+            ->get();
     }
 
     /**
-     * Update (rename) a folder. Checks ownership.
+     * Get uploadable folders (leaf folders or folders that accept documents) grouped by category.
      */
-    public function updateFolder(int $folderId, int $userId, string $folderName, ?string $color = null): Folder
+    public function getUploadableFolders(): array
     {
-        $folder = Folder::findOrFail($folderId);
+        $tree = $this->getSystemFolderTree();
+        $grouped = [];
 
-        if ($folder->user_id !== $userId) {
-            abort(403, 'Unauthorized action.');
+        foreach ($tree as $category) {
+            $folders = [];
+            foreach ($category->children as $folder) {
+                if ($folder->children->isEmpty()) {
+                    $folders[] = $folder;
+                } else {
+                    foreach ($folder->children as $subFolder) {
+                        $subFolder->display_name = $folder->folder_name . ' - ' . $subFolder->folder_name;
+                        $folders[] = $subFolder;
+                    }
+                }
+            }
+            $grouped[$category->folder_name] = $folders;
         }
 
-        $oldName = $folder->folder_name;
-
-        $folder->update([
-            'folder_name' => $folderName,
-            'color' => $color ?? $folder->color,
-        ]);
-
-        DashboardLog::create([
-            'user_id' => $userId,
-            'activity' => "Renamed folder from '{$oldName}' to '{$folderName}'",
-            'activity_type' => 'folder_updated',
-            'visibility' => 'own',
-        ]);
-
-        return $folder;
+        return $grouped;
     }
 
     /**
-     * Delete a folder and move its documents to uncategorized. Checks ownership.
-     */
-    public function deleteFolder(int $folderId, int $userId): void
-    {
-        $folder = Folder::findOrFail($folderId);
-
-        if ($folder->user_id !== $userId) {
-            abort(403, 'Unauthorized action.');
-        }
-
-        $folderName = $folder->folder_name;
-        $docCount = Document::where('folder_id', $folderId)->count();
-
-        Document::where('folder_id', $folderId)->update(['folder_id' => null]);
-        $folder->delete();
-
-        DashboardLog::create([
-            'user_id' => $userId,
-            'activity' => "Deleted folder '{$folderName}' ({$docCount} documents moved to uncategorized)",
-            'activity_type' => 'folder_deleted',
-            'visibility' => 'own',
-        ]);
-    }
-
-    /**
-     * Move a document to a folder (or null for uncategorized). Checks ownership.
+     * Move a document to a folder. Checks document ownership only.
      */
     public function moveDocument(int $documentId, int $userId, ?int $folderId): string
     {
@@ -94,10 +66,7 @@ class FolderService
         }
 
         if ($folderId) {
-            $folder = Folder::findOrFail($folderId);
-            if ($folder->user_id !== $userId) {
-                abort(403, 'You do not own this folder.');
-            }
+            Folder::findOrFail($folderId);
         }
 
         $document->update(['folder_id' => $folderId]);
@@ -117,9 +86,9 @@ class FolderService
     }
 
     /**
-     * Get all folders for a user with document counts.
+     * Get all folders for a user with document counts (legacy support).
      */
-    public function getUserFolders(int $userId)
+    public function getUserFolders(int $userId): Collection
     {
         return Folder::where('user_id', $userId)
             ->withCount('documents')

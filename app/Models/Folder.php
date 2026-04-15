@@ -9,11 +9,20 @@ use Illuminate\Database\Eloquent\Relations\HasMany;
 class Folder extends Model
 {
     protected $primaryKey = 'folder_id';
-    
+
     protected $fillable = [
         'user_id',
         'folder_name',
         'color',
+        'parent_id',
+        'is_system',
+        'level',
+        'sort_order',
+        'slug',
+    ];
+
+    protected $casts = [
+        'is_system' => 'boolean',
     ];
 
     /**
@@ -22,6 +31,22 @@ class Folder extends Model
     public function user(): BelongsTo
     {
         return $this->belongsTo(User::class);
+    }
+
+    /**
+     * Get the parent folder
+     */
+    public function parent(): BelongsTo
+    {
+        return $this->belongsTo(Folder::class, 'parent_id', 'folder_id');
+    }
+
+    /**
+     * Get child folders
+     */
+    public function children(): HasMany
+    {
+        return $this->hasMany(Folder::class, 'parent_id', 'folder_id')->orderBy('sort_order');
     }
 
     /**
@@ -38,5 +63,60 @@ class Folder extends Model
     public function getDocumentCountAttribute(): int
     {
         return $this->documents()->count();
+    }
+
+    /**
+     * Scope: only system folders
+     */
+    public function scopeSystem($query)
+    {
+        return $query->where('is_system', true);
+    }
+
+    /**
+     * Scope: top-level categories only
+     */
+    public function scopeTopLevel($query)
+    {
+        return $query->whereNull('parent_id');
+    }
+
+    /**
+     * Get ancestor chain for breadcrumbs (ordered from root to immediate parent)
+     */
+    public function getAncestors(): array
+    {
+        $ancestors = [];
+        $current = $this->parent;
+        while ($current) {
+            array_unshift($ancestors, $current);
+            $current = $current->parent;
+        }
+        return $ancestors;
+    }
+
+    /**
+     * Get the top-level category name for this folder
+     */
+    public function getTopLevelCategoryAttribute(): ?string
+    {
+        if ($this->level === 0) {
+            return $this->folder_name;
+        }
+        $ancestors = $this->getAncestors();
+        return !empty($ancestors) ? $ancestors[0]->folder_name : $this->folder_name;
+    }
+
+    /**
+     * Get all descendant folder IDs (children + grandchildren)
+     */
+    public function getDescendantIds(): array
+    {
+        $ids = [];
+        foreach ($this->children as $child) {
+            $ids[] = $child->folder_id;
+            $ids = array_merge($ids, $child->getDescendantIds());
+        }
+        return $ids;
     }
 }

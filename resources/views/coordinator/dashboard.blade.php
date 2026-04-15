@@ -248,6 +248,8 @@
         </table>
         </div>
     </div>
+
+    @include('partials.exam-trends')
 @endsection
 
 @push('scripts')

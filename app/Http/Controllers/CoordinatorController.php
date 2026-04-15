@@ -9,6 +9,8 @@ use App\Models\Document;
 use App\Models\DocumentView;
 use App\Services\DashboardService;
 use App\Services\DocumentService;
+use App\Services\FolderService;
+use App\Services\ExamRecordService;
 use App\Services\TaskService;
 use App\Services\EmployeeService;
 use Illuminate\Http\Request;
@@ -20,7 +22,9 @@ class CoordinatorController extends Controller
         protected DashboardService $dashboardService,
         protected DocumentService $documentService,
         protected TaskService $taskService,
-        protected EmployeeService $employeeService
+        protected EmployeeService $employeeService,
+        protected FolderService $folderService,
+        protected ExamRecordService $examRecordService
     ) {}
 
     /**
@@ -80,12 +84,14 @@ class CoordinatorController extends Controller
         $recentActivities = $this->dashboardService->getRecentActivities($user, 10);
         $announcements = $this->dashboardService->getAnnouncements($user, 5);
         $docAnalyticsData = $this->dashboardService->getCoordinatorDocumentAnalytics($user->id);
+        $examTrends = $this->examRecordService->getTrends();
 
         return view('coordinator.dashboard', array_merge($stats, $docAnalyticsData, compact(
             'recentTasks',
             'facultyList',
             'recentActivities',
-            'announcements'
+            'announcements',
+            'examTrends'
         )));
     }
 
@@ -180,8 +186,15 @@ class CoordinatorController extends Controller
     {
         $categoryFilter = $request->query('category');
         $folderFilter = $request->query('folder');
+        $tab = $request->query('tab', 'accreditation');
 
-        $folders = $this->documentService->getUserFolders(auth()->id());
+        $folderTree = $this->folderService->getSystemFolderTree();
+        $uploadableFolders = $this->folderService->getUploadableFolders();
+        $currentFolder = $folderFilter && $folderFilter !== 'uncategorized'
+            ? \App\Models\Folder::with('parent.parent')->find($folderFilter)
+            : null;
+        $breadcrumbs = $currentFolder ? $currentFolder->getAncestors() : [];
+
         $documents = $this->documentService->getFilteredDocuments(
             auth()->user(), $categoryFilter, $folderFilter, $request->query()
         );
@@ -189,7 +202,23 @@ class CoordinatorController extends Controller
         $favoriteDocuments = $this->documentService->getFavoriteDocuments(auth()->user());
         $categories = $this->documentService->getCategories();
 
-        return view('coordinator.documents', compact('documents', 'recentDocuments', 'favoriteDocuments', 'categories', 'categoryFilter', 'folders', 'folderFilter'));
+        $examRecords = collect();
+        $isPrcFolder = false;
+        $isCertFolder = false;
+        if ($currentFolder) {
+            $isPrcFolder = $currentFolder->slug === \App\Models\ExamRecord::PRC_FOLDER_SLUG;
+            $isCertFolder = in_array($currentFolder->slug, \App\Models\ExamRecord::CERT_FOLDER_SLUGS);
+            if ($isPrcFolder || $isCertFolder) {
+                $examRecords = $this->examRecordService->getFolderExamRecords($currentFolder->folder_id);
+            }
+        }
+
+        return view('coordinator.documents', compact(
+            'documents', 'recentDocuments', 'favoriteDocuments', 'categories',
+            'categoryFilter', 'folderFilter', 'folderTree', 'uploadableFolders',
+            'currentFolder', 'breadcrumbs', 'tab',
+            'examRecords', 'isPrcFolder', 'isCertFolder'
+        ));
     }
 
     public function uploadDocument(Request $request)
@@ -203,14 +232,8 @@ class CoordinatorController extends Controller
                 'word' => 'required|file|max:10240|mimes:doc,docx',
                 default => 'required|file|max:10240|mimes:jpg,jpeg,png|mimetypes:image/jpeg,image/png',
             },
-            'category' => 'required|in:Policies,Forms,Reports,Memos,Research Papers,Other',
             'tags' => 'nullable|string|max:15',
-            'folder_id' => [
-                'nullable',
-                \Illuminate\Validation\Rule::exists('folders', 'folder_id')->where(function ($query) {
-                    $query->where('user_id', auth()->id());
-                }),
-            ],
+            'folder_id' => 'required|exists:folders,folder_id',
         ]);
 
         // Block dangerous file extensions (double-extension attack prevention)
@@ -233,6 +256,52 @@ class CoordinatorController extends Controller
         }
 
         return redirect()->back()->with('success', "$uploadedCount document(s) uploaded successfully");
+    }
+
+    public function storeExamRecord(Request $request)
+    {
+        $folderSlug = $request->input('folder_slug');
+
+        if ($folderSlug === \App\Models\ExamRecord::PRC_FOLDER_SLUG) {
+            $request->validate([
+                'batch_label' => 'required|string|max:50',
+                'ce_passed' => 'required|integer|min:0',
+                'ce_total' => 'nullable|integer|min:0',
+                'ese_passed' => 'required|integer|min:0',
+                'ese_total' => 'nullable|integer|min:0',
+            ]);
+
+            $documentId = $this->examRecordService->storePrcResults($request->only([
+                'batch_label', 'ce_passed', 'ce_total', 'ese_passed', 'ese_total'
+            ]), auth()->id());
+
+            return response()->json([
+                'success' => true,
+                'message' => 'PRC exam results recorded and document generated.',
+                'document_id' => $documentId,
+            ]);
+        }
+
+        if (in_array($folderSlug, \App\Models\ExamRecord::CERT_FOLDER_SLUGS)) {
+            $request->validate([
+                'folder_id' => 'required|exists:folders,folder_id',
+                'batch_label' => 'required|string|max:50',
+                'passed_count' => 'required|integer|min:0',
+            ]);
+
+            $this->examRecordService->storeCertificationCount(
+                $request->input('folder_id'),
+                $request->only(['batch_label', 'passed_count']),
+                auth()->id()
+            );
+
+            return response()->json([
+                'success' => true,
+                'message' => 'Certification passer count recorded.',
+            ]);
+        }
+
+        return response()->json(['success' => false, 'message' => 'Invalid folder type.'], 422);
     }
 
     public function editFaculty($id)

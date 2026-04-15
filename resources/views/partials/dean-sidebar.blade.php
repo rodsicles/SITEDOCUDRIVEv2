@@ -4,10 +4,7 @@
     <i class="fas fa-chart-line"></i> Dashboard
 </a>
 
-<div class="sidebar-section-label">Admin & Leave</div>
-<a href="{{ route('leave.index') }}" class="menu-item {{ request()->routeIs('leave.index', 'leave.create', 'leave.edit') ? 'active' : '' }}">
-    <i class="fas fa-calendar-alt"></i> Leave Requests
-</a>
+<div class="sidebar-section-label">Schedule</div>
 <a href="{{ route('calendar.index') }}" class="menu-item {{ request()->routeIs('calendar.index') ? 'active' : '' }}">
     <i class="fas fa-calendar"></i> Calendar
 </a>
@@ -31,12 +28,6 @@
 <div class="sidebar-section-label">Resources & Development</div>
 <a href="{{ route('dean.documents') }}" class="menu-item {{ request()->routeIs('dean.documents') ? 'active' : '' }}">
     <i class="fas fa-folder"></i> Documents
-</a>
-<a href="{{ route('equipment.index') }}" class="menu-item {{ request()->routeIs('equipment.*') ? 'active' : '' }}">
-    <i class="fas fa-tools"></i> Equipment
-</a>
-<a href="{{ route('professional-development.index') }}" class="menu-item {{ request()->routeIs('professional-development.*') ? 'active' : '' }}">
-    <i class="fas fa-graduation-cap"></i> Prof. Development
 </a>
 <a href="{{ route('skill-tags.index') }}" class="menu-item {{ request()->routeIs('skill-tags.*') ? 'active' : '' }}">
     <i class="fas fa-tags"></i> Skill Tags

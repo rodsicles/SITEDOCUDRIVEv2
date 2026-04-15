@@ -17,9 +17,14 @@ class ExamRecord extends Model
         'exam_type',
         'batch_label',
         'passed_count',
+        'passer_names',
         'total_examinees',
         'recorded_by',
         'document_id',
+    ];
+
+    protected $casts = [
+        'passer_names' => 'array',
     ];
 
     public function folder()

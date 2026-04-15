@@ -149,19 +149,29 @@
                     </div>
                     <div class="form-group">
                         <label class="form-label">Civil Engineer — Passed *</label>
-                        <input type="number" name="ce_passed" class="form-control" min="0" required placeholder="0">
+                        <input type="number" name="ce_passed" class="form-control" min="0" required placeholder="0" id="prcCePassed">
                     </div>
                     <div class="form-group">
                         <label class="form-label">Civil Engineer — Total Examinees</label>
                         <input type="number" name="ce_total" class="form-control" min="0" placeholder="Optional">
                     </div>
+                    <div class="form-group md:col-span-2">
+                        <label class="form-label">Civil Engineer — Passer Names</label>
+                        <textarea name="ce_names" class="form-control" rows="4" placeholder="Enter names, one per line" oninput="updatePasserCount(this, 'prcCePassed')"></textarea>
+                        <small class="text-xs text-gray-500 dark:text-gray-400 mt-1">One name per line. Passed count auto-updates from names entered.</small>
+                    </div>
                     <div class="form-group">
                         <label class="form-label">Environmental Sanitary Eng. — Passed *</label>
-                        <input type="number" name="ese_passed" class="form-control" min="0" required placeholder="0">
+                        <input type="number" name="ese_passed" class="form-control" min="0" required placeholder="0" id="prcEsePassed">
                     </div>
                     <div class="form-group">
                         <label class="form-label">Environmental Sanitary Eng. — Total Examinees</label>
                         <input type="number" name="ese_total" class="form-control" min="0" placeholder="Optional">
+                    </div>
+                    <div class="form-group md:col-span-2">
+                        <label class="form-label">Environmental Sanitary Eng. — Passer Names</label>
+                        <textarea name="ese_names" class="form-control" rows="4" placeholder="Enter names, one per line" oninput="updatePasserCount(this, 'prcEsePassed')"></textarea>
+                        <small class="text-xs text-gray-500 dark:text-gray-400 mt-1">One name per line. Passed count auto-updates from names entered.</small>
                     </div>
                 </div>
                 <div class="flex gap-2">
@@ -191,7 +201,12 @@
                     </div>
                     <div class="form-group">
                         <label class="form-label">Number of Passers *</label>
-                        <input type="number" name="passed_count" class="form-control" min="0" required placeholder="0">
+                        <input type="number" name="passed_count" class="form-control" min="0" required placeholder="0" id="certPassedCount">
+                    </div>
+                    <div class="form-group md:col-span-2">
+                        <label class="form-label">Passer Names</label>
+                        <textarea name="passer_names" class="form-control" rows="4" placeholder="Enter names, one per line" oninput="updatePasserCount(this, 'certPassedCount')"></textarea>
+                        <small class="text-xs text-gray-500 dark:text-gray-400 mt-1">One name per line. Passed count auto-updates from names entered.</small>
                     </div>
                 </div>
                 <div class="flex gap-2">
@@ -220,10 +235,12 @@
                                 <th>Exam Type</th>
                                 <th>Passed</th>
                                 <th>Total</th>
+                                <th>Names</th>
                                 <th>Recorded</th>
                                 @else
                                 <th>Year</th>
                                 <th>Passers</th>
+                                <th>Names</th>
                                 <th>Recorded By</th>
                                 <th>Date</th>
                                 @endif
@@ -237,14 +254,46 @@
                                 <td>{{ $record->exam_type }}</td>
                                 <td><strong>{{ $record->passed_count }}</strong></td>
                                 <td>{{ $record->total_examinees ?? '—' }}</td>
+                                <td>
+                                    @if($record->passer_names && count($record->passer_names) > 0)
+                                    <button type="button" onclick="togglePasserNames(this)" class="btn btn-sm text-xs" style="padding: 2px 8px; background: rgba(2,138,15,0.1); color: #028a0f;">
+                                        <i class="fas fa-chevron-down"></i> {{ count($record->passer_names) }} names
+                                    </button>
+                                    @else
+                                    <span class="text-gray-400">—</span>
+                                    @endif
+                                </td>
                                 <td>{{ $record->created_at->format('M d, Y') }}</td>
                                 @else
                                 <td>{{ $record->batch_label }}</td>
                                 <td><strong>{{ $record->passed_count }}</strong></td>
+                                <td>
+                                    @if($record->passer_names && count($record->passer_names) > 0)
+                                    <button type="button" onclick="togglePasserNames(this)" class="btn btn-sm text-xs" style="padding: 2px 8px; background: rgba(2,138,15,0.1); color: #028a0f;">
+                                        <i class="fas fa-chevron-down"></i> {{ count($record->passer_names) }} names
+                                    </button>
+                                    @else
+                                    <span class="text-gray-400">—</span>
+                                    @endif
+                                </td>
                                 <td>{{ $record->recorder->employee->full_name ?? $record->recorder->username }}</td>
                                 <td>{{ $record->created_at->format('M d, Y') }}</td>
                                 @endif
                             </tr>
+                            @if($record->passer_names && count($record->passer_names) > 0)
+                            <tr class="passer-names-row hidden">
+                                <td colspan="{{ (isset($isPrcFolder) && $isPrcFolder) ? 6 : 5 }}" style="background: #f9fafb; padding: 8px 16px;">
+                                    <div class="text-xs text-gray-600 dark:text-gray-400">
+                                        <strong>Passer Names:</strong>
+                                        <ol style="margin: 4px 0 0 16px; padding: 0;">
+                                            @foreach($record->passer_names as $name)
+                                            <li>{{ $name }}</li>
+                                            @endforeach
+                                        </ol>
+                                    </div>
+                                </td>
+                            </tr>
+                            @endif
                             @endforeach
                         </tbody>
                     </table>
@@ -393,6 +442,26 @@
         if (form) form.classList.toggle('hidden');
     }
 
+    function updatePasserCount(textarea, countFieldId) {
+        const names = textarea.value.split('\n').filter(n => n.trim() !== '');
+        const countField = document.getElementById(countFieldId);
+        if (countField) countField.value = names.length;
+    }
+
+    function parseNames(text) {
+        return text.split('\n').map(n => n.trim()).filter(n => n !== '');
+    }
+
+    function togglePasserNames(btn) {
+        const row = btn.closest('tr');
+        const namesRow = row.nextElementSibling;
+        if (namesRow && namesRow.classList.contains('passer-names-row')) {
+            namesRow.classList.toggle('hidden');
+            btn.querySelector('i').classList.toggle('fa-chevron-down');
+            btn.querySelector('i').classList.toggle('fa-chevron-up');
+        }
+    }
+
     document.getElementById('folderDocType')?.addEventListener('change', function() {
         const fileInput = document.getElementById('folderFileInput');
         const fileHelp = document.getElementById('folderFileHelp');
@@ -495,6 +564,11 @@
 
         try {
             const formData = new FormData(form);
+            const ceNamesTextarea = form.querySelector('[name="ce_names"]');
+            const eseNamesTextarea = form.querySelector('[name="ese_names"]');
+            if (ceNamesTextarea) formData.set('ce_names', ceNamesTextarea.value);
+            if (eseNamesTextarea) formData.set('ese_names', eseNamesTextarea.value);
+
             const response = await fetch("{{ route($role . '.store-exam-record') }}", {
                 method: 'POST',
                 body: formData,
@@ -537,6 +611,9 @@
 
         try {
             const formData = new FormData(form);
+            const namesTextarea = form.querySelector('[name="passer_names"]');
+            if (namesTextarea) formData.set('passer_names', namesTextarea.value);
+
             const response = await fetch("{{ route($role . '.store-exam-record') }}", {
                 method: 'POST',
                 body: formData,

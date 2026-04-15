@@ -110,7 +110,48 @@ class WordDocumentService
         $table->addCell(2000, array_merge(['bgColor' => 'f0f0f0'], $cellStyle))->addText((string) $totalPassed, ['bold' => true, 'size' => 12, 'color' => '028a0f'], ['alignment' => Jc::CENTER]);
         $table->addCell(2000, array_merge(['bgColor' => 'f0f0f0'], $cellStyle))->addText($totalExaminees > 0 ? (string) $totalExaminees : 'N/A', ['bold' => true, 'size' => 11], ['alignment' => Jc::CENTER]);
 
-        $section->addTextBreak(2);
+        $section->addTextBreak(1);
+
+        // List of Passers section
+        $hasNames = false;
+        foreach ($examData as $exam) {
+            if (!empty($exam['passer_names'])) {
+                $hasNames = true;
+                break;
+            }
+        }
+
+        if ($hasNames) {
+            $section->addText(
+                'List of Passers',
+                ['bold' => true, 'size' => 14],
+                ['alignment' => Jc::CENTER, 'spaceAfter' => 200]
+            );
+
+            foreach ($examData as $exam) {
+                if (empty($exam['passer_names'])) {
+                    continue;
+                }
+
+                $section->addText(
+                    $exam['exam_type'],
+                    ['bold' => true, 'size' => 12, 'color' => '028a0f'],
+                    ['spaceAfter' => 100]
+                );
+
+                foreach ($exam['passer_names'] as $index => $name) {
+                    $section->addText(
+                        ($index + 1) . '. ' . $name,
+                        ['size' => 11],
+                        ['indent' => 0.5, 'spaceAfter' => 40]
+                    );
+                }
+
+                $section->addTextBreak(1);
+            }
+        } else {
+            $section->addTextBreak(2);
+        }
 
         // Footer
         $section->addText(

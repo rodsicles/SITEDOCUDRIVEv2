@@ -246,10 +246,12 @@ class CoordinatorController extends Controller
                 'ce_total' => 'nullable|integer|min:0',
                 'ese_passed' => 'required|integer|min:0',
                 'ese_total' => 'nullable|integer|min:0',
+                'ce_names' => 'nullable|string',
+                'ese_names' => 'nullable|string',
             ]);
 
             $documentId = $this->examRecordService->storePrcResults($request->only([
-                'batch_label', 'ce_passed', 'ce_total', 'ese_passed', 'ese_total'
+                'batch_label', 'ce_passed', 'ce_total', 'ese_passed', 'ese_total', 'ce_names', 'ese_names'
             ]), auth()->id());
 
             return response()->json([
@@ -264,11 +266,12 @@ class CoordinatorController extends Controller
                 'folder_id' => 'required|exists:folders,folder_id',
                 'batch_label' => 'required|string|max:50',
                 'passed_count' => 'required|integer|min:0',
+                'passer_names' => 'nullable|string',
             ]);
 
             $this->examRecordService->storeCertificationCount(
                 $request->input('folder_id'),
-                $request->only(['batch_label', 'passed_count']),
+                $request->only(['batch_label', 'passed_count', 'passer_names']),
                 auth()->id()
             );
 

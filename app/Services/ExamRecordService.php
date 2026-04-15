@@ -21,17 +21,23 @@ class ExamRecordService
             throw new \RuntimeException('PRC Results folder not found.');
         }
 
+        // Parse passer names from newline-separated strings
+        $ceNames = $this->parseNames($data['ce_names'] ?? '');
+        $eseNames = $this->parseNames($data['ese_names'] ?? '');
+
         // Build exam data array
         $examData = [
             [
                 'exam_type' => 'Civil Engineer',
                 'passed_count' => $data['ce_passed'],
                 'total_examinees' => $data['ce_total'] ?? null,
+                'passer_names' => $ceNames,
             ],
             [
                 'exam_type' => 'Environmental Sanitary Engineering',
                 'passed_count' => $data['ese_passed'],
                 'total_examinees' => $data['ese_total'] ?? null,
+                'passer_names' => $eseNames,
             ],
         ];
 
@@ -60,6 +66,7 @@ class ExamRecordService
                 'exam_type' => $exam['exam_type'],
                 'batch_label' => $data['batch_label'],
                 'passed_count' => $exam['passed_count'],
+                'passer_names' => !empty($exam['passer_names']) ? $exam['passer_names'] : null,
                 'total_examinees' => $exam['total_examinees'],
                 'recorded_by' => $userId,
                 'document_id' => $document->document_id,
@@ -83,11 +90,15 @@ class ExamRecordService
         $folder = Folder::findOrFail($folderId);
         $certName = $folder->folder_name;
 
+        // Parse passer names from newline-separated string
+        $names = $this->parseNames($data['passer_names'] ?? '');
+
         $record = ExamRecord::create([
             'folder_id' => $folderId,
             'exam_type' => $certName,
             'batch_label' => $data['batch_label'],
             'passed_count' => $data['passed_count'],
+            'passer_names' => !empty($names) ? $names : null,
             'total_examinees' => null,
             'recorded_by' => $userId,
             'document_id' => null,
@@ -160,5 +171,17 @@ class ExamRecordService
     protected function clearTrendsCache(): void
     {
         Cache::forget('exam_trends');
+    }
+
+    protected function parseNames(string $text): array
+    {
+        if (empty($text)) {
+            return [];
+        }
+
+        return array_values(array_filter(
+            array_map('trim', preg_split('/\r\n|\r|\n/', $text)),
+            fn($name) => $name !== ''
+        ));
     }
 }

@@ -88,6 +88,9 @@
         </div>
     </div>
 
+    <!-- Exam & Certification Trends -->
+    @include('partials.exam-trends')
+
     <!-- Announcements Feed Widget -->
     @include('partials.announcement-widget')
 
@@ -248,8 +251,6 @@
         </table>
         </div>
     </div>
-
-    @include('partials.exam-trends')
 @endsection
 
 @push('scripts')

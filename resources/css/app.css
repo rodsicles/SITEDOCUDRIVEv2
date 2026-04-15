@@ -1217,6 +1217,124 @@ body {
 }
 
 /* ============================================
+   TRENDS - COMPACT DASHBOARD PANELS
+   ============================================ */
+
+.trends-compact-grid {
+    display: grid;
+    grid-template-columns: repeat(4, 1fr);
+    gap: 0;
+}
+
+.trends-panel {
+    padding: 16px 20px;
+    border-right: 1px solid #e0e0e0;
+    border-bottom: 1px solid #e0e0e0;
+}
+
+.trends-panel:last-child {
+    border-right: none;
+}
+
+.dark .trends-panel {
+    border-color: #374151;
+}
+
+.trends-panel-header {
+    margin-bottom: 10px;
+}
+
+.trends-panel-title {
+    @apply text-xs font-bold uppercase text-gray-500 dark:text-gray-400;
+    letter-spacing: 0.05em;
+}
+
+.trends-bars {
+    display: flex;
+    flex-direction: column;
+    gap: 6px;
+}
+
+.trends-bar-row {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+}
+
+.trends-bar-label {
+    @apply text-xs text-gray-600 dark:text-gray-400;
+    min-width: 55px;
+    flex-shrink: 0;
+}
+
+.trends-bar-track {
+    flex: 1;
+    height: 14px;
+    background: #f0f0f0;
+    overflow: hidden;
+}
+
+.dark .trends-bar-track {
+    background: #333;
+}
+
+.trends-bar-fill {
+    height: 100%;
+    background: #028a0f;
+    min-width: 2px;
+}
+
+.trends-bar-value {
+    @apply text-xs font-bold text-gray-800 dark:text-gray-200;
+    min-width: 28px;
+    text-align: right;
+}
+
+.trends-breakdown {
+    margin-top: 8px;
+    padding-top: 8px;
+    border-top: 1px solid #e0e0e0;
+}
+
+.dark .trends-breakdown {
+    border-color: #374151;
+}
+
+.trends-breakdown-row {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    margin-bottom: 2px;
+}
+
+.trends-breakdown-batch {
+    @apply text-xs text-gray-500 dark:text-gray-400;
+    min-width: 55px;
+}
+
+.trends-breakdown-item {
+    @apply text-xs text-gray-600 dark:text-gray-300;
+}
+
+@media (max-width: 1024px) {
+    .trends-compact-grid {
+        grid-template-columns: repeat(2, 1fr);
+    }
+    .trends-panel:nth-child(2) {
+        border-right: none;
+    }
+}
+
+@media (max-width: 640px) {
+    .trends-compact-grid {
+        grid-template-columns: 1fr;
+    }
+    .trends-panel {
+        border-right: none;
+    }
+}
+
+/* ============================================
    NEW FOLDER DESIGN - COMPACT HORIZONTAL CARDS
    ============================================ */
 

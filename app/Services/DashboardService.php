@@ -7,7 +7,6 @@ use App\Models\Employee;
 use App\Models\Task;
 use App\Models\Document;
 use App\Models\Folder;
-use App\Models\LeaveRequest;
 use App\Models\DashboardLog;
 use App\Models\PerformanceReport;
 use App\Models\Announcement;
@@ -19,21 +18,6 @@ use Illuminate\Support\Collection;
 class DashboardService
 {
     /**
-     * Get leave request count for a user by period.
-     */
-    public function getLeaveCount(int $userId, string $period = 'year'): int
-    {
-        $query = LeaveRequest::where('user_id', $userId)
-            ->whereYear('start_date', date('Y'));
-
-        if ($period === 'month') {
-            $query->whereMonth('start_date', date('m'));
-        }
-
-        return $query->count();
-    }
-
-    /**
      * Get Dean dashboard statistics.
      */
     public function getDeanStats(int $userId): array
@@ -42,8 +26,6 @@ class DashboardService
             return [
                 'totalEmployees' => Employee::count(),
                 'totalDocuments' => Document::count(),
-                'leaveThisMonth' => $this->getLeaveCount($userId, 'month'),
-                'leaveThisYear' => $this->getLeaveCount($userId, 'year'),
                 'totalTasks' => Task::count(),
             ];
         });
@@ -68,8 +50,6 @@ class DashboardService
             return [
                 'totalFaculty' => $facultyQuery->count(),
                 'totalDocuments' => Document::where('uploaded_by', $userId)->count(),
-                'leaveThisMonth' => $this->getLeaveCount($userId, 'month'),
-                'leaveThisYear' => $this->getLeaveCount($userId, 'year'),
                 'totalTasks' => Task::where('assigned_to', $userId)->count(),
             ];
         });
@@ -83,8 +63,6 @@ class DashboardService
         return Cache::remember("faculty_stats_{$userId}", now()->addMinutes(5), function () use ($userId) {
             return [
                 'totalDocuments' => Document::where('uploaded_by', $userId)->count(),
-                'leaveThisMonth' => $this->getLeaveCount($userId, 'month'),
-                'leaveThisYear' => $this->getLeaveCount($userId, 'year'),
                 'completedTasks' => Task::where('assigned_to', $userId)
                     ->where('status', 'Completed')
                     ->count(),

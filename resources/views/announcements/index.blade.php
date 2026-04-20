@@ -37,8 +37,7 @@
             @endif
         </div>
 
-        @forelse($announcements as $announcement)
-
+        d\]
         {{-- Announcement Card --}}
         <div id="announcement-{{ $announcement->announcement_id }}"
              data-id="{{ $announcement->announcement_id }}"

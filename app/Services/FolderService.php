@@ -97,7 +97,11 @@ class FolderService
         ];
 
         if ($parentId) {
-            $parent = Folder::findOrFail($parentId);
+            $parent = Folder::where('folder_id', $parentId)
+                ->where(function ($query) use ($userId) {
+                    $query->where('user_id', $userId)->orWhere('is_system', true);
+                })
+                ->firstOrFail();
             $data['parent_id'] = $parentId;
             $data['is_system'] = $parent->is_system;
             $data['level'] = $parent->level + 1;
@@ -115,6 +119,64 @@ class FolderService
         ]);
 
         return $folder;
+    }
+
+    /**
+     * Update a folder's name and/or color. Verifies ownership.
+     */
+    public function updateFolder(int $folderId, int $userId, string $folderName, ?string $color = null): Folder
+    {
+        $folder = Folder::where('folder_id', $folderId)
+            ->where('user_id', $userId)
+            ->where('is_system', false)
+            ->firstOrFail();
+
+        $folder->update(array_filter([
+            'folder_name' => $folderName,
+            'color' => $color,
+        ], fn($v) => $v !== null));
+
+        DashboardLog::create([
+            'user_id' => $userId,
+            'activity' => "Renamed folder to: {$folderName}",
+            'activity_type' => 'folder_updated',
+            'visibility' => 'own',
+        ]);
+
+        return $folder->fresh();
+    }
+
+    /**
+     * Delete a folder. Moves its documents to Uncategorized. Verifies ownership.
+     */
+    public function deleteFolder(int $folderId, int $userId): void
+    {
+        $folder = Folder::where('folder_id', $folderId)
+            ->where('user_id', $userId)
+            ->where('is_system', false)
+            ->firstOrFail();
+
+        $folderName = $folder->folder_name;
+
+        // Move all documents in this folder (and descendant folders) to uncategorized
+        $descendantIds = $folder->getDescendantIds();
+        $allFolderIds = array_merge([$folderId], $descendantIds);
+
+        Document::whereIn('folder_id', $allFolderIds)->update(['folder_id' => null]);
+
+        // Delete descendant folders first, then the folder itself
+        if (!empty($descendantIds)) {
+            Folder::whereIn('folder_id', $descendantIds)->delete();
+        }
+
+        $folder->delete();
+
+        DashboardLog::create([
+            'user_id' => $userId,
+            'activity' => "Deleted folder: {$folderName}",
+            'activity_type' => 'folder_deleted',
+            'visibility' => 'own',
+        ]);
     }
 
     /**

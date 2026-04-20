@@ -7,13 +7,11 @@ use App\Http\Controllers\CoordinatorController;
 use App\Http\Controllers\FacultyController;
 use App\Http\Controllers\SearchController;
 use App\Http\Controllers\ProfileController;
-use App\Http\Controllers\LeaveController;
 use App\Http\Controllers\CalendarController;
 use App\Http\Controllers\FolderController;
 use App\Http\Controllers\AnnouncementController;
 use App\Http\Controllers\SkillTagController;
 use App\Http\Controllers\ProfessionalDevelopmentController;
-use App\Http\Controllers\EquipmentController;
 use App\Http\Controllers\BackupController;
 
 // Authentication Routes
@@ -30,17 +28,6 @@ Route::middleware(['auth', 'no.back'])->prefix('profile')->name('profile.')->gro
     Route::get('/edit', [ProfileController::class, 'edit'])->name('edit');
     Route::post('/update', [ProfileController::class, 'update'])->name('update');
     Route::post('/change-password', [ProfileController::class, 'changePassword'])->name('change-password');
-});
-
-// Leave Management (All authenticated users)
-Route::middleware(['auth', 'no.back'])->prefix('leave')->name('leave.')->group(function () {
-    Route::get('/', [LeaveController::class, 'index'])->name('index');
-    Route::get('/create', [LeaveController::class, 'create'])->name('create');
-    Route::post('/', [LeaveController::class, 'store'])->name('store');
-    Route::get('/{id}/edit', [LeaveController::class, 'edit'])->name('edit');
-    Route::patch('/{id}', [LeaveController::class, 'update'])->name('update');
-    Route::delete('/{id}', [LeaveController::class, 'delete'])->name('delete');
-    Route::get('/calendar', [LeaveController::class, 'calendar'])->name('calendar');
 });
 
 // Calendar/Events (All authenticated users can view, only Dean/Coordinator can create/edit)
@@ -92,21 +79,6 @@ Route::middleware(['auth', 'no.back'])->prefix('professional-development')->name
     Route::delete('/{id}', [ProfessionalDevelopmentController::class, 'destroy'])->middleware('role:Faculty Employee')->name('destroy');
 });
 
-// Equipment Borrowing (All authenticated users)
-Route::middleware(['auth', 'no.back'])->prefix('equipment')->name('equipment.')->group(function () {
-    Route::get('/', [EquipmentController::class, 'index'])->name('index');
-    Route::get('/borrow', [EquipmentController::class, 'borrow'])->name('borrow');
-    Route::post('/borrow', [EquipmentController::class, 'storeBorrow'])->name('store-borrow');
-    Route::post('/{id}/return', [EquipmentController::class, 'returnItem'])->name('return');
-
-    // Dean-only equipment item management
-    Route::middleware('role:Dean')->group(function () {
-        Route::post('/items', [EquipmentController::class, 'storeItem'])->name('store-item');
-        Route::put('/items/{id}', [EquipmentController::class, 'updateItem'])->name('update-item');
-        Route::delete('/items/{id}', [EquipmentController::class, 'destroyItem'])->name('destroy-item');
-    });
-});
-
 // Dean Routes
 Route::middleware(['auth', 'no.back', 'role:Dean'])->prefix('dean')->name('dean.')->group(function () {
     Route::get('/dashboard', [DeanController::class, 'dashboard'])->name('dashboard');
@@ -118,7 +90,7 @@ Route::middleware(['auth', 'no.back', 'role:Dean'])->prefix('dean')->name('dean.
     Route::post('/accounts/faculty', [DeanController::class, 'storeFaculty'])->name('store-faculty');
     Route::get('/accounts/{id}/edit', [DeanController::class, 'editEmployee'])->name('edit-employee');
     Route::patch('/accounts/{id}', [DeanController::class, 'updateEmployee'])->name('update-employee');
-    Route::post('/accounts/{id}/reset-password', [DeanController::class, 'resetEmployeePassword'])->name('reset-password');
+    Route::post('/accounts/{id}/reset-password', [DeanController::class, 'resetEmployeePassword'])->middleware('throttle:5,1')->name('reset-password');
 
     Route::get('/reports', [DeanController::class, 'reports'])->name('reports');
     Route::get('/analytics', [DeanController::class, 'analytics'])->name('analytics');
@@ -137,8 +109,8 @@ Route::middleware(['auth', 'no.back', 'role:Dean'])->prefix('dean')->name('dean.
     
     // Folder Management - Rate Limited: 3 folders per hour
     Route::post('/folders', [FolderController::class, 'store'])->middleware('throttle:3,60')->name('folders.store');
-    Route::patch('/folders/{folder}', [FolderController::class, 'update'])->name('folders.update');
-    Route::delete('/folders/{folder}', [FolderController::class, 'destroy'])->name('folders.destroy');
+    Route::patch('/folders/{folder}', [FolderController::class, 'update'])->middleware('throttle:10,60')->name('folders.update');
+    Route::delete('/folders/{folder}', [FolderController::class, 'destroy'])->middleware('throttle:10,60')->name('folders.destroy');
     Route::get('/folders/list', [FolderController::class, 'getUserFolders'])->name('folders.list');
     Route::post('/documents/{document}/move', [FolderController::class, 'moveDocument'])->name('documents.move');
 
@@ -166,7 +138,7 @@ Route::middleware(['auth', 'no.back', 'role:Program Coordinator'])->prefix('coor
     Route::get('/faculty/{id}/profile', [CoordinatorController::class, 'viewEmployeeProfile'])->name('faculty-profile');
     Route::get('/faculty/{id}/edit', [CoordinatorController::class, 'editFaculty'])->name('edit-faculty');
     Route::patch('/faculty/{id}', [CoordinatorController::class, 'updateFaculty'])->name('update-faculty');
-    Route::post('/faculty/{id}/reset-password', [CoordinatorController::class, 'resetFacultyPassword'])->name('reset-faculty-password');
+    Route::post('/faculty/{id}/reset-password', [CoordinatorController::class, 'resetFacultyPassword'])->middleware('throttle:5,1')->name('reset-faculty-password');
     
     // Documents - Rate Limited: 6 uploads per hour
     Route::get('/documents', [CoordinatorController::class, 'documents'])->name('documents');
@@ -177,8 +149,8 @@ Route::middleware(['auth', 'no.back', 'role:Program Coordinator'])->prefix('coor
     
     // Folder Management - Rate Limited: 3 folders per hour
     Route::post('/folders', [FolderController::class, 'store'])->middleware('throttle:3,60')->name('folders.store');
-    Route::patch('/folders/{folder}', [FolderController::class, 'update'])->name('folders.update');
-    Route::delete('/folders/{folder}', [FolderController::class, 'destroy'])->name('folders.destroy');
+    Route::patch('/folders/{folder}', [FolderController::class, 'update'])->middleware('throttle:10,60')->name('folders.update');
+    Route::delete('/folders/{folder}', [FolderController::class, 'destroy'])->middleware('throttle:10,60')->name('folders.destroy');
     Route::get('/folders/list', [FolderController::class, 'getUserFolders'])->name('folders.list');
     Route::post('/documents/{document}/move', [FolderController::class, 'moveDocument'])->name('documents.move');
 });
@@ -192,8 +164,8 @@ Route::middleware(['auth', 'no.back', 'role:Faculty Employee'])->prefix('faculty
     
     // Folder Management - Rate Limited: 3 folders per hour
     Route::post('/folders', [FolderController::class, 'store'])->middleware('throttle:3,60')->name('folders.store');
-    Route::patch('/folders/{folder}', [FolderController::class, 'update'])->name('folders.update');
-    Route::delete('/folders/{folder}', [FolderController::class, 'destroy'])->name('folders.destroy');
+    Route::patch('/folders/{folder}', [FolderController::class, 'update'])->middleware('throttle:10,60')->name('folders.update');
+    Route::delete('/folders/{folder}', [FolderController::class, 'destroy'])->middleware('throttle:10,60')->name('folders.destroy');
     Route::get('/folders/list', [FolderController::class, 'getUserFolders'])->name('folders.list');
     Route::post('/documents/{document}/move', [FolderController::class, 'moveDocument'])->name('documents.move');
     Route::post('/notifications/{id}/read', [FacultyController::class, 'markNotificationRead'])->name('mark-notification-read');

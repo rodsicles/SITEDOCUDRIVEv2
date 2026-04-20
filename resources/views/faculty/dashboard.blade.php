@@ -24,16 +24,6 @@
 
         <div class="stat-item-horizontal">
             <div class="stat-icon-horizontal">
-                <i class="fas fa-calendar-times"></i>
-            </div>
-            <div class="stat-content-horizontal">
-                <div class="stat-number-label"><strong>{{ $leaveThisMonth }}</strong> Total Leave</div>
-                <div class="stat-description">This month | {{ $leaveThisYear }} this year</div>
-            </div>
-        </div>
-
-        <div class="stat-item-horizontal">
-            <div class="stat-icon-horizontal">
                 <i class="fas fa-check-circle"></i>
             </div>
             <div class="stat-content-horizontal">

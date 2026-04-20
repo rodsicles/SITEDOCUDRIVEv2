@@ -79,21 +79,6 @@ class User extends Authenticatable
         return $this->hasMany(Document::class, 'uploaded_by');
     }
 
-    public function leaveRequests()
-    {
-        return $this->hasMany(LeaveRequest::class, 'user_id');
-    }
-
-    public function reviewedLeaves()
-    {
-        return $this->hasMany(LeaveRequest::class, 'reviewed_by');
-    }
-
-    public function leaveBalance()
-    {
-        return $this->hasOne(LeaveBalance::class, 'user_id')->where('year', date('Y'));
-    }
-
     public function calendarEvents()
     {
         return $this->hasMany(CalendarEvent::class, 'created_by');
@@ -127,11 +112,6 @@ class User extends Authenticatable
     public function professionalDevelopments()
     {
         return $this->hasMany(ProfessionalDevelopment::class, 'user_id');
-    }
-
-    public function equipmentBorrows()
-    {
-        return $this->hasMany(EquipmentBorrow::class, 'user_id');
     }
 
     public function isDean()

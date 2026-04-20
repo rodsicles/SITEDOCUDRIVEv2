@@ -23,7 +23,8 @@ class BackupController extends Controller
             $result = $this->backupService->createBackup(auth()->user());
             return redirect()->back()->with('success', "Backup created: {$result['filename']}");
         } catch (\Exception $e) {
-            return redirect()->back()->with('error', 'Backup failed: ' . $e->getMessage());
+            \Log::error('Backup failed: ' . $e->getMessage());
+            return redirect()->back()->with('error', 'Backup failed. Please try again or contact support.');
         }
     }
 
@@ -47,7 +48,8 @@ class BackupController extends Controller
             $this->backupService->restoreBackup($file, auth()->user());
             return redirect()->back()->with('success', 'Database restored successfully from: ' . $file->getClientOriginalName());
         } catch (\Exception $e) {
-            return redirect()->back()->with('error', 'Restore failed: ' . $e->getMessage());
+            \Log::error('Restore failed: ' . $e->getMessage());
+            return redirect()->back()->with('error', 'Restore failed. Please try again or contact support.');
         }
     }
 

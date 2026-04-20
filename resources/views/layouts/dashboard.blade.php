@@ -409,22 +409,38 @@
             });
         }
         
+        function escapeHtml(str) {
+            const div = document.createElement('div');
+            div.textContent = str;
+            return div.innerHTML;
+        }
+
         function displaySearchResults(results) {
             if (results.length === 0) {
                 searchResults.innerHTML = '<p class="text-center text-gray-600 dark:text-gray-400 p-5">No results found</p>';
                 return;
             }
-            
-            let html = '';
+
+            searchResults.innerHTML = '';
             results.forEach(result => {
-                html += `
-                    <div class="p-3 mb-2 cursor-pointer hover:bg-[rgba(2,138,15,0.1)]" onclick="window.location.href='${result.url}'">
-                        <div class="font-semibold text-gray-800 dark:text-gray-200 mb-1">${result.title}</div>
-                        <div class="text-xs text-gray-600 dark:text-gray-400">${result.type}</div>
-                    </div>
-                `;
+                const item = document.createElement('div');
+                item.className = 'p-3 mb-2 cursor-pointer hover:bg-[rgba(2,138,15,0.1)]';
+                item.addEventListener('click', () => {
+                    window.location.href = result.url;
+                });
+
+                const title = document.createElement('div');
+                title.className = 'font-semibold text-gray-800 dark:text-gray-200 mb-1';
+                title.textContent = result.title;
+
+                const type = document.createElement('div');
+                type.className = 'text-xs text-gray-600 dark:text-gray-400';
+                type.textContent = result.type;
+
+                item.appendChild(title);
+                item.appendChild(type);
+                searchResults.appendChild(item);
             });
-            searchResults.innerHTML = html;
         }
         
         // Keyboard shortcut: Ctrl+K for search

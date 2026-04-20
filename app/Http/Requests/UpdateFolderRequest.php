@@ -9,7 +9,17 @@ class UpdateFolderRequest extends FormRequest
 {
     public function authorize(): bool
     {
-        return true;
+        if (!auth()->check()) {
+            return false;
+        }
+
+        $folderId = $this->route('folder');
+        $folder = \App\Models\Folder::where('folder_id', $folderId)
+            ->where('user_id', auth()->id())
+            ->where('is_system', false)
+            ->first();
+
+        return $folder !== null;
     }
 
     public function rules(): array

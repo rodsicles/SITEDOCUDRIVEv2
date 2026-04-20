@@ -128,4 +128,19 @@ class User extends Authenticatable
     {
         return $this->role->role_name === 'Faculty Employee';
     }
+
+    public function isSecretary()
+    {
+        return $this->role->role_name === 'Secretary';
+    }
+
+    public function isDeanOrSecretary()
+    {
+        return $this->isDean() || $this->isSecretary();
+    }
+
+    public function canManageDocuments()
+    {
+        return $this->isDean() || $this->isSecretary() || $this->isProgramCoordinator();
+    }
 }

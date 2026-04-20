@@ -27,3 +27,9 @@
 <a href="{{ route('faculty.documents') }}" class="menu-item {{ request()->routeIs('faculty.documents', 'faculty.upload-document') ? 'active' : '' }}">
     <i class="fas fa-folder"></i> Documents
 </a>
+<a href="{{ route('faculty.teaching-guides.index') }}" class="menu-item {{ request()->routeIs('faculty.teaching-guides.*') ? 'active' : '' }}">
+    <i class="fas fa-book-open"></i> Teaching Guides
+</a>
+<a href="{{ route('faculty.exam-questionnaires.index') }}" class="menu-item {{ request()->routeIs('faculty.exam-questionnaires.*') ? 'active' : '' }}">
+    <i class="fas fa-file-alt"></i> Exam Questionnaires
+</a>

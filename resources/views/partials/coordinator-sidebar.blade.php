@@ -26,6 +26,12 @@
 <a href="{{ route('coordinator.documents') }}" class="menu-item {{ request()->routeIs('coordinator.documents', 'coordinator.upload-document') ? 'active' : '' }}">
     <i class="fas fa-folder"></i> Documents
 </a>
+<a href="{{ route('coordinator.teaching-guides.index') }}" class="menu-item {{ request()->routeIs('coordinator.teaching-guides.*') ? 'active' : '' }}">
+    <i class="fas fa-book-open"></i> Teaching Guides
+</a>
+<a href="{{ route('coordinator.exam-questionnaires.index') }}" class="menu-item {{ request()->routeIs('coordinator.exam-questionnaires.*') ? 'active' : '' }}">
+    <i class="fas fa-file-alt"></i> Exam Questionnaires
+</a>
 <a href="{{ route('skill-tags.index') }}" class="menu-item {{ request()->routeIs('skill-tags.*') ? 'active' : '' }}">
     <i class="fas fa-tags"></i> Skill Tags
 </a>

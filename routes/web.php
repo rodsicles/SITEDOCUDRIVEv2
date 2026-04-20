@@ -13,6 +13,8 @@ use App\Http\Controllers\AnnouncementController;
 use App\Http\Controllers\SkillTagController;
 use App\Http\Controllers\ProfessionalDevelopmentController;
 use App\Http\Controllers\BackupController;
+use App\Http\Controllers\TeachingGuideController;
+use App\Http\Controllers\ExamQuestionnaireController;
 
 // Authentication Routes
 Route::get('/', [AuthController::class, 'showLogin'])->name('login');
@@ -79,8 +81,8 @@ Route::middleware(['auth', 'no.back'])->prefix('professional-development')->name
     Route::delete('/{id}', [ProfessionalDevelopmentController::class, 'destroy'])->middleware('role:Faculty Employee')->name('destroy');
 });
 
-// Dean Routes
-Route::middleware(['auth', 'no.back', 'role:Dean'])->prefix('dean')->name('dean.')->group(function () {
+// Dean + Secretary Routes (Secretary has same access as Dean)
+Route::middleware(['auth', 'no.back', 'role:Dean,Secretary'])->prefix('dean')->name('dean.')->group(function () {
     Route::get('/dashboard', [DeanController::class, 'dashboard'])->name('dashboard');
     Route::get('/employees', [DeanController::class, 'employees'])->name('employees');
     Route::get('/employees/{id}/profile', [DeanController::class, 'viewEmployeeProfile'])->name('employee-profile');
@@ -120,6 +122,19 @@ Route::middleware(['auth', 'no.back', 'role:Dean'])->prefix('dean')->name('dean.
     Route::get('/backup/download/{filename}', [BackupController::class, 'download'])->name('backup.download');
     Route::post('/backup/restore', [BackupController::class, 'restore'])->name('backup.restore');
     Route::delete('/backup/{filename}', [BackupController::class, 'destroy'])->name('backup.destroy');
+
+    // Teaching Guides (Dean + Secretary can upload and delete)
+    Route::get('/teaching-guides', [TeachingGuideController::class, 'index'])->name('teaching-guides.index');
+    Route::post('/teaching-guides', [TeachingGuideController::class, 'store'])->middleware('throttle:6,60')->name('teaching-guides.store');
+    Route::get('/teaching-guides/{id}/download', [TeachingGuideController::class, 'download'])->name('teaching-guides.download');
+    Route::delete('/teaching-guides/{id}', [TeachingGuideController::class, 'destroy'])->name('teaching-guides.destroy');
+
+    // Exam Questionnaires
+    Route::get('/exam-questionnaires', [ExamQuestionnaireController::class, 'index'])->name('exam-questionnaires.index');
+    Route::get('/exam-questionnaires/{id}/view', [ExamQuestionnaireController::class, 'view'])->name('exam-questionnaires.view');
+    Route::get('/exam-questionnaires/{id}/download', [ExamQuestionnaireController::class, 'download'])->name('exam-questionnaires.download');
+    Route::post('/exam-questionnaires/{id}/approve', [ExamQuestionnaireController::class, 'approve'])->name('exam-questionnaires.approve');
+    Route::post('/exam-questionnaires/{id}/reject', [ExamQuestionnaireController::class, 'reject'])->name('exam-questionnaires.reject');
 });
 
 // Program Coordinator Routes
@@ -153,6 +168,19 @@ Route::middleware(['auth', 'no.back', 'role:Program Coordinator'])->prefix('coor
     Route::delete('/folders/{folder}', [FolderController::class, 'destroy'])->middleware('throttle:10,60')->name('folders.destroy');
     Route::get('/folders/list', [FolderController::class, 'getUserFolders'])->name('folders.list');
     Route::post('/documents/{document}/move', [FolderController::class, 'moveDocument'])->name('documents.move');
+
+    // Teaching Guides (Coordinator can also upload)
+    Route::get('/teaching-guides', [TeachingGuideController::class, 'index'])->name('teaching-guides.index');
+    Route::post('/teaching-guides', [TeachingGuideController::class, 'store'])->middleware('throttle:6,60')->name('teaching-guides.store');
+    Route::get('/teaching-guides/{id}/download', [TeachingGuideController::class, 'download'])->name('teaching-guides.download');
+    Route::delete('/teaching-guides/{id}', [TeachingGuideController::class, 'destroy'])->name('teaching-guides.destroy');
+
+    // Exam Questionnaires
+    Route::get('/exam-questionnaires', [ExamQuestionnaireController::class, 'index'])->name('exam-questionnaires.index');
+    Route::get('/exam-questionnaires/{id}/view', [ExamQuestionnaireController::class, 'view'])->name('exam-questionnaires.view');
+    Route::get('/exam-questionnaires/{id}/download', [ExamQuestionnaireController::class, 'download'])->name('exam-questionnaires.download');
+    Route::post('/exam-questionnaires/{id}/approve', [ExamQuestionnaireController::class, 'approve'])->name('exam-questionnaires.approve');
+    Route::post('/exam-questionnaires/{id}/reject', [ExamQuestionnaireController::class, 'reject'])->name('exam-questionnaires.reject');
 });
 
 // Faculty Employee Routes
@@ -178,4 +206,15 @@ Route::middleware(['auth', 'no.back', 'role:Faculty Employee'])->prefix('faculty
     Route::post('/documents/{id}/favorite', [FacultyController::class, 'toggleFavorite'])->name('toggle-favorite');
     Route::get('/documents/{id}/download', [FacultyController::class, 'downloadDocument'])->name('download-document');
     Route::get('/profile', [FacultyController::class, 'profile'])->name('profile');
+
+    // Teaching Guides (Faculty: read-only, download only)
+    Route::get('/teaching-guides', [TeachingGuideController::class, 'index'])->name('teaching-guides.index');
+    Route::get('/teaching-guides/{id}/download', [TeachingGuideController::class, 'download'])->name('teaching-guides.download');
+
+    // Exam Questionnaires (Faculty: submit and view own only)
+    Route::get('/exam-questionnaires', [ExamQuestionnaireController::class, 'index'])->name('exam-questionnaires.index');
+    Route::post('/exam-questionnaires', [ExamQuestionnaireController::class, 'store'])->middleware('throttle:6,60')->name('exam-questionnaires.store');
+    Route::get('/exam-questionnaires/{id}/view', [ExamQuestionnaireController::class, 'view'])->name('exam-questionnaires.view');
+    Route::get('/exam-questionnaires/{id}/download', [ExamQuestionnaireController::class, 'download'])->name('exam-questionnaires.download');
+    Route::delete('/exam-questionnaires/{id}', [ExamQuestionnaireController::class, 'destroy'])->name('exam-questionnaires.destroy');
 });

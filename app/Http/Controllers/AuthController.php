@@ -18,6 +18,7 @@ class AuthController extends Controller
                 'Dean'                => redirect()->route('dean.dashboard'),
                 'Program Coordinator' => redirect()->route('coordinator.dashboard'),
                 'Faculty Employee'    => redirect()->route('faculty.dashboard'),
+                'Secretary'           => redirect()->route('dean.dashboard'),
                 default               => redirect()->route('login'),
             };
         }
@@ -37,6 +38,7 @@ class AuthController extends Controller
                 'Dean'                => redirect()->route('dean.dashboard'),
                 'Program Coordinator' => redirect()->route('coordinator.dashboard'),
                 'Faculty Employee'    => redirect()->route('faculty.dashboard'),
+                'Secretary'           => redirect()->route('dean.dashboard'),
                 default               => redirect()->route('login'),
             };
         }
@@ -71,6 +73,7 @@ class AuthController extends Controller
                 'Dean' => redirect()->route('dean.dashboard'),
                 'Program Coordinator' => redirect()->route('coordinator.dashboard'),
                 'Faculty Employee' => redirect()->route('faculty.dashboard'),
+                'Secretary' => redirect()->route('dean.dashboard'),
                 default => redirect()->route('login'),
             };
         }

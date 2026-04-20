@@ -20,6 +20,7 @@ return new class extends Migration
             ['role_name' => 'Dean'],
             ['role_name' => 'Program Coordinator'],
             ['role_name' => 'Faculty Employee'],
+            ['role_name' => 'Secretary'],
         ]);
     }
 

@@ -74,9 +74,31 @@ class DatabaseSeeder extends Seeder
             'hire_date' => now()->subYears(2),
         ]);
 
+        // Create Secretary User
+        $secretaryUser = User::create([
+            'role_id' => 4,
+            'username' => 'secretary',
+            'name' => 'Secretary',
+            'email' => 'secretary@example.com',
+            'password' => Hash::make('password123'),
+            'status' => 'Active',
+        ]);
+
+        Employee::create([
+            'user_id' => $secretaryUser->id,
+            'employee_no' => 'SEC001',
+            'full_name' => 'Maria Secretary',
+            'department' => 'Engineering',
+            'position' => 'Secretary',
+            'hire_date' => now()->subYears(1),
+        ]);
+
         $this->command->info('Sample users created successfully!');
         $this->command->info('Dean - Username: dean, Password: password123');
         $this->command->info('Coordinator - Username: coordinator, Password: password123');
         $this->command->info('Faculty - Username: faculty, Password: password123');
+        $this->command->info('Secretary - Username: secretary, Password: password123');
+
+        $this->call(SystemFolderSeeder::class);
     }
 }

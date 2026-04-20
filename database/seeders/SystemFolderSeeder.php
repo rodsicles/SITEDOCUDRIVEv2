@@ -34,7 +34,6 @@ class SystemFolderSeeder extends Seeder
                 'name' => 'Academics',
                 'slug' => 'academics',
                 'children' => [
-                    ['name' => 'Teaching Guides', 'slug' => 'teaching-guides'],
                     ['name' => 'Grading Sheets', 'slug' => 'grading-sheets'],
                     ['name' => 'Portfolios of Faculty', 'slug' => 'portfolios-of-faculty'],
                     [
@@ -47,6 +46,16 @@ class SystemFolderSeeder extends Seeder
                     ],
                 ],
             ],
+            [
+                'name' => 'Teaching Guides',
+                'slug' => 'tg-category',
+                'children' => $this->buildSchoolYearFolders('tg', 2025),
+            ],
+            [
+                'name' => 'Exam Questionnaires',
+                'slug' => 'eq-category',
+                'children' => $this->buildSchoolYearFolders('eq', 2025),
+            ],
         ];
 
         foreach ($tree as $sortOrder => $category) {
@@ -56,18 +65,49 @@ class SystemFolderSeeder extends Seeder
         $this->command->info('System folders seeded successfully!');
     }
 
+    /**
+     * Build semester + exam subfolders for a given school year start.
+     * E.g. startYear=2025 → AY 2025-2026
+     */
+    public static function buildSchoolYearFolders(string $prefix, int $startYear): array
+    {
+        $endYear = $startYear + 1;
+        $ay      = "AY {$startYear}-{$endYear}";
+
+        return [
+            [
+                'name' => "1st Semester {$ay} (Aug {$startYear} - Jan {$endYear})",
+                'slug' => "{$prefix}-1st-{$startYear}-{$endYear}",
+                'children' => [
+                    ['name' => 'Prelims',  'slug' => "{$prefix}-1st-{$startYear}-{$endYear}-prelims"],
+                    ['name' => 'Midterms', 'slug' => "{$prefix}-1st-{$startYear}-{$endYear}-midterms"],
+                    ['name' => 'Finals',   'slug' => "{$prefix}-1st-{$startYear}-{$endYear}-finals"],
+                ],
+            ],
+            [
+                'name' => "2nd Semester {$ay} (Feb {$endYear} - Jun {$endYear})",
+                'slug' => "{$prefix}-2nd-{$startYear}-{$endYear}",
+                'children' => [
+                    ['name' => 'Prelims',  'slug' => "{$prefix}-2nd-{$startYear}-{$endYear}-prelims"],
+                    ['name' => 'Midterms', 'slug' => "{$prefix}-2nd-{$startYear}-{$endYear}-midterms"],
+                    ['name' => 'Finals',   'slug' => "{$prefix}-2nd-{$startYear}-{$endYear}-finals"],
+                ],
+            ],
+        ];
+    }
+
     private function createFolder(array $data, ?int $parentId, int $level, int $sortOrder): void
     {
         $folder = Folder::firstOrCreate(
             ['slug' => $data['slug']],
             [
                 'folder_name' => $data['name'],
-                'parent_id' => $parentId,
-                'user_id' => null,
-                'color' => '#028a0f',
-                'is_system' => true,
-                'level' => $level,
-                'sort_order' => $sortOrder,
+                'parent_id'   => $parentId,
+                'user_id'     => null,
+                'color'       => '#028a0f',
+                'is_system'   => true,
+                'level'       => $level,
+                'sort_order'  => $sortOrder,
             ]
         );
 

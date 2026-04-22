@@ -36,6 +36,87 @@
     <!-- Exam & Certification Trends -->
     @include('partials.exam-trends')
 
+    <!-- Two-column row: Document Quick Stats + Upcoming Deadlines -->
+    <div class="faculty-dashboard-row">
+
+        <!-- Document Quick Stats -->
+        <div class="content-card faculty-dashboard-col">
+            <div class="card-header">
+                <h3 class="card-title"><i class="fas fa-folder-open mr-2"></i> Document Quick Stats</h3>
+                <a href="{{ route('faculty.documents') }}" class="badge badge-info no-underline cursor-pointer">View All</a>
+            </div>
+            <div class="faculty-doc-stats">
+                @if($latestDocument)
+                <div class="faculty-doc-last-upload">
+                    <i class="fas fa-clock text-[#028a0f] dark:text-[#34d399]"></i>
+                    <span>Last upload: <strong>{{ $latestDocument->created_at->format('M d, Y') }}</strong></span>
+                </div>
+                @endif
+                @if($folderStats->isEmpty())
+                <div class="faculty-doc-empty">
+                    <i class="fas fa-folder text-gray-300 dark:text-gray-600 text-2xl block mb-1"></i>
+                    No folders yet.
+                </div>
+                @else
+                <div class="faculty-folder-list">
+                    @foreach($folderStats as $folder)
+                    <div class="faculty-folder-row">
+                        <div class="faculty-folder-name">
+                            <i class="fas fa-folder text-[#028a0f] dark:text-[#34d399] mr-1.5"></i>
+                            <span>{{ $folder->folder_name }}</span>
+                        </div>
+                        <span class="faculty-folder-count">{{ $folder->documents_count }} {{ Str::plural('file', $folder->documents_count) }}</span>
+                    </div>
+                    @endforeach
+                </div>
+                @endif
+            </div>
+        </div>
+
+        <!-- Upcoming Deadlines -->
+        <div class="content-card faculty-dashboard-col">
+            <div class="card-header">
+                <h3 class="card-title"><i class="fas fa-calendar-alt mr-2"></i> Upcoming Deadlines</h3>
+                <a href="{{ route('faculty.tasks') }}" class="badge badge-info no-underline cursor-pointer">View All</a>
+            </div>
+            @if($upcomingDeadlines->isEmpty())
+            <div class="faculty-deadline-empty">
+                <i class="fas fa-check-circle text-green-400 dark:text-green-500 text-2xl block mb-1"></i>
+                No upcoming deadlines.
+            </div>
+            @else
+            <div class="faculty-deadline-list">
+                @foreach($upcomingDeadlines as $task)
+                @php
+                    $daysLeft = now()->startOfDay()->diffInDays($task->due_date->startOfDay(), false);
+                    if ($daysLeft < 0) {
+                        $urgency = 'overdue';
+                        $label = 'Overdue by ' . abs($daysLeft) . 'd';
+                    } elseif ($daysLeft === 0) {
+                        $urgency = 'today';
+                        $label = 'Due Today';
+                    } elseif ($daysLeft <= 2) {
+                        $urgency = 'soon';
+                        $label = 'Due in ' . $daysLeft . 'd';
+                    } else {
+                        $urgency = 'ok';
+                        $label = 'Due in ' . $daysLeft . 'd';
+                    }
+                @endphp
+                <div class="faculty-deadline-row">
+                    <div class="faculty-deadline-info">
+                        <span class="faculty-deadline-title">{{ Str::limit($task->task_title, 35) }}</span>
+                        <span class="faculty-deadline-by">{{ $task->assignedBy->employee->full_name ?? $task->assignedBy->username }}</span>
+                    </div>
+                    <span class="faculty-deadline-badge faculty-deadline-{{ $urgency }}">{{ $label }}</span>
+                </div>
+                @endforeach
+            </div>
+            @endif
+        </div>
+
+    </div>
+
     <!-- Announcements Feed Widget -->
     @include('partials.announcement-widget')
 

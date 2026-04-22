@@ -3700,3 +3700,136 @@ body {
 /* SweetAlert2 flat design overrides */
 .swal-flat { border-radius: 0 !important; }
 .swal2-confirm, .swal2-cancel { border-radius: 0 !important; }
+
+/* Faculty Dashboard - Two Column Row */
+.faculty-dashboard-row {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 1.5rem;
+    margin-bottom: 1.5rem;
+}
+
+@media (max-width: 768px) {
+    .faculty-dashboard-row { grid-template-columns: 1fr; }
+}
+
+.faculty-dashboard-col {
+    margin-bottom: 0 !important;
+}
+
+/* Document Quick Stats */
+.faculty-doc-stats { padding: 0.5rem 0; }
+
+.faculty-doc-last-upload {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+    font-size: 0.8rem;
+    color: #6b7280;
+    padding: 0.5rem 0 0.75rem;
+    border-bottom: 1px solid #e5e7eb;
+    margin-bottom: 0.75rem;
+}
+
+.dark .faculty-doc-last-upload { border-color: #374151; color: #9ca3af; }
+
+.faculty-folder-list { display: flex; flex-direction: column; gap: 0; }
+
+.faculty-folder-row {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 0.55rem 0;
+    border-bottom: 1px solid #f3f4f6;
+    font-size: 0.85rem;
+}
+
+.dark .faculty-folder-row { border-color: #2d2d2d; }
+.faculty-folder-row:last-child { border-bottom: none; }
+
+.faculty-folder-name {
+    display: flex;
+    align-items: center;
+    color: #374151;
+    font-weight: 500;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+    max-width: 70%;
+}
+
+.dark .faculty-folder-name { color: #d1d5db; }
+
+.faculty-folder-count {
+    font-size: 0.75rem;
+    font-weight: 600;
+    color: #028a0f;
+    background: rgba(2, 138, 15, 0.08);
+    padding: 0.15rem 0.55rem;
+    white-space: nowrap;
+}
+
+.dark .faculty-folder-count { color: #34d399; background: rgba(52, 211, 153, 0.1); }
+
+.faculty-doc-empty, .faculty-deadline-empty {
+    text-align: center;
+    padding: 2rem 0;
+    font-size: 0.85rem;
+    color: #9ca3af;
+}
+
+/* Upcoming Deadlines */
+.faculty-deadline-list { display: flex; flex-direction: column; gap: 0; }
+
+.faculty-deadline-row {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 0.6rem 0;
+    border-bottom: 1px solid #f3f4f6;
+}
+
+.dark .faculty-deadline-row { border-color: #2d2d2d; }
+.faculty-deadline-row:last-child { border-bottom: none; }
+
+.faculty-deadline-info {
+    display: flex;
+    flex-direction: column;
+    gap: 0.1rem;
+    overflow: hidden;
+}
+
+.faculty-deadline-title {
+    font-size: 0.85rem;
+    font-weight: 600;
+    color: #374151;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+}
+
+.dark .faculty-deadline-title { color: #d1d5db; }
+
+.faculty-deadline-by {
+    font-size: 0.72rem;
+    color: #9ca3af;
+}
+
+.faculty-deadline-badge {
+    font-size: 0.7rem;
+    font-weight: 700;
+    padding: 0.2rem 0.55rem;
+    white-space: nowrap;
+    flex-shrink: 0;
+    margin-left: 0.75rem;
+}
+
+.faculty-deadline-overdue { background: #fee2e2; color: #dc2626; }
+.faculty-deadline-today   { background: #fef3c7; color: #d97706; }
+.faculty-deadline-soon    { background: #ffedd5; color: #ea580c; }
+.faculty-deadline-ok      { background: rgba(2,138,15,0.1); color: #028a0f; }
+
+.dark .faculty-deadline-overdue { background: rgba(220,38,38,0.15); color: #f87171; }
+.dark .faculty-deadline-today   { background: rgba(217,119,6,0.15); color: #fbbf24; }
+.dark .faculty-deadline-soon    { background: rgba(234,88,12,0.15); color: #fb923c; }
+.dark .faculty-deadline-ok      { background: rgba(52,211,153,0.1); color: #34d399; }

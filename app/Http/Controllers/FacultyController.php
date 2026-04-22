@@ -50,6 +50,22 @@ class FacultyController extends Controller
         $announcements = $this->dashboardService->getAnnouncements($user, 5);
         $examTrends = $this->examRecordService->getTrends();
 
+        // Document Quick Stats: folders with doc counts + most recent upload
+        $folderStats = $this->folderService->getUserFolders($user->id);
+        $latestDocument = \App\Models\Document::where('uploaded_by', $user->id)
+            ->latest()
+            ->first();
+
+        // Upcoming deadlines: pending/in-progress tasks due within 7 days (incl. overdue)
+        $upcomingDeadlines = Task::with('assignedBy')
+            ->where('assigned_to', $user->id)
+            ->whereIn('status', ['Pending', 'In Progress'])
+            ->whereNotNull('due_date')
+            ->where('due_date', '<=', now()->addDays(7))
+            ->orderBy('due_date')
+            ->take(5)
+            ->get();
+
         return view('faculty.dashboard', array_merge($stats, compact(
             'recentTasks',
             'unreadNotifications',
@@ -57,7 +73,10 @@ class FacultyController extends Controller
             'performanceReports',
             'recentActivities',
             'announcements',
-            'examTrends'
+            'examTrends',
+            'folderStats',
+            'latestDocument',
+            'upcomingDeadlines'
         )));
     }
 

@@ -161,6 +161,50 @@ class ExamRecordService
                 ])
                 ->toArray();
 
+            // Use placeholder data when no real records exist yet
+            if (empty($prcTrends)) {
+                $prcTrends = [
+                    [
+                        'batch_label' => 'Batch 2025',
+                        'date' => 'Jan 15, 2025',
+                        'results' => [
+                            ['exam_type' => 'Civil Engineer', 'passed' => 8, 'total' => 12],
+                            ['exam_type' => 'Environmental Sanitary Engineering', 'passed' => 5, 'total' => 9],
+                        ],
+                    ],
+                    [
+                        'batch_label' => 'Batch 2024',
+                        'date' => 'Jan 20, 2024',
+                        'results' => [
+                            ['exam_type' => 'Civil Engineer', 'passed' => 6, 'total' => 10],
+                            ['exam_type' => 'Environmental Sanitary Engineering', 'passed' => 4, 'total' => 7],
+                        ],
+                    ],
+                    [
+                        'batch_label' => 'Batch 2023',
+                        'date' => 'Feb 10, 2023',
+                        'results' => [
+                            ['exam_type' => 'Civil Engineer', 'passed' => 7, 'total' => 11],
+                            ['exam_type' => 'Environmental Sanitary Engineering', 'passed' => 3, 'total' => 6],
+                        ],
+                    ],
+                ];
+            }
+
+            if (empty($certTrends)) {
+                $certTrends = [
+                    ['exam_type' => 'Cybersecurity', 'batch_label' => '2025', 'passed' => 10, 'date' => 'Mar 5, 2025'],
+                    ['exam_type' => 'Cybersecurity', 'batch_label' => '2024', 'passed' => 7, 'date' => 'Mar 8, 2024'],
+                    ['exam_type' => 'Cybersecurity', 'batch_label' => '2023', 'passed' => 5, 'date' => 'Apr 2, 2023'],
+                    ['exam_type' => 'Networking', 'batch_label' => '2025', 'passed' => 9, 'date' => 'Mar 5, 2025'],
+                    ['exam_type' => 'Networking', 'batch_label' => '2024', 'passed' => 6, 'date' => 'Mar 8, 2024'],
+                    ['exam_type' => 'Networking', 'batch_label' => '2023', 'passed' => 4, 'date' => 'Apr 2, 2023'],
+                    ['exam_type' => 'HTML & CSS', 'batch_label' => '2025', 'passed' => 12, 'date' => 'Mar 5, 2025'],
+                    ['exam_type' => 'HTML & CSS', 'batch_label' => '2024', 'passed' => 8, 'date' => 'Mar 8, 2024'],
+                    ['exam_type' => 'HTML & CSS', 'batch_label' => '2023', 'passed' => 6, 'date' => 'Apr 2, 2023'],
+                ];
+            }
+
             return [
                 'prc' => $prcTrends,
                 'certifications' => $certTrends,

@@ -24,8 +24,11 @@ class BackupService
 
         $dbConfig = config('database.connections.mysql');
 
+        $mysqldump = env('MYSQLDUMP_PATH', 'mysqldump');
+
         $command = sprintf(
-            'mysqldump --host=%s --port=%s --user=%s --password=%s %s',
+            '%s --host=%s --port=%s --user=%s --password=%s %s',
+            escapeshellarg($mysqldump),
             escapeshellarg($dbConfig['host']),
             escapeshellarg($dbConfig['port'] ?? '3306'),
             escapeshellarg($dbConfig['username']),
@@ -90,8 +93,11 @@ class BackupService
 
         $dbConfig = config('database.connections.mysql');
 
+        $mysql = env('MYSQL_PATH', 'mysql');
+
         $command = sprintf(
-            'mysql --host=%s --port=%s --user=%s --password=%s %s',
+            '%s --host=%s --port=%s --user=%s --password=%s %s',
+            escapeshellarg($mysql),
             escapeshellarg($dbConfig['host']),
             escapeshellarg($dbConfig['port'] ?? '3306'),
             escapeshellarg($dbConfig['username']),

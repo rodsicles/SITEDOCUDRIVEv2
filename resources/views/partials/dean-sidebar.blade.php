@@ -41,8 +41,3 @@
 <a href="{{ route('skill-tags.index') }}" class="menu-item {{ request()->routeIs('skill-tags.*') ? 'active' : '' }}">
     <i class="fas fa-tags"></i> Skill Tags
 </a>
-
-<div class="sidebar-section-label">System</div>
-<a href="{{ route('dean.backup') }}" class="menu-item {{ request()->routeIs('dean.backup*') ? 'active' : '' }}">
-    <i class="fas fa-database"></i> Backup & Restore
-</a>

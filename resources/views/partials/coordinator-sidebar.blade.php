@@ -6,6 +6,9 @@
 <a href="{{ route('coordinator.tasks') }}" class="menu-item {{ request()->routeIs('coordinator.tasks') ? 'active' : '' }}">
     <i class="fas fa-tasks"></i> My Tasks
 </a>
+<a href="{{ route('coordinator.activity-log') }}" class="menu-item {{ request()->routeIs('coordinator.activity-log') ? 'active' : '' }}">
+    <i class="fas fa-history"></i> Activity Log
+</a>
 
 <div class="sidebar-section-label">Schedule</div>
 <a href="{{ route('calendar.index') }}" class="menu-item {{ request()->routeIs('calendar.index') ? 'active' : '' }}">

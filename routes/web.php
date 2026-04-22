@@ -81,6 +81,11 @@ Route::middleware(['auth', 'no.back'])->prefix('professional-development')->name
     Route::delete('/{id}', [ProfessionalDevelopmentController::class, 'destroy'])->middleware('role:Faculty Employee')->name('destroy');
 });
 
+// User Guide (All authenticated users)
+Route::middleware(['auth', 'no.back'])->get('/user-guide', function () {
+    return view('user-guide');
+})->name('user-guide');
+
 // Dean + Secretary Routes (Secretary has same access as Dean)
 Route::middleware(['auth', 'no.back', 'role:Dean,Secretary'])->prefix('dean')->name('dean.')->group(function () {
     Route::get('/dashboard', [DeanController::class, 'dashboard'])->name('dashboard');
@@ -96,6 +101,7 @@ Route::middleware(['auth', 'no.back', 'role:Dean,Secretary'])->prefix('dean')->n
 
     Route::get('/reports', [DeanController::class, 'reports'])->name('reports');
     Route::get('/analytics', [DeanController::class, 'analytics'])->name('analytics');
+    Route::get('/activity-log', [DeanController::class, 'activityLog'])->name('activity-log');
 
     // Tasks
     Route::get('/tasks', [DeanController::class, 'tasks'])->name('tasks');
@@ -181,6 +187,7 @@ Route::middleware(['auth', 'no.back', 'role:Program Coordinator'])->prefix('coor
     Route::get('/exam-questionnaires/{id}/download', [ExamQuestionnaireController::class, 'download'])->name('exam-questionnaires.download');
     Route::post('/exam-questionnaires/{id}/approve', [ExamQuestionnaireController::class, 'approve'])->name('exam-questionnaires.approve');
     Route::post('/exam-questionnaires/{id}/reject', [ExamQuestionnaireController::class, 'reject'])->name('exam-questionnaires.reject');
+    Route::get('/activity-log', [CoordinatorController::class, 'activityLog'])->name('activity-log');
 });
 
 // Faculty Employee Routes
@@ -217,4 +224,5 @@ Route::middleware(['auth', 'no.back', 'role:Faculty Employee'])->prefix('faculty
     Route::get('/exam-questionnaires/{id}/view', [ExamQuestionnaireController::class, 'view'])->name('exam-questionnaires.view');
     Route::get('/exam-questionnaires/{id}/download', [ExamQuestionnaireController::class, 'download'])->name('exam-questionnaires.download');
     Route::delete('/exam-questionnaires/{id}', [ExamQuestionnaireController::class, 'destroy'])->name('exam-questionnaires.destroy');
+    Route::get('/activity-log', [FacultyController::class, 'activityLog'])->name('activity-log');
 });

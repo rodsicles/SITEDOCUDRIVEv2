@@ -3,6 +3,7 @@
 namespace App\Http\Controllers;
 
 use App\Models\Task;
+use App\Models\DashboardLog;
 use App\Models\Notification;
 use App\Models\PerformanceReport;
 use App\Services\DashboardService;
@@ -78,6 +79,12 @@ class FacultyController extends Controller
         $this->taskService->updateTaskByAssignee($id, $validated['status'], auth()->id());
 
         return redirect()->back()->with('success', 'Task status updated successfully');
+    }
+
+    public function activityLog()
+    {
+        $activities = DashboardLog::getPaginatedLogs(auth()->user(), 20);
+        return view('activity-log', compact('activities'));
     }
 
     public function notifications()

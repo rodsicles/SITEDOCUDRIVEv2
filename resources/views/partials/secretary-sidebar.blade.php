@@ -6,6 +6,9 @@
 <a href="{{ route('dean.tasks') }}" class="menu-item {{ request()->routeIs('dean.tasks', 'dean.create-task') ? 'active' : '' }}">
     <i class="fas fa-tasks"></i> Tasks
 </a>
+<a href="{{ route('dean.activity-log') }}" class="menu-item {{ request()->routeIs('dean.activity-log') ? 'active' : '' }}">
+    <i class="fas fa-history"></i> Activity Log
+</a>
 
 <div class="sidebar-section-label">Schedule</div>
 <a href="{{ route('calendar.index') }}" class="menu-item {{ request()->routeIs('calendar.index') ? 'active' : '' }}">
@@ -22,7 +25,7 @@
     <i class="fas fa-users"></i> Faculty Members
 </a>
 <a href="{{ route('dean.reports') }}" class="menu-item {{ request()->routeIs('dean.reports') ? 'active' : '' }}">
-    <i class="fas fa-file-alt"></i> Performance Reports
+    <i class="fas fa-file-alt"></i> Reports
 </a>
 <a href="{{ route('dean.analytics') }}" class="menu-item {{ request()->routeIs('dean.analytics') ? 'active' : '' }}">
     <i class="fas fa-chart-pie"></i> Analytics

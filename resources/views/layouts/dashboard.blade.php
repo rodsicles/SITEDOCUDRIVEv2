@@ -156,6 +156,9 @@
                 <div class="sidebar-brand-line"></div>
                 <h2 class="sidebar-brand-title">EMPLOYEE DASHBOARD</h2>
                 <p class="sidebar-brand-welcome">Welcome, {{ auth()->user()->role->role_name }}</p>
+                <a href="{{ route('user-guide') }}" class="sidebar-guide-btn {{ request()->routeIs('user-guide') ? 'active' : '' }}">
+                    <i class="fas fa-book-open"></i> User Guide
+                </a>
             </div>
             <nav class="p-2">
                 @yield('sidebar')

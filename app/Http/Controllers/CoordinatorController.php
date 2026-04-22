@@ -5,6 +5,7 @@ namespace App\Http\Controllers;
 use App\Models\User;
 use App\Models\Employee;
 use App\Models\Task;
+use App\Models\DashboardLog;
 use App\Models\Document;
 use App\Models\DocumentView;
 use App\Services\DashboardService;
@@ -93,6 +94,12 @@ class CoordinatorController extends Controller
             'announcements',
             'examTrends'
         )));
+    }
+
+    public function activityLog()
+    {
+        $activities = DashboardLog::getPaginatedLogs(auth()->user(), 20);
+        return view('activity-log', compact('activities'));
     }
 
     public function tasks()

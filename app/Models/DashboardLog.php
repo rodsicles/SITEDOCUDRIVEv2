@@ -85,4 +85,37 @@ class DashboardLog extends Model
 
         return $query->latest('log_date')->limit($limit)->get();
     }
+
+    /**
+     * Get paginated filtered logs based on user role
+     */
+    public static function getPaginatedLogs($user, $perPage = 20)
+    {
+        $query = self::with(['user.employee', 'targetUser.employee']);
+
+        if ($user->isDean()) {
+            $query->latest('log_date');
+        } elseif ($user->role_id === 2) {
+            $coordinatorDept = optional($user->employee)->department;
+            $query->where(function($q) use ($user, $coordinatorDept) {
+                $q->where('user_id', $user->id)
+                  ->orWhere('target_user_id', $user->id)
+                  ->orWhereHas('user', function($subQ) use ($coordinatorDept) {
+                      $subQ->where('role_id', 3);
+                      if ($coordinatorDept) {
+                          $subQ->whereHas('employee', function($empQ) use ($coordinatorDept) {
+                              $empQ->where('department', $coordinatorDept);
+                          });
+                      }
+                  });
+            });
+        } else {
+            $query->where(function($q) use ($user) {
+                $q->where('user_id', $user->id)
+                  ->orWhere('target_user_id', $user->id);
+            });
+        }
+
+        return $query->latest('log_date')->paginate($perPage);
+    }
 }

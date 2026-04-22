@@ -3,6 +3,7 @@
 namespace App\Http\Controllers;
 
 use App\Models\Employee;
+use App\Models\DashboardLog;
 use App\Models\PerformanceReport;
 use App\Models\Task;
 use App\Models\User;
@@ -54,6 +55,12 @@ class DeanController extends Controller
             'examTrends',
             'recentTasks'
         )));
+    }
+
+    public function activityLog()
+    {
+        $activities = DashboardLog::getPaginatedLogs(auth()->user(), 20);
+        return view('activity-log', compact('activities'));
     }
 
     public function employees()

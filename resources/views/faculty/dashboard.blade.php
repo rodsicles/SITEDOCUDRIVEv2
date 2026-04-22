@@ -103,56 +103,6 @@
         </div>
     </div>
 
-    <!-- Recent Activities / Notifications -->
-    <div class="bg-white dark:bg-[#2a2a2a] p-6 mb-6 shadow-sm border border-gray-200 dark:border-gray-700">
-        <div class="flex justify-between items-center mb-5 pb-4 border-b border-gray-200 dark:border-gray-700">
-            <h3 class="text-lg font-semibold text-gray-800 dark:text-gray-200 m-0">My Recent Activities</h3>
-            <div class="flex gap-3 items-center">
-                <span class="px-3 py-1 text-xs font-semibold bg-blue-100 dark:bg-blue-900/30 text-blue-800 dark:text-blue-300">Last 10 Activities</span>
-                <button type="button" onclick="toggleRecentActivities()" class="bg-gray-200 dark:bg-gray-700 text-gray-700 dark:text-gray-300 px-4 py-2 text-sm font-medium cursor-pointer border-0">
-                    <i id="recentActivitiesIcon" class="fas fa-chevron-up"></i>
-                    <span id="recentActivitiesText">Hide</span>
-                </button>
-            </div>
-        </div>
-        <div id="recentActivitiesContent" class="overflow-x-auto">
-            <table class="w-full border-separate border-spacing-0">
-                <thead>
-                    <tr>
-                        <th class="bg-transparent text-gray-600 dark:text-gray-400 font-semibold text-xs uppercase tracking-wide px-3 py-3 text-left border-b border-gray-200 dark:border-gray-700">Activity</th>
-                        <th class="bg-transparent text-gray-600 dark:text-gray-400 font-semibold text-xs uppercase tracking-wide px-3 py-3 text-left border-b border-gray-200 dark:border-gray-700">Date & Time</th>
-                    </tr>
-                </thead>
-                <tbody>
-                    @forelse($recentActivities as $activity)
-                    <tr class="hover:bg-gray-50 dark:hover:bg-gray-800">
-                        <td class="px-3 py-4 border-b border-gray-200 dark:border-gray-700 text-gray-800 dark:text-gray-200 text-sm">
-                            {{ $activity->activity }}
-                            @if($activity->activity_type)
-                                <span class="inline-block px-3 py-1 text-xs font-semibold bg-gray-100 dark:bg-gray-700 text-gray-700 dark:text-gray-300 ml-1.5">
-                                    {{ ucfirst(str_replace('_', ' ', $activity->activity_type)) }}
-                                </span>
-                            @endif
-                            @if($activity->user_id !== auth()->id() && $activity->user)
-                                <br><small class="text-gray-600 dark:text-gray-400">
-                                    <i class="fas fa-info-circle"></i> By {{ $activity->user->employee->full_name ?? $activity->user->username }}
-                                </small>
-                            @endif
-                        </td>
-                        <td class="px-3 py-4 border-b border-gray-200 dark:border-gray-700 text-gray-800 dark:text-gray-200 text-sm">{{ $activity->log_date->format('M d, Y h:i A') }}</td>
-                    </tr>
-                    @empty
-                    <tr>
-                        <td colspan="2" class="px-3 py-8 text-center text-gray-600 dark:text-gray-400">
-                            No recent activities
-                        </td>
-                    </tr>
-                    @endforelse
-                </tbody>
-            </table>
-        </div>
-    </div>
-
 @endsection
 
 @push('scripts')
@@ -162,25 +112,6 @@
         const content = document.getElementById('recentTasksContent');
         const icon = document.getElementById('recentTasksIcon');
         const text = document.getElementById('recentTasksText');
-
-        if (content.style.display === 'none') {
-            content.style.display = 'block';
-            icon.classList.remove('fa-chevron-down');
-            icon.classList.add('fa-chevron-up');
-            text.textContent = 'Hide';
-        } else {
-            content.style.display = 'none';
-            icon.classList.remove('fa-chevron-up');
-            icon.classList.add('fa-chevron-down');
-            text.textContent = 'Show';
-        }
-    }
-
-    // Toggle Recent Activities visibility
-    function toggleRecentActivities() {
-        const content = document.getElementById('recentActivitiesContent');
-        const icon = document.getElementById('recentActivitiesIcon');
-        const text = document.getElementById('recentActivitiesText');
 
         if (content.style.display === 'none') {
             content.style.display = 'block';

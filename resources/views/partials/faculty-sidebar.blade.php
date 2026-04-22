@@ -6,6 +6,9 @@
 <a href="{{ route('faculty.tasks') }}" class="menu-item {{ request()->routeIs('faculty.tasks') ? 'active' : '' }}">
     <i class="fas fa-tasks"></i> My Tasks
 </a>
+<a href="{{ route('faculty.activity-log') }}" class="menu-item {{ request()->routeIs('faculty.activity-log') ? 'active' : '' }}">
+    <i class="fas fa-history"></i> Activity Log
+</a>
 
 <div class="sidebar-section-label">Schedule</div>
 <a href="{{ route('calendar.index') }}" class="menu-item {{ request()->routeIs('calendar.index') ? 'active' : '' }}">

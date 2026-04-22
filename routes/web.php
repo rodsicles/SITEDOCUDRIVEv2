@@ -114,7 +114,8 @@ Route::middleware(['auth', 'no.back', 'role:Dean,Secretary'])->prefix('dean')->n
     Route::post('/exam-records', [DeanController::class, 'storeExamRecord'])->middleware('throttle:10,60')->name('store-exam-record');
     Route::get('/documents/{id}/view', [DeanController::class, 'viewDocument'])->name('view-document');
     Route::get('/documents/{id}/download', [DeanController::class, 'downloadDocument'])->name('download-document');
-    
+    Route::delete('/documents/{id}', [DeanController::class, 'deleteDocument'])->name('delete-document');
+
     // Folder Management - Rate Limited: 3 folders per hour
     Route::post('/folders', [FolderController::class, 'store'])->middleware('throttle:3,60')->name('folders.store');
     Route::patch('/folders/{folder}', [FolderController::class, 'update'])->middleware('throttle:10,60')->name('folders.update');
@@ -154,12 +155,9 @@ Route::middleware(['auth', 'no.back', 'role:Program Coordinator'])->prefix('coor
     
     // Faculty Management
     Route::get('/faculty', [CoordinatorController::class, 'faculty'])->name('faculty');
-    Route::get('/faculty/create', [CoordinatorController::class, 'createFaculty'])->name('create-faculty');
-    Route::post('/faculty', [CoordinatorController::class, 'storeFaculty'])->name('store-faculty');
     Route::get('/faculty/{id}/profile', [CoordinatorController::class, 'viewEmployeeProfile'])->name('faculty-profile');
     Route::get('/faculty/{id}/edit', [CoordinatorController::class, 'editFaculty'])->name('edit-faculty');
     Route::patch('/faculty/{id}', [CoordinatorController::class, 'updateFaculty'])->name('update-faculty');
-    Route::post('/faculty/{id}/reset-password', [CoordinatorController::class, 'resetFacultyPassword'])->middleware('throttle:5,1')->name('reset-faculty-password');
     
     // Documents - Rate Limited: 6 uploads per hour
     Route::get('/documents', [CoordinatorController::class, 'documents'])->name('documents');
@@ -167,7 +165,8 @@ Route::middleware(['auth', 'no.back', 'role:Program Coordinator'])->prefix('coor
     Route::post('/exam-records', [CoordinatorController::class, 'storeExamRecord'])->middleware('throttle:10,60')->name('store-exam-record');
     Route::get('/documents/{id}/view', [CoordinatorController::class, 'viewDocument'])->name('view-document');
     Route::get('/documents/{id}/download', [CoordinatorController::class, 'downloadDocument'])->name('download-document');
-    
+    Route::delete('/documents/{id}', [CoordinatorController::class, 'deleteDocument'])->name('delete-document');
+
     // Folder Management - Rate Limited: 3 folders per hour
     Route::post('/folders', [FolderController::class, 'store'])->middleware('throttle:3,60')->name('folders.store');
     Route::patch('/folders/{folder}', [FolderController::class, 'update'])->middleware('throttle:10,60')->name('folders.update');
@@ -212,6 +211,7 @@ Route::middleware(['auth', 'no.back', 'role:Faculty Employee'])->prefix('faculty
     Route::get('/documents/{id}/view', [FacultyController::class, 'viewDocument'])->name('view-document');
     Route::post('/documents/{id}/favorite', [FacultyController::class, 'toggleFavorite'])->name('toggle-favorite');
     Route::get('/documents/{id}/download', [FacultyController::class, 'downloadDocument'])->name('download-document');
+    Route::delete('/documents/{id}', [FacultyController::class, 'deleteDocument'])->name('delete-document');
     Route::get('/profile', [FacultyController::class, 'profile'])->name('profile');
 
     // Teaching Guides (Faculty: read-only, download only)

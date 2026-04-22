@@ -239,4 +239,25 @@ class DocumentService
     {
         return self::CATEGORIES;
     }
+
+    /**
+     * Soft delete a document.
+     */
+    public function deleteDocument(int $documentId, User $user): void
+    {
+        $document = Document::findOrFail($documentId);
+
+        if (!($user->isDean() || $user->isSecretary() || $document->uploaded_by === $user->id)) {
+            abort(403, 'Unauthorized');
+        }
+
+        DashboardLog::create([
+            'user_id' => $user->id,
+            'activity' => 'Deleted document: ' . $document->document_title,
+            'activity_type' => 'document_deleted',
+            'visibility' => 'own',
+        ]);
+
+        $document->delete();
+    }
 }

@@ -1,4 +1,6 @@
 import './bootstrap';
+import Swal from 'sweetalert2';
+window.Swal = Swal;
 
 // Page ready - instant load, no slide-down animations
 document.addEventListener('DOMContentLoaded', function() {

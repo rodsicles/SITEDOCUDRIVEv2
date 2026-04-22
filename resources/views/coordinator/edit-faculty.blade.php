@@ -3,7 +3,7 @@
 @section('title', 'Edit Faculty - Coordinator')
 
 @section('page-title', 'Edit Faculty Information')
-@section('page-subtitle', 'Update faculty member details and reset password')
+@section('page-subtitle', 'Update faculty member details')
 
 @section('sidebar')
     @include('partials.coordinator-sidebar')
@@ -95,50 +95,4 @@
         </form>
     </div>
 
-    <!-- Reset Password Section -->
-    <div class="content-card">
-        <div class="card-header">
-            <h3 class="card-title">Reset Password</h3>
-        </div>
-
-        <div class="bg-orange-50 dark:bg-orange-900/20 p-4 mb-5 border-l-4 border-orange-500">
-            <p class="m-0 text-orange-800 dark:text-orange-400 text-sm">
-                <i class="fas fa-exclamation-triangle"></i> <strong>Warning:</strong> Resetting the password will immediately change the faculty member's login credentials. Make sure to inform them of the new password.
-            </p>
-        </div>
-
-        <form action="{{ route('coordinator.reset-faculty-password', $employee->employee_id) }}" method="POST" id="resetPasswordForm">
-            @csrf
-
-            <div class="grid grid-cols-1 md:grid-cols-2 gap-5">
-                <div class="form-group">
-                    <label class="form-label">New Password *</label>
-                    <input type="password" name="new_password" class="form-control" 
-                           required minlength="8" maxlength="40" placeholder="Enter new password">
-                    <small class="text-gray-600 dark:text-gray-400 text-xs mt-1.5 block">Minimum 8 characters</small>
-                </div>
-
-                <div class="form-group">
-                    <label class="form-label">Confirm New Password *</label>
-                    <input type="password" name="new_password_confirmation" class="form-control" 
-                           required minlength="8" maxlength="40" placeholder="Confirm new password">
-                    <small class="text-gray-600 dark:text-gray-400 text-xs mt-1.5 block">Must match the new password</small>
-                </div>
-            </div>
-
-            <div class="mt-6">
-                <button type="button" class="btn btn-danger" onclick="confirmPasswordReset()">
-                    <i class="fas fa-key"></i> Reset Password
-                </button>
-            </div>
-        </form>
-    </div>
-
-    <script>
-        function confirmPasswordReset() {
-            if (confirm('Are you sure you want to reset the password for {{ $employee->full_name }}?\n\nThis action cannot be undone and will immediately change their login credentials.')) {
-                document.getElementById('resetPasswordForm').submit();
-            }
-        }
-    </script>
 @endsection

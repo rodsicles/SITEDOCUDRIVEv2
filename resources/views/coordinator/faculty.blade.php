@@ -3,40 +3,26 @@
 @section('title', 'Faculty Members - Coordinator')
 
 @section('page-title', 'Faculty Management')
-@section('page-subtitle', 'Manage faculty employee accounts')
+@section('page-subtitle', 'View faculty employee accounts')
 
 @section('sidebar')
     @include('partials.coordinator-sidebar')
 @endsection
 
 @section('content')
-    <!-- Tab Navigation -->
-    <div class="mb-6">
-        <div class="flex gap-2 border-b-2 border-gray-200 dark:border-gray-700">
-            <button class="tab-button inline-flex items-center gap-2 px-5 py-3.5 bg-transparent border-0 border-b-[3px] border-transparent text-gray-600 dark:text-gray-400 text-sm font-semibold cursor-pointer hover:text-[#028a0f] hover:bg-[rgba(2,138,15,0.05)] dark:hover:bg-[rgba(2,184,21,0.1)] transition-all" onclick="switchTab('list')" id="listTab">
-                <i class="fas fa-users"></i> Faculty Directory
-            </button>
-            <button class="tab-button inline-flex items-center gap-2 px-5 py-3.5 bg-transparent border-0 border-b-[3px] border-transparent text-gray-600 dark:text-gray-400 text-sm font-semibold cursor-pointer hover:text-[#028a0f] hover:bg-[rgba(2,138,15,0.05)] dark:hover:bg-[rgba(2,184,21,0.1)] transition-all" onclick="switchTab('create')" id="createTab">
-                <i class="fas fa-user-plus"></i> Create New Faculty
-            </button>
+    <div class="content-card">
+        <div class="card-header">
+            <h3 class="card-title">Faculty Directory</h3>
         </div>
-    </div>
 
-    <!-- Tab Content: Faculty List -->
-    <div class="tab-content active" id="listContent">
-        <div class="content-card">
-            <div class="card-header">
-                <h3 class="card-title">Faculty Directory</h3>
+        @if(session('success'))
+            <div class="alert alert-success">
+                <strong><i class="fas fa-check-circle"></i> Success!</strong>
+                <p>{{ session('success') }}</p>
             </div>
+        @endif
 
-            @if(session('success'))
-                <div class="alert alert-success">
-                    <strong><i class="fas fa-check-circle"></i> Success!</strong>
-                    <p>{{ session('success') }}</p>
-                </div>
-            @endif
-
-            <table class="data-table">
+        <table class="data-table">
             <thead>
                 <tr>
                     <th>Employee No.</th>
@@ -69,149 +55,16 @@
                 </tr>
                 @empty
                 <tr>
-                    <td colspan="7" class="text-center text-gray-600 dark:text-gray-400">
+                    <td colspan="6" class="text-center text-gray-600 dark:text-gray-400">
                         No faculty members yet
                     </td>
                 </tr>
                 @endforelse
             </tbody>
         </table>
-        
+
         <div class="mt-5">
             {{ $facultyMembers->links() }}
         </div>
-        </div>
     </div>
-
-    <!-- Tab Content: Create Faculty Form -->
-    <div class="tab-content" id="createContent" style="display: none;">
-        <div class="content-card">
-            <div class="card-header">
-                <h3 class="card-title">Faculty Account Information</h3>
-            </div>
-
-            @if($errors->any())
-                <div class="alert alert-error">
-                    <strong><i class="fas fa-exclamation-circle"></i> Validation Errors:</strong>
-                    <ul class="mt-2 ml-5">
-                        @foreach($errors->all() as $error)
-                            <li>{{ $error }}</li>
-                        @endforeach
-                    </ul>
-                </div>
-            @endif
-            
-            <form action="{{ route('coordinator.store-faculty') }}" method="POST">
-                @csrf
-                
-                <div class="form-group">
-                    <label class="form-label">Full Name *</label>
-                    <input type="text" name="full_name" class="form-control" 
-                           placeholder="Enter full name" required maxlength="100" value="{{ old('full_name') }}">
-                </div>
-
-                <div class="form-group">
-                    <label class="form-label">Employee Number</label>
-                    <input type="text" name="employee_no" class="form-control" 
-                           placeholder="Enter employee number (optional)" maxlength="30" value="{{ old('employee_no') }}">
-                </div>
-
-                <div class="form-group">
-                    <label class="form-label">Department</label>
-                    <input type="text" class="form-control" value="{{ auth()->user()->employee->department ?? 'N/A' }}" disabled>
-                    <input type="hidden" name="department" value="{{ auth()->user()->employee->department }}">
-                    <small class="text-gray-600 dark:text-gray-400 text-xs mt-1 block">
-                        <i class="fas fa-info-circle"></i> Auto-assigned to your department
-                    </small>
-                </div>
-
-                <div class="form-group">
-                    <label class="form-label">Username *</label>
-                    <input type="text" name="username" class="form-control" 
-                           placeholder="Enter username" required maxlength="50" value="{{ old('username') }}">
-                </div>
-
-                <div class="form-group">
-                    <label class="form-label">Email Address *</label>
-                    <input type="email" name="email" class="form-control" 
-                           placeholder="Enter email address" required maxlength="100" value="{{ old('email') }}">
-                </div>
-
-                <div class="form-group">
-                    <label class="form-label">Password *</label>
-                    <input type="password" name="password" class="form-control" 
-                           placeholder="Enter password (min 8 characters)" required minlength="8">
-                </div>
-
-                <div class="flex gap-2.5">
-                    <button type="submit" class="btn btn-success">
-                        <i class="fas fa-user-plus"></i> Create Faculty Account
-                    </button>
-                    <button type="button" class="btn btn-secondary" onclick="switchTab('list')">
-                        <i class="fas fa-times"></i> Cancel
-                    </button>
-                </div>
-            </form>
-        </div>
-    </div>
-
-    <script>
-        function switchTab(tabName) {
-            // Hide all tab contents
-            document.querySelectorAll('.tab-content').forEach(content => {
-                content.style.display = 'none';
-            });
-
-            // Remove active class from all tab buttons
-            document.querySelectorAll('.tab-button').forEach(button => {
-                button.classList.remove('active');
-                button.style.color = '';
-                button.style.borderBottomColor = '';
-                button.style.background = '';
-            });
-
-            // Show selected tab content and activate button
-            if (tabName === 'list') {
-                document.getElementById('listContent').style.display = 'block';
-                const listTab = document.getElementById('listTab');
-                listTab.classList.add('active');
-                listTab.style.color = 'var(--color-primary)';
-                listTab.style.borderBottomColor = 'var(--color-primary)';
-                listTab.style.background = 'rgba(2, 138, 15, 0.1)';
-            } else if (tabName === 'create') {
-                document.getElementById('createContent').style.display = 'block';
-                const createTab = document.getElementById('createTab');
-                createTab.classList.add('active');
-                createTab.style.color = 'var(--color-primary)';
-                createTab.style.borderBottomColor = 'var(--color-primary)';
-                createTab.style.background = 'rgba(2, 138, 15, 0.1)';
-            }
-        }
-
-        // Check if there are validation errors, if so, show create tab
-        @if($errors->any())
-            document.addEventListener('DOMContentLoaded', function() {
-                switchTab('create');
-            });
-        @endif
-
-        // Prevent double submit on create faculty form
-        document.addEventListener('DOMContentLoaded', function() {
-            const createForm = document.querySelector('form[action="{{ route('coordinator.store-faculty') }}"]');
-            if (createForm) {
-                createForm.addEventListener('submit', function(e) {
-                    const submitBtn = this.querySelector('button[type="submit"]');
-                    if (submitBtn && !submitBtn.disabled) {
-                        submitBtn.disabled = true;
-                        submitBtn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Creating Account...';
-                        // Re-enable after 5 seconds as a safety measure
-                        setTimeout(() => {
-                            submitBtn.disabled = false;
-                            submitBtn.innerHTML = '<i class="fas fa-user-plus"></i> Create Faculty Account';
-                        }, 5000);
-                    }
-                });
-            }
-        });
-    </script>
 @endsection

@@ -398,6 +398,12 @@ class CoordinatorController extends Controller
         return $this->documentService->downloadDocument($id, auth()->user());
     }
 
+    public function deleteDocument($id)
+    {
+        $this->documentService->deleteDocument($id, auth()->user());
+        return redirect()->back()->with('success', 'Document deleted successfully.');
+    }
+
     public function toggleFavorite($id)
     {
         $result = $this->documentService->toggleFavorite($id, auth()->id());

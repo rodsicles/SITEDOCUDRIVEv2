@@ -179,6 +179,12 @@ class DeanController extends Controller
         return $this->documentService->downloadDocument($id, auth()->user());
     }
 
+    public function deleteDocument($id)
+    {
+        $this->documentService->deleteDocument($id, auth()->user());
+        return redirect()->back()->with('success', 'Document deleted successfully.');
+    }
+
     public function uploadDocument(Request $request)
     {
         $validated = $request->validate([

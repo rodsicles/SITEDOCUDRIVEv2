@@ -104,6 +104,12 @@
                             <a href="{{ route('coordinator.download-document', $document->document_id) }}" class="btn btn-success text-xs">
                                 <i class="fas fa-download"></i> Download
                             </a>
+                            <form id="delete-doc-{{ $document->document_id }}" action="{{ route('coordinator.delete-document', $document->document_id) }}" method="POST" class="d-inline">
+                                @csrf @method('DELETE')
+                            </form>
+                            <button type="button" onclick="confirmDelete({{ $document->document_id }})" class="btn btn-danger text-xs">
+                                <i class="fas fa-trash"></i> Delete
+                            </button>
                         </div>
                     </td>
                 </tr>
@@ -122,3 +128,25 @@
         </div>
     </div>
 @endsection
+
+@push('scripts')
+<script>
+function confirmDelete(id) {
+    Swal.fire({
+        title: 'Delete Document?',
+        text: 'This document will be removed. The record will be kept for backup.',
+        icon: 'warning',
+        showCancelButton: true,
+        confirmButtonText: 'Yes, delete it',
+        cancelButtonText: 'Cancel',
+        confirmButtonColor: '#dc2626',
+        cancelButtonColor: '#6b7280',
+        customClass: { popup: 'swal-flat' }
+    }).then((result) => {
+        if (result.isConfirmed) {
+            document.getElementById('delete-doc-' + id).submit();
+        }
+    });
+}
+</script>
+@endpush

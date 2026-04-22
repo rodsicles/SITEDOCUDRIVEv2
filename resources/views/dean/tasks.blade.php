@@ -24,6 +24,7 @@
                     <th>Assigned To</th>
                     <th>Due Date</th>
                     <th>Status</th>
+                    <th>Attachments</th>
                     <th>Created</th>
                     <th>Action</th>
                 </tr>
@@ -48,24 +49,46 @@
                             <span class="badge badge-danger">Pending</span>
                         @endif
                     </td>
+                    <td>
+                        @if($task->attachments->isNotEmpty())
+                            <div class="flex flex-col gap-1">
+                                @foreach($task->attachments as $attachment)
+                                    <a href="{{ route('task-attachments.download', $attachment->task_attachment_id) }}" class="text-xs text-blue-700 dark:text-blue-300 no-underline">
+                                        <i class="fas fa-paperclip mr-1"></i>{{ Str::limit($attachment->original_name, 24) }}
+                                    </a>
+                                @endforeach
+                            </div>
+                        @else
+                            <span class="text-xs text-gray-500 dark:text-gray-400">No attachments</span>
+                        @endif
+                    </td>
                     <td>{{ $task->created_at->format('M d, Y') }}</td>
                     <td>
-                        @if($task->status !== 'Completed')
-                        <form action="{{ route('dean.update-task', $task->task_id) }}" method="POST" class="inline">
-                            @csrf
-                            @method('PATCH')
-                            <select name="status" onchange="this.form.submit()" class="px-2 py-1 border border-gray-200 dark:border-gray-700 text-sm bg-white dark:bg-[#1e1e1e] text-gray-800 dark:text-gray-200 cursor-pointer">
-                                <option value="Pending" {{ $task->status === 'Pending' ? 'selected' : '' }}>Pending</option>
-                                <option value="In Progress" {{ $task->status === 'In Progress' ? 'selected' : '' }}>In Progress</option>
-                                <option value="Completed" {{ $task->status === 'Completed' ? 'selected' : '' }}>Completed</option>
-                            </select>
-                        </form>
-                        @endif
+                        <div class="flex flex-col gap-2">
+                            @if($task->status !== 'Completed')
+                            <form action="{{ route('dean.update-task', $task->task_id) }}" method="POST" class="inline">
+                                @csrf
+                                @method('PATCH')
+                                <select name="status" onchange="this.form.submit()" class="form-control text-xs">
+                                    <option value="Pending" {{ $task->status === 'Pending' ? 'selected' : '' }}>Pending</option>
+                                    <option value="In Progress" {{ $task->status === 'In Progress' ? 'selected' : '' }}>In Progress</option>
+                                    <option value="Completed" {{ $task->status === 'Completed' ? 'selected' : '' }}>Completed</option>
+                                </select>
+                            </form>
+                            @endif
+                            <form action="{{ route('dean.tasks.attachments.store', $task->task_id) }}" method="POST" enctype="multipart/form-data" class="flex flex-col gap-2">
+                                @csrf
+                                <input type="file" name="attachment" class="form-control text-xs" required>
+                                <button type="submit" class="btn btn-primary text-xs">
+                                    <i class="fas fa-upload"></i> Upload File
+                                </button>
+                            </form>
+                        </div>
                     </td>
                 </tr>
                 @empty
                 <tr>
-                    <td colspan="6" class="text-center text-gray-600 dark:text-gray-400">
+                    <td colspan="7" class="text-center text-gray-600 dark:text-gray-400">
                         No tasks created yet
                     </td>
                 </tr>

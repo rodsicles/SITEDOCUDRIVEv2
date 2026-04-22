@@ -15,7 +15,7 @@
             <h3 class="card-title">Task Details</h3>
         </div>
 
-        <form action="{{ route('dean.store-task') }}" method="POST">
+        <form action="{{ route('dean.store-task') }}" method="POST" enctype="multipart/form-data">
             @csrf
 
             <div class="form-group">
@@ -47,11 +47,17 @@
                 <input type="date" name="due_date" class="form-control" required>
             </div>
 
+            <div class="form-group">
+                <label class="form-label">Task Attachments</label>
+                <input type="file" name="attachments[]" class="form-control" multiple accept=".pdf,.doc,.docx,.xls,.xlsx,.csv,.txt,.jpg,.jpeg,.png">
+                <small class="text-gray-500 dark:text-gray-400 block mt-1">Optional. Upload up to 5 reference files.</small>
+            </div>
+
             <div class="flex gap-2.5">
                 <button type="submit" class="btn btn-primary">
                     <i class="fas fa-save"></i> Create Task
                 </button>
-                <a href="{{ route('dean.tasks') }}" class="btn bg-gray-600 hover:bg-gray-700 text-white">
+                <a href="{{ route('dean.tasks') }}" class="btn bg-gray-600 text-white">
                     <i class="fas fa-times"></i> Cancel
                 </a>
             </div>

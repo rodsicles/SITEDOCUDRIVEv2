@@ -19,36 +19,95 @@
             <span class="badge badge-info">{{ $documents->total() }} Files</span>
         </div>
 
-        <!-- Category Filter + Search -->
-        <div class="documents-filter flex items-center gap-4 flex-wrap">
-            <div class="flex items-center gap-2">
-                <label>Filter by Type:</label>
-                <select onchange="window.location.href = this.value" class="form-control text-sm max-w-xs">
-                    <option value="{{ route('dean.documents') }}">All Documents</option>
-                    @foreach($categories as $cat)
-                        <option value="{{ route('dean.documents', ['category' => $cat]) }}" {{ $categoryFilter === $cat ? 'selected' : '' }}>
-                            {{ $cat }}
-                        </option>
-                    @endforeach
-                </select>
-            </div>
-            <form action="{{ route('dean.documents') }}" method="GET" class="flex items-center gap-2 ml-auto">
-                @if($categoryFilter)
-                <input type="hidden" name="category" value="{{ $categoryFilter }}">
-                @endif
-                <div class="relative">
-                    <input type="text" name="search" value="{{ request('search') }}" class="form-control text-sm pl-9" placeholder="Search documents..." style="min-width: 220px;">
-                    <i class="fas fa-search absolute left-3 top-1/2 -translate-y-1/2 text-gray-400 text-xs"></i>
+        <div class="documents-filter space-y-4">
+            <form action="{{ route('dean.documents') }}" method="GET" class="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-4 gap-3">
+                <input type="hidden" name="folder" value="{{ $folderFilter }}">
+                <input type="hidden" name="tab" value="{{ $tab }}">
+                <div>
+                    <label class="text-xs font-semibold text-gray-600 dark:text-gray-300 block mb-1">Category</label>
+                    <select name="category" class="form-control text-sm">
+                        <option value="">All Categories</option>
+                        @foreach($categories as $cat)
+                            <option value="{{ $cat }}" {{ $categoryFilter === $cat ? 'selected' : '' }}>{{ $cat }}</option>
+                        @endforeach
+                    </select>
                 </div>
-                <button type="submit" class="btn btn-primary text-sm">
-                    <i class="fas fa-search"></i>
-                </button>
-                @if(request('search'))
-                <a href="{{ route('dean.documents', $categoryFilter ? ['category' => $categoryFilter] : []) }}" class="btn bg-gray-200 dark:bg-gray-700 text-gray-700 dark:text-gray-300 text-sm">
-                    <i class="fas fa-times"></i>
-                </a>
-                @endif
+                <div>
+                    <label class="text-xs font-semibold text-gray-600 dark:text-gray-300 block mb-1">Search</label>
+                    <input type="text" name="search" value="{{ request('search') }}" class="form-control text-sm" placeholder="Title or keyword">
+                </div>
+                <div>
+                    <label class="text-xs font-semibold text-gray-600 dark:text-gray-300 block mb-1">Tag</label>
+                    <input type="text" name="tag" value="{{ request('tag') }}" class="form-control text-sm" placeholder="Filter by tag">
+                </div>
+                <div>
+                    <label class="text-xs font-semibold text-gray-600 dark:text-gray-300 block mb-1">Uploader</label>
+                    <select name="uploaded_by" class="form-control text-sm">
+                        <option value="">All Uploaders</option>
+                        @foreach($uploaders as $uploader)
+                            <option value="{{ $uploader->id }}" {{ (string) request('uploaded_by') === (string) $uploader->id ? 'selected' : '' }}>
+                                {{ $uploader->employee->full_name ?? $uploader->username }}
+                            </option>
+                        @endforeach
+                    </select>
+                </div>
+                <div>
+                    <label class="text-xs font-semibold text-gray-600 dark:text-gray-300 block mb-1">Uploaded From</label>
+                    <input type="date" name="date_from" value="{{ request('date_from') }}" class="form-control text-sm">
+                </div>
+                <div>
+                    <label class="text-xs font-semibold text-gray-600 dark:text-gray-300 block mb-1">Uploaded To</label>
+                    <input type="date" name="date_to" value="{{ request('date_to') }}" class="form-control text-sm">
+                </div>
+                <div class="flex items-end gap-2 md:col-span-2">
+                    <button type="submit" class="btn btn-primary text-sm">
+                        <i class="fas fa-filter"></i> Apply Filters
+                    </button>
+                    <a href="{{ route('dean.documents', array_filter(['folder' => $folderFilter, 'tab' => $tab])) }}" class="btn bg-gray-200 dark:bg-gray-700 text-gray-700 dark:text-gray-300 text-sm">
+                        <i class="fas fa-rotate-left"></i> Reset
+                    </a>
+                </div>
             </form>
+
+            <div class="flex flex-col gap-3 border-t border-gray-200 dark:border-gray-700 pt-4">
+                <form action="{{ route('document-filters.store') }}" method="POST" class="flex flex-wrap items-end gap-2">
+                    @csrf
+                    <input type="hidden" name="category" value="{{ $categoryFilter }}">
+                    <input type="hidden" name="folder" value="{{ $folderFilter }}">
+                    <input type="hidden" name="tab" value="{{ $tab }}">
+                    <input type="hidden" name="search" value="{{ request('search') }}">
+                    <input type="hidden" name="tag" value="{{ request('tag') }}">
+                    <input type="hidden" name="uploaded_by" value="{{ request('uploaded_by') }}">
+                    <input type="hidden" name="date_from" value="{{ request('date_from') }}">
+                    <input type="hidden" name="date_to" value="{{ request('date_to') }}">
+                    <div>
+                        <label class="text-xs font-semibold text-gray-600 dark:text-gray-300 block mb-1">Save Current Filters</label>
+                        <input type="text" name="name" class="form-control text-sm" placeholder="Filter name" maxlength="50" required>
+                    </div>
+                    <button type="submit" class="btn btn-primary text-sm">
+                        <i class="fas fa-bookmark"></i> Save Filter
+                    </button>
+                </form>
+
+                @if($savedFilters->isNotEmpty())
+                <div class="flex flex-wrap gap-2">
+                    @foreach($savedFilters as $savedFilter)
+                    <div class="flex items-center gap-2 border border-gray-200 dark:border-gray-700 px-3 py-2 bg-gray-50 dark:bg-[#1e1e1e]">
+                        <a href="{{ route('dean.documents', array_merge($savedFilter->toQueryParams(), ['saved_filter' => $savedFilter->document_filter_id])) }}" class="text-sm font-medium text-gray-700 dark:text-gray-200 no-underline">
+                            {{ $savedFilter->name }}
+                        </a>
+                        <form action="{{ route('document-filters.destroy', $savedFilter->document_filter_id) }}" method="POST">
+                            @csrf
+                            @method('DELETE')
+                            <button type="submit" class="text-xs text-red-600 dark:text-red-400 bg-transparent border-0 cursor-pointer">
+                                <i class="fas fa-trash"></i>
+                            </button>
+                        </form>
+                    </div>
+                    @endforeach
+                </div>
+                @endif
+            </div>
         </div>
         <table class="data-table">
             <thead>
@@ -98,9 +157,14 @@
                     <td>{{ $document->created_at->format('M d, Y') }}</td>
                     <td>
                         <div class="doc-action-btns">
-                            <a href="{{ route('dean.view-document', $document->document_id) }}" target="_blank" class="btn btn-primary text-xs">
-                                <i class="fas fa-eye"></i> View
-                            </a>
+                            <button type="button"
+                                class="btn btn-primary text-xs"
+                                data-preview-url="{{ route('dean.view-document', $document->document_id) }}"
+                                data-preview-title="{{ $document->document_title }}"
+                                data-preview-type="{{ $extension === 'pdf' ? 'pdf' : (in_array($extension, ['png', 'jpg', 'jpeg']) ? 'image' : 'other') }}"
+                                onclick="openDocumentPreview(this)">
+                                <i class="fas fa-eye"></i> Preview
+                            </button>
                             <a href="{{ route('dean.download-document', $document->document_id) }}" class="btn btn-success text-xs">
                                 <i class="fas fa-download"></i> Download
                             </a>
@@ -127,6 +191,8 @@
             {{ $documents->links() }}
         </div>
     </div>
+
+    @include('partials.document-preview-modal')
 @endsection
 
 @push('scripts')

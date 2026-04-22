@@ -82,7 +82,7 @@ class FacultyController extends Controller
 
     public function tasks()
     {
-        $tasks = Task::with('assignedBy')
+        $tasks = Task::with(['assignedBy.employee', 'attachments.uploader.employee'])
             ->where('assigned_to', auth()->id())
             ->latest('created_at')
             ->paginate(15);
@@ -139,6 +139,8 @@ class FacultyController extends Controller
         $recentDocuments = $this->documentService->getRecentDocuments(auth()->id(), 5);
         $favoriteDocuments = $this->documentService->getFavoriteDocuments(auth()->user());
         $categories = $this->documentService->getCategories();
+        $uploaders = $this->documentService->getAvailableUploaders(auth()->user());
+        $savedFilters = auth()->user()->documentFilters()->latest()->get();
 
         $examRecords = collect();
         $isPrcFolder = false;
@@ -154,7 +156,7 @@ class FacultyController extends Controller
         return view('faculty.documents', compact(
             'documents', 'recentDocuments', 'favoriteDocuments', 'categories',
             'categoryFilter', 'folderFilter', 'folderTree', 'uploadableFolders',
-            'currentFolder', 'breadcrumbs', 'tab',
+            'currentFolder', 'breadcrumbs', 'tab', 'uploaders', 'savedFilters',
             'examRecords', 'isPrcFolder', 'isCertFolder'
         ));
     }

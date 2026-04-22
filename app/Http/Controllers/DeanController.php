@@ -86,7 +86,7 @@ class DeanController extends Controller
 
     public function tasks()
     {
-        $tasks = Task::with(['assignedTo.employee', 'assignedBy.employee'])
+        $tasks = Task::with(['assignedTo.employee', 'assignedBy.employee', 'attachments.uploader.employee'])
             ->latest('created_at')
             ->paginate(15);
         return view('dean.tasks', compact('tasks'));
@@ -109,9 +109,11 @@ class DeanController extends Controller
             'task_title' => 'required|string|max:15',
             'task_description' => 'nullable|string|max:150',
             'due_date' => 'required|date',
+            'attachments' => 'nullable|array|max:5',
+            'attachments.*' => 'file|max:10240|mimes:pdf,doc,docx,xls,xlsx,csv,txt,jpg,jpeg,png',
         ]);
 
-        $this->taskService->createTask($validated, auth()->id());
+        $this->taskService->createTask($validated, auth()->id(), $request->file('attachments', []));
 
         return redirect()->route('dean.tasks')
             ->with('success', 'Task created successfully');
@@ -144,6 +146,8 @@ class DeanController extends Controller
             auth()->user(), $categoryFilter, $folderFilter, $request->query()
         );
         $categories = $this->documentService->getCategories();
+        $uploaders = $this->documentService->getAvailableUploaders(auth()->user());
+        $savedFilters = auth()->user()->documentFilters()->latest()->get();
 
         $examRecords = collect();
         $isPrcFolder = false;
@@ -158,7 +162,7 @@ class DeanController extends Controller
 
         return view('dean.documents', compact(
             'documents', 'categories', 'categoryFilter', 'folderFilter',
-            'folderTree', 'currentFolder', 'breadcrumbs', 'tab',
+            'folderTree', 'currentFolder', 'breadcrumbs', 'tab', 'uploaders', 'savedFilters',
             'examRecords', 'isPrcFolder', 'isCertFolder'
         ));
     }

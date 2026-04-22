@@ -99,6 +99,11 @@ class User extends Authenticatable
         return $this->hasMany(DocumentView::class, 'user_id');
     }
 
+    public function documentFilters()
+    {
+        return $this->hasMany(DocumentFilter::class, 'user_id');
+    }
+
     public function announcements()
     {
         return $this->hasMany(Announcement::class, 'author_id');
@@ -112,6 +117,11 @@ class User extends Authenticatable
     public function professionalDevelopments()
     {
         return $this->hasMany(ProfessionalDevelopment::class, 'user_id');
+    }
+
+    public function taskAttachments()
+    {
+        return $this->hasMany(TaskAttachment::class, 'uploaded_by');
     }
 
     public function isDean()

@@ -3,9 +3,10 @@
 namespace App\Services;
 
 use App\Models\Task;
+use App\Models\TaskAttachment;
 use App\Models\Notification;
 use App\Models\DashboardLog;
-use App\Models\User;
+use Illuminate\Http\UploadedFile;
 use Illuminate\Support\Collection;
 
 class TaskService
@@ -13,7 +14,7 @@ class TaskService
     /**
      * Create a new task with notification and logging.
      */
-    public function createTask(array $validated, int $assignedByUserId): Task
+    public function createTask(array $validated, int $assignedByUserId, array $attachments = []): Task
     {
         $task = Task::create([
             'assigned_by' => $assignedByUserId,
@@ -23,6 +24,23 @@ class TaskService
             'due_date' => $validated['due_date'],
             'status' => 'Pending',
         ]);
+
+        foreach ($attachments as $attachment) {
+            if (!$attachment instanceof UploadedFile) {
+                continue;
+            }
+
+            $storedPath = $attachment->store('task-attachments', 'local');
+
+            TaskAttachment::create([
+                'task_id' => $task->task_id,
+                'uploaded_by' => $assignedByUserId,
+                'original_name' => $attachment->getClientOriginalName(),
+                'file_path' => $storedPath,
+                'mime_type' => $attachment->getClientMimeType(),
+                'file_size' => $attachment->getSize(),
+            ]);
+        }
 
         Notification::create([
             'user_id' => $validated['assigned_to'],
@@ -36,6 +54,16 @@ class TaskService
             'activity_type' => 'task_created',
             'visibility' => 'dean',
         ]);
+
+        if (!empty($attachments)) {
+            DashboardLog::create([
+                'user_id' => $assignedByUserId,
+                'target_user_id' => $validated['assigned_to'],
+                'activity' => 'Added task attachment(s) to: ' . $validated['task_title'],
+                'activity_type' => 'task_attachment',
+                'visibility' => 'dean',
+            ]);
+        }
 
         return $task;
     }

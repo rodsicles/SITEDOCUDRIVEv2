@@ -32,7 +32,12 @@
                     <span>{{ $announcement->author->employee->full_name ?? $announcement->author->username }}</span>
                     <span>&middot;</span>
                     <span>{{ $announcement->created_at->diffForHumans() }}</span>
-
+                    @if($announcement->expires_at)
+                    <span>&middot;</span>
+                    <span class="text-orange-600 dark:text-orange-300">
+                        Expires {{ $announcement->expires_at->diffForHumans() }}
+                    </span>
+                    @endif
                 </div>
             </div>
         </div>

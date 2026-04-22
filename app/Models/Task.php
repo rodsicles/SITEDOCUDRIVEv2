@@ -33,4 +33,9 @@ class Task extends Model
     {
         return $this->belongsTo(User::class, 'assigned_to');
     }
+
+    public function attachments()
+    {
+        return $this->hasMany(TaskAttachment::class, 'task_id', 'task_id');
+    }
 }

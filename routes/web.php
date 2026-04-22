@@ -15,6 +15,8 @@ use App\Http\Controllers\ProfessionalDevelopmentController;
 use App\Http\Controllers\BackupController;
 use App\Http\Controllers\TeachingGuideController;
 use App\Http\Controllers\ExamQuestionnaireController;
+use App\Http\Controllers\DocumentFilterController;
+use App\Http\Controllers\TaskAttachmentController;
 
 // Authentication Routes
 Route::get('/', [AuthController::class, 'showLogin'])->name('login');
@@ -30,6 +32,15 @@ Route::middleware(['auth', 'no.back'])->prefix('profile')->name('profile.')->gro
     Route::get('/edit', [ProfileController::class, 'edit'])->name('edit');
     Route::post('/update', [ProfileController::class, 'update'])->name('update');
     Route::post('/change-password', [ProfileController::class, 'changePassword'])->name('change-password');
+});
+
+Route::middleware(['auth', 'no.back'])->prefix('document-filters')->name('document-filters.')->group(function () {
+    Route::post('/', [DocumentFilterController::class, 'store'])->middleware('throttle:10,60')->name('store');
+    Route::delete('/{id}', [DocumentFilterController::class, 'destroy'])->name('destroy');
+});
+
+Route::middleware(['auth', 'no.back'])->prefix('task-attachments')->name('task-attachments.')->group(function () {
+    Route::get('/{id}/download', [TaskAttachmentController::class, 'download'])->name('download');
 });
 
 // Calendar/Events (All authenticated users can view, only Dean/Coordinator can create/edit)
@@ -108,6 +119,7 @@ Route::middleware(['auth', 'no.back', 'role:Dean,Secretary'])->prefix('dean')->n
     Route::get('/tasks/create', [DeanController::class, 'createTask'])->name('create-task');
     Route::post('/tasks', [DeanController::class, 'storeTask'])->name('store-task');
     Route::patch('/tasks/{id}', [DeanController::class, 'updateTask'])->name('update-task');
+    Route::post('/tasks/{id}/attachments', [TaskAttachmentController::class, 'store'])->name('tasks.attachments.store');
 
     Route::get('/documents', [DeanController::class, 'documents'])->name('documents');
     Route::post('/documents', [DeanController::class, 'uploadDocument'])->middleware('throttle:6,60')->name('upload-document');
@@ -152,6 +164,7 @@ Route::middleware(['auth', 'no.back', 'role:Program Coordinator'])->prefix('coor
     // Tasks (assigned to coordinator)
     Route::get('/tasks', [CoordinatorController::class, 'tasks'])->name('tasks');
     Route::patch('/tasks/{id}', [CoordinatorController::class, 'updateTask'])->name('update-task');
+    Route::post('/tasks/{id}/attachments', [TaskAttachmentController::class, 'store'])->name('tasks.attachments.store');
     
     // Faculty Management
     Route::get('/faculty', [CoordinatorController::class, 'faculty'])->name('faculty');
@@ -194,6 +207,7 @@ Route::middleware(['auth', 'no.back', 'role:Faculty Employee'])->prefix('faculty
     Route::get('/dashboard', [FacultyController::class, 'dashboard'])->name('dashboard');
     Route::get('/tasks', [FacultyController::class, 'tasks'])->name('tasks');
     Route::patch('/tasks/{id}/status', [FacultyController::class, 'updateTaskStatus'])->name('update-task-status');
+    Route::post('/tasks/{id}/attachments', [TaskAttachmentController::class, 'store'])->name('tasks.attachments.store');
     Route::get('/notifications', [FacultyController::class, 'notifications'])->name('notifications');
     
     // Folder Management - Rate Limited: 3 folders per hour

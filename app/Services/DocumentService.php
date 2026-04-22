@@ -52,7 +52,44 @@ class DocumentService
             });
         }
 
+        $tag = $queryParams['tag'] ?? null;
+        if ($tag) {
+            $query->where('tags', 'like', "%{$tag}%");
+        }
+
+        $uploadedBy = $queryParams['uploaded_by'] ?? null;
+        if ($uploadedBy) {
+            $query->where('uploaded_by', $uploadedBy);
+        }
+
+        $dateFrom = $queryParams['date_from'] ?? null;
+        if ($dateFrom) {
+            $query->whereDate('created_at', '>=', $dateFrom);
+        }
+
+        $dateTo = $queryParams['date_to'] ?? null;
+        if ($dateTo) {
+            $query->whereDate('created_at', '<=', $dateTo);
+        }
+
         return $query->paginate($perPage)->appends($queryParams);
+    }
+
+    /**
+     * Get uploaders visible to the current user for filter dropdowns.
+     */
+    public function getAvailableUploaders(User $user): Collection
+    {
+        $uploaderIds = Document::getFilteredDocuments($user)
+            ->select('uploaded_by')
+            ->distinct()
+            ->pluck('uploaded_by');
+
+        return User::with('employee')
+            ->whereIn('id', $uploaderIds)
+            ->get()
+            ->sortBy(fn (User $uploader) => $uploader->employee->full_name ?? $uploader->username)
+            ->values();
     }
 
     /**

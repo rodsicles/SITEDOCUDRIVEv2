@@ -7,7 +7,7 @@
     <link rel="icon" type="image/png" href="{{ asset('images/SPUP-final-logo.png') }}">
     @vite(['resources/css/app.css', 'resources/js/app.js'])
 </head>
-<body class="role-selection-page" data-font-size="medium">
+<body class="login-portal-page" data-font-size="medium">
 
     <!-- Loading Overlay -->
     <div id="loadingOverlay" class="login-loading-overlay">
@@ -18,120 +18,100 @@
         </div>
     </div>
 
-    <!-- MAIN LAYOUT -->
-    <div class="role-selection-container">
-        <!-- Left Section: Branding -->
-        <div class="role-selection-left">
-            <div class="role-selection-branding">
-                <div class="role-selection-logo-wrapper">
-                    <img src="{{ asset('images/SPUP-final-logo.png') }}" alt="St. Paul University Philippines Logo" class="role-selection-logo">
-                </div>
-                <div class="role-selection-branding-text">
-                    <h2 class="role-selection-university-name">St. Paul University Philippines</h2>
-                    <p class="role-selection-university-location">Tuguegarao City</p>
+    {{-- ───────────────── TOP HEADER BAR ───────────────── --}}
+    <header class="login-portal-header">
+        <div class="login-portal-header-inner">
+            <div class="login-portal-brand">
+                <img src="{{ asset('images/site-logo.png') }}" alt="SITE Logo" class="login-portal-brand-logo">
+                <div class="login-portal-brand-text">
+                    <h1 class="login-portal-brand-title">School of Information Technology and Engineering</h1>
+                    <p class="login-portal-brand-subtitle">St. Paul University Philippines</p>
                 </div>
             </div>
 
-            <div class="role-selection-tagline">
-                <div class="role-selection-main-title-wrapper">
-                    <img src="{{ asset('images/site-logo.png') }}" alt="Logo" class="role-selection-title-logo">
-                    <h1 class="role-selection-main-title">Employee Dashboard with <span class="role-selection-accent">Data Analytics</span></h1>
-                </div>
-                <p class="role-selection-description">Manage documents, reports and credentials of SITE employees</p>
-
-                <div class="role-selection-features">
-                    <div class="role-selection-feature-item">
-                        <i class="fas fa-file-alt role-selection-feature-icon"></i>
-                        <span>Document Management & Tracking</span>
-                    </div>
-                    <div class="role-selection-feature-item">
-                        <i class="fas fa-chart-bar role-selection-feature-icon"></i>
-                        <span>Analytics & Report Generation</span>
-                    </div>
-                    <div class="role-selection-feature-item">
-                        <i class="fas fa-id-card role-selection-feature-icon"></i>
-                        <span>Employee Credentials Management</span>
-                    </div>
-                    <div class="role-selection-feature-item">
-                        <i class="fas fa-shield-alt role-selection-feature-icon"></i>
-                        <span>Role-Based Access Control</span>
-                    </div>
+            <div class="login-portal-header-meta">
+                <button id="themeToggle" type="button" class="login-portal-theme-toggle" aria-label="Toggle theme">
+                    <i class="fas fa-moon"></i>
+                </button>
+                <div class="login-portal-secure">
+                    <i class="fas fa-shield-alt"></i>
+                    <span>Secure Login Portal</span>
                 </div>
             </div>
         </div>
+    </header>
 
-        <!-- Right Section: Single Login Form -->
-        <div class="role-selection-right">
-            <div class="login-right-wrapper">
+    {{-- ───────────────── MAIN CARD ───────────────── --}}
+    <main class="login-portal-main">
+        <div class="login-portal-card">
+            <div class="login-portal-card-header">
+                <h2 class="login-portal-card-title">Employee Dashboard</h2>
+                <p class="login-portal-card-subtitle">with Data Analytics</p>
+            </div>
 
-                <!-- Theme Toggle -->
-                <div style="display: flex; justify-content: flex-end; margin-bottom: 12px;">
-                    <button id="themeToggle" type="button" class="login-inline-theme-toggle">
-                        <i class="fas fa-moon"></i>
-                    </button>
+            <div class="login-portal-card-body">
+                <div class="login-portal-welcome">
+                    <h3 class="login-portal-welcome-title">Welcome Back</h3>
+                    <p class="login-portal-welcome-sub">Sign in to your account</p>
                 </div>
 
-                <!-- Header -->
-                <p class="role-selection-subtitle" style="margin-bottom: 24px;">Enter your credentials to continue.</p>
-
-                <!-- Error Message -->
+                {{-- Error Message --}}
                 @if($errors->any())
-                <div class="login-inline-error" style="margin-bottom: 16px;">
+                <div class="login-portal-error">
                     {{ $errors->first() }}
                 </div>
                 @endif
 
-                <!-- Login Form -->
                 <form action="{{ route('login.post') }}" method="POST" id="loginForm">
                     @csrf
 
-                    <div class="login-inline-field">
-                        <label class="login-inline-label">Username</label>
-                        <div class="login-inline-input-wrapper">
-                            <i class="fas fa-user login-inline-input-icon"></i>
-                            <input type="text" name="username" class="login-inline-input" placeholder="Enter your username" required value="{{ old('username') }}">
+                    <div class="login-portal-field">
+                        <label class="login-portal-label">Username</label>
+                        <div class="login-portal-input-wrapper">
+                            <i class="fas fa-user login-portal-input-icon"></i>
+                            <input type="text" name="username" class="login-portal-input"
+                                placeholder="Enter username" required value="{{ old('username') }}">
                         </div>
                     </div>
 
-                    <div class="login-inline-field">
-                        <label class="login-inline-label">Password</label>
-                        <div class="login-inline-input-wrapper">
-                            <i class="fas fa-lock login-inline-input-icon"></i>
-                            <input type="password" id="password" name="password" class="login-inline-input has-toggle" placeholder="Enter your password" required>
-                            <button type="button" id="togglePassword" class="login-inline-password-toggle">
-                                <i class="fas fa-eye text-base" id="toggleIcon"></i>
+                    <div class="login-portal-field">
+                        <label class="login-portal-label">Password</label>
+                        <div class="login-portal-input-wrapper">
+                            <i class="fas fa-lock login-portal-input-icon"></i>
+                            <input type="password" id="password" name="password"
+                                class="login-portal-input has-toggle" placeholder="Enter password" required>
+                            <button type="button" id="togglePassword" class="login-portal-pw-toggle" aria-label="Toggle password visibility">
+                                <i class="fas fa-eye" id="toggleIcon"></i>
                             </button>
                         </div>
-                        <div id="capsLockWarning" class="login-inline-capslock">
+                        <div id="capsLockWarning" class="login-portal-capslock">
                             <i class="fas fa-exclamation-triangle"></i> Caps Lock is on
                         </div>
                     </div>
 
-                    <!-- Remember me -->
-                    <div class="login-inline-remember">
-                        <label class="login-inline-toggle">
-                            <input type="checkbox" id="remember" name="remember">
-                            <span class="login-inline-toggle-slider"></span>
+                    <div class="login-portal-row">
+                        <label class="login-portal-remember">
+                            <input type="checkbox" id="remember" name="remember" checked>
+                            <span>Remember me</span>
                         </label>
-                        <label for="remember" class="login-inline-toggle-label">Remember me</label>
+                        <a href="#" class="login-portal-forgot">Forgot password?</a>
                     </div>
 
-                    <button type="submit" class="login-inline-submit">
-                        SIGN IN <i class="fas fa-arrow-right"></i>
-                    </button>
+                    <div class="login-portal-submit-wrap">
+                        <button type="submit" class="login-portal-submit">
+                            SIGN IN <i class="fas fa-sign-in-alt"></i>
+                        </button>
+                    </div>
                 </form>
-
             </div>
         </div>
-    </div>
 
-    <!-- Footer -->
-    <footer class="login-page-footer">
-        <div class="login-footer-content">
-            <span>A.Y. 2025-2026</span>
-            <span class="login-footer-separator">|</span>
-            <span>Caritas Christi Urget Nos</span>
-        </div>
+        <p class="login-portal-ay">A.Y. 2025-2026 &nbsp;|&nbsp; Caritas Christi Urget Nos</p>
+    </main>
+
+    {{-- ───────────────── FOOTER ───────────────── --}}
+    <footer class="login-portal-footer">
+        &copy; {{ date('Y') }} St. Paul University Philippines. All rights reserved.
     </footer>
 
     <script>
@@ -162,7 +142,7 @@
             icon.className = theme === 'dark' ? 'fas fa-sun' : 'fas fa-moon';
         }
 
-        // Show/Hide Password Toggle
+        // Show/Hide Password
         const togglePassword = document.getElementById('togglePassword');
         const passwordInput = document.getElementById('password');
         const toggleIcon = document.getElementById('toggleIcon');
@@ -175,7 +155,7 @@
             });
         }
 
-        // Caps Lock Detection
+        // Caps Lock detection
         const capsWarning = document.getElementById('capsLockWarning');
         if (passwordInput) {
             passwordInput.addEventListener('keyup', function(e) {
@@ -190,12 +170,11 @@
             });
         }
 
-        // Login Form Loading Effect
+        // Loading overlay on submit
         const loginForm = document.getElementById('loginForm');
         const loadingOverlay = document.getElementById('loadingOverlay');
-
         if (loginForm) {
-            loginForm.addEventListener('submit', function(e) {
+            loginForm.addEventListener('submit', function() {
                 loadingOverlay.classList.remove('hidden');
                 loadingOverlay.classList.add('flex');
             });

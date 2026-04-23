@@ -81,6 +81,7 @@ class DocumentService
     public function getAvailableUploaders(User $user): Collection
     {
         $uploaderIds = Document::getFilteredDocuments($user)
+            ->reorder()
             ->select('uploaded_by')
             ->distinct()
             ->pluck('uploaded_by');
@@ -158,20 +159,31 @@ class DocumentService
 
         $mimeType = Storage::disk('local')->mimeType($document->file_path);
         $allowedMimes = ['application/pdf', 'image/jpeg', 'image/png'];
+
+        // For Word docs: serve the sibling PDF for inline preview
+        $serveFilePath = $document->file_path;
         if (!in_array($mimeType, $allowedMimes)) {
-            $mimeType = 'application/octet-stream';
+            $pdfSibling = preg_replace('/\.[^.]+$/', '.pdf', $document->file_path);
+            if (Storage::disk('local')->exists($pdfSibling)) {
+                $serveFilePath = $pdfSibling;
+                $mimeType      = 'application/pdf';
+            } else {
+                $mimeType = 'application/octet-stream';
+            }
         }
 
-        return Storage::disk('local')->response($document->file_path, null, [
-            'Content-Type' => $mimeType,
-            'Content-Disposition' => 'inline; filename="' . basename($document->file_path) . '"',
+        $absolutePath = Storage::disk('local')->path($serveFilePath);
+
+        return response()->file($absolutePath, [
+            'Content-Type'        => $mimeType,
+            'Content-Disposition' => 'inline; filename="' . basename($absolutePath) . '"',
         ]);
     }
 
     /**
      * Download a document.
      */
-    public function downloadDocument(int $documentId, User $user)
+    public function downloadDocument(int $documentId, User $user, string $format = 'word')
     {
         $document = Document::findOrFail($documentId);
 
@@ -190,7 +202,16 @@ class DocumentService
             abort(403, 'Unauthorized file access');
         }
 
-        if (!Storage::disk('local')->exists($document->file_path)) {
+        // Determine which file to download
+        $downloadPath = $document->file_path;
+        if ($format === 'pdf') {
+            $pdfPath = preg_replace('/\.[^.]+$/', '.pdf', $document->file_path);
+            if (Storage::disk('local')->exists($pdfPath)) {
+                $downloadPath = $pdfPath;
+            }
+        }
+
+        if (!Storage::disk('local')->exists($downloadPath)) {
             abort(404, 'File not found');
         }
 
@@ -201,7 +222,7 @@ class DocumentService
             'visibility' => 'own',
         ]);
 
-        return Storage::disk('local')->download($document->file_path, basename($document->file_path));
+        return Storage::disk('local')->download($downloadPath, basename($downloadPath));
     }
 
     /**

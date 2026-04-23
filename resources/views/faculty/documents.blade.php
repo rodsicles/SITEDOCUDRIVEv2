@@ -158,17 +158,24 @@
                     <td>{{ $document->created_at->format('M d, Y') }}</td>
                     <td>
                         <div class="doc-action-btns">
-                            <button type="button"
-                                class="btn btn-primary text-xs"
-                                data-preview-url="{{ route('faculty.view-document', $document->document_id) }}"
-                                data-preview-title="{{ $document->document_title }}"
-                                data-preview-type="{{ $extension === 'pdf' ? 'pdf' : (in_array($extension, ['png', 'jpg', 'jpeg']) ? 'image' : 'other') }}"
-                                onclick="openDocumentPreview(this)">
+                            <a href="{{ route('faculty.view-document', $document->document_id) }}" target="_blank" class="btn btn-primary text-xs">
                                 <i class="fas fa-eye"></i> Preview
-                            </button>
+                            </a>
+                            @if($document->document_type === 'word')
+                            <div class="doc-download-wrap" style="position:relative;display:inline-block;">
+                                <button type="button" class="btn btn-success text-xs" onclick="toggleDownloadMenu({{ $document->document_id }})">
+                                    <i class="fas fa-download"></i> Download <i class="fas fa-caret-down"></i>
+                                </button>
+                                <div id="dl-menu-{{ $document->document_id }}" class="doc-dl-menu" style="display:none;position:absolute;top:100%;left:0;z-index:99;background:#fff;border:1px solid #ccc;min-width:130px;">
+                                    <a href="{{ route('faculty.download-document', $document->document_id) }}?format=word" class="doc-dl-option"><i class="fas fa-file-word"></i> Word (.docx)</a>
+                                    <a href="{{ route('faculty.download-document', $document->document_id) }}?format=pdf" class="doc-dl-option"><i class="fas fa-file-pdf"></i> PDF (.pdf)</a>
+                                </div>
+                            </div>
+                            @else
                             <a href="{{ route('faculty.download-document', $document->document_id) }}" class="btn btn-success text-xs">
                                 <i class="fas fa-download"></i> Download
                             </a>
+                            @endif
                             <form id="delete-doc-{{ $document->document_id }}" action="{{ route('faculty.delete-document', $document->document_id) }}" method="POST" class="d-inline">
                                 @csrf @method('DELETE')
                             </form>

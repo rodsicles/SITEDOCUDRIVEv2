@@ -93,6 +93,30 @@ class ExamRecordService
         // Parse passer names from newline-separated string
         $names = $this->parseNames($data['passer_names'] ?? '');
 
+        // Get recorder name (used in the generated document header)
+        $user = \App\Models\User::with('employee')->find($userId);
+        $recorderName = $user->employee->full_name ?? $user->username;
+
+        // Generate Word + PDF document with the same SPUP letterhead format as PRC results
+        $filePath = $this->wordService->generateCertResultsDoc(
+            $certName,
+            $data['batch_label'],
+            (int) $data['passed_count'],
+            $names,
+            $recorderName
+        );
+
+        // Create document record so the file appears in the certification folder
+        $document = Document::create([
+            'uploaded_by'    => $userId,
+            'folder_id'      => $folderId,
+            'document_title' => $certName . ' Passers - ' . $data['batch_label'],
+            'file_path'      => $filePath,
+            'document_type'  => 'word',
+            'category'       => $folder->top_level_category ?? 'Accreditation and Certifications',
+            'tags'           => 'certification,' . str_replace(' ', '-', strtolower($certName)) . ',' . $data['batch_label'],
+        ]);
+
         $record = ExamRecord::create([
             'folder_id' => $folderId,
             'exam_type' => $certName,
@@ -101,7 +125,7 @@ class ExamRecordService
             'passer_names' => !empty($names) ? $names : null,
             'total_examinees' => null,
             'recorded_by' => $userId,
-            'document_id' => null,
+            'document_id' => $document->document_id,
         ]);
 
         DashboardLog::create([

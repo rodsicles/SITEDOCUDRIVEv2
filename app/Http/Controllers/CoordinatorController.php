@@ -395,9 +395,10 @@ class CoordinatorController extends Controller
         return $this->documentService->viewDocument($id, auth()->user(), true);
     }
 
-    public function downloadDocument($id)
+    public function downloadDocument($id, Request $request)
     {
-        return $this->documentService->downloadDocument($id, auth()->user());
+        $format = in_array($request->query('format'), ['pdf', 'word']) ? $request->query('format') : 'word';
+        return $this->documentService->downloadDocument($id, auth()->user(), $format);
     }
 
     public function deleteDocument($id)

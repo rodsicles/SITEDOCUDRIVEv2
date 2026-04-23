@@ -2,6 +2,7 @@
 
 namespace App\Services;
 
+use Barryvdh\DomPDF\Facade\Pdf;
 use PhpOffice\PhpWord\PhpWord;
 use PhpOffice\PhpWord\IOFactory;
 use PhpOffice\PhpWord\SimpleType\Jc;
@@ -10,7 +11,7 @@ use Illuminate\Support\Facades\Storage;
 
 class WordDocumentService
 {
-    public function generatePrcResultsDoc(array $examData, string $batchLabel, string $recorderName): string
+    public function generatePrcResultsDoc(array $examData, string $batchLabel, string $recorderName, string $department = 'SCHOOL OF INFORMATION TECHNOLOGY AND ENGINEERING'): string
     {
         $phpWord = new PhpWord();
 
@@ -18,97 +19,205 @@ class WordDocumentService
         $phpWord->setDefaultFontName('Arial');
         $phpWord->setDefaultFontSize(11);
 
+        // Margins: top/bottom 1080 twips (~1.9 cm), sides 720 twips (~1.27 cm)
         $section = $phpWord->addSection([
-            'marginTop' => 600,
-            'marginBottom' => 600,
-            'marginLeft' => 720,
-            'marginRight' => 720,
+            'marginTop'    => 1080,
+            'marginBottom' => 900,
+            'marginLeft'   => 900,
+            'marginRight'  => 900,
+            'headerHeight' => 720,
+            'footerHeight' => 600,
         ]);
 
-        // Logo
-        $logoPath = public_path('images/site-logo.png');
-        if (file_exists($logoPath)) {
-            $section->addImage($logoPath, [
-                'width' => 80,
-                'height' => 80,
-                'alignment' => Jc::CENTER,
+        // ── REPEATING HEADER (every page) ──────────────────────────────
+        $header = $section->addHeader();
+
+        // Seal + university info in a 2-column table
+        $sealPath   = public_path('images/SPUP-final-logo.png');
+        $headerTable = $header->addTable([
+            'unit'             => TblWidth::PERCENT,
+            'width'            => 100 * 50,
+            'borderSize'       => 0,
+            'borderColor'      => 'ffffff',
+            'cellMarginTop'    => 0,
+            'cellMarginBottom' => 0,
+        ]);
+
+        $headerTable->addRow(800);
+
+        // Seal cell
+        $sealCell = $headerTable->addCell(1200, ['valign' => 'center']);
+        if (file_exists($sealPath)) {
+            $sealCell->addImage($sealPath, [
+                'width'     => 58,
+                'height'    => 58,
+                'alignment' => Jc::RIGHT,
             ]);
         }
 
-        // School name header
-        $section->addText(
-            'SITE - School of Information Technology and Engineering',
-            ['bold' => true, 'size' => 14, 'color' => '028a0f'],
-            ['alignment' => Jc::CENTER, 'spaceAfter' => 0]
-        );
-
-        $section->addText(
+        // University info cell
+        $infoCell = $headerTable->addCell(10800, ['valign' => 'center']);
+        $infoCell->addText(
             'St. Paul University Philippines',
-            ['size' => 11, 'color' => '333333'],
-            ['alignment' => Jc::CENTER, 'spaceAfter' => 200]
+            ['name' => 'Times New Roman', 'bold' => true, 'size' => 18],
+            ['alignment' => Jc::CENTER, 'spaceAfter' => 0, 'spaceBefore' => 0]
+        );
+        $infoCell->addText(
+            'Tuguegarao City, Cagayan 3500',
+            ['size' => 9, 'color' => '000000'],
+            ['alignment' => Jc::CENTER, 'spaceAfter' => 0, 'spaceBefore' => 0]
+        );
+        $infoCell->addText(
+            'Tel: 396-1967-1994',
+            ['size' => 9, 'color' => '000000'],
+            ['alignment' => Jc::CENTER, 'spaceAfter' => 0, 'spaceBefore' => 0]
+        );
+        $infoCell->addText(
+            'Fax: 078-8464305',
+            ['size' => 9, 'color' => '000000'],
+            ['alignment' => Jc::CENTER, 'spaceAfter' => 0, 'spaceBefore' => 0]
+        );
+        $infoCell->addText(
+            'www.spup.edu.ph',
+            ['size' => 9, 'color' => '000000'],
+            ['alignment' => Jc::CENTER, 'spaceAfter' => 0, 'spaceBefore' => 0]
         );
 
-        // Divider line
-        $section->addText(
-            str_repeat('─', 60),
-            ['size' => 8, 'color' => '028a0f'],
-            ['alignment' => Jc::CENTER, 'spaceAfter' => 200]
+        // Thin gold separator (30 twip = ~0.5mm)
+        $sepTable = $header->addTable([
+            'borderSize' => 0, 'borderColor' => 'ffffff',
+            'width' => 5000, 'unit' => TblWidth::PERCENT,
+        ]);
+        $sepTable->addRow(30);
+        $sepTable->addCell(5000, [
+            'bgColor'           => 'C9A227',
+            'borderTopSize'     => 0, 'borderTopColor'    => 'ffffff',
+            'borderBottomSize'  => 0, 'borderBottomColor' => 'ffffff',
+            'borderLeftSize'    => 0, 'borderLeftColor'   => 'ffffff',
+            'borderRightSize'   => 0, 'borderRightColor'  => 'ffffff',
+        ])->addText('');
+
+        // Thin green separator
+        $greenTable = $header->addTable([
+            'borderSize' => 0, 'borderColor' => 'ffffff',
+            'width' => 5000, 'unit' => TblWidth::PERCENT,
+        ]);
+        $greenTable->addRow(30);
+        $greenTable->addCell(5000, [
+            'bgColor'           => '006633',
+            'borderTopSize'     => 0, 'borderTopColor'    => 'ffffff',
+            'borderBottomSize'  => 0, 'borderBottomColor' => 'ffffff',
+            'borderLeftSize'    => 0, 'borderLeftColor'   => 'ffffff',
+            'borderRightSize'   => 0, 'borderRightColor'  => 'ffffff',
+        ])->addText('');
+
+        // Department / office label
+        $header->addText(
+            strtoupper($department),
+            ['bold' => true, 'size' => 9, 'color' => '000000'],
+            ['alignment' => Jc::CENTER, 'spaceAfter' => 0, 'spaceBefore' => 40]
         );
+
+        // ── REPEATING FOOTER (every page) ──────────────────────────────
+        $footer = $section->addFooter();
+
+        // Thin gold separator
+        $fGoldTable = $footer->addTable([
+            'borderSize' => 0, 'borderColor' => 'ffffff',
+            'width' => 5000, 'unit' => TblWidth::PERCENT,
+        ]);
+        $fGoldTable->addRow(30);
+        $fGoldTable->addCell(5000, [
+            'bgColor'           => 'C9A227',
+            'borderTopSize'     => 0, 'borderTopColor'    => 'ffffff',
+            'borderBottomSize'  => 0, 'borderBottomColor' => 'ffffff',
+            'borderLeftSize'    => 0, 'borderLeftColor'   => 'ffffff',
+            'borderRightSize'   => 0, 'borderRightColor'  => 'ffffff',
+        ])->addText('');
+
+        // Thin green separator
+        $fGreenTable = $footer->addTable([
+            'borderSize' => 0, 'borderColor' => 'ffffff',
+            'width' => 5000, 'unit' => TblWidth::PERCENT,
+        ]);
+        $fGreenTable->addRow(30);
+        $fGreenTable->addCell(5000, [
+            'bgColor'           => '006633',
+            'borderTopSize'     => 0, 'borderTopColor'    => 'ffffff',
+            'borderBottomSize'  => 0, 'borderBottomColor' => 'ffffff',
+            'borderLeftSize'    => 0, 'borderLeftColor'   => 'ffffff',
+            'borderRightSize'   => 0, 'borderRightColor'  => 'ffffff',
+        ])->addText('');
+
+        // Footer badges image
+        $badgesPath = public_path('images/spup-footer-badges.jpg');
+        if (file_exists($badgesPath)) {
+            $footer->addImage($badgesPath, [
+                'width'     => 460,
+                'height'    => 51,
+                'alignment' => Jc::LEFT,
+            ]);
+        } else {
+            // Text fallback if image missing
+            $footer->addText(
+                'TÜV Rheinland Certified  |  AASBI Accredited  |  PACU  |  1957          MAKING A DIFFERENCE GLOBALLY',
+                ['size' => 7, 'color' => '444444'],
+                ['alignment' => Jc::LEFT]
+            );
+        }
 
         // Title
         $section->addText(
-            'PRC Board Examination Results',
-            ['bold' => true, 'size' => 16],
-            ['alignment' => Jc::CENTER, 'spaceAfter' => 100]
+            'PRC BOARD EXAMINATION RESULTS',
+            ['bold' => true, 'size' => 13],
+            ['alignment' => Jc::CENTER, 'spaceAfter' => 60]
         );
 
         $section->addText(
-            'Batch: ' . $batchLabel,
-            ['bold' => true, 'size' => 12, 'color' => '028a0f'],
-            ['alignment' => Jc::CENTER, 'spaceAfter' => 300]
+            $batchLabel,
+            ['bold' => true, 'size' => 11],
+            ['alignment' => Jc::CENTER, 'spaceAfter' => 180]
         );
 
         // Results table
         $tableStyle = [
-            'borderSize' => 6,
-            'borderColor' => '999999',
-            'cellMargin' => 80,
-            'unit' => TblWidth::PERCENT,
-            'width' => 100 * 50,
+            'borderSize'  => 6,
+            'borderColor' => '000000',
+            'cellMargin'  => 40,
+            'unit'        => TblWidth::PERCENT,
+            'width'       => 100 * 50,
         ];
 
         $phpWord->addTableStyle('ResultsTable', $tableStyle);
         $table = $section->addTable('ResultsTable');
 
-        // Header row
-        $headerStyle = ['bgColor' => '028a0f'];
-        $headerFont = ['bold' => true, 'color' => 'FFFFFF', 'size' => 11];
-        $cellStyle = ['valign' => 'center'];
+        // Header row — clean bold text, no background
+        $headerFont = ['bold' => true, 'size' => 9, 'color' => '000000'];
+        $cellStyle  = ['valign' => 'center'];
 
-        $table->addRow(400);
-        $table->addCell(4000, array_merge($headerStyle, $cellStyle))->addText('Examination', $headerFont, ['alignment' => Jc::CENTER]);
-        $table->addCell(2000, array_merge($headerStyle, $cellStyle))->addText('Passed', $headerFont, ['alignment' => Jc::CENTER]);
-        $table->addCell(2000, array_merge($headerStyle, $cellStyle))->addText('Total Examinees', $headerFont, ['alignment' => Jc::CENTER]);
+        $table->addRow(280);
+        $table->addCell(4000, $cellStyle)->addText('EXAMINATION', $headerFont, ['alignment' => Jc::CENTER]);
+        $table->addCell(2000, $cellStyle)->addText('PASSED', $headerFont, ['alignment' => Jc::CENTER]);
+        $table->addCell(2000, $cellStyle)->addText('TOTAL EXAMINEES', $headerFont, ['alignment' => Jc::CENTER]);
 
         // Data rows
-        $rowFont = ['size' => 11];
-        $numberFont = ['bold' => true, 'size' => 12];
+        $rowFont    = ['size' => 9];
+        $numberFont = ['bold' => true, 'size' => 9];
 
         foreach ($examData as $exam) {
-            $altBg = [];
-            $table->addRow(350);
-            $table->addCell(4000, array_merge($altBg, $cellStyle))->addText($exam['exam_type'], $rowFont);
-            $table->addCell(2000, array_merge($altBg, $cellStyle))->addText((string) $exam['passed_count'], $numberFont, ['alignment' => Jc::CENTER]);
-            $table->addCell(2000, array_merge($altBg, $cellStyle))->addText($exam['total_examinees'] ? (string) $exam['total_examinees'] : 'N/A', $rowFont, ['alignment' => Jc::CENTER]);
+            $table->addRow(260);
+            $table->addCell(4000, $cellStyle)->addText($exam['exam_type'], $rowFont);
+            $table->addCell(2000, $cellStyle)->addText((string) $exam['passed_count'], $numberFont, ['alignment' => Jc::CENTER]);
+            $table->addCell(2000, $cellStyle)->addText($exam['total_examinees'] ? (string) $exam['total_examinees'] : 'N/A', $rowFont, ['alignment' => Jc::CENTER]);
         }
 
         // Total row
         $totalPassed = array_sum(array_column($examData, 'passed_count'));
         $totalExaminees = array_sum(array_filter(array_column($examData, 'total_examinees')));
-        $table->addRow(400);
-        $table->addCell(4000, array_merge(['bgColor' => 'f0f0f0'], $cellStyle))->addText('TOTAL', ['bold' => true, 'size' => 11]);
-        $table->addCell(2000, array_merge(['bgColor' => 'f0f0f0'], $cellStyle))->addText((string) $totalPassed, ['bold' => true, 'size' => 12, 'color' => '028a0f'], ['alignment' => Jc::CENTER]);
-        $table->addCell(2000, array_merge(['bgColor' => 'f0f0f0'], $cellStyle))->addText($totalExaminees > 0 ? (string) $totalExaminees : 'N/A', ['bold' => true, 'size' => 11], ['alignment' => Jc::CENTER]);
+        $table->addRow(280);
+        $table->addCell(4000, $cellStyle)->addText('TOTAL', ['bold' => true, 'size' => 9]);
+        $table->addCell(2000, $cellStyle)->addText((string) $totalPassed, ['bold' => true, 'size' => 9], ['alignment' => Jc::CENTER]);
+        $table->addCell(2000, $cellStyle)->addText($totalExaminees > 0 ? (string) $totalExaminees : 'N/A', ['bold' => true, 'size' => 9], ['alignment' => Jc::CENTER]);
 
         $section->addTextBreak(1);
 
@@ -124,8 +233,8 @@ class WordDocumentService
         if ($hasNames) {
             $section->addText(
                 'List of Passers',
-                ['bold' => true, 'size' => 14],
-                ['alignment' => Jc::CENTER, 'spaceAfter' => 200]
+                ['bold' => true, 'size' => 11],
+                ['alignment' => Jc::CENTER, 'spaceAfter' => 80]
             );
 
             foreach ($examData as $exam) {
@@ -135,15 +244,15 @@ class WordDocumentService
 
                 $section->addText(
                     $exam['exam_type'],
-                    ['bold' => true, 'size' => 12, 'color' => '028a0f'],
-                    ['spaceAfter' => 100]
+                    ['bold' => true, 'size' => 10],
+                    ['spaceAfter' => 40]
                 );
 
                 foreach ($exam['passer_names'] as $index => $name) {
                     $section->addText(
                         ($index + 1) . '. ' . $name,
-                        ['size' => 11],
-                        ['indent' => 0.5, 'spaceAfter' => 40]
+                        ['size' => 9],
+                        ['indent' => 0.5, 'spaceAfter' => 20]
                     );
                 }
 
@@ -153,21 +262,11 @@ class WordDocumentService
             $section->addTextBreak(2);
         }
 
-        // Footer
-        $section->addText(
-            str_repeat('─', 60),
-            ['size' => 8, 'color' => 'cccccc'],
-            ['alignment' => Jc::CENTER, 'spaceAfter' => 100]
-        );
+        $section->addTextBreak(2);
 
+        // Recorded-by note
         $section->addText(
-            'Generated: ' . date('F d, Y h:i A'),
-            ['size' => 9, 'color' => '666666', 'italic' => true],
-            ['alignment' => Jc::CENTER, 'spaceAfter' => 0]
-        );
-
-        $section->addText(
-            'Recorded by: ' . $recorderName,
+            'Generated: ' . date('F d, Y h:i A') . '   |   Recorded by: ' . $recorderName,
             ['size' => 9, 'color' => '666666', 'italic' => true],
             ['alignment' => Jc::CENTER]
         );
@@ -185,6 +284,85 @@ class WordDocumentService
         $writer = IOFactory::createWriter($phpWord, 'Word2007');
         $writer->save($storagePath);
 
+        // Also generate a PDF sibling (same base name, .pdf extension)
+        $this->generatePrcResultsPdf(
+            $examData, $batchLabel, $recorderName,
+            str_replace('.docx', '.pdf', $storagePath)
+        );
+
         return 'documents/' . $filename;
+    }
+
+    /**
+     * Generate a PDF version of PRC results using dompdf.
+     */
+    private function generatePrcResultsPdf(array $examData, string $batchLabel, string $recorderName, string $pdfStoragePath): void
+    {
+        $totalPassed    = array_sum(array_column($examData, 'passed_count'));
+        $totalExaminees = array_sum(array_filter(array_column($examData, 'total_examinees')));
+        $hasNames       = collect($examData)->contains(fn($e) => !empty($e['passer_names']));
+
+        $pdf = Pdf::loadView('exports.prc-results-pdf', compact(
+            'examData', 'batchLabel', 'recorderName',
+            'totalPassed', 'totalExaminees', 'hasNames'
+        ))->setPaper('letter', 'portrait');
+
+        file_put_contents($pdfStoragePath, $pdf->output());
+    }
+
+    /**
+     * Generate a Word doc + sibling PDF for an IT certification record,
+     * using the same SPUP letterhead layout as the PRC results.
+     *
+     * Returns the relative storage path of the .docx file.
+     */
+    public function generateCertResultsDoc(
+        string $certName,
+        string $batchLabel,
+        int $passedCount,
+        array $passerNames,
+        string $recorderName,
+        string $department = 'SCHOOL OF INFORMATION TECHNOLOGY AND ENGINEERING'
+    ): string {
+        // Reuse the PRC pipeline by shaping cert data into the same examData structure,
+        // so the Word output also uses the SPUP header/footer + bordered table.
+        $examData = [[
+            'exam_type'       => $certName,
+            'passed_count'    => $passedCount,
+            'total_examinees' => null,
+            'passer_names'    => $passerNames,
+        ]];
+
+        // Build the .docx using the existing PRC generator (header/footer/table styling shared).
+        $docPath = $this->generatePrcResultsDoc($examData, $batchLabel, $recorderName, $department);
+
+        // Overwrite the auto-generated PDF sibling with the cert-specific PDF view
+        // so the title/subtitle reads "IT Certification Results".
+        $absoluteDocxPath = Storage::disk('local')->path($docPath);
+        $pdfStoragePath   = str_replace('.docx', '.pdf', $absoluteDocxPath);
+
+        $this->generateCertResultsPdf(
+            $certName, $batchLabel, $passedCount, $passerNames, $recorderName, $pdfStoragePath
+        );
+
+        return $docPath;
+    }
+
+    /**
+     * Generate a PDF version of an IT certification record using dompdf.
+     */
+    private function generateCertResultsPdf(
+        string $certName,
+        string $batchLabel,
+        int $passedCount,
+        array $passerNames,
+        string $recorderName,
+        string $pdfStoragePath
+    ): void {
+        $pdf = Pdf::loadView('exports.cert-results-pdf', compact(
+            'certName', 'batchLabel', 'passedCount', 'passerNames', 'recorderName'
+        ))->setPaper('letter', 'portrait');
+
+        file_put_contents($pdfStoragePath, $pdf->output());
     }
 }

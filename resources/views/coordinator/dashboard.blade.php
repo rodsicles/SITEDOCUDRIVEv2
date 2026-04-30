@@ -90,8 +90,14 @@
             <h3 class="card-title">Quick Actions</h3>
         </div>
         <div class="flex gap-4 flex-wrap">
-            <a href="{{ route('coordinator.create-faculty') }}" class="btn btn-success">
-                <i class="fas fa-user-plus"></i> Add Faculty Member
+            <a href="{{ route('coordinator.faculty') }}" class="btn btn-primary border-0">
+                <i class="fas fa-users mr-1"></i> Manage Faculty
+            </a>
+            <a href="{{ route('coordinator.tasks') }}" class="btn btn-primary border-0">
+                <i class="fas fa-tasks mr-1"></i> View Tasks
+            </a>
+            <a href="{{ route('announcements.create') }}" class="btn btn-primary border-0">
+                <i class="fas fa-bullhorn mr-1"></i> Post Announcement
             </a>
         </div>
     </div>

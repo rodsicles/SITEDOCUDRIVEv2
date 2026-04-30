@@ -41,8 +41,7 @@
             <a href="#guide-documents" class="guide-toc-item"><span class="guide-toc-num">5</span> Documents</a>
             <a href="#guide-teaching" class="guide-toc-item"><span class="guide-toc-num">6</span> Teaching Guides</a>
             <a href="#guide-exams" class="guide-toc-item"><span class="guide-toc-num">7</span> Exam Questionnaires</a>
-            <a href="#guide-skills" class="guide-toc-item"><span class="guide-toc-num">8</span> Skill Tags</a>
-            <a href="#guide-profile" class="guide-toc-item"><span class="guide-toc-num">9</span> Profile</a>
+            <a href="#guide-profile" class="guide-toc-item"><span class="guide-toc-num">8</span> Profile</a>
         @elseif(auth()->user()->isProgramCoordinator())
             <a href="#guide-dashboard" class="guide-toc-item"><span class="guide-toc-num">1</span> Dashboard</a>
             <a href="#guide-tasks" class="guide-toc-item"><span class="guide-toc-num">2</span> Tasks</a>
@@ -63,7 +62,6 @@
             <a href="#guide-documents" class="guide-toc-item"><span class="guide-toc-num">8</span> Documents</a>
             <a href="#guide-teaching" class="guide-toc-item"><span class="guide-toc-num">9</span> Teaching Guides</a>
             <a href="#guide-exams" class="guide-toc-item"><span class="guide-toc-num">10</span> Exam Questionnaires</a>
-            <a href="#guide-skills" class="guide-toc-item"><span class="guide-toc-num">11</span> Skill Tags</a>
         @endif
     </div>
 </div>
@@ -259,37 +257,11 @@
     <div class="guide-tip"><i class="fas fa-lightbulb mr-1"></i> <strong>Tip:</strong> Label each questionnaire with the course code and term for quick identification.</div>
 </div>
 
-{{-- ===== SKILL TAGS (Faculty + Dean) ===== --}}
-@if(auth()->user()->isFaculty() || auth()->user()->isDean() || auth()->user()->isSecretary())
-<div id="guide-skills" class="content-card">
-    <div class="card-header">
-        <h3 class="card-title"><i class="fas fa-tags mr-2"></i>
-            @if(auth()->user()->isFaculty()) 8. @else 11. @endif
-            Skill Tags
-        </h3>
-    </div>
-    <p class="guide-intro">Skill Tags allow faculty members to highlight their competencies and areas of expertise on their profile.</p>
-    <ol class="guide-steps">
-        <li>Click <strong>Skill Tags</strong> in the sidebar to open the Skill Tags page.</li>
-        @if(auth()->user()->isFaculty())
-        <li>Your existing skill tags are listed. Each tag represents a skill or competency.</li>
-        <li>To <strong>add a new skill</strong>, type the skill name in the input field and click <strong>Add</strong>.</li>
-        <li>To <strong>remove a skill</strong>, click the <strong>×</strong> button beside the tag.</li>
-        <li>Your skill tags will appear on your employee profile for administrators to view.</li>
-        @else
-        <li>View the skill tags of all faculty members in the department.</li>
-        <li>Use this page to understand the competency distribution across faculty.</li>
-        @endif
-    </ol>
-    <div class="guide-tip"><i class="fas fa-lightbulb mr-1"></i> <strong>Tip:</strong> Keep your skill tags updated so your profile accurately reflects your expertise.</div>
-</div>
-@endif
-
 {{-- ===== PROFILE (Faculty only) ===== --}}
 @if(auth()->user()->isFaculty())
 <div id="guide-profile" class="content-card">
     <div class="card-header">
-        <h3 class="card-title"><i class="fas fa-user mr-2"></i> 9. Profile</h3>
+        <h3 class="card-title"><i class="fas fa-user mr-2"></i> 8. Profile</h3>
     </div>
     <p class="guide-intro">Your Profile page contains your personal and professional information visible to administrators.</p>
     <ol class="guide-steps">
@@ -297,7 +269,6 @@
         <li>View your personal details: name, department, position, and contact info.</li>
         <li>Click <strong>Edit Profile</strong> to update your information — name, email, or contact number.</li>
         <li>To change your <strong>password</strong>, scroll to the Change Password section, enter your current password, then your new password, and save.</li>
-        <li>Your <strong>Skill Tags</strong> are also visible on your profile page.</li>
     </ol>
     <div class="guide-tip"><i class="fas fa-lightbulb mr-1"></i> <strong>Tip:</strong> Keep your contact information up to date so administrators can reach you easily.</div>
 </div>
@@ -305,7 +276,7 @@
 
 {{-- Back to Top --}}
 <div class="guide-back-top">
-    <a href="#" class="btn btn-secondary"><i class="fas fa-arrow-up mr-1"></i> Back to Top</a>
+    <a href="#" onclick="event.preventDefault(); window.scrollTo({top:0, behavior:'smooth'});" class="btn btn-secondary border-0"><i class="fas fa-arrow-up mr-1"></i> Back to Top</a>
 </div>
 
 @endsection

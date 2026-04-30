@@ -151,9 +151,9 @@ class DeanController extends Controller
                 foreach ($rows as $log) {
                     fputcsv($out, [
                         optional($log->log_date)->format('Y-m-d H:i:s'),
-                        $log->user->employee->full_name ?? $log->user->username ?? 'System',
-                        $log->user->role->role_name ?? '—',
-                        $log->targetUser?->employee->full_name ?? $log->targetUser?->username ?? '',
+                        optional(optional($log->user)->employee)->full_name ?? optional($log->user)->username ?? 'System',
+                        optional(optional($log->user)->role)->role_name ?? '—',
+                        optional(optional($log->targetUser)->employee)->full_name ?? optional($log->targetUser)->username ?? '',
                         $log->activity,
                         $log->activity_type ?? '',
                         $log->ip_address ?? '',

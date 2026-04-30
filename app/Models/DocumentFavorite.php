@@ -11,6 +11,7 @@ class DocumentFavorite extends Model
 
     protected $fillable = [
         'document_id',
+        'user_id',
     ];
 
     public function user()

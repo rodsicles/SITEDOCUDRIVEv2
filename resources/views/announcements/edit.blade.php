@@ -89,7 +89,7 @@
             </div>
 
             <div class="flex justify-end gap-3 mt-4 pt-4 border-t border-gray-200 dark:border-gray-700">
-                <a href="{{ route('announcements.index') }}" class="btn" style="background: #6b7280; color: white;">Cancel</a>
+                <a href="{{ route('announcements.index') }}" class="btn btn-secondary border-0">Cancel</a>
                 <button type="submit" class="btn btn-primary">
                     <i class="fas fa-save mr-1"></i> Update Announcement
                 </button>

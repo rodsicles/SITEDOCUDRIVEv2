@@ -110,18 +110,18 @@
                             </td>
                             <td>
                                 <strong class="text-sm text-gray-800 dark:text-gray-200">
-                                    {{ $log->user->employee->full_name ?? $log->user->username ?? 'System' }}
+                                    {{ optional(optional($log->user)->employee)->full_name ?? optional($log->user)->username ?? 'System' }}
                                 </strong>
                                 @if($log->targetUser)
                                     <div class="text-xs text-gray-500 dark:text-gray-400 mt-0.5">
                                         <i class="fas fa-arrow-right mr-0.5"></i>
-                                        {{ $log->targetUser->employee->full_name ?? $log->targetUser->username }}
+                                        {{ optional($log->targetUser->employee)->full_name ?? $log->targetUser->username }}
                                     </div>
                                 @endif
                             </td>
                             <td>
                                 <span class="text-xs text-gray-600 dark:text-gray-400">
-                                    {{ $log->user->role->role_name ?? '—' }}
+                                    {{ optional(optional($log->user)->role)->role_name ?? '—' }}
                                 </span>
                             </td>
                             <td class="text-sm text-gray-700 dark:text-gray-300 break-words">

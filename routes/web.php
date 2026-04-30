@@ -65,6 +65,9 @@ Route::middleware(['auth', 'no.back'])->prefix('calendar')->name('calendar.')->g
 Route::middleware(['auth', 'no.back'])->prefix('announcements')->name('announcements.')->group(function () {
     Route::get('/', [AnnouncementController::class, 'index'])->name('index');
     Route::post('/{id}/read', [AnnouncementController::class, 'markAsRead'])->name('read');
+    Route::post('/{id}/react', [AnnouncementController::class, 'toggleReaction'])
+        ->middleware('throttle:60,1')
+        ->name('react');
 
 
     // Only Dean and Coordinator can create/edit/delete announcements
@@ -113,6 +116,13 @@ Route::middleware(['auth', 'no.back', 'role:Dean,Secretary'])->prefix('dean')->n
     Route::get('/reports', [DeanController::class, 'reports'])->name('reports');
     Route::get('/analytics', [DeanController::class, 'analytics'])->name('analytics');
     Route::get('/activity-log', [DeanController::class, 'activityLog'])->name('activity-log');
+    Route::get('/audit-trail', [DeanController::class, 'auditTrail'])->name('audit-trail');
+    Route::get('/audit-trail/export', [DeanController::class, 'auditTrailExport'])
+        ->middleware('throttle:5,1')
+        ->name('audit-trail.export');
+    Route::post('/insight/refresh', [DeanController::class, 'refreshInsight'])
+        ->middleware('throttle:6,1')
+        ->name('insight.refresh');
 
     // Tasks
     Route::get('/tasks', [DeanController::class, 'tasks'])->name('tasks');
@@ -209,6 +219,8 @@ Route::middleware(['auth', 'no.back', 'role:Faculty Employee'])->prefix('faculty
     Route::patch('/tasks/{id}/status', [FacultyController::class, 'updateTaskStatus'])->name('update-task-status');
     Route::post('/tasks/{id}/attachments', [TaskAttachmentController::class, 'store'])->name('tasks.attachments.store');
     Route::get('/notifications', [FacultyController::class, 'notifications'])->name('notifications');
+    Route::get('/notifications/unread-count', [FacultyController::class, 'unreadNotificationCount'])->name('notifications.unread-count');
+    Route::post('/notifications/{id}/read-json', [FacultyController::class, 'markNotificationReadJson'])->name('notifications.read-json');
     
     // Folder Management - Rate Limited: 3 folders per hour
     Route::post('/folders', [FolderController::class, 'store'])->middleware('throttle:3,60')->name('folders.store');

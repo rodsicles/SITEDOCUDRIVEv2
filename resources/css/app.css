@@ -3956,6 +3956,7 @@ body {
     color: #ffffff;
     box-shadow: 0 10px 30px rgba(0,0,0,0.12);
     overflow: hidden;
+    border-radius: 10px !important;
 }
 .dark .login-portal-card { background: #0f3a1d; }
 
@@ -4043,6 +4044,10 @@ body {
     font-size: 14px;
     padding: 12px 14px 12px 40px;
     outline: none;
+    border-radius: 6px !important;
+}
+.login-portal-input-wrapper .login-portal-input {
+    border-radius: 6px !important;
 }
 .login-portal-input::placeholder { color: rgba(255,255,255,0.45); }
 .login-portal-input:focus { border-color: #6ec48a; background: rgba(255,255,255,0.08); }
@@ -4117,6 +4122,10 @@ body {
     align-items: center;
     justify-content: center;
     gap: 8px;
+    border-radius: 6px !important;
+}
+.login-portal-submit-wrap .login-portal-submit {
+    border-radius: 6px !important;
 }
 
 /* Center the submit button */

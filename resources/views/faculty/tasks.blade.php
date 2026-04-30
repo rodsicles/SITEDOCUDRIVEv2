@@ -10,10 +10,60 @@
 @endsection
 
 @section('content')
+    @php
+        $filter = $filter ?? 'all';
+        $counts = $counts ?? ['all'=>0,'today'=>0,'week'=>0,'overdue'=>0,'pending'=>0,'completed'=>0];
+        $chips = [
+            ['key' => 'all',       'label' => 'All',          'icon' => 'fa-list'],
+            ['key' => 'today',     'label' => 'Today',        'icon' => 'fa-calendar-day'],
+            ['key' => 'week',      'label' => 'This Week',    'icon' => 'fa-calendar-week'],
+            ['key' => 'overdue',   'label' => 'Overdue',      'icon' => 'fa-triangle-exclamation'],
+            ['key' => 'pending',   'label' => 'Pending',      'icon' => 'fa-hourglass-half'],
+            ['key' => 'completed', 'label' => 'Completed',    'icon' => 'fa-check'],
+        ];
+    @endphp
+
+    {{-- Quick Filter Chips --}}
+    <div class="content-card mb-4">
+        <div class="flex flex-wrap items-center gap-2">
+            <span class="text-xs font-semibold uppercase tracking-wide text-gray-500 dark:text-gray-400 mr-2">
+                <i class="fas fa-filter mr-1"></i> Filter:
+            </span>
+            @foreach($chips as $chip)
+                @php
+                    $isActive = $filter === $chip['key'];
+                    $count = $counts[$chip['key']] ?? 0;
+                    $base = 'inline-flex items-center gap-2 px-3 py-1.5 text-xs font-semibold no-underline border-0';
+                    $active = 'bg-[#028a0f] text-white';
+                    $inactive = 'bg-gray-100 dark:bg-gray-700 text-gray-700 dark:text-gray-200 hover:bg-gray-200 dark:hover:bg-gray-600';
+                    $tone = $chip['key'] === 'overdue' && $count > 0 && !$isActive
+                        ? 'bg-red-50 dark:bg-red-900/30 text-red-700 dark:text-red-300 hover:bg-red-100'
+                        : $inactive;
+                @endphp
+                <a href="{{ route('faculty.tasks', ['filter' => $chip['key']]) }}"
+                   class="{{ $base }} {{ $isActive ? $active : $tone }}">
+                    <i class="fas {{ $chip['icon'] }}"></i>
+                    {{ $chip['label'] }}
+                    <span class="px-1.5 py-0.5 text-[10px] font-bold {{ $isActive ? 'bg-white text-[#028a0f]' : 'bg-white dark:bg-[#1e1e1e] text-gray-700 dark:text-gray-200 border border-gray-200 dark:border-gray-600' }}">
+                        {{ $count }}
+                    </span>
+                </a>
+            @endforeach
+        </div>
+    </div>
+
     <div class="content-card">
         <div class="card-header">
-            <h3 class="card-title">All Tasks</h3>
-            <span class="badge badge-info">{{ $tasks->total() }} Total</span>
+            <h3 class="card-title">
+                @if($filter === 'all')      All Tasks
+                @elseif($filter === 'today') Tasks Due Today
+                @elseif($filter === 'week')  Tasks Due This Week
+                @elseif($filter === 'overdue') Overdue Tasks
+                @elseif($filter === 'pending') Pending Tasks
+                @elseif($filter === 'completed') Completed Tasks
+                @endif
+            </h3>
+            <span class="badge badge-info">{{ $tasks->total() }} Showing</span>
         </div>
         <table class="data-table">
             <thead>

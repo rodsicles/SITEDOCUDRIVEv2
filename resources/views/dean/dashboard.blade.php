@@ -10,6 +10,9 @@
 @endsection
 
 @section('content')
+    {{-- Weekly Insight Briefing — auto-generated narrative analytics --}}
+    @include('partials.insight-briefing')
+
     <!-- Minimalist Horizontal Stats -->
     <div class="stats-grid-horizontal">
         <div class="stat-item-horizontal">

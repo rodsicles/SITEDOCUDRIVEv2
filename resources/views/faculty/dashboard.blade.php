@@ -10,6 +10,12 @@
 @endsection
 
 @section('content')
+    {{-- My Pending Items snapshot --}}
+    @include('partials.pending-items-widget')
+
+    {{-- Today's Schedule --}}
+    @include('partials.today-events-widget')
+
     <!-- Minimalist Horizontal Stats -->
     <div class="stats-grid-horizontal">
         <div class="stat-item-horizontal">

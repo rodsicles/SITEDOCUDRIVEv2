@@ -9,6 +9,9 @@
 <a href="{{ route('dean.activity-log') }}" class="menu-item {{ request()->routeIs('dean.activity-log') ? 'active' : '' }}">
     <i class="fas fa-history"></i> Activity Log
 </a>
+<a href="{{ route('dean.audit-trail') }}" class="menu-item {{ request()->routeIs('dean.audit-trail') ? 'active' : '' }}">
+    <i class="fas fa-shield-alt"></i> Audit Trail
+</a>
 
 <div class="sidebar-section-label">Schedule</div>
 <a href="{{ route('calendar.index') }}" class="menu-item {{ request()->routeIs('calendar.index') ? 'active' : '' }}">

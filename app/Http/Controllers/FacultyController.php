@@ -66,6 +66,21 @@ class FacultyController extends Controller
             ->take(5)
             ->get();
 
+        // Pending items snapshot (for the new "My Pending Items" widget)
+        $pendingItems = [
+            'tasks'     => Task::where('assigned_to', $user->id)->whereIn('status', ['Pending', 'In Progress'])->count(),
+            'overdue'   => Task::where('assigned_to', $user->id)->whereIn('status', ['Pending', 'In Progress'])->whereDate('due_date', '<', today())->count(),
+            'unread'    => $unreadNotifications,
+            'leaves'    => \App\Models\LeaveRequest::where('user_id', $user->id)->where('status', 'Pending')->count(),
+        ];
+
+        // Today's calendar events (visible to this user)
+        $todayEvents = \App\Models\CalendarEvent::getEventsForUser(
+            $user->id,
+            now()->startOfDay(),
+            now()->endOfDay()
+        );
+
         return view('faculty.dashboard', array_merge($stats, compact(
             'recentTasks',
             'unreadNotifications',
@@ -76,17 +91,76 @@ class FacultyController extends Controller
             'examTrends',
             'folderStats',
             'latestDocument',
-            'upcomingDeadlines'
+            'upcomingDeadlines',
+            'pendingItems',
+            'todayEvents'
         )));
     }
 
-    public function tasks()
+    public function tasks(Request $request)
     {
-        $tasks = Task::with(['assignedBy.employee', 'attachments.uploader.employee'])
-            ->where('assigned_to', auth()->id())
-            ->latest('created_at')
-            ->paginate(15);
-        return view('faculty.tasks', compact('tasks'));
+        $filter = $request->query('filter', 'all');
+        $allowed = ['all', 'today', 'week', 'overdue', 'pending', 'completed'];
+        if (!in_array($filter, $allowed, true)) {
+            $filter = 'all';
+        }
+
+        $query = Task::with(['assignedBy.employee', 'attachments.uploader.employee'])
+            ->where('assigned_to', auth()->id());
+
+        switch ($filter) {
+            case 'today':
+                $query->whereDate('due_date', today());
+                break;
+            case 'week':
+                $query->whereBetween('due_date', [now()->startOfWeek()->toDateString(), now()->endOfWeek()->toDateString()]);
+                break;
+            case 'overdue':
+                $query->whereDate('due_date', '<', today())->where('status', '!=', 'Completed');
+                break;
+            case 'pending':
+                $query->whereIn('status', ['Pending', 'In Progress']);
+                break;
+            case 'completed':
+                $query->where('status', 'Completed');
+                break;
+        }
+
+        // Counts for chip badges (always against the user's full task set)
+        $base = Task::where('assigned_to', auth()->id());
+        $counts = [
+            'all'       => (clone $base)->count(),
+            'today'     => (clone $base)->whereDate('due_date', today())->count(),
+            'week'      => (clone $base)->whereBetween('due_date', [now()->startOfWeek()->toDateString(), now()->endOfWeek()->toDateString()])->count(),
+            'overdue'   => (clone $base)->whereDate('due_date', '<', today())->where('status', '!=', 'Completed')->count(),
+            'pending'   => (clone $base)->whereIn('status', ['Pending', 'In Progress'])->count(),
+            'completed' => (clone $base)->where('status', 'Completed')->count(),
+        ];
+
+        $tasks = $query->latest('created_at')->paginate(15)->withQueryString();
+
+        return view('faculty.tasks', compact('tasks', 'filter', 'counts'));
+    }
+
+    /**
+     * JSON endpoint: mark a notification as read (used by row-click UX).
+     */
+    public function markNotificationReadJson($id)
+    {
+        $this->notificationService->markAsRead($id, auth()->id());
+        return response()->json(['success' => true]);
+    }
+
+    /**
+     * JSON endpoint: current unread notification count for the auth user.
+     * Used by the top-bar badge to auto-refresh every 30s without a page reload.
+     */
+    public function unreadNotificationCount()
+    {
+        $count = Notification::where('user_id', auth()->id())
+            ->where('is_read', false)
+            ->count();
+        return response()->json(['count' => $count]);
     }
 
     public function updateTaskStatus(Request $request, $id)

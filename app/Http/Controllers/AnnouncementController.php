@@ -3,9 +3,11 @@
 namespace App\Http\Controllers;
 
 use App\Models\Announcement;
+use App\Models\AnnouncementReaction;
 use App\Models\Notification;
 use App\Services\AnnouncementService;
 use Illuminate\Http\Request;
+use Illuminate\Validation\Rule;
 
 class AnnouncementController extends Controller
 {
@@ -13,11 +15,14 @@ class AnnouncementController extends Controller
         protected AnnouncementService $announcementService
     ) {}
 
+    /** Allowed reaction emojis (server-side whitelist). */
+    public const ALLOWED_REACTIONS = ['👍', '❤️', '✅', '🎉'];
+
     public function index()
     {
         $user = auth()->user();
 
-        $announcements = Announcement::with(['author.employee', 'reads'])
+        $announcements = Announcement::with(['author.employee', 'reads', 'reactions'])
             ->active()
             ->visibleTo($user)
             ->ordered()
@@ -111,6 +116,64 @@ class AnnouncementController extends Controller
         $this->announcementService->markAsRead($id, auth()->id());
 
         return response()->json(['success' => true]);
+    }
+
+    /**
+     * Toggle a reaction emoji on an announcement for the authenticated user.
+     */
+    public function toggleReaction(Request $request, $id)
+    {
+        $validated = $request->validate([
+            'emoji' => ['required', 'string', Rule::in(self::ALLOWED_REACTIONS)],
+        ]);
+
+        $user = auth()->user();
+
+        // Ensure the announcement exists and is visible to the user.
+        $announcement = Announcement::visibleTo($user)
+            ->where('announcement_id', $id)
+            ->firstOrFail();
+
+        $existing = AnnouncementReaction::where('announcement_id', $announcement->announcement_id)
+            ->where('user_id', $user->id)
+            ->where('emoji', $validated['emoji'])
+            ->first();
+
+        if ($existing) {
+            $existing->delete();
+            $reacted = false;
+        } else {
+            AnnouncementReaction::create([
+                'announcement_id' => $announcement->announcement_id,
+                'user_id'         => $user->id,
+                'emoji'           => $validated['emoji'],
+            ]);
+            $reacted = true;
+        }
+
+        // Build counts for the whitelisted set so the UI gets a stable shape.
+        $countsRaw = AnnouncementReaction::where('announcement_id', $announcement->announcement_id)
+            ->selectRaw('emoji, COUNT(*) as total')
+            ->groupBy('emoji')
+            ->pluck('total', 'emoji');
+
+        $counts = [];
+        foreach (self::ALLOWED_REACTIONS as $emoji) {
+            $counts[$emoji] = (int) ($countsRaw[$emoji] ?? 0);
+        }
+
+        $userReactions = AnnouncementReaction::where('announcement_id', $announcement->announcement_id)
+            ->where('user_id', $user->id)
+            ->pluck('emoji')
+            ->all();
+
+        return response()->json([
+            'success'        => true,
+            'emoji'          => $validated['emoji'],
+            'reacted'        => $reacted,
+            'counts'         => $counts,
+            'user_reactions' => $userReactions,
+        ]);
     }
 
     private function getRolePrefix(): string

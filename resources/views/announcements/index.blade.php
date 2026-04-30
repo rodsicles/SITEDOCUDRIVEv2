@@ -139,7 +139,38 @@
                 </p>
 
                 {{-- Footer --}}
-                <div class="flex items-center justify-end pt-3 border-t border-gray-200 dark:border-gray-700 flex-wrap gap-2">
+                <div class="flex items-center justify-between pt-3 border-t border-gray-200 dark:border-gray-700 flex-wrap gap-2">
+
+                    {{-- Reaction bar --}}
+                    @php
+                        $allowedReactions = \App\Http\Controllers\AnnouncementController::ALLOWED_REACTIONS;
+                        $reactionGroups   = $announcement->reactions->groupBy('emoji');
+                        $myReactions      = $announcement->reactions
+                            ->where('user_id', auth()->id())
+                            ->pluck('emoji')
+                            ->all();
+                    @endphp
+                    <div class="flex items-center gap-1 flex-wrap"
+                         data-reaction-bar="{{ $announcement->announcement_id }}">
+                        @foreach($allowedReactions as $emoji)
+                            @php
+                                $count = $reactionGroups->get($emoji)?->count() ?? 0;
+                                $mine  = in_array($emoji, $myReactions, true);
+                            @endphp
+                            <button type="button"
+                                    data-reaction-btn="{{ $emoji }}"
+                                    data-announcement="{{ $announcement->announcement_id }}"
+                                    aria-pressed="{{ $mine ? 'true' : 'false' }}"
+                                    class="reaction-btn inline-flex items-center gap-1 px-2 py-1 text-xs border transition-colors cursor-pointer
+                                        {{ $mine
+                                            ? 'border-[#028a0f] bg-green-50 text-[#028a0f] dark:bg-[#1a2a1a] dark:text-[#02b815] dark:border-[#02b815]'
+                                            : 'border-gray-200 dark:border-gray-700 bg-white dark:bg-[#2a2a2a] text-gray-600 dark:text-gray-300 hover:border-[#028a0f] hover:text-[#028a0f] dark:hover:border-[#02b815] dark:hover:text-[#02b815]' }}">
+                                <span class="text-sm leading-none">{{ $emoji }}</span>
+                                <span data-reaction-count="{{ $emoji }}"
+                                      class="font-semibold {{ $count === 0 ? 'opacity-0 w-0' : '' }}">{{ $count }}</span>
+                            </button>
+                        @endforeach
+                    </div>
 
                     {{-- Read status --}}
                     <div class="flex items-center gap-3">
@@ -233,5 +264,64 @@
         }, { threshold: 0.6 });
 
         document.querySelectorAll('[data-unread="1"]').forEach(c => readObserver.observe(c));
+
+        // Toggle reaction
+        document.addEventListener('click', function (e) {
+            const btn = e.target.closest('[data-reaction-btn]');
+            if (!btn) return;
+            e.preventDefault();
+
+            if (btn.dataset.busy === '1') return;
+            btn.dataset.busy = '1';
+
+            const id    = btn.dataset.announcement;
+            const emoji = btn.dataset.reactionBtn;
+
+            fetch(`/announcements/${id}/react`, {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                    'Accept': 'application/json',
+                    'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]').content,
+                },
+                body: JSON.stringify({ emoji }),
+            })
+            .then(r => r.ok ? r.json() : Promise.reject(r))
+            .then(data => {
+                if (!data.success) return;
+                const bar = document.querySelector(`[data-reaction-bar="${id}"]`);
+                if (!bar) return;
+
+                const userSet = new Set(data.user_reactions || []);
+
+                bar.querySelectorAll('[data-reaction-btn]').forEach(b => {
+                    const e2     = b.dataset.reactionBtn;
+                    const count  = (data.counts && data.counts[e2]) || 0;
+                    const mine   = userSet.has(e2);
+                    const countEl = b.querySelector(`[data-reaction-count="${CSS.escape(e2)}"]`);
+
+                    if (countEl) {
+                        countEl.textContent = count;
+                        countEl.classList.toggle('opacity-0', count === 0);
+                        countEl.classList.toggle('w-0', count === 0);
+                    }
+
+                    b.setAttribute('aria-pressed', mine ? 'true' : 'false');
+
+                    const activeClasses   = ['border-[#028a0f]','bg-green-50','text-[#028a0f]','dark:bg-[#1a2a1a]','dark:text-[#02b815]','dark:border-[#02b815]'];
+                    const inactiveClasses = ['border-gray-200','dark:border-gray-700','bg-white','dark:bg-[#2a2a2a]','text-gray-600','dark:text-gray-300','hover:border-[#028a0f]','hover:text-[#028a0f]','dark:hover:border-[#02b815]','dark:hover:text-[#02b815]'];
+
+                    if (mine) {
+                        b.classList.remove(...inactiveClasses);
+                        b.classList.add(...activeClasses);
+                    } else {
+                        b.classList.remove(...activeClasses);
+                        b.classList.add(...inactiveClasses);
+                    }
+                });
+            })
+            .catch(() => { /* silently ignore; user can retry */ })
+            .finally(() => { delete btn.dataset.busy; });
+        });
     </script>
 @endsection

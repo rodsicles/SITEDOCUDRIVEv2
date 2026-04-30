@@ -13,7 +13,9 @@ use App\Services\EmployeeService;
 use App\Services\ExamRecordService;
 use App\Services\FolderService;
 use App\Services\TaskService;
+use App\Services\WeeklyInsightService;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\Cache;
 use Illuminate\Support\Facades\Hash;
 
 class DeanController extends Controller
@@ -24,7 +26,8 @@ class DeanController extends Controller
         protected EmployeeService $employeeService,
         protected FolderService $folderService,
         protected ExamRecordService $examRecordService,
-        protected TaskService $taskService
+        protected TaskService $taskService,
+        protected WeeklyInsightService $weeklyInsightService
     ) {}
 
     public function dashboard()
@@ -39,6 +42,7 @@ class DeanController extends Controller
         $announcements = $this->dashboardService->getAnnouncements($user, 5);
         $docAnalyticsData = $this->dashboardService->getDeanDocumentAnalytics();
         $examTrends = $this->examRecordService->getTrends();
+        $insight = $this->weeklyInsightService->generateForDean();
 
         $recentTasks = Task::with(['assignedTo.employee'])
             ->latest()
@@ -53,7 +57,8 @@ class DeanController extends Controller
             'topPerformers',
             'announcements',
             'examTrends',
-            'recentTasks'
+            'recentTasks',
+            'insight'
         )));
     }
 
@@ -61,6 +66,149 @@ class DeanController extends Controller
     {
         $activities = DashboardLog::getPaginatedLogs(auth()->user(), 20);
         return view('activity-log', compact('activities'));
+    }
+
+    /**
+     * Force-refresh the cached weekly insight briefing.
+     */
+    public function refreshInsight(Request $request)
+    {
+        Cache::forget('weekly_insight_dean');
+        $this->weeklyInsightService->generateForDean();
+
+        return redirect()->route('dean.dashboard')
+            ->with('success', 'Weekly briefing refreshed.');
+    }
+
+    /**
+     * Dean-only audit trail with full filtering and search.
+     */
+    public function auditTrail(Request $request)
+    {
+        $filters = $request->validate([
+            'q'             => 'nullable|string|max:100',
+            'activity_type' => 'nullable|string|max:100',
+            'user_id'       => 'nullable|integer|exists:users,id',
+            'date_from'     => 'nullable|date',
+            'date_to'       => 'nullable|date|after_or_equal:date_from',
+        ]);
+
+        $query = $this->buildAuditTrailQuery($filters);
+        $logs  = $query->paginate(25)->withQueryString();
+
+        $activityTypes = DashboardLog::query()
+            ->whereNotNull('activity_type')
+            ->distinct()
+            ->orderBy('activity_type')
+            ->pluck('activity_type');
+
+        $users = User::with('employee')
+            ->where('status', 'Active')
+            ->get()
+            ->sortBy(fn($u) => $u->employee->full_name ?? $u->username)
+            ->values();
+
+        return view('dean.audit-trail', compact('logs', 'activityTypes', 'users', 'filters'));
+    }
+
+    /**
+     * Stream an audit trail CSV export of the currently-filtered records.
+     */
+    public function auditTrailExport(Request $request)
+    {
+        $filters = $request->validate([
+            'q'             => 'nullable|string|max:100',
+            'activity_type' => 'nullable|string|max:100',
+            'user_id'       => 'nullable|integer|exists:users,id',
+            'date_from'     => 'nullable|date',
+            'date_to'       => 'nullable|date|after_or_equal:date_from',
+        ]);
+
+        $query = $this->buildAuditTrailQuery($filters);
+
+        DashboardLog::create([
+            'user_id'       => auth()->id(),
+            'activity'      => 'Exported audit trail (CSV)',
+            'activity_type' => 'audit_export',
+            'visibility'    => 'dean',
+        ]);
+
+        $filename = 'audit-trail-' . now()->format('Y-m-d_His') . '.csv';
+        $headers = [
+            'Content-Type'        => 'text/csv; charset=UTF-8',
+            'Content-Disposition' => 'attachment; filename="' . $filename . '"',
+            'Pragma'              => 'no-cache',
+            'Expires'             => '0',
+        ];
+
+        return response()->stream(function () use ($query) {
+            $out = fopen('php://output', 'w');
+            // BOM so Excel recognizes UTF-8
+            fwrite($out, "\xEF\xBB\xBF");
+            fputcsv($out, ['Date & Time', 'User', 'Role', 'Target User', 'Activity', 'Type', 'IP Address']);
+
+            $query->chunk(500, function ($rows) use ($out) {
+                foreach ($rows as $log) {
+                    fputcsv($out, [
+                        optional($log->log_date)->format('Y-m-d H:i:s'),
+                        $log->user->employee->full_name ?? $log->user->username ?? 'System',
+                        $log->user->role->role_name ?? '—',
+                        $log->targetUser?->employee->full_name ?? $log->targetUser?->username ?? '',
+                        $log->activity,
+                        $log->activity_type ?? '',
+                        $log->ip_address ?? '',
+                    ]);
+                }
+            });
+
+            fclose($out);
+        }, 200, $headers);
+    }
+
+    /**
+     * Shared query builder for audit trail listing + export.
+     */
+    protected function buildAuditTrailQuery(array $filters)
+    {
+        $query = DashboardLog::with(['user.employee', 'user.role', 'targetUser.employee'])
+            ->latest('log_date');
+
+        if (!empty($filters['activity_type'])) {
+            $query->where('activity_type', $filters['activity_type']);
+        }
+
+        if (!empty($filters['user_id'])) {
+            $query->where(function ($q) use ($filters) {
+                $q->where('user_id', $filters['user_id'])
+                  ->orWhere('target_user_id', $filters['user_id']);
+            });
+        }
+
+        if (!empty($filters['date_from'])) {
+            $query->whereDate('log_date', '>=', $filters['date_from']);
+        }
+
+        if (!empty($filters['date_to'])) {
+            $query->whereDate('log_date', '<=', $filters['date_to']);
+        }
+
+        if (!empty($filters['q'])) {
+            $term = $filters['q'];
+            $query->where(function ($q) use ($term) {
+                $q->where('activity', 'like', "%{$term}%")
+                  ->orWhere('ip_address', 'like', "%{$term}%")
+                  ->orWhereHas('user', function ($uq) use ($term) {
+                      $uq->where('username', 'like', "%{$term}%")
+                         ->orWhereHas('employee', fn($e) => $e->where('full_name', 'like', "%{$term}%"));
+                  })
+                  ->orWhereHas('targetUser', function ($uq) use ($term) {
+                      $uq->where('username', 'like', "%{$term}%")
+                         ->orWhereHas('employee', fn($e) => $e->where('full_name', 'like', "%{$term}%"));
+                  });
+            });
+        }
+
+        return $query;
     }
 
     public function employees()

@@ -181,11 +181,9 @@
                 </div>
                 <div class="flex items-center gap-3 max-md:gap-2 flex-shrink-0">
                     @if(auth()->user()->isFaculty())
-                    <a href="{{ route('faculty.notifications') }}" class="relative text-lg max-md:text-base text-gray-600 dark:text-gray-400">
+                    <a href="{{ route('faculty.notifications') }}" class="relative text-lg max-md:text-base text-gray-600 dark:text-gray-400" id="notification-bell-link">
                         <i class="fas fa-bell"></i>
-                        @if(isset($unreadNotifications) && $unreadNotifications > 0)
-                        <span class="absolute -top-2 -right-2 bg-[#028a0f] text-white w-4 h-4 text-xs flex items-center justify-center font-bold">{{ $unreadNotifications }}</span>
-                        @endif
+                        <span id="notification-badge" class="absolute -top-2 -right-2 bg-[#028a0f] text-white w-4 h-4 text-xs flex items-center justify-center font-bold {{ (isset($unreadNotifications) && $unreadNotifications > 0) ? '' : 'hidden' }}">{{ $unreadNotifications ?? 0 }}</span>
                     </a>
                     @endif
 
@@ -566,5 +564,53 @@
     </script>
 
     @stack('scripts')
+
+    @auth
+        @if(auth()->user()->isFaculty())
+        <script>
+            // Notification badge live polling (every 30s) for the faculty top-bar bell.
+            (function() {
+                const url = "{{ route('faculty.notifications.unread-count') }}";
+                const badge = document.getElementById('notification-badge');
+                if (!badge) return;
+
+                function applyCount(count) {
+                    if (!badge) return;
+                    if (count > 0) {
+                        badge.textContent = count > 99 ? '99+' : count;
+                        badge.classList.remove('hidden');
+                    } else {
+                        badge.textContent = '0';
+                        badge.classList.add('hidden');
+                    }
+                }
+
+                function refresh() {
+                    fetch(url, { headers: { 'Accept': 'application/json', 'X-Requested-With': 'XMLHttpRequest' }, credentials: 'same-origin' })
+                        .then(function(r) { return r.ok ? r.json() : null; })
+                        .then(function(data) { if (data && typeof data.count !== 'undefined') applyCount(data.count); })
+                        .catch(function() {});
+                }
+
+                // Expose so per-page scripts (e.g. notifications page) can force-refresh
+                window.refreshNotificationBadge = refresh;
+
+                // Pause polling when tab is hidden to save resources
+                let intervalId = null;
+                function start() {
+                    if (intervalId) return;
+                    intervalId = setInterval(refresh, 30000);
+                }
+                function stop() {
+                    if (intervalId) { clearInterval(intervalId); intervalId = null; }
+                }
+                document.addEventListener('visibilitychange', function() {
+                    if (document.hidden) { stop(); } else { refresh(); start(); }
+                });
+                start();
+            })();
+        </script>
+        @endif
+    @endauth
 </body>
 </html>

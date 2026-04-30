@@ -51,6 +51,12 @@
 
             <div class="login-portal-card-body">
                 <div class="login-portal-welcome">
+                    <p class="login-portal-greeting" id="loginGreeting">
+                        <i class="fas fa-sun" id="greetingIcon"></i>
+                        <span id="greetingText">Good Day</span>
+                        <span class="greeting-sep">·</span>
+                        <span id="greetingDate">{{ now()->format('l, F j, Y') }}</span>
+                    </p>
                     <h3 class="login-portal-welcome-title">Welcome Back</h3>
                     <p class="login-portal-welcome-sub">Sign in to your account</p>
                 </div>
@@ -106,7 +112,7 @@
             </div>
         </div>
 
-        <p class="login-portal-ay">A.Y. 2025-2026 &nbsp;|&nbsp; Caritas Christi Urget Nos</p>
+        <p class="login-portal-ay">A.Y. 2025-2026 &nbsp;|&nbsp; <span class="ay-motto">Caritas Christi Urget Nos</span></p>
     </main>
 
     {{-- ───────────────── FOOTER ───────────────── --}}
@@ -141,6 +147,33 @@
             const icon = themeToggle.querySelector('i');
             icon.className = theme === 'dark' ? 'fas fa-sun' : 'fas fa-moon';
         }
+
+        // ── Time-of-day Greeting (live, updates every 60s) ──
+        (function() {
+            const textEl = document.getElementById('greetingText');
+            const dateEl = document.getElementById('greetingDate');
+            const iconEl = document.getElementById('greetingIcon');
+            if (!textEl || !dateEl || !iconEl) return;
+
+            function update() {
+                const now = new Date();
+                const h = now.getHours();
+                let phrase, icon;
+                if (h < 5)        { phrase = 'Good Evening';   icon = 'fa-moon'; }
+                else if (h < 12)  { phrase = 'Good Morning';   icon = 'fa-sun'; }
+                else if (h < 18)  { phrase = 'Good Afternoon'; icon = 'fa-cloud-sun'; }
+                else              { phrase = 'Good Evening';   icon = 'fa-moon'; }
+
+                textEl.textContent = phrase;
+                iconEl.className = 'fas ' + icon;
+
+                const opts = { weekday: 'long', month: 'long', day: 'numeric', year: 'numeric' };
+                dateEl.textContent = now.toLocaleDateString(undefined, opts);
+            }
+
+            update();
+            setInterval(update, 60000);
+        })();
 
         // Show/Hide Password
         const togglePassword = document.getElementById('togglePassword');

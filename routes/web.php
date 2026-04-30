@@ -10,7 +10,6 @@ use App\Http\Controllers\ProfileController;
 use App\Http\Controllers\CalendarController;
 use App\Http\Controllers\FolderController;
 use App\Http\Controllers\AnnouncementController;
-use App\Http\Controllers\SkillTagController;
 use App\Http\Controllers\ProfessionalDevelopmentController;
 use App\Http\Controllers\BackupController;
 use App\Http\Controllers\TeachingGuideController;
@@ -78,13 +77,6 @@ Route::middleware(['auth', 'no.back'])->prefix('announcements')->name('announcem
         Route::put('/{id}', [AnnouncementController::class, 'update'])->name('update');
         Route::delete('/{id}', [AnnouncementController::class, 'destroy'])->name('destroy');
     });
-});
-
-// Skill Tags (All authenticated users can view, Faculty manages own)
-Route::middleware(['auth', 'no.back'])->prefix('skill-tags')->name('skill-tags.')->group(function () {
-    Route::get('/', [SkillTagController::class, 'index'])->name('index');
-    Route::post('/', [SkillTagController::class, 'store'])->middleware('role:Faculty Employee')->name('store');
-    Route::delete('/{id}', [SkillTagController::class, 'destroy'])->middleware('role:Faculty Employee')->name('destroy');
 });
 
 // Professional Development (All roles view, Faculty manages own)

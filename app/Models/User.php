@@ -109,11 +109,6 @@ class User extends Authenticatable
         return $this->hasMany(Announcement::class, 'author_id');
     }
 
-    public function skillTags()
-    {
-        return $this->hasMany(SkillTag::class, 'user_id');
-    }
-
     public function professionalDevelopments()
     {
         return $this->hasMany(ProfessionalDevelopment::class, 'user_id');

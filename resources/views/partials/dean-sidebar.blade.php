@@ -44,6 +44,3 @@
 <a href="{{ route('dean.exam-questionnaires.index') }}" class="menu-item {{ request()->routeIs('dean.exam-questionnaires.*') ? 'active' : '' }}">
     <i class="fas fa-file-alt"></i> Exam Questionnaires
 </a>
-<a href="{{ route('skill-tags.index') }}" class="menu-item {{ request()->routeIs('skill-tags.*') ? 'active' : '' }}">
-    <i class="fas fa-tags"></i> Skill Tags
-</a>

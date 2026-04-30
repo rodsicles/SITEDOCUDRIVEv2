@@ -135,8 +135,13 @@ body {
 
 /* Common Utility Classes */
 .content-card {
-    @apply bg-white dark:bg-[#2a2a2a] p-6 border border-gray-200 dark:border-gray-700 mb-6;
-    border-left: 3px solid #028a0f;
+    @apply bg-white dark:bg-[#2a2a2a] p-6 mb-6;
+    border: 1.5px solid #c4c8cf;
+    border-left: 4px solid #028a0f;
+}
+.dark .content-card {
+    border-color: #4b5563;
+    border-left-color: #02b815;
 }
 
 /* Sidebar Container - Ensure all items visible - NO HEIGHT LIMITS */
@@ -3845,11 +3850,42 @@ body {
     display: flex;
     flex-direction: column;
     min-height: 100vh;
-    background: #f3f4f6;
+    /* Stronger gray accent: deeper vignette + subtle dot grid for texture */
+    background-color: #d8d8d8;
+    background-image:
+        radial-gradient(ellipse at center, #ececec 0%, #d8d8d8 50%, #c4c4c4 100%),
+        radial-gradient(circle, rgba(0,0,0,0.06) 1px, transparent 1px);
+    background-size: auto, 22px 22px;
+    background-blend-mode: normal, multiply;
     color: #111827;
     font-family: 'Inter', system-ui, -apple-system, Segoe UI, Roboto, sans-serif;
+    position: relative;
+    overflow-x: hidden;
 }
-.dark .login-portal-page { background: #111827; color: #e5e7eb; }
+/* Brand accent: thin green vertical lines on the left & right edges */
+.login-portal-page::before,
+.login-portal-page::after {
+    content: "";
+    position: fixed;
+    top: 0;
+    bottom: 0;
+    width: 3px;
+    background: #028a0f;
+    z-index: 1;
+    pointer-events: none;
+}
+.login-portal-page::before { left: 0; }
+.login-portal-page::after  { right: 0; }
+
+.dark .login-portal-page {
+    background:
+        radial-gradient(ellipse at center, #1f2937 0%, #161e2b 55%, #0f1620 100%);
+    color: #e5e7eb;
+}
+.dark .login-portal-page::before,
+.dark .login-portal-page::after {
+    background: #02b815;
+}
 
 /* ── Top header ── */
 .login-portal-header {
@@ -3987,6 +4023,23 @@ body {
 }
 
 .login-portal-welcome { text-align: center; margin-bottom: 22px; }
+
+.login-portal-greeting {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    gap: 8px;
+    font-size: 12px;
+    font-weight: 500;
+    color: #c5e9cf;
+    background: rgba(255, 255, 255, 0.08);
+    border: 1px solid rgba(255, 255, 255, 0.12);
+    padding: 5px 12px;
+    margin: 0 0 12px;
+    letter-spacing: 0.2px;
+}
+.login-portal-greeting i { color: #ffd479; font-size: 12px; }
+.login-portal-greeting .greeting-sep { opacity: 0.55; }
 
 .login-portal-welcome-title {
     font-size: 19px;
@@ -4138,11 +4191,19 @@ body {
 
 .login-portal-ay {
     text-align: center;
-    font-size: 12px;
-    color: #9ca3af;
-    margin-top: 18px;
+    font-size: 14px;
+    font-weight: 500;
+    letter-spacing: 0.3px;
+    color: #4b5563;
+    margin-top: 22px;
 }
-.dark .login-portal-ay { color: #6b7280; }
+.login-portal-ay .ay-motto {
+    font-style: italic;
+    font-weight: 600;
+    color: #028a0f;
+}
+.dark .login-portal-ay { color: #9ca3af; }
+.dark .login-portal-ay .ay-motto { color: #02b815; }
 
 /* ── Bottom footer ── */
 .login-portal-footer {

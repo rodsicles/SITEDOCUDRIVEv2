@@ -6,17 +6,15 @@ use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Hash;
 use Illuminate\Validation\Rules\Password;
 use App\Models\DashboardLog;
-use App\Services\SkillTagService;
 
 class ProfileController extends Controller
 {
-    public function edit(SkillTagService $skillTagService)
+    public function edit()
     {
         $user = auth()->user();
         $employee = $user->employee;
-        $skillTags = $user->isFaculty() ? $skillTagService->getTagsForUser($user->id) : collect();
 
-        return view('profile.edit', compact('user', 'employee', 'skillTags'));
+        return view('profile.edit', compact('user', 'employee'));
     }
 
     public function update(Request $request)

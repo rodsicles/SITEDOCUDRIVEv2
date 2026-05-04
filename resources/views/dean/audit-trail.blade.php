@@ -1,8 +1,8 @@
 @extends('layouts.dashboard')
 
-@section('title', 'Audit Trail')
+@section('title', 'Activity Log')
 
-@section('page-title', 'Audit Trail')
+@section('page-title', 'Activity Log')
 @section('page-subtitle', 'Searchable, filterable record of every system action')
 
 @section('sidebar')
@@ -19,8 +19,8 @@
     <div class="content-card">
         <div class="card-header">
             <h3 class="card-title">
-                <i class="fas fa-shield-alt mr-2 text-[#028a0f] dark:text-[#02b815]"></i>
-                Audit Trail
+                <i class="fas fa-history mr-2 text-[#028a0f] dark:text-[#02b815]"></i>
+                Activity Log
                 <span class="badge badge-info ml-2">{{ number_format($logs->total()) }} records</span>
             </h3>
             <a href="{{ route('dean.audit-trail.export') }}{{ $exportQuery ? '?' . $exportQuery : '' }}"

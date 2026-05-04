@@ -64,8 +64,8 @@ class DeanController extends Controller
 
     public function activityLog()
     {
-        $activities = DashboardLog::getPaginatedLogs(auth()->user(), 20);
-        return view('activity-log', compact('activities'));
+        // Activity Log and Audit Trail were merged. Redirect any old links to the unified view.
+        return redirect()->route('dean.audit-trail');
     }
 
     /**

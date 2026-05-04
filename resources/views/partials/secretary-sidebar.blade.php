@@ -6,7 +6,7 @@
 <a href="{{ route('dean.tasks') }}" class="menu-item {{ request()->routeIs('dean.tasks', 'dean.create-task') ? 'active' : '' }}">
     <i class="fas fa-tasks"></i> Tasks
 </a>
-<a href="{{ route('dean.activity-log') }}" class="menu-item {{ request()->routeIs('dean.activity-log') ? 'active' : '' }}">
+<a href="{{ route('dean.audit-trail') }}" class="menu-item {{ request()->routeIs('dean.audit-trail', 'dean.activity-log') ? 'active' : '' }}">
     <i class="fas fa-history"></i> Activity Log
 </a>
 

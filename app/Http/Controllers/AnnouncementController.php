@@ -179,7 +179,7 @@ class AnnouncementController extends Controller
     private function getRolePrefix(): string
     {
         $user = auth()->user();
-        if ($user->isDean()) return 'dean';
+        if ($user->isDean() || $user->isSecretary()) return 'dean';
         if ($user->isProgramCoordinator()) return 'coordinator';
         return 'faculty';
     }

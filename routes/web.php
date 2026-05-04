@@ -56,8 +56,8 @@ Route::middleware(['auth', 'no.back'])->prefix('calendar')->name('calendar.')->g
     });
     
     // Show and respond routes - MUST come after /create to avoid conflicts
-    Route::get('/{id}', [CalendarController::class, 'show'])->name('show');
-    Route::post('/{id}/respond', [CalendarController::class, 'respond'])->name('respond');
+    Route::get('/{id}', [CalendarController::class, 'show'])->whereNumber('id')->name('show');
+    Route::post('/{id}/respond', [CalendarController::class, 'respond'])->whereNumber('id')->name('respond');
 });
 
 // Announcements (All authenticated users can view, only Dean/Coordinator can create/edit/delete)
@@ -137,12 +137,12 @@ Route::middleware(['auth', 'no.back', 'role:Dean,Secretary'])->prefix('dean')->n
     Route::get('/folders/list', [FolderController::class, 'getUserFolders'])->name('folders.list');
     Route::post('/documents/{document}/move', [FolderController::class, 'moveDocument'])->name('documents.move');
 
-    // Backup & Restore
+    // Backup & Restore - rate limited because operations are destructive / heavy
     Route::get('/backup', [BackupController::class, 'index'])->name('backup');
-    Route::post('/backup/create', [BackupController::class, 'create'])->name('backup.create');
-    Route::get('/backup/download/{filename}', [BackupController::class, 'download'])->name('backup.download');
-    Route::post('/backup/restore', [BackupController::class, 'restore'])->name('backup.restore');
-    Route::delete('/backup/{filename}', [BackupController::class, 'destroy'])->name('backup.destroy');
+    Route::post('/backup/create', [BackupController::class, 'create'])->middleware('throttle:3,60')->name('backup.create');
+    Route::get('/backup/download/{filename}', [BackupController::class, 'download'])->middleware('throttle:20,60')->name('backup.download');
+    Route::post('/backup/restore', [BackupController::class, 'restore'])->middleware('throttle:2,60')->name('backup.restore');
+    Route::delete('/backup/{filename}', [BackupController::class, 'destroy'])->middleware('throttle:10,60')->name('backup.destroy');
 
     // Teaching Guides (Dean + Secretary can upload and delete)
     Route::get('/teaching-guides', [TeachingGuideController::class, 'index'])->name('teaching-guides.index');

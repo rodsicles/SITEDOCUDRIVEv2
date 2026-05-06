@@ -26,7 +26,6 @@
                     <th>Status</th>
                     <th>Attachments</th>
                     <th>Created</th>
-                    <th>Action</th>
                 </tr>
             </thead>
             <tbody>
@@ -63,32 +62,10 @@
                         @endif
                     </td>
                     <td>{{ $task->created_at->format('M d, Y') }}</td>
-                    <td>
-                        <div class="flex flex-col gap-2">
-                            @if($task->status !== 'Completed')
-                            <form action="{{ route('dean.update-task', $task->task_id) }}" method="POST" class="inline">
-                                @csrf
-                                @method('PATCH')
-                                <select name="status" onchange="this.form.submit()" class="form-control text-xs">
-                                    <option value="Pending" {{ $task->status === 'Pending' ? 'selected' : '' }}>Pending</option>
-                                    <option value="In Progress" {{ $task->status === 'In Progress' ? 'selected' : '' }}>In Progress</option>
-                                    <option value="Completed" {{ $task->status === 'Completed' ? 'selected' : '' }}>Completed</option>
-                                </select>
-                            </form>
-                            @endif
-                            <form action="{{ route('dean.tasks.attachments.store', $task->task_id) }}" method="POST" enctype="multipart/form-data" class="flex flex-col gap-2">
-                                @csrf
-                                <input type="file" name="attachment" class="form-control text-xs" required>
-                                <button type="submit" class="btn btn-primary text-xs">
-                                    <i class="fas fa-upload"></i> Upload File
-                                </button>
-                            </form>
-                        </div>
-                    </td>
                 </tr>
                 @empty
                 <tr>
-                    <td colspan="7" class="text-center text-gray-600 dark:text-gray-400">
+                    <td colspan="6" class="text-center text-gray-600 dark:text-gray-400">
                         No tasks created yet
                     </td>
                 </tr>

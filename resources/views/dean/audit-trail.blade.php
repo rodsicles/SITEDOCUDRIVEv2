@@ -13,7 +13,6 @@
 
     @php
         $hasFilters = !empty(array_filter($filters ?? []));
-        $exportQuery = http_build_query(array_filter($filters ?? []));
     @endphp
 
     <div class="content-card">
@@ -23,10 +22,6 @@
                 Activity Log
                 <span class="badge badge-info ml-2">{{ number_format($logs->total()) }} records</span>
             </h3>
-            <a href="{{ route('dean.audit-trail.export') }}{{ $exportQuery ? '?' . $exportQuery : '' }}"
-               class="btn btn-success border-0">
-                <i class="fas fa-file-csv mr-1"></i> Export CSV
-            </a>
         </div>
 
         {{-- Filter form --}}
@@ -93,12 +88,11 @@
             <table class="data-table compact" style="width: 100%;">
                 <thead>
                     <tr>
-                        <th style="width: 14%;">Date &amp; Time</th>
-                        <th style="width: 18%;">User</th>
-                        <th style="width: 10%;">Role</th>
+                        <th style="width: 16%;">Date &amp; Time</th>
+                        <th style="width: 20%;">User</th>
+                        <th style="width: 12%;">Role</th>
                         <th>Action</th>
-                        <th style="width: 12%;">Type</th>
-                        <th style="width: 11%;">IP Address</th>
+                        <th style="width: 14%;">Type</th>
                     </tr>
                 </thead>
                 <tbody>
@@ -136,15 +130,10 @@
                                     <span class="text-gray-400 dark:text-gray-500 text-xs">—</span>
                                 @endif
                             </td>
-                            <td>
-                                <code class="text-xs text-gray-600 dark:text-gray-400">
-                                    {{ $log->ip_address ?? '—' }}
-                                </code>
-                            </td>
                         </tr>
                     @empty
                         <tr>
-                            <td colspan="6" class="text-center py-10 text-gray-500 dark:text-gray-400">
+                            <td colspan="5" class="text-center py-10 text-gray-500 dark:text-gray-400">
                                 <i class="fas fa-shield-alt text-3xl mb-2 block text-gray-300 dark:text-gray-600"></i>
                                 No audit records match your filters.
                             </td>

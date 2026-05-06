@@ -2,7 +2,7 @@
 
 @section('title', 'Dean Dashboard')
 
-@section('page-title', 'Data Analytics Dashboard')
+@section('page-title', 'Dean Dashboard')
 @section('page-subtitle', 'Comprehensive overview of system analytics')
 
 @section('sidebar')

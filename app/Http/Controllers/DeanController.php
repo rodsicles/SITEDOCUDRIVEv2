@@ -112,61 +112,7 @@ class DeanController extends Controller
     }
 
     /**
-     * Stream an audit trail CSV export of the currently-filtered records.
-     */
-    public function auditTrailExport(Request $request)
-    {
-        $filters = $request->validate([
-            'q'             => 'nullable|string|max:100',
-            'activity_type' => 'nullable|string|max:100',
-            'user_id'       => 'nullable|integer|exists:users,id',
-            'date_from'     => 'nullable|date',
-            'date_to'       => 'nullable|date|after_or_equal:date_from',
-        ]);
-
-        $query = $this->buildAuditTrailQuery($filters);
-
-        DashboardLog::create([
-            'user_id'       => auth()->id(),
-            'activity'      => 'Exported audit trail (CSV)',
-            'activity_type' => 'audit_export',
-            'visibility'    => 'dean',
-        ]);
-
-        $filename = 'audit-trail-' . now()->format('Y-m-d_His') . '.csv';
-        $headers = [
-            'Content-Type'        => 'text/csv; charset=UTF-8',
-            'Content-Disposition' => 'attachment; filename="' . $filename . '"',
-            'Pragma'              => 'no-cache',
-            'Expires'             => '0',
-        ];
-
-        return response()->stream(function () use ($query) {
-            $out = fopen('php://output', 'w');
-            // BOM so Excel recognizes UTF-8
-            fwrite($out, "\xEF\xBB\xBF");
-            fputcsv($out, ['Date & Time', 'User', 'Role', 'Target User', 'Activity', 'Type', 'IP Address']);
-
-            $query->chunk(500, function ($rows) use ($out) {
-                foreach ($rows as $log) {
-                    fputcsv($out, [
-                        optional($log->log_date)->format('Y-m-d H:i:s'),
-                        optional(optional($log->user)->employee)->full_name ?? optional($log->user)->username ?? 'System',
-                        optional(optional($log->user)->role)->role_name ?? '—',
-                        optional(optional($log->targetUser)->employee)->full_name ?? optional($log->targetUser)->username ?? '',
-                        $log->activity,
-                        $log->activity_type ?? '',
-                        $log->ip_address ?? '',
-                    ]);
-                }
-            });
-
-            fclose($out);
-        }, 200, $headers);
-    }
-
-    /**
-     * Shared query builder for audit trail listing + export.
+     * Shared query builder for audit trail listing.
      */
     protected function buildAuditTrailQuery(array $filters)
     {
@@ -196,7 +142,6 @@ class DeanController extends Controller
             $term = $filters['q'];
             $query->where(function ($q) use ($term) {
                 $q->where('activity', 'like', "%{$term}%")
-                  ->orWhere('ip_address', 'like', "%{$term}%")
                   ->orWhereHas('user', function ($uq) use ($term) {
                       $uq->where('username', 'like', "%{$term}%")
                          ->orWhereHas('employee', fn($e) => $e->where('full_name', 'like', "%{$term}%"));

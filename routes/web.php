@@ -109,9 +109,6 @@ Route::middleware(['auth', 'no.back', 'role:Dean,Secretary'])->prefix('dean')->n
     Route::get('/analytics', [DeanController::class, 'analytics'])->name('analytics');
     Route::get('/activity-log', [DeanController::class, 'activityLog'])->name('activity-log');
     Route::get('/audit-trail', [DeanController::class, 'auditTrail'])->name('audit-trail');
-    Route::get('/audit-trail/export', [DeanController::class, 'auditTrailExport'])
-        ->middleware('throttle:5,1')
-        ->name('audit-trail.export');
     Route::post('/insight/refresh', [DeanController::class, 'refreshInsight'])
         ->middleware('throttle:6,1')
         ->name('insight.refresh');

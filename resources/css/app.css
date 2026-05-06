@@ -252,41 +252,54 @@ body {
 }
 
 /* ===== USER GUIDE PAGE STYLES ===== */
+/* Welcome hero */
 .guide-welcome-banner {
     display: flex;
     align-items: center;
     gap: 1.25rem;
-    background: rgba(2, 138, 15, 0.07);
-    border: 1px solid rgba(2, 138, 15, 0.25);
-    border-left: 4px solid #028a0f;
-    padding: 1.25rem 1.5rem;
+    background: linear-gradient(135deg, #ffffff 0%, #f0fdf4 100%);
+    border: 1px solid #d1fae5;
+    border-radius: 12px;
+    padding: 1.5rem 1.75rem;
     margin-bottom: 1.5rem;
+    box-shadow: 0 1px 3px rgba(2, 138, 15, 0.04);
 }
 .dark .guide-welcome-banner {
-    background: rgba(2, 138, 15, 0.1);
+    background: linear-gradient(135deg, #161616 0%, #0f1f12 100%);
     border-color: rgba(2, 138, 15, 0.3);
+    box-shadow: none;
 }
 .guide-welcome-icon {
-    font-size: 2rem;
-    color: #028a0f;
+    width: 3rem;
+    height: 3rem;
+    border-radius: 10px;
+    background: linear-gradient(135deg, #028a0f 0%, #02b815 100%);
+    color: #ffffff;
+    font-size: 1.25rem;
+    display: flex;
+    align-items: center;
+    justify-content: center;
     flex-shrink: 0;
+    box-shadow: 0 4px 10px rgba(2, 138, 15, 0.25);
 }
 .dark .guide-welcome-icon {
-    color: #34d399;
+    color: #ffffff;
 }
 .guide-welcome-title {
-    font-size: 1.1rem;
+    font-size: 1.15rem;
     font-weight: 700;
-    color: #028a0f;
-    margin-bottom: 0.2rem;
+    color: #064e3b;
+    margin-bottom: 0.25rem;
+    letter-spacing: -0.01em;
 }
 .dark .guide-welcome-title {
-    color: #34d399;
+    color: #6ee7b7;
 }
 .guide-welcome-sub {
-    font-size: 0.85rem;
+    font-size: 0.875rem;
     color: #4b5563;
-    line-height: 1.5;
+    line-height: 1.55;
+    max-width: 65ch;
 }
 .dark .guide-welcome-sub {
     color: #9ca3af;
@@ -294,99 +307,190 @@ body {
 
 /* Table of Contents */
 .guide-toc {
-    display: flex;
-    flex-wrap: wrap;
-    gap: 0.5rem;
-    padding-top: 0.25rem;
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(220px, 1fr));
+    gap: 0.6rem;
+    padding-top: 0.5rem;
 }
 .guide-toc-item {
     display: inline-flex;
     align-items: center;
-    gap: 0.4rem;
-    padding: 0.3rem 0.75rem;
-    border: 1px solid #e0e0e0;
-    font-size: 0.8rem;
-    color: #2d4a30;
+    gap: 0.65rem;
+    padding: 0.7rem 0.9rem;
+    border: 1px solid #e5e7eb;
+    border-radius: 8px;
+    font-size: 0.85rem;
+    font-weight: 500;
+    color: #374151;
     text-decoration: none;
-    background: #fafafa;
+    background: #ffffff;
+    transition: all 0.15s ease;
 }
 .guide-toc-item:hover {
-    background: rgba(2, 138, 15, 0.08);
+    background: #f0fdf4;
     border-color: #028a0f;
     color: #028a0f;
+    transform: translateX(2px);
+    box-shadow: 0 2px 6px rgba(2, 138, 15, 0.08);
 }
 .dark .guide-toc-item {
-    border-color: #374151;
+    border-color: #2d3748;
     color: #d1d5db;
-    background: #2a2a2a;
+    background: #1a1a1a;
+}
+.dark .guide-toc-item:hover {
+    background: rgba(2, 138, 15, 0.12);
+    border-color: #02b815;
+    color: #6ee7b7;
 }
 .guide-toc-num {
     display: inline-flex;
     align-items: center;
     justify-content: center;
-    width: 1.3rem;
-    height: 1.3rem;
-    background: #028a0f;
-    color: white;
-    font-size: 0.65rem;
+    width: 1.65rem;
+    height: 1.65rem;
+    background: linear-gradient(135deg, #028a0f 0%, #02b815 100%);
+    color: #ffffff;
+    font-size: 0.7rem;
     font-weight: 700;
     flex-shrink: 0;
+    border-radius: 6px;
+    box-shadow: 0 2px 4px rgba(2, 138, 15, 0.2);
 }
 
 /* Guide intro paragraph */
 .guide-intro {
-    font-size: 0.875rem;
+    font-size: 0.92rem;
     color: #4b5563;
-    margin-bottom: 1rem;
-    line-height: 1.6;
-    padding: 0.75rem 1rem;
-    background: #f8f9fa;
-    border-left: 3px solid #028a0f;
+    margin: 0.25rem 0 1.25rem 0;
+    line-height: 1.65;
+    padding: 0;
+    background: transparent;
+    border-left: none;
+    font-weight: 400;
 }
 .dark .guide-intro {
     color: #9ca3af;
-    background: #1f1f1f;
+    background: transparent;
 }
 
-/* Guide steps list */
+/* Guide steps list — numbered cards via CSS counters */
 .guide-steps {
-    padding-left: 1.25rem;
+    list-style: none;
+    counter-reset: guide-step;
+    padding: 0;
     margin: 0 0 1rem 0;
+    display: flex;
+    flex-direction: column;
+    gap: 0.55rem;
 }
 .guide-steps li {
-    font-size: 0.875rem;
+    counter-increment: guide-step;
+    position: relative;
+    font-size: 0.88rem;
     color: #374151;
-    line-height: 1.7;
-    padding: 0.3rem 0;
-    border-bottom: 1px solid #f3f4f6;
+    line-height: 1.6;
+    padding: 0.85rem 1rem 0.85rem 3rem;
+    border: 1px solid #e5e7eb;
+    border-radius: 8px;
+    background: #ffffff;
+    transition: all 0.15s ease;
 }
-.guide-steps li:last-child {
-    border-bottom: none;
+.guide-steps li::before {
+    content: counter(guide-step);
+    position: absolute;
+    left: 0.75rem;
+    top: 50%;
+    transform: translateY(-50%);
+    width: 1.6rem;
+    height: 1.6rem;
+    border-radius: 50%;
+    background: #f0fdf4;
+    color: #028a0f;
+    font-size: 0.75rem;
+    font-weight: 700;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    border: 1.5px solid #86efac;
+}
+.guide-steps li:hover {
+    border-color: #028a0f;
+    background: #fafffb;
+    box-shadow: 0 2px 6px rgba(2, 138, 15, 0.05);
+}
+.guide-steps li:hover::before {
+    background: #028a0f;
+    color: #ffffff;
+    border-color: #028a0f;
 }
 .dark .guide-steps li {
     color: #d1d5db;
-    border-bottom-color: #2d3748;
+    border-color: #2d3748;
+    background: #181818;
+}
+.dark .guide-steps li::before {
+    background: rgba(2, 138, 15, 0.15);
+    color: #6ee7b7;
+    border-color: rgba(110, 231, 183, 0.4);
+}
+.dark .guide-steps li:hover {
+    border-color: #02b815;
+    background: #1a2a1a;
+}
+.dark .guide-steps li:hover::before {
+    background: #02b815;
+    color: #ffffff;
+    border-color: #02b815;
 }
 
 /* Guide tip box */
 .guide-tip {
-    font-size: 0.8rem;
-    color: #065f46;
-    background: rgba(2, 138, 15, 0.07);
-    border: 1px solid rgba(2, 138, 15, 0.2);
-    padding: 0.6rem 1rem;
-    margin-top: 0.5rem;
+    display: flex;
+    align-items: flex-start;
+    gap: 0.6rem;
+    font-size: 0.85rem;
+    color: #064e3b;
+    background: linear-gradient(135deg, #f0fdf4 0%, #ecfdf5 100%);
+    border: 1px solid #a7f3d0;
+    border-left: 3px solid #028a0f;
+    padding: 0.85rem 1.1rem;
+    margin-top: 1rem;
+    border-radius: 8px;
+    line-height: 1.55;
+}
+.guide-tip i {
+    color: #d97706;
+    margin-top: 0.15rem;
+    flex-shrink: 0;
 }
 .dark .guide-tip {
-    color: #6ee7b7;
-    background: rgba(2, 138, 15, 0.1);
-    border-color: rgba(2, 138, 15, 0.25);
+    color: #a7f3d0;
+    background: linear-gradient(135deg, rgba(2, 138, 15, 0.12) 0%, rgba(2, 138, 15, 0.08) 100%);
+    border-color: rgba(110, 231, 183, 0.3);
+    border-left-color: #02b815;
+}
+.dark .guide-tip i {
+    color: #fbbf24;
 }
 
-/* Back to top */
+/* Section card spacing tweaks just for guide */
+#guide-dashboard, #guide-tasks, #guide-calendar, #guide-announcements,
+#guide-faculty, #guide-reports, #guide-analytics,
+#guide-documents, #guide-teaching, #guide-exams, #guide-profile {
+    scroll-margin-top: 80px;
+}
+
+/* Back to top — floating button */
 .guide-back-top {
     text-align: center;
-    padding: 1rem 0 2rem;
+    padding: 1.5rem 0 2rem;
+}
+.guide-back-top .btn {
+    border-radius: 8px;
+    padding: 0.6rem 1.25rem;
+    font-weight: 500;
+    font-size: 0.85rem;
 }
 
 

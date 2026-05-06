@@ -58,7 +58,7 @@
                     </div>
                     <div class="form-group mb-0">
                         <label class="form-label">Certificate (Image only: JPG, PNG, max 5MB)</label>
-                        <input type="file" name="certificate" class="form-control" accept=".jpg,.jpeg,.png">
+                        <input type="file" name="certificate" class="form-control" accept=".jpg,.jpeg,.png" data-dropzone="1">
                     </div>
                 </div>
                 <button type="submit" class="btn btn-primary border-0">

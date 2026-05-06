@@ -2,6 +2,7 @@
 
 namespace App\Models;
 
+use App\Models\User;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 
@@ -70,5 +71,28 @@ class Announcement extends Model
     public function scopeOrdered($query)
     {
         return $query->orderByDesc('is_pinned')->orderByDesc('created_at');
+    }
+
+    /**
+     * Compute the target audience of this announcement (active users that
+     * match the visibility/department filters), excluding the author.
+     * Returns a query builder you can chain on (or call ->get()).
+     */
+    public function targetAudienceQuery()
+    {
+        return User::query()
+            ->where('id', '!=', $this->author_id)
+            ->where('status', 'Active')
+            ->when($this->visibility !== 'All', function ($q) {
+                $q->whereHas('role', function ($r) {
+                    $r->where('role_name', $this->visibility);
+                });
+            })
+            ->when($this->department && $this->department !== 'All', function ($q) {
+                $q->whereHas('employee', function ($e) {
+                    $e->where('department', $this->department);
+                });
+            })
+            ->with(['employee:user_id,full_name,department', 'role:role_id,role_name']);
     }
 }

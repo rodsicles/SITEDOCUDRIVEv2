@@ -189,6 +189,13 @@
                         <span class="text-xs text-gray-400 dark:text-gray-500">
                             <i class="fas fa-eye mr-0.5"></i> {{ $announcement->reads->count() }}
                         </span>
+                        @if(auth()->id() === $announcement->author_id || auth()->user()->isDean())
+                            <button type="button"
+                                    onclick="openReceipts({{ $announcement->announcement_id }})"
+                                    class="text-xs text-[#028a0f] dark:text-[#02b815] hover:underline bg-transparent border-none cursor-pointer font-medium">
+                                <i class="fas fa-clipboard-check mr-0.5"></i> Receipts
+                            </button>
+                        @endif
                     </div>
                 </div>
             </div>
@@ -323,5 +330,112 @@
             .catch(() => { /* silently ignore; user can retry */ })
             .finally(() => { delete btn.dataset.busy; });
         });
+
+        // ---------- Read Receipts modal ----------
+        function openReceipts(id) {
+            const modal = document.getElementById('receiptsModal');
+            const titleEl = document.getElementById('receiptsTitle');
+            const summary = document.getElementById('receiptsSummary');
+            const readList = document.getElementById('receiptsReadList');
+            const unreadList = document.getElementById('receiptsUnreadList');
+            const tabRead = document.getElementById('tabRead');
+            const tabUnread = document.getElementById('tabUnread');
+
+            titleEl.textContent = 'Loading...';
+            summary.textContent = '';
+            readList.innerHTML = '<div class="p-3 text-xs text-gray-500">Loading...</div>';
+            unreadList.innerHTML = '<div class="p-3 text-xs text-gray-500">Loading...</div>';
+            modal.classList.remove('hidden');
+            modal.classList.add('flex');
+
+            fetch(`/announcements/${id}/receipts`, {
+                headers: { 'Accept': 'application/json', 'X-Requested-With': 'XMLHttpRequest' }
+            })
+            .then(r => r.ok ? r.json() : Promise.reject(r))
+            .then(data => {
+                titleEl.textContent = data.title;
+                summary.textContent = `${data.total_read} of ${data.total_audience} have read`;
+                tabRead.textContent = `Read (${data.total_read})`;
+                tabUnread.textContent = `Not yet read (${data.total_unread})`;
+
+                const renderRow = (row, includeWhen) => {
+                    const when = includeWhen && row.read_at
+                        ? `<span class="text-[11px] text-gray-400 dark:text-gray-500">${new Date(row.read_at).toLocaleString()}</span>`
+                        : '';
+                    const meta = [row.role, row.department].filter(Boolean).join(' &middot; ');
+                    return `<div class="flex items-center justify-between gap-2 px-3 py-2 border-b border-gray-100 dark:border-gray-700">
+                        <div class="min-w-0">
+                            <div class="text-xs font-semibold text-gray-800 dark:text-gray-100 truncate">${row.name}</div>
+                            <div class="text-[11px] text-gray-500 dark:text-gray-400 truncate">${meta}</div>
+                        </div>
+                        ${when}
+                    </div>`;
+                };
+
+                readList.innerHTML = data.read.length
+                    ? data.read.map(r => renderRow(r, true)).join('')
+                    : '<div class="p-3 text-xs text-gray-500">No one has read this yet.</div>';
+                unreadList.innerHTML = data.unread.length
+                    ? data.unread.map(r => renderRow(r, false)).join('')
+                    : '<div class="p-3 text-xs text-gray-500">Everyone has read this announcement.</div>';
+            })
+            .catch(() => {
+                titleEl.textContent = 'Error';
+                summary.textContent = 'Could not load receipts.';
+                readList.innerHTML = '';
+                unreadList.innerHTML = '';
+            });
+        }
+        function closeReceipts() {
+            const modal = document.getElementById('receiptsModal');
+            modal.classList.add('hidden');
+            modal.classList.remove('flex');
+        }
+        function showReceiptsTab(which) {
+            const readPane = document.getElementById('receiptsReadList');
+            const unreadPane = document.getElementById('receiptsUnreadList');
+            const tabRead = document.getElementById('tabRead');
+            const tabUnread = document.getElementById('tabUnread');
+            const active = ['border-[#028a0f]','text-[#028a0f]','dark:text-[#02b815]','dark:border-[#02b815]'];
+            const inactive = ['border-transparent','text-gray-500','dark:text-gray-400'];
+            if (which === 'read') {
+                readPane.classList.remove('hidden');
+                unreadPane.classList.add('hidden');
+                tabRead.classList.remove(...inactive); tabRead.classList.add(...active);
+                tabUnread.classList.remove(...active); tabUnread.classList.add(...inactive);
+            } else {
+                readPane.classList.add('hidden');
+                unreadPane.classList.remove('hidden');
+                tabUnread.classList.remove(...inactive); tabUnread.classList.add(...active);
+                tabRead.classList.remove(...active); tabRead.classList.add(...inactive);
+            }
+        }
     </script>
+
+    {{-- Receipts modal --}}
+    <div id="receiptsModal" class="hidden fixed inset-0 z-[9999] bg-black/50 items-center justify-center p-4" onclick="if(event.target===this)closeReceipts()">
+        <div class="bg-white dark:bg-[#1f1f1f] w-full max-w-lg rounded-md shadow-2xl border border-gray-200 dark:border-gray-700 overflow-hidden">
+            <div class="flex items-start justify-between gap-3 px-4 py-3 border-b border-gray-100 dark:border-gray-700">
+                <div class="min-w-0">
+                    <h3 id="receiptsTitle" class="text-sm font-semibold text-gray-800 dark:text-gray-100 truncate">Read Receipts</h3>
+                    <div id="receiptsSummary" class="text-xs text-gray-500 dark:text-gray-400 mt-0.5"></div>
+                </div>
+                <button type="button" onclick="closeReceipts()" class="text-gray-500 hover:text-red-600 text-sm bg-transparent border-none cursor-pointer">
+                    <i class="fas fa-times"></i>
+                </button>
+            </div>
+            <div class="flex border-b border-gray-100 dark:border-gray-700">
+                <button id="tabRead" type="button" onclick="showReceiptsTab('read')"
+                        class="flex-1 px-3 py-2 text-xs font-medium border-b-2 border-[#028a0f] text-[#028a0f] dark:border-[#02b815] dark:text-[#02b815] bg-transparent cursor-pointer">
+                    Read
+                </button>
+                <button id="tabUnread" type="button" onclick="showReceiptsTab('unread')"
+                        class="flex-1 px-3 py-2 text-xs font-medium border-b-2 border-transparent text-gray-500 dark:text-gray-400 bg-transparent cursor-pointer">
+                    Not yet read
+                </button>
+            </div>
+            <div id="receiptsReadList" class="max-h-80 overflow-y-auto"></div>
+            <div id="receiptsUnreadList" class="max-h-80 overflow-y-auto hidden"></div>
+        </div>
+    </div>
 @endsection

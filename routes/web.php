@@ -77,6 +77,9 @@ Route::middleware(['auth', 'no.back'])->prefix('announcements')->name('announcem
     Route::post('/{id}/react', [AnnouncementController::class, 'toggleReaction'])
         ->middleware('throttle:60,1')
         ->name('react');
+    Route::get('/{id}/receipts', [AnnouncementController::class, 'receipts'])
+        ->middleware('throttle:60,1')
+        ->name('receipts');
 
 
     // Only Dean and Coordinator can create/edit/delete announcements

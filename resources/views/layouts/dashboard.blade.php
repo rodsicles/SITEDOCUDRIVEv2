@@ -268,16 +268,7 @@
         </div>
     </div>
 
-    <!-- Document Preview Modal -->
-    <div id="documentPreviewModal" class="hidden fixed inset-0 bg-black/60 z-[9999] items-center justify-center">
-        <div class="bg-white dark:bg-[#2a2a2a] max-w-[90%] max-h-[90vh] h-[90vh] w-[90%] border border-gray-200 dark:border-gray-700">
-            <div class="flex justify-between items-center p-3 border-b border-gray-200 dark:border-gray-700">
-                <h3 id="previewTitle" class="m-0 text-gray-800 dark:text-gray-200 text-sm font-semibold">Document Preview</h3>
-                <button onclick="closePreview()" class="bg-transparent border-none text-xl cursor-pointer text-gray-800 dark:text-gray-200 w-8 h-8 flex items-center justify-center">×</button>
-            </div>
-            <iframe id="previewFrame" class="w-full h-[calc(100%-48px)] border-none bg-white"></iframe>
-        </div>
-    </div>
+
 
     <!-- Toast Container -->
     <div id="toastContainer" class="fixed top-20 right-5 z-[10000]"></div>
@@ -490,29 +481,96 @@
             showToast('{{ $errors->first() }}', 'error');
         @endif
 
-        // Document Preview Modal Functions
-        function openPreview(url, title) {
-            document.getElementById('previewTitle').textContent = title;
-            document.getElementById('previewFrame').src = url;
-            const modal = document.getElementById('documentPreviewModal');
-            modal.classList.remove('hidden');
-            modal.classList.add('flex');
-        }
 
-        function closePreview() {
-            const modal = document.getElementById('documentPreviewModal');
-            modal.classList.add('hidden');
-            modal.classList.remove('flex');
-            document.getElementById('previewFrame').src = '';
-        }
 
-        // Close preview on ESC
-        document.addEventListener('keydown', (e) => {
-            const modal = document.getElementById('documentPreviewModal');
-            if (e.key === 'Escape' && !modal.classList.contains('hidden')) {
-                closePreview();
+        // ---------- Drag-and-Drop file input enhancement ----------
+        // Any <input type="file" data-dropzone="1"> gets wrapped with a drop target
+        // so users can drag files from the desktop straight onto the field.
+        // The browser still sends the same multipart/form-data POST, so backend
+        // validation (mimes:, mimetypes:, max:, quota) is unchanged.
+        (function () {
+            const enhance = (input) => {
+                if (input.dataset.dropEnhanced === '1') return;
+                input.dataset.dropEnhanced = '1';
+
+                const wrapper = document.createElement('div');
+                wrapper.className = 'drop-zone';
+                wrapper.style.cssText = 'position:relative;border:2px dashed #cbd5e1;border-radius:6px;padding:18px;background:#f8fafc;color:#475569;text-align:center;font-size:12px;cursor:pointer;transition:all .15s;';
+
+                const label = document.createElement('div');
+                label.innerHTML = '<i class="fas fa-cloud-upload-alt" style="font-size:22px;color:#64748b;display:block;margin-bottom:6px;"></i>'
+                    + '<strong style="color:#334155;">Drag &amp; drop file here</strong>'
+                    + '<span style="opacity:.7;"> or click to browse</span>'
+                    + '<div data-drop-filename style="margin-top:6px;font-size:11px;color:#0f766e;font-weight:600;"></div>';
+
+                input.parentNode.insertBefore(wrapper, input);
+                wrapper.appendChild(label);
+                wrapper.appendChild(input);
+                input.style.position = 'absolute';
+                input.style.opacity = '0';
+                input.style.inset = '0';
+                input.style.width = '100%';
+                input.style.height = '100%';
+                input.style.cursor = 'pointer';
+
+                const fileNameEl = wrapper.querySelector('[data-drop-filename]');
+                const setFileLabel = () => {
+                    if (input.files && input.files.length) {
+                        const names = Array.from(input.files).map(f => f.name).join(', ');
+                        fileNameEl.textContent = '\u2713 ' + names;
+                    } else {
+                        fileNameEl.textContent = '';
+                    }
+                };
+                input.addEventListener('change', setFileLabel);
+
+                ['dragenter', 'dragover'].forEach(evt =>
+                    wrapper.addEventListener(evt, e => {
+                        e.preventDefault();
+                        wrapper.style.borderColor = '#028a0f';
+                        wrapper.style.background = '#f0fdf4';
+                        wrapper.style.color = '#028a0f';
+                    })
+                );
+                ['dragleave', 'drop'].forEach(evt =>
+                    wrapper.addEventListener(evt, e => {
+                        e.preventDefault();
+                        wrapper.style.borderColor = '#cbd5e1';
+                        wrapper.style.background = '#f8fafc';
+                        wrapper.style.color = '#475569';
+                    })
+                );
+                wrapper.addEventListener('drop', e => {
+                    if (!e.dataTransfer || !e.dataTransfer.files || !e.dataTransfer.files.length) return;
+                    // Use DataTransfer to assign dropped files to the input.
+                    try {
+                        const dt = new DataTransfer();
+                        const acceptMultiple = input.multiple;
+                        const files = acceptMultiple ? Array.from(e.dataTransfer.files) : [e.dataTransfer.files[0]];
+                        files.forEach(f => dt.items.add(f));
+                        input.files = dt.files;
+                        input.dispatchEvent(new Event('change', { bubbles: true }));
+                    } catch (err) {
+                        // Older browsers: fall back to triggering click so user picks again.
+                        console.warn('Drop assignment unsupported, fallback to click:', err);
+                    }
+                });
+
+                if (input.files && input.files.length) setFileLabel();
+            };
+
+            const init = () => document.querySelectorAll('input[type="file"][data-dropzone="1"]').forEach(enhance);
+            if (document.readyState === 'loading') {
+                document.addEventListener('DOMContentLoaded', init);
+            } else {
+                init();
             }
-        });
+            // Watch for late-rendered inputs (e.g. inside dynamically opened modals).
+            const mo = new MutationObserver(() => init());
+            mo.observe(document.body, { childList: true, subtree: true });
+        })();
+
+
 
         // Mobile Sidebar Toggle
         const mobileMenuToggle = document.getElementById('mobileMenuToggle');

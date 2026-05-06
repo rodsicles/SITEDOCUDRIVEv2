@@ -99,7 +99,7 @@
             @csrf
             <div class="form-group">
                 <label class="form-label">Upload .sql Backup File</label>
-                <input type="file" name="backup_file" class="form-control" accept=".sql" required>
+                <input type="file" name="backup_file" class="form-control" accept=".sql" required data-dropzone="1">
             </div>
             <div class="flex items-center gap-3 mb-5">
                 <input type="checkbox" id="confirmRestore" class="w-4 h-4" onchange="document.getElementById('restoreBtn').disabled = !this.checked">

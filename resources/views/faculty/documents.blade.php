@@ -159,7 +159,7 @@
                     <td>
                         <div class="doc-action-btns">
                             <a href="{{ route('faculty.view-document', $document->document_id) }}" target="_blank" class="btn btn-primary text-xs">
-                                <i class="fas fa-eye"></i> Preview
+                                <i class="fas fa-eye"></i> View
                             </a>
                             @if($document->document_type === 'word')
                             <div class="doc-download-wrap" style="position:relative;display:inline-block;">
@@ -200,7 +200,7 @@
         </div>
     </div>
 
-    @include('partials.document-preview-modal')
+
 @endsection
 
 @push('scripts')

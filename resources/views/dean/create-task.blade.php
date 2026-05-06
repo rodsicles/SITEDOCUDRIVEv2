@@ -49,7 +49,7 @@
 
             <div class="form-group">
                 <label class="form-label">Task Attachments</label>
-                <input type="file" name="attachments[]" class="form-control" multiple accept=".pdf,.doc,.docx,.xls,.xlsx,.csv,.txt,.jpg,.jpeg,.png">
+                <input type="file" name="attachments[]" class="form-control" multiple accept=".pdf,.doc,.docx,.xls,.xlsx,.csv,.txt,.jpg,.jpeg,.png" data-dropzone="1">
                 <small class="text-gray-500 dark:text-gray-400 block mt-1">Optional. Upload up to 5 reference files.</small>
             </div>
 

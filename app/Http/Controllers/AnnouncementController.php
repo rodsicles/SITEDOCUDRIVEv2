@@ -119,6 +119,50 @@ class AnnouncementController extends Controller
     }
 
     /**
+     * Return read/unread breakdown of the announcement's target audience.
+     * Restricted to the author or a Dean for accountability/follow-up.
+     */
+    public function receipts($id)
+    {
+        $user = auth()->user();
+        $announcement = Announcement::where('announcement_id', $id)->firstOrFail();
+
+        if ($announcement->author_id !== $user->id && !$user->isDean()) {
+            abort(403);
+        }
+
+        $audience = $announcement->targetAudienceQuery()->get();
+        $reads = $announcement->reads()->get()->keyBy('user_id');
+
+        $read = [];
+        $unread = [];
+        foreach ($audience as $member) {
+            $row = [
+                'id'         => $member->id,
+                'name'       => $member->employee->full_name ?? $member->name,
+                'role'       => $member->role->role_name ?? '',
+                'department' => $member->employee->department ?? '',
+            ];
+            if (isset($reads[$member->id])) {
+                $row['read_at'] = optional($reads[$member->id]->read_at)->toIso8601String();
+                $read[] = $row;
+            } else {
+                $unread[] = $row;
+            }
+        }
+
+        return response()->json([
+            'announcement_id' => $announcement->announcement_id,
+            'title'           => $announcement->title,
+            'total_audience'  => count($audience),
+            'total_read'      => count($read),
+            'total_unread'    => count($unread),
+            'read'            => $read,
+            'unread'          => $unread,
+        ]);
+    }
+
+    /**
      * Toggle a reaction emoji on an announcement for the authenticated user.
      */
     public function toggleReaction(Request $request, $id)

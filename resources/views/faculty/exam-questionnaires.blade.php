@@ -63,7 +63,7 @@
                 </div>
                 <div class="form-group col-span-2">
                     <label class="form-label">File (PDF only, max 10MB) <span class="text-red-500">*</span></label>
-                    <input type="file" name="file" class="form-control" accept=".pdf" required>
+                    <input type="file" name="file" class="form-control" accept=".pdf" required data-dropzone="1">
                     @error('file')<span class="text-red-500 text-xs">{{ $message }}</span>@enderror
                 </div>
             </div>

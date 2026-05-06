@@ -325,7 +325,7 @@
                     </div>
                     <div class="form-group">
                         <label class="form-label">Choose Files * (Max 3)</label>
-                        <input type="file" name="documents[]" id="folderFileInput" class="form-control" multiple required disabled>
+                        <input type="file" name="documents[]" id="folderFileInput" class="form-control" multiple required disabled data-dropzone="1">
                         <small id="folderFileHelp" class="text-xs text-gray-500 dark:text-gray-400 mt-1">
                             <i class="fas fa-lock"></i> Select Document Type first
                         </small>

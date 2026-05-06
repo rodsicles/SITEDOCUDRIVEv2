@@ -37,7 +37,7 @@ class ProfessionalDevelopmentController extends Controller
             'date_attended' => 'required|date|before_or_equal:today',
             'organizer' => 'required|string|max:150',
             'hours' => 'required|numeric|min:0.5|max:999',
-            'certificate' => 'nullable|image|mimes:jpg,jpeg,png|max:5120',
+            'certificate' => 'nullable|image|mimes:jpg,jpeg,png|max:5120|mimetypes:image/jpeg,image/png',
         ]);
 
         $this->pdService->create($validated, $request->file('certificate'), auth()->user());
@@ -53,7 +53,7 @@ class ProfessionalDevelopmentController extends Controller
             'date_attended' => 'required|date|before_or_equal:today',
             'organizer' => 'required|string|max:150',
             'hours' => 'required|numeric|min:0.5|max:999',
-            'certificate' => 'nullable|image|mimes:jpg,jpeg,png|max:5120',
+            'certificate' => 'nullable|image|mimes:jpg,jpeg,png|max:5120|mimetypes:image/jpeg,image/png',
         ]);
 
         $this->pdService->update($pd, $validated, $request->file('certificate'), auth()->id());

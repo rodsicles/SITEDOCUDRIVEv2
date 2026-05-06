@@ -252,6 +252,7 @@ class DocumentService
                 'folder_id' => $validated['folder_id'] ?? null,
                 'document_title' => $validated['document_title'] . ($uploadedCount > 0 ? ' (' . ($uploadedCount + 1) . ')' : ''),
                 'file_path' => 'documents/' . $filename,
+                'file_size' => (int) ($file->getSize() ?? 0),
                 'document_type' => $validated['document_type'],
                 'category' => $category,
                 'tags' => $tags,

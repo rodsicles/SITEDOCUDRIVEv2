@@ -13,9 +13,10 @@ class SearchController extends Controller
 {
     public function search(Request $request)
     {
-        $query = $request->get('q', '');
-        
-        if (strlen($query) < 2) {
+        $query = trim((string) $request->get('q', ''));
+
+        // Require at least 3 characters to prevent expensive wildcard scans.
+        if (mb_strlen($query) < 3) {
             return response()->json([]);
         }
 

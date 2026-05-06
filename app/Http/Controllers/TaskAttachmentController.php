@@ -21,11 +21,23 @@ class TaskAttachmentController extends Controller
             abort(403);
         }
 
+        // Cap attachments per task to prevent storage spam.
+        $maxAttachmentsPerTask = 10;
+        if (TaskAttachment::where('task_id', $task->task_id)->count() >= $maxAttachmentsPerTask) {
+            return back()->with('error', "Maximum of {$maxAttachmentsPerTask} attachments per task reached.");
+        }
+
         $validated = $request->validate([
-            'attachment' => 'required|file|max:10240|mimes:pdf,doc,docx,xls,xlsx,csv,txt,jpg,jpeg,png',
+            'attachment' => 'required|file|max:10240|mimes:pdf,doc,docx,xls,xlsx,csv,txt,jpg,jpeg,png|mimetypes:application/pdf,application/msword,application/vnd.openxmlformats-officedocument.wordprocessingml.document,application/vnd.ms-excel,application/vnd.openxmlformats-officedocument.spreadsheetml.sheet,text/csv,text/plain,image/jpeg,image/png',
         ]);
 
         $file = $validated['attachment'];
+
+        $quotaService = app(\App\Services\StorageQuotaService::class);
+        if (!$quotaService->hasQuotaForBytes($user->id, (int) ($file->getSize() ?? 0))) {
+            return back()->with('error', 'Storage quota exceeded (limit: ' . $quotaService->formatBytes(\App\Services\StorageQuotaService::DEFAULT_QUOTA_BYTES) . ').');
+        }
+
         $storedPath = $file->store('task-attachments', 'local');
 
         TaskAttachment::create([

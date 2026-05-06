@@ -7,6 +7,9 @@ use App\Models\DashboardLog;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Hash;
+use Illuminate\Support\Facades\RateLimiter;
+use Illuminate\Validation\ValidationException;
+use Illuminate\Support\Str;
 
 class AuthController extends Controller
 {
@@ -57,7 +60,24 @@ class AuthController extends Controller
             'password' => 'required|string',
         ]);
 
+        // Per-username + IP rate limiter (defence in depth alongside the
+        // route-level IP throttle): 5 attempts / minute / (username + IP).
+        $throttleKey = Str::lower($credentials['username']) . '|' . $request->ip();
+        if (RateLimiter::tooManyAttempts($throttleKey, 5)) {
+            $seconds = RateLimiter::availableIn($throttleKey);
+            DashboardLog::create([
+                'user_id'       => null,
+                'activity'      => 'Login throttled for username: ' . $credentials['username'],
+                'activity_type' => 'login_throttled',
+                'visibility'    => 'dean',
+            ]);
+            throw ValidationException::withMessages([
+                'username' => "Too many login attempts. Please try again in {$seconds} seconds.",
+            ])->status(429);
+        }
+
         if (Auth::attempt(['username' => $credentials['username'], 'password' => $credentials['password'], 'status' => 'Active'])) {
+            RateLimiter::clear($throttleKey);
             $user = Auth::user();
             $role = $user->role->role_name;
 
@@ -77,6 +97,9 @@ class AuthController extends Controller
                 default => redirect()->route('login'),
             };
         }
+
+        // Count this failed attempt (decay 60s).
+        RateLimiter::hit($throttleKey, 60);
 
         DashboardLog::create([
             'user_id' => null,

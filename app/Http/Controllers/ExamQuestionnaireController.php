@@ -56,7 +56,7 @@ class ExamQuestionnaireController extends Controller
         $validated = $request->validate([
             'subject'   => 'required|string|max:100',
             'exam_type' => 'required|in:Quiz,Prelim,Midterm,Pre-Final,Final',
-            'file'      => 'required|file|max:10240|mimes:pdf',
+            'file'      => 'required|file|max:10240|mimes:pdf|mimetypes:application/pdf',
         ]);
 
         $file = $request->file('file');
@@ -65,6 +65,11 @@ class ExamQuestionnaireController extends Controller
         $originalName = $file->getClientOriginalName();
         if (preg_match('/\.(php|phtml|exe|sh|bat|cmd|com|vbs|js|jsp|asp|aspx)(\.|$)/i', $originalName)) {
             return back()->with('error', 'Invalid file type.');
+        }
+
+        $quotaService = app(\App\Services\StorageQuotaService::class);
+        if (!$quotaService->hasQuotaForBytes(auth()->id(), (int) ($file->getSize() ?? 0))) {
+            return back()->with('error', 'Storage quota exceeded (limit: ' . $quotaService->formatBytes(\App\Services\StorageQuotaService::DEFAULT_QUOTA_BYTES) . ').');
         }
 
         // Auto-detect semester and academic year from current date

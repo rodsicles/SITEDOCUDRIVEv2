@@ -24,13 +24,13 @@ Route::post('/login', [AuthController::class, 'login'])->middleware('throttle:5,
 Route::post('/logout', [AuthController::class, 'logout'])->name('logout')->middleware('auth');
 
 // Global Search (All authenticated users)
-Route::get('/search', [SearchController::class, 'search'])->middleware(['auth', 'no.back']);
+Route::get('/search', [SearchController::class, 'search'])->middleware(['auth', 'no.back', 'throttle:20,1']);
 
 // Profile Management (All authenticated users)
 Route::middleware(['auth', 'no.back'])->prefix('profile')->name('profile.')->group(function () {
     Route::get('/edit', [ProfileController::class, 'edit'])->name('edit');
-    Route::post('/update', [ProfileController::class, 'update'])->name('update');
-    Route::post('/change-password', [ProfileController::class, 'changePassword'])->name('change-password');
+    Route::post('/update', [ProfileController::class, 'update'])->middleware('throttle:10,1')->name('update');
+    Route::post('/change-password', [ProfileController::class, 'changePassword'])->middleware('throttle:10,1')->name('change-password');
 });
 
 Route::middleware(['auth', 'no.back'])->prefix('document-filters')->name('document-filters.')->group(function () {
@@ -50,9 +50,9 @@ Route::middleware(['auth', 'no.back'])->prefix('calendar')->name('calendar.')->g
     // Only Dean and Coordinator can create/edit/delete events
     Route::middleware('role:Dean,Program Coordinator')->group(function () {
         Route::get('/create', [CalendarController::class, 'create'])->name('create');
-        Route::post('/', [CalendarController::class, 'store'])->name('store');
-        Route::put('/{id}', [CalendarController::class, 'update'])->name('update');
-        Route::delete('/{id}', [CalendarController::class, 'destroy'])->name('destroy');
+        Route::post('/', [CalendarController::class, 'store'])->middleware('throttle:20,1')->name('store');
+        Route::put('/{id}', [CalendarController::class, 'update'])->middleware('throttle:20,1')->name('update');
+        Route::delete('/{id}', [CalendarController::class, 'destroy'])->middleware('throttle:20,1')->name('destroy');
     });
     
     // Show and respond routes - MUST come after /create to avoid conflicts
@@ -63,7 +63,7 @@ Route::middleware(['auth', 'no.back'])->prefix('calendar')->name('calendar.')->g
 // Announcements (All authenticated users can view, only Dean/Coordinator can create/edit/delete)
 Route::middleware(['auth', 'no.back'])->prefix('announcements')->name('announcements.')->group(function () {
     Route::get('/', [AnnouncementController::class, 'index'])->name('index');
-    Route::post('/{id}/read', [AnnouncementController::class, 'markAsRead'])->name('read');
+    Route::post('/{id}/read', [AnnouncementController::class, 'markAsRead'])->middleware('throttle:60,1')->name('read');
     Route::post('/{id}/react', [AnnouncementController::class, 'toggleReaction'])
         ->middleware('throttle:60,1')
         ->name('react');
@@ -99,10 +99,10 @@ Route::middleware(['auth', 'no.back', 'role:Dean,Secretary'])->prefix('dean')->n
     Route::get('/employees/{id}/profile', [DeanController::class, 'viewEmployeeProfile'])->name('employee-profile');
 
     // Account Management
-    Route::post('/accounts/coordinator', [DeanController::class, 'storeCoordinator'])->name('store-coordinator');
-    Route::post('/accounts/faculty', [DeanController::class, 'storeFaculty'])->name('store-faculty');
+    Route::post('/accounts/coordinator', [DeanController::class, 'storeCoordinator'])->middleware('throttle:10,60')->name('store-coordinator');
+    Route::post('/accounts/faculty', [DeanController::class, 'storeFaculty'])->middleware('throttle:10,60')->name('store-faculty');
     Route::get('/accounts/{id}/edit', [DeanController::class, 'editEmployee'])->name('edit-employee');
-    Route::patch('/accounts/{id}', [DeanController::class, 'updateEmployee'])->name('update-employee');
+    Route::patch('/accounts/{id}', [DeanController::class, 'updateEmployee'])->middleware('throttle:10,60')->name('update-employee');
     Route::post('/accounts/{id}/reset-password', [DeanController::class, 'resetEmployeePassword'])->middleware('throttle:5,1')->name('reset-password');
 
     Route::get('/reports', [DeanController::class, 'reports'])->name('reports');
@@ -117,8 +117,8 @@ Route::middleware(['auth', 'no.back', 'role:Dean,Secretary'])->prefix('dean')->n
     Route::get('/tasks', [DeanController::class, 'tasks'])->name('tasks');
     Route::get('/tasks/create', [DeanController::class, 'createTask'])->name('create-task');
     Route::post('/tasks', [DeanController::class, 'storeTask'])->name('store-task');
-    Route::patch('/tasks/{id}', [DeanController::class, 'updateTask'])->name('update-task');
-    Route::post('/tasks/{id}/attachments', [TaskAttachmentController::class, 'store'])->name('tasks.attachments.store');
+    Route::patch('/tasks/{id}', [DeanController::class, 'updateTask'])->middleware('throttle:30,1')->name('update-task');
+    Route::post('/tasks/{id}/attachments', [TaskAttachmentController::class, 'store'])->middleware('throttle:30,1')->name('tasks.attachments.store');
 
     Route::get('/documents', [DeanController::class, 'documents'])->name('documents');
     Route::post('/documents', [DeanController::class, 'uploadDocument'])->middleware('throttle:6,60')->name('upload-document');
@@ -151,25 +151,25 @@ Route::middleware(['auth', 'no.back', 'role:Dean,Secretary'])->prefix('dean')->n
     Route::get('/exam-questionnaires', [ExamQuestionnaireController::class, 'index'])->name('exam-questionnaires.index');
     Route::get('/exam-questionnaires/{id}/view', [ExamQuestionnaireController::class, 'view'])->name('exam-questionnaires.view');
     Route::get('/exam-questionnaires/{id}/download', [ExamQuestionnaireController::class, 'download'])->name('exam-questionnaires.download');
-    Route::post('/exam-questionnaires/{id}/approve', [ExamQuestionnaireController::class, 'approve'])->name('exam-questionnaires.approve');
-    Route::post('/exam-questionnaires/{id}/reject', [ExamQuestionnaireController::class, 'reject'])->name('exam-questionnaires.reject');
+    Route::post('/exam-questionnaires/{id}/approve', [ExamQuestionnaireController::class, 'approve'])->middleware('throttle:30,1')->name('exam-questionnaires.approve');
+    Route::post('/exam-questionnaires/{id}/reject', [ExamQuestionnaireController::class, 'reject'])->middleware('throttle:30,1')->name('exam-questionnaires.reject');
 });
 
 // Program Coordinator Routes
 Route::middleware(['auth', 'no.back', 'role:Program Coordinator'])->prefix('coordinator')->name('coordinator.')->group(function () {
-    Route::post('/documents/{id}/favorite', [CoordinatorController::class, 'toggleFavorite'])->name('toggle-favorite');
+    Route::post('/documents/{id}/favorite', [CoordinatorController::class, 'toggleFavorite'])->middleware('throttle:60,1')->name('toggle-favorite');
     Route::get('/dashboard', [CoordinatorController::class, 'dashboard'])->name('dashboard');
     
     // Tasks (assigned to coordinator)
     Route::get('/tasks', [CoordinatorController::class, 'tasks'])->name('tasks');
-    Route::patch('/tasks/{id}', [CoordinatorController::class, 'updateTask'])->name('update-task');
-    Route::post('/tasks/{id}/attachments', [TaskAttachmentController::class, 'store'])->name('tasks.attachments.store');
+    Route::patch('/tasks/{id}', [CoordinatorController::class, 'updateTask'])->middleware('throttle:30,1')->name('update-task');
+    Route::post('/tasks/{id}/attachments', [TaskAttachmentController::class, 'store'])->middleware('throttle:30,1')->name('tasks.attachments.store');
     
     // Faculty Management
     Route::get('/faculty', [CoordinatorController::class, 'faculty'])->name('faculty');
     Route::get('/faculty/{id}/profile', [CoordinatorController::class, 'viewEmployeeProfile'])->name('faculty-profile');
     Route::get('/faculty/{id}/edit', [CoordinatorController::class, 'editFaculty'])->name('edit-faculty');
-    Route::patch('/faculty/{id}', [CoordinatorController::class, 'updateFaculty'])->name('update-faculty');
+    Route::patch('/faculty/{id}', [CoordinatorController::class, 'updateFaculty'])->middleware('throttle:10,60')->name('update-faculty');
     
     // Documents - Rate Limited: 6 uploads per hour
     Route::get('/documents', [CoordinatorController::class, 'documents'])->name('documents');
@@ -196,8 +196,8 @@ Route::middleware(['auth', 'no.back', 'role:Program Coordinator'])->prefix('coor
     Route::get('/exam-questionnaires', [ExamQuestionnaireController::class, 'index'])->name('exam-questionnaires.index');
     Route::get('/exam-questionnaires/{id}/view', [ExamQuestionnaireController::class, 'view'])->name('exam-questionnaires.view');
     Route::get('/exam-questionnaires/{id}/download', [ExamQuestionnaireController::class, 'download'])->name('exam-questionnaires.download');
-    Route::post('/exam-questionnaires/{id}/approve', [ExamQuestionnaireController::class, 'approve'])->name('exam-questionnaires.approve');
-    Route::post('/exam-questionnaires/{id}/reject', [ExamQuestionnaireController::class, 'reject'])->name('exam-questionnaires.reject');
+    Route::post('/exam-questionnaires/{id}/approve', [ExamQuestionnaireController::class, 'approve'])->middleware('throttle:30,1')->name('exam-questionnaires.approve');
+    Route::post('/exam-questionnaires/{id}/reject', [ExamQuestionnaireController::class, 'reject'])->middleware('throttle:30,1')->name('exam-questionnaires.reject');
     Route::get('/activity-log', [CoordinatorController::class, 'activityLog'])->name('activity-log');
 });
 
@@ -205,11 +205,11 @@ Route::middleware(['auth', 'no.back', 'role:Program Coordinator'])->prefix('coor
 Route::middleware(['auth', 'no.back', 'role:Faculty Employee'])->prefix('faculty')->name('faculty.')->group(function () {
     Route::get('/dashboard', [FacultyController::class, 'dashboard'])->name('dashboard');
     Route::get('/tasks', [FacultyController::class, 'tasks'])->name('tasks');
-    Route::patch('/tasks/{id}/status', [FacultyController::class, 'updateTaskStatus'])->name('update-task-status');
-    Route::post('/tasks/{id}/attachments', [TaskAttachmentController::class, 'store'])->name('tasks.attachments.store');
+    Route::patch('/tasks/{id}/status', [FacultyController::class, 'updateTaskStatus'])->middleware('throttle:30,1')->name('update-task-status');
+    Route::post('/tasks/{id}/attachments', [TaskAttachmentController::class, 'store'])->middleware('throttle:30,1')->name('tasks.attachments.store');
     Route::get('/notifications', [FacultyController::class, 'notifications'])->name('notifications');
     Route::get('/notifications/unread-count', [FacultyController::class, 'unreadNotificationCount'])->name('notifications.unread-count');
-    Route::post('/notifications/{id}/read-json', [FacultyController::class, 'markNotificationReadJson'])->name('notifications.read-json');
+    Route::post('/notifications/{id}/read-json', [FacultyController::class, 'markNotificationReadJson'])->middleware('throttle:60,1')->name('notifications.read-json');
     
     // Folder Management - Rate Limited: 3 folders per hour
     Route::post('/folders', [FolderController::class, 'store'])->middleware('throttle:3,60')->name('folders.store');
@@ -217,14 +217,14 @@ Route::middleware(['auth', 'no.back', 'role:Faculty Employee'])->prefix('faculty
     Route::delete('/folders/{folder}', [FolderController::class, 'destroy'])->middleware('throttle:10,60')->name('folders.destroy');
     Route::get('/folders/list', [FolderController::class, 'getUserFolders'])->name('folders.list');
     Route::post('/documents/{document}/move', [FolderController::class, 'moveDocument'])->name('documents.move');
-    Route::post('/notifications/{id}/read', [FacultyController::class, 'markNotificationRead'])->name('mark-notification-read');
+    Route::post('/notifications/{id}/read', [FacultyController::class, 'markNotificationRead'])->middleware('throttle:60,1')->name('mark-notification-read');
     
     // Documents - Rate Limited: 6 uploads per hour
     Route::get('/documents', [FacultyController::class, 'documents'])->name('documents');
     Route::post('/documents', [FacultyController::class, 'uploadDocument'])->middleware('throttle:6,60')->name('upload-document');
     Route::post('/exam-records', [FacultyController::class, 'storeExamRecord'])->middleware('throttle:10,60')->name('store-exam-record');
     Route::get('/documents/{id}/view', [FacultyController::class, 'viewDocument'])->name('view-document');
-    Route::post('/documents/{id}/favorite', [FacultyController::class, 'toggleFavorite'])->name('toggle-favorite');
+    Route::post('/documents/{id}/favorite', [FacultyController::class, 'toggleFavorite'])->middleware('throttle:60,1')->name('toggle-favorite');
     Route::get('/documents/{id}/download', [FacultyController::class, 'downloadDocument'])->name('download-document');
     Route::delete('/documents/{id}', [FacultyController::class, 'deleteDocument'])->name('delete-document');
     Route::get('/profile', [FacultyController::class, 'profile'])->name('profile');

@@ -57,7 +57,7 @@ class TeachingGuideController extends Controller
             'title'     => 'required|string|max:150',
             'subject'   => 'required|string|max:100',
             'folder_id' => 'required|exists:folders,folder_id',
-            'file'      => 'required|file|max:10240|mimes:pdf,doc,docx',
+            'file'      => 'required|file|max:10240|mimes:pdf,doc,docx|mimetypes:application/pdf,application/msword,application/vnd.openxmlformats-officedocument.wordprocessingml.document',
         ]);
 
         $file = $request->file('file');
@@ -65,6 +65,11 @@ class TeachingGuideController extends Controller
         // Block double-extension attacks
         if (preg_match('/\.(php|phtml|exe|sh|bat|cmd|com|vbs|js|jsp|asp|aspx)(\.|$)/i', $file->getClientOriginalName())) {
             return back()->with('error', 'Invalid file type.');
+        }
+
+        $quotaService = app(\App\Services\StorageQuotaService::class);
+        if (!$quotaService->hasQuotaForBytes($user->id, (int) ($file->getSize() ?? 0))) {
+            return back()->with('error', 'Storage quota exceeded (limit: ' . $quotaService->formatBytes(\App\Services\StorageQuotaService::DEFAULT_QUOTA_BYTES) . ').');
         }
 
         $extension = strtolower($file->getClientOriginalExtension());

@@ -298,15 +298,22 @@ class DeanController extends Controller
             'folder_id' => 'required|exists:folders,folder_id',
         ]);
 
-        foreach ($request->file('documents') as $file) {
+        $files = $request->file('documents');
+        foreach ($files as $file) {
             $originalName = $file->getClientOriginalName();
             if (preg_match('/\.(php|phtml|phar|exe|sh|bat|cmd|com|cgi|pl|py|jsp|asp|aspx|htaccess)/i', pathinfo($originalName, PATHINFO_FILENAME))) {
                 return back()->with('error', 'File contains a forbidden extension in its name.');
             }
         }
 
+        $quotaService = app(\App\Services\StorageQuotaService::class);
+        $needed = $quotaService->sumUploadedSizes($files);
+        if (!$quotaService->hasQuotaForBytes(auth()->id(), $needed)) {
+            return back()->with('error', 'Storage quota exceeded (limit: ' . $quotaService->formatBytes(\App\Services\StorageQuotaService::DEFAULT_QUOTA_BYTES) . ').');
+        }
+
         $uploadedCount = $this->documentService->uploadDocuments(
-            $validated, $request->file('documents'), auth()->id()
+            $validated, $files, auth()->id()
         );
 
         if ($request->expectsJson()) {

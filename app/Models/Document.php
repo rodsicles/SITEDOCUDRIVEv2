@@ -17,6 +17,7 @@ class Document extends Model
         'folder_id',
         'document_title',
         'file_path',
+        'file_size',
         'document_type',
         'category',
         'category_id',

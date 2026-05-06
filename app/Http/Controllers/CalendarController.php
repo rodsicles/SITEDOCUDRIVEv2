@@ -218,10 +218,30 @@ class CalendarController extends Controller
     // Get events as JSON (for AJAX calendar)
     public function getEvents(Request $request)
     {
-        $start = $request->input('start');
-        $end = $request->input('end');
-        
-        $events = CalendarEvent::getEventsForUser(auth()->id(), $start, $end);
+        $request->validate([
+            'start' => 'nullable|date',
+            'end'   => 'nullable|date|after_or_equal:start',
+        ]);
+
+        // Default to a 30-day window centred on today if no range supplied.
+        try {
+            $start = $request->filled('start')
+                ? \Illuminate\Support\Carbon::parse($request->input('start'))
+                : now()->subDays(15);
+            $end = $request->filled('end')
+                ? \Illuminate\Support\Carbon::parse($request->input('end'))
+                : now()->addDays(15);
+        } catch (\Throwable $e) {
+            return response()->json(['error' => 'Invalid date range.'], 422);
+        }
+
+        // Cap the window to 90 days to prevent expensive full-table scans.
+        $maxDays = 90;
+        if ($start->diffInDays($end) > $maxDays) {
+            $end = (clone $start)->addDays($maxDays);
+        }
+
+        $events = CalendarEvent::getEventsForUser(auth()->id(), $start->toDateTimeString(), $end->toDateTimeString());
         
         return response()->json($events->map(function($event) {
             return [

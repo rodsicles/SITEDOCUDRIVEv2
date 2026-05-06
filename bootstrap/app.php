@@ -12,9 +12,14 @@ return Application::configure(basePath: dirname(__DIR__))
     )
     ->withMiddleware(function (Middleware $middleware): void {
         $middleware->alias([
-            'role'    => \App\Http\Middleware\RoleMiddleware::class,
-            'no.back' => \App\Http\Middleware\PreventBackHistory::class,
+            'role'                  => \App\Http\Middleware\RoleMiddleware::class,
+            'no.back'               => \App\Http\Middleware\PreventBackHistory::class,
+            'password.changed'      => \App\Http\Middleware\EnsurePasswordChanged::class,
         ]);
+
+        // Apply the password-change gate to every web request. Inside the
+        // middleware, unauthenticated requests pass through untouched.
+        $middleware->appendToGroup('web', \App\Http\Middleware\EnsurePasswordChanged::class);
     })
     ->withExceptions(function (Exceptions $exceptions): void {
         //

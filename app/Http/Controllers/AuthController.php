@@ -89,6 +89,14 @@ class AuthController extends Controller
                 'activity_type' => 'login',
             ]);
 
+            // Mandatory-change gate: if the admin (Dean / Coordinator) flagged
+            // this account, the user is locked into the change-password screen
+            // until they complete the rotation. This protects the creator from
+            // liability over the temporary password they handed out.
+            if ($user->must_change_password) {
+                return redirect()->route('password.force-change.show');
+            }
+
             return match($role) {
                 'Dean' => redirect()->route('dean.dashboard'),
                 'Program Coordinator' => redirect()->route('coordinator.dashboard'),
@@ -111,6 +119,93 @@ class AuthController extends Controller
         return back()->withErrors([
             'username' => 'Invalid credentials.',
         ])->withInput($request->only('username'));
+    }
+
+    /**
+     * Render the locked, blurred-overlay password-change interface.
+     * Reachable only when the user has must_change_password = true.
+     */
+    public function showForceChange()
+    {
+        $user = Auth::user();
+        if (!$user) {
+            return redirect()->route('login');
+        }
+
+        // If the flag has already been cleared, kick the user back to their dashboard.
+        if (!$user->must_change_password) {
+            $role = $user->role->role_name;
+            return match($role) {
+                'Dean'                => redirect()->route('dean.dashboard'),
+                'Program Coordinator' => redirect()->route('coordinator.dashboard'),
+                'Faculty Employee'    => redirect()->route('faculty.dashboard'),
+                'Secretary'           => redirect()->route('dean.dashboard'),
+                default               => redirect()->route('login'),
+            };
+        }
+
+        return response()->view('auth.force-password-change')->withHeaders([
+            'Cache-Control' => 'no-store, no-cache, must-revalidate, max-age=0',
+            'Pragma'        => 'no-cache',
+            'Expires'       => '0',
+        ]);
+    }
+
+    /**
+     * Process the mandatory password rotation. On success, clears the flag,
+     * stamps password_changed_at, writes a chain-of-custody audit record,
+     * and releases the user to their normal dashboard.
+     */
+    public function forceChange(Request $request)
+    {
+        $user = Auth::user();
+        if (!$user) {
+            return redirect()->route('login');
+        }
+
+        $validated = $request->validate([
+            'current_password' => 'required|string',
+            'new_password'     => 'required|string|min:8|max:40|confirmed|different:current_password',
+        ], [
+            'new_password.different' => 'Your new password must be different from the temporary one.',
+        ]);
+
+        if (!Hash::check($validated['current_password'], $user->password)) {
+            DashboardLog::create([
+                'user_id'       => $user->id,
+                'activity'      => 'Failed forced-password-change attempt (wrong current password)',
+                'activity_type' => 'password_force_change_failed',
+                'visibility'    => 'dean',
+            ]);
+            return back()->withErrors([
+                'current_password' => 'The current (temporary) password is incorrect.',
+            ]);
+        }
+
+        $user->update([
+            'password'              => $validated['new_password'],
+            'must_change_password'  => false,
+            'password_changed_at'   => now(),
+        ]);
+
+        // Re-hash session id so the temp-password session token cannot be reused.
+        $request->session()->regenerate();
+
+        DashboardLog::create([
+            'user_id'       => $user->id,
+            'activity'      => 'User completed mandatory password change on first login',
+            'activity_type' => 'password_force_changed',
+            'visibility'    => 'dean',
+        ]);
+
+        $role = $user->role->role_name;
+        return match($role) {
+            'Dean'                => redirect()->route('dean.dashboard')->with('success', 'Password updated. Welcome!'),
+            'Program Coordinator' => redirect()->route('coordinator.dashboard')->with('success', 'Password updated. Welcome!'),
+            'Faculty Employee'    => redirect()->route('faculty.dashboard')->with('success', 'Password updated. Welcome!'),
+            'Secretary'           => redirect()->route('dean.dashboard')->with('success', 'Password updated. Welcome!'),
+            default               => redirect()->route('login'),
+        };
     }
 
     public function logout(Request $request)

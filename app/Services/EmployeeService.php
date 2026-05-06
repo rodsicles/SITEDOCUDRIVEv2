@@ -31,6 +31,10 @@ class EmployeeService
                 'email' => $validated['email'],
                 'password' => Hash::make($validated['password']),
                 'status' => 'Active',
+                // Force a password rotation on first login so the Dean is not
+                // liable for whatever the temporary password is later used for.
+                'must_change_password' => true,
+                'password_changed_at'  => null,
             ]);
 
             $employee = Employee::create([
@@ -72,6 +76,9 @@ class EmployeeService
                 'email' => $validated['email'],
                 'password' => Hash::make($validated['password']),
                 'status' => 'Active',
+                // Force a password rotation on first login (chain-of-custody).
+                'must_change_password' => true,
+                'password_changed_at'  => null,
             ]);
 
             $employee = Employee::create([
@@ -139,7 +146,10 @@ class EmployeeService
     public function resetFacultyPassword(Employee $employee, string $newPassword, User $resetter): void
     {
         $employee->user->update([
-            'password' => Hash::make($newPassword),
+            'password'             => Hash::make($newPassword),
+            // Treat any admin reset like a fresh issuance: faculty must rotate again.
+            'must_change_password' => true,
+            'password_changed_at'  => null,
         ]);
 
         Notification::create([
@@ -196,7 +206,10 @@ class EmployeeService
     public function resetEmployeePassword(Employee $employee, string $newPassword, User $resetter): void
     {
         $employee->user->update([
-            'password' => Hash::make($newPassword),
+            'password'             => Hash::make($newPassword),
+            // Treat any admin reset like a fresh issuance: target must rotate again.
+            'must_change_password' => true,
+            'password_changed_at'  => null,
         ]);
 
         Notification::create([

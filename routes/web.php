@@ -23,6 +23,16 @@ Route::get('/login', [AuthController::class, 'showLogin'])->name('login.page');
 Route::post('/login', [AuthController::class, 'login'])->middleware('throttle:20,1')->name('login.post');
 Route::post('/logout', [AuthController::class, 'logout'])->name('logout')->middleware('auth');
 
+// Mandatory password-change gate (locked overlay) for accounts created by an
+// admin with a temporary password. Throttled to mitigate temp-password brute force.
+Route::middleware('auth')->group(function () {
+    Route::get('/password/force-change', [AuthController::class, 'showForceChange'])
+        ->name('password.force-change.show');
+    Route::post('/password/force-change', [AuthController::class, 'forceChange'])
+        ->middleware('throttle:5,1')
+        ->name('password.force-change.update');
+});
+
 // Global Search (All authenticated users)
 Route::get('/search', [SearchController::class, 'search'])->middleware(['auth', 'no.back', 'throttle:20,1']);
 

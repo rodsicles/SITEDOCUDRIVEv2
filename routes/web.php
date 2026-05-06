@@ -20,7 +20,7 @@ use App\Http\Controllers\TaskAttachmentController;
 // Authentication Routes
 Route::get('/', [AuthController::class, 'showLogin'])->name('login');
 Route::get('/login', [AuthController::class, 'showLogin'])->name('login.page');
-Route::post('/login', [AuthController::class, 'login'])->middleware('throttle:5,1')->name('login.post');
+Route::post('/login', [AuthController::class, 'login'])->middleware('throttle:20,1')->name('login.post');
 Route::post('/logout', [AuthController::class, 'logout'])->name('logout')->middleware('auth');
 
 // Global Search (All authenticated users)
@@ -39,7 +39,7 @@ Route::middleware(['auth', 'no.back'])->prefix('document-filters')->name('docume
 });
 
 Route::middleware(['auth', 'no.back'])->prefix('task-attachments')->name('task-attachments.')->group(function () {
-    Route::get('/{id}/download', [TaskAttachmentController::class, 'download'])->name('download');
+    Route::get('/{id}/download', [TaskAttachmentController::class, 'download'])->middleware('throttle:30,1')->name('download');
 });
 
 // Calendar/Events (All authenticated users can view, only Dean/Coordinator can create/edit)
@@ -118,7 +118,7 @@ Route::middleware(['auth', 'no.back', 'role:Dean,Secretary'])->prefix('dean')->n
     Route::get('/tasks/create', [DeanController::class, 'createTask'])->name('create-task');
     Route::post('/tasks', [DeanController::class, 'storeTask'])->name('store-task');
     Route::patch('/tasks/{id}', [DeanController::class, 'updateTask'])->middleware('throttle:30,1')->name('update-task');
-    Route::post('/tasks/{id}/attachments', [TaskAttachmentController::class, 'store'])->middleware('throttle:30,1')->name('tasks.attachments.store');
+    // NOTE: Dean attachment-upload UI was removed; this route is intentionally not exposed.
 
     Route::get('/documents', [DeanController::class, 'documents'])->name('documents');
     Route::post('/documents', [DeanController::class, 'uploadDocument'])->middleware('throttle:6,60')->name('upload-document');
@@ -209,7 +209,7 @@ Route::middleware(['auth', 'no.back', 'role:Faculty Employee'])->prefix('faculty
     Route::post('/tasks/{id}/attachments', [TaskAttachmentController::class, 'store'])->middleware('throttle:30,1')->name('tasks.attachments.store');
     Route::get('/notifications', [FacultyController::class, 'notifications'])->name('notifications');
     Route::get('/notifications/unread-count', [FacultyController::class, 'unreadNotificationCount'])->name('notifications.unread-count');
-    Route::post('/notifications/{id}/read-json', [FacultyController::class, 'markNotificationReadJson'])->middleware('throttle:60,1')->name('notifications.read-json');
+    Route::post('/notifications/{id}/read-json', [FacultyController::class, 'markNotificationReadJson'])->middleware('throttle:120,1')->name('notifications.read-json');
     
     // Folder Management - Rate Limited: 3 folders per hour
     Route::post('/folders', [FolderController::class, 'store'])->middleware('throttle:3,60')->name('folders.store');
@@ -217,7 +217,7 @@ Route::middleware(['auth', 'no.back', 'role:Faculty Employee'])->prefix('faculty
     Route::delete('/folders/{folder}', [FolderController::class, 'destroy'])->middleware('throttle:10,60')->name('folders.destroy');
     Route::get('/folders/list', [FolderController::class, 'getUserFolders'])->name('folders.list');
     Route::post('/documents/{document}/move', [FolderController::class, 'moveDocument'])->name('documents.move');
-    Route::post('/notifications/{id}/read', [FacultyController::class, 'markNotificationRead'])->middleware('throttle:60,1')->name('mark-notification-read');
+    Route::post('/notifications/{id}/read', [FacultyController::class, 'markNotificationRead'])->middleware('throttle:120,1')->name('mark-notification-read');
     
     // Documents - Rate Limited: 6 uploads per hour
     Route::get('/documents', [FacultyController::class, 'documents'])->name('documents');

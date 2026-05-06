@@ -14,7 +14,12 @@ class CalendarController extends Controller
     public function index()
     {
         $user = auth()->user();
-        $events = CalendarEvent::getEventsForUser($user->id);
+
+        // Clamp initial load to a 90-day window centred on today so the
+        // events query never scans the entire table even on large datasets.
+        $rangeStart = now()->subDays(45)->toDateTimeString();
+        $rangeEnd   = now()->addDays(45)->toDateTimeString();
+        $events = CalendarEvent::getEventsForUser($user->id, $rangeStart, $rangeEnd);
         
         // Format for FullCalendar
         $formattedEvents = $events->map(function($event) {

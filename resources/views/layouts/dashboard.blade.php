@@ -383,8 +383,8 @@
             clearTimeout(searchTimeout);
             const query = e.target.value.trim();
             
-            if (query.length < 2) {
-                searchResults.innerHTML = '<p class="text-center text-gray-600 dark:text-gray-400 p-5">Type at least 2 characters...</p>';
+            if (query.length < 3) {
+                searchResults.innerHTML = '<p class="text-center text-gray-600 dark:text-gray-400 p-5">Type at least 3 characters...</p>';
                 return;
             }
             

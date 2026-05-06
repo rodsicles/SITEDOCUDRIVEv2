@@ -143,8 +143,7 @@
             initialView: 'dayGridMonth',
             headerToolbar: {
                 left: 'prev,next today',
-                center: 'title',
-                right: ''
+                center: 'title'
             },
             events: events,
             eventClick: function(info) {

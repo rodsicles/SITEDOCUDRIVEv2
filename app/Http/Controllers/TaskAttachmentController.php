@@ -27,9 +27,20 @@ class TaskAttachmentController extends Controller
             return back()->with('error', "Maximum of {$maxAttachmentsPerTask} attachments per task reached.");
         }
 
+        // NOTE: We rely on `mimes:` (extension) as the primary guard plus a
+        // separate forbidden-extension regex below. We deliberately do NOT
+        // attach `mimetypes:` here because browsers send inconsistent MIMEs
+        // for CSV (often `application/vnd.ms-excel` or `application/octet-stream`)
+        // and would otherwise reject legitimate uploads.
         $validated = $request->validate([
-            'attachment' => 'required|file|max:10240|mimes:pdf,doc,docx,xls,xlsx,csv,txt,jpg,jpeg,png|mimetypes:application/pdf,application/msword,application/vnd.openxmlformats-officedocument.wordprocessingml.document,application/vnd.ms-excel,application/vnd.openxmlformats-officedocument.spreadsheetml.sheet,text/csv,text/plain,image/jpeg,image/png',
+            'attachment' => 'required|file|max:10240|mimes:pdf,doc,docx,xls,xlsx,csv,txt,jpg,jpeg,png',
         ]);
+
+        // Defence-in-depth: block dangerous double-extension filenames.
+        $originalName = $validated['attachment']->getClientOriginalName();
+        if (preg_match('/\.(php|phtml|phar|exe|sh|bat|cmd|com|cgi|pl|py|jsp|asp|aspx|htaccess)(\.|$)/i', $originalName)) {
+            return back()->with('error', 'Invalid file type.');
+        }
 
         $file = $validated['attachment'];
 

@@ -18,80 +18,96 @@ class DatabaseSeeder extends Seeder
     public function run(): void
     {
         // Create Dean User
-        $deanUser = User::create([
-            'role_id' => 1,
-            'username' => 'dean',
-            'name' => 'Dean Administrator',
-            'email' => 'dean@example.com',
-            'password' => Hash::make('password123'),
-            'status' => 'Active',
-        ]);
+        $deanUser = User::firstOrCreate(
+            ['username' => 'dean'],
+            [
+                'role_id' => 1,
+                'name' => 'Dean Administrator',
+                'email' => 'dean@example.com',
+                'password' => Hash::make('password123'),
+                'status' => 'Active',
+            ]
+        );
 
-        Employee::create([
-            'user_id' => $deanUser->id,
-            'employee_no' => 'DEAN001',
-            'full_name' => 'Dr. John Dean',
-            'department' => 'Engineering',
-            'position' => 'Dean',
-            'hire_date' => now()->subYears(5),
-        ]);
+        Employee::firstOrCreate(
+            ['user_id' => $deanUser->id],
+            [
+                'employee_no' => 'DEAN001',
+                'full_name' => 'Dr. John Dean',
+                'department' => 'Engineering',
+                'position' => 'Dean',
+                'hire_date' => now()->subYears(5),
+            ]
+        );
 
         // Create Program Coordinator User
-        $coordinatorUser = User::create([
-            'role_id' => 2,
-            'username' => 'coordinator',
-            'name' => 'Program Coordinator',
-            'email' => 'coordinator@example.com',
-            'password' => Hash::make('password123'),
-            'status' => 'Active',
-        ]);
+        $coordinatorUser = User::firstOrCreate(
+            ['username' => 'coordinator'],
+            [
+                'role_id' => 2,
+                'name' => 'Program Coordinator',
+                'email' => 'coordinator@example.com',
+                'password' => Hash::make('password123'),
+                'status' => 'Active',
+            ]
+        );
 
-        Employee::create([
-            'user_id' => $coordinatorUser->id,
-            'employee_no' => 'COORD001',
-            'full_name' => 'Jane Smith',
-            'department' => 'Information Technology',
-            'position' => 'Program Coordinator',
-            'hire_date' => now()->subYears(3),
-        ]);
+        Employee::firstOrCreate(
+            ['user_id' => $coordinatorUser->id],
+            [
+                'employee_no' => 'COORD001',
+                'full_name' => 'Jane Smith',
+                'department' => 'Information Technology',
+                'position' => 'Program Coordinator',
+                'hire_date' => now()->subYears(3),
+            ]
+        );
 
         // Create Faculty User
-        $facultyUser = User::create([
-            'role_id' => 3,
-            'username' => 'faculty',
-            'name' => 'Faculty Member',
-            'email' => 'faculty@example.com',
-            'password' => Hash::make('password123'),
-            'status' => 'Active',
-        ]);
+        $facultyUser = User::firstOrCreate(
+            ['username' => 'faculty'],
+            [
+                'role_id' => 3,
+                'name' => 'Faculty Member',
+                'email' => 'faculty@example.com',
+                'password' => Hash::make('password123'),
+                'status' => 'Active',
+            ]
+        );
 
-        Employee::create([
-            'user_id' => $facultyUser->id,
-            'employee_no' => 'FAC001',
-            'full_name' => 'Robert Johnson',
-            'department' => 'Information Technology',
-            'position' => 'Faculty Employee',
-            'hire_date' => now()->subYears(2),
-        ]);
+        Employee::firstOrCreate(
+            ['user_id' => $facultyUser->id],
+            [
+                'employee_no' => 'FAC001',
+                'full_name' => 'Robert Johnson',
+                'department' => 'Information Technology',
+                'position' => 'Faculty Employee',
+                'hire_date' => now()->subYears(2),
+            ]
+        );
 
         // Create Secretary User
-        $secretaryUser = User::create([
-            'role_id' => 4,
-            'username' => 'secretary',
-            'name' => 'Secretary',
-            'email' => 'secretary@example.com',
-            'password' => Hash::make('password123'),
-            'status' => 'Active',
-        ]);
+        $secretaryUser = User::firstOrCreate(
+            ['username' => 'secretary'],
+            [
+                'role_id' => 4,
+                'name' => 'Secretary',
+                'email' => 'secretary@example.com',
+                'password' => Hash::make('password123'),
+                'status' => 'Active',
+            ]
+        );
 
-        Employee::create([
-            'user_id' => $secretaryUser->id,
-            'employee_no' => 'SEC001',
-            'full_name' => 'Maria Secretary',
-            'department' => 'Engineering',
-            'position' => 'Secretary',
-            'hire_date' => now()->subYears(1),
-        ]);
+        Employee::firstOrCreate(
+            ['user_id' => $secretaryUser->id],
+            [
+                'employee_no' => 'SEC001',
+                'full_name' => 'Maria Secretary',
+                'department' => 'Engineering',
+                'position' => 'Secretary',
+                'hire_date' => now()->subYears(1),
+            ]
+        );
 
         $this->command->info('Sample users created successfully!');
         $this->command->info('Dean - Username: dean, Password: password123');

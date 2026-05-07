@@ -3,6 +3,7 @@
 namespace App\Http\Controllers;
 
 use App\Models\User;
+use App\Models\Employee;
 use App\Models\DashboardLog;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
@@ -206,6 +207,45 @@ class AuthController extends Controller
             'Secretary'           => redirect()->route('dean.dashboard')->with('success', 'Password updated. Welcome!'),
             default               => redirect()->route('login'),
         };
+    }
+
+    public function showRegister()
+    {
+        return view('auth.register');
+    }
+
+    public function register(Request $request)
+    {
+        $validated = $request->validate([
+            'name'       => 'required|string|max:255',
+            'username'   => 'required|string|max:50|unique:users,username',
+            'email'      => 'required|email|max:255|unique:users,email',
+            'password'   => 'required|string|min:8|max:40',
+            'role_id'    => 'required|in:1,2,3,4',
+            'department' => 'required|in:Engineering,Information Technology',
+        ]);
+
+        $user = User::create([
+            'role_id'  => $validated['role_id'],
+            'username' => $validated['username'],
+            'name'     => $validated['name'],
+            'email'    => $validated['email'],
+            'password' => $validated['password'],
+            'status'   => 'Active',
+        ]);
+
+        $roleNames = [1 => 'Dean', 2 => 'Program Coordinator', 3 => 'Faculty Employee', 4 => 'Secretary'];
+
+        Employee::create([
+            'user_id'     => $user->id,
+            'employee_no' => strtoupper(substr($validated['username'], 0, 4)) . str_pad($user->id, 3, '0', STR_PAD_LEFT),
+            'full_name'   => $validated['name'],
+            'department'  => $validated['department'],
+            'position'    => $roleNames[(int) $validated['role_id']],
+            'hire_date'   => now()->toDateString(),
+        ]);
+
+        return redirect()->route('login')->with('success', 'Account created! You can now log in.');
     }
 
     public function logout(Request $request)

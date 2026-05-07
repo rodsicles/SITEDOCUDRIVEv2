@@ -61,6 +61,13 @@
                     <p class="login-portal-welcome-sub">Sign in to your account</p>
                 </div>
 
+                {{-- Success Message --}}
+                @if(session('success'))
+                <div style="background: #065f46; color: #6ee7b7; padding: 0.75rem 1rem; border-radius: 0.5rem; margin-bottom: 1rem; font-size: 0.875rem;">
+                    {{ session('success') }}
+                </div>
+                @endif
+
                 {{-- Error Message --}}
                 @if($errors->any())
                 <div class="login-portal-error">
@@ -109,6 +116,12 @@
                         </button>
                     </div>
                 </form>
+
+                <div style="text-align: center; margin-top: 1rem;">
+                    <a href="{{ route('register') }}" style="color: #6ee7b7; text-decoration: underline; font-size: 0.875rem;">
+                        <i class="fas fa-user-plus"></i> Create Account
+                    </a>
+                </div>
             </div>
         </div>
 

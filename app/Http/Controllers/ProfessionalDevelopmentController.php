@@ -3,6 +3,7 @@
 namespace App\Http\Controllers;
 
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\Storage;
 use App\Models\ProfessionalDevelopment;
 use App\Services\ProfessionalDevelopmentService;
 
@@ -58,6 +59,31 @@ class ProfessionalDevelopmentController extends Controller
 
         $this->pdService->update($pd, $validated, $request->file('certificate'), auth()->id());
         return redirect()->back()->with('success', 'Training record updated.');
+    }
+
+    public function certificate($id)
+    {
+        $pd = ProfessionalDevelopment::findOrFail($id);
+
+        if (!$pd->hasCertificate()) {
+            abort(404, 'No certificate uploaded.');
+        }
+
+        $user = auth()->user();
+        // Owner, Dean, or Coordinator may view
+        if ((int) $pd->user_id !== (int) $user->id && !$user->isDean() && !$user->isSecretary() && !$user->isProgramCoordinator()) {
+            abort(403);
+        }
+
+        if (!Storage::disk('local')->exists($pd->certificate_path)) {
+            abort(404, 'Certificate file not found.');
+        }
+
+        $absolutePath = Storage::disk('local')->path($pd->certificate_path);
+
+        return response()->file($absolutePath, [
+            'Content-Type' => Storage::disk('local')->mimeType($pd->certificate_path),
+        ]);
     }
 
     public function destroy($id)

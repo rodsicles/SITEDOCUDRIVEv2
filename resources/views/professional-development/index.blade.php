@@ -102,7 +102,7 @@
                             <td>
                                 <div class="flex gap-1">
                                     @if($record->hasCertificate())
-                                        <a href="{{ asset($record->certificate_path) }}" target="_blank" class="btn btn-primary py-1 px-2.5 text-xs">
+                                        <a href="{{ route('professional-development.certificate', $record->professional_development_id) }}" target="_blank" class="btn btn-primary py-1 px-2.5 text-xs">
                                             <i class="fas fa-eye"></i>
                                         </a>
                                     @endif
@@ -185,7 +185,7 @@
                             <td>{{ $record->hours }} hrs</td>
                             <td>
                                 @if($record->hasCertificate())
-                                    <a href="{{ asset($record->certificate_path) }}" target="_blank" class="cert-status-uploaded"><i class="fas fa-check-circle"></i> View</a>
+                                    <a href="{{ route('professional-development.certificate', $record->professional_development_id) }}" target="_blank" class="cert-status-uploaded"><i class="fas fa-check-circle"></i> View</a>
                                 @else
                                     <span class="cert-status-pending"><i class="fas fa-clock"></i> Not Yet</span>
                                 @endif

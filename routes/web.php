@@ -34,7 +34,7 @@ Route::middleware('auth')->group(function () {
 });
 
 // Global Search (All authenticated users)
-Route::get('/search', [SearchController::class, 'search'])->middleware(['auth', 'no.back', 'throttle:20,1']);
+Route::get('/search', [SearchController::class, 'search'])->middleware(['auth', 'no.back', 'throttle:20,1'])->name('search');
 
 // Profile Management (All authenticated users)
 Route::middleware(['auth', 'no.back'])->prefix('profile')->name('profile.')->group(function () {
@@ -98,6 +98,7 @@ Route::middleware(['auth', 'no.back'])->prefix('professional-development')->name
     Route::post('/', [ProfessionalDevelopmentController::class, 'store'])->middleware('role:Faculty Employee')->name('store');
     Route::put('/{id}', [ProfessionalDevelopmentController::class, 'update'])->middleware('role:Faculty Employee')->name('update');
     Route::delete('/{id}', [ProfessionalDevelopmentController::class, 'destroy'])->middleware('role:Faculty Employee')->name('destroy');
+    Route::get('/{id}/certificate', [ProfessionalDevelopmentController::class, 'certificate'])->name('certificate');
 });
 
 // User Guide (All authenticated users)

@@ -47,9 +47,9 @@ class ProfessionalDevelopmentService
         try {
             $certificatePath = null;
             if ($certificate) {
-                $filename = 'cert_' . time() . '.' . $certificate->getClientOriginalExtension();
-                $certificate->move(public_path("uploads/certificates/{$user->id}"), $filename);
-                $certificatePath = "uploads/certificates/{$user->id}/{$filename}";
+                $filename = 'cert_' . time() . '_' . $certificate->hashName();
+                Storage::disk('local')->putFileAs("certificates/{$user->id}", $certificate, $filename);
+                $certificatePath = "certificates/{$user->id}/{$filename}";
             }
 
             $pd = ProfessionalDevelopment::create([
@@ -95,12 +95,12 @@ class ProfessionalDevelopmentService
 
         if ($certificate) {
             // Delete old certificate
-            if ($pd->certificate_path && file_exists(public_path($pd->certificate_path))) {
-                unlink(public_path($pd->certificate_path));
+            if ($pd->certificate_path && Storage::disk('local')->exists($pd->certificate_path)) {
+                Storage::disk('local')->delete($pd->certificate_path);
             }
-            $filename = 'cert_' . time() . '.' . $certificate->getClientOriginalExtension();
-            $certificate->move(public_path("uploads/certificates/{$userId}"), $filename);
-            $pd->certificate_path = "uploads/certificates/{$userId}/{$filename}";
+            $filename = 'cert_' . time() . '_' . $certificate->hashName();
+            Storage::disk('local')->putFileAs("certificates/{$userId}", $certificate, $filename);
+            $pd->certificate_path = "certificates/{$userId}/{$filename}";
         }
 
         $pd->update([
@@ -127,8 +127,8 @@ class ProfessionalDevelopmentService
             abort(403, 'Unauthorized');
         }
 
-        if ($pd->certificate_path && file_exists(public_path($pd->certificate_path))) {
-            unlink(public_path($pd->certificate_path));
+        if ($pd->certificate_path && Storage::disk('local')->exists($pd->certificate_path)) {
+            Storage::disk('local')->delete($pd->certificate_path);
         }
 
         $seminarName = $pd->seminar_name;

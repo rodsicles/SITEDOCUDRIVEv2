@@ -133,6 +133,21 @@ return [
 
     /*
     |--------------------------------------------------------------------------
+    | Binary Paths (for backup/restore)
+    |--------------------------------------------------------------------------
+    |
+    | Paths to mysqldump and mysql binaries used by BackupService.
+    | Override via MYSQLDUMP_PATH / MYSQL_PATH in .env.
+    |
+    */
+
+    'dump' => [
+        'mysqldump_path' => env('MYSQLDUMP_PATH', 'mysqldump'),
+        'mysql_path'     => env('MYSQL_PATH', 'mysql'),
+    ],
+
+    /*
+    |--------------------------------------------------------------------------
     | Redis Databases
     |--------------------------------------------------------------------------
     |

@@ -116,11 +116,16 @@ class ExamQuestionnaireController extends Controller
             abort(403);
         }
 
-        $path = Storage::disk('local')->path($questionnaire->file_path);
+        // Path traversal protection
+        if (str_contains($questionnaire->file_path, '..') || str_contains($questionnaire->file_path, './')) {
+            abort(403, 'Invalid file path');
+        }
 
-        if (!file_exists($path)) {
+        if (!Storage::disk('local')->exists($questionnaire->file_path)) {
             abort(404, 'File not found.');
         }
+
+        $path = Storage::disk('local')->path($questionnaire->file_path);
 
         return response()->file($path, [
             'Content-Type'        => 'application/pdf',
@@ -138,11 +143,16 @@ class ExamQuestionnaireController extends Controller
             abort(403);
         }
 
-        $path = Storage::disk('local')->path($questionnaire->file_path);
+        // Path traversal protection
+        if (str_contains($questionnaire->file_path, '..') || str_contains($questionnaire->file_path, './')) {
+            abort(403, 'Invalid file path');
+        }
 
-        if (!file_exists($path)) {
+        if (!Storage::disk('local')->exists($questionnaire->file_path)) {
             abort(404, 'File not found.');
         }
+
+        $path = Storage::disk('local')->path($questionnaire->file_path);
 
         return response()->download($path, $questionnaire->title . '.pdf');
     }

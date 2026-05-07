@@ -111,8 +111,16 @@ class TeachingGuideController extends Controller
         $user = auth()->user();
         $guide = TeachingGuide::findOrFail($id);
 
+        // Path traversal protection
+        if (str_contains($guide->file_path, '..') || str_contains($guide->file_path, './')) {
+            abort(403, 'Invalid file path');
+        }
+
+        if (!Storage::disk('local')->exists($guide->file_path)) {
+            abort(404, 'File not found.');
+        }
+
         $path = Storage::disk('local')->path($guide->file_path);
-        if (!file_exists($path)) abort(404, 'File not found.');
 
         return response()->download($path, basename($guide->file_path));
     }

@@ -232,20 +232,20 @@ class DocumentService
     {
         $tags = !empty($validated['tags']) ? implode(',', array_map('trim', explode(',', $validated['tags']))) : '';
 
+        // Resolve folder + category once before the loop to avoid repeated queries.
+        $category = 'Other';
+        if (!empty($validated['folder_id'])) {
+            $folder = Folder::find($validated['folder_id']);
+            if ($folder) {
+                $category = $folder->top_level_category ?? 'Other';
+            }
+        }
+
         $uploadedCount = 0;
         foreach ($files as $index => $file) {
             // Sanitize filename: use hash only, no original name
             $filename = time() . '_' . $index . '_' . $file->hashName();
             Storage::disk('local')->putFileAs('documents', $file, $filename);
-
-            // Auto-derive category from folder's top-level ancestor
-            $category = 'Other';
-            if (!empty($validated['folder_id'])) {
-                $folder = Folder::find($validated['folder_id']);
-                if ($folder) {
-                    $category = $folder->top_level_category ?? 'Other';
-                }
-            }
 
             Document::create([
                 'uploaded_by' => $userId,

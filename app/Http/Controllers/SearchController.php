@@ -3,7 +3,6 @@
 namespace App\Http\Controllers;
 
 use Illuminate\Http\Request;
-use Illuminate\Support\Facades\Hash;
 use App\Models\User;
 use App\Models\Employee;
 use App\Models\Task;
@@ -25,11 +24,21 @@ class SearchController extends Controller
 
         // Search Employees (Dean and Coordinator only)
         if ($user->isDean() || $user->isProgramCoordinator()) {
-            $employees = Employee::where('full_name', 'LIKE', "%{$query}%")
-                ->orWhere('employee_no', 'LIKE', "%{$query}%")
-                ->orWhere('department', 'LIKE', "%{$query}%")
-                ->limit(5)
-                ->get();
+            $employeeQuery = Employee::where(function ($q) use ($query) {
+                $q->where('full_name', 'LIKE', "%{$query}%")
+                  ->orWhere('employee_no', 'LIKE', "%{$query}%")
+                  ->orWhere('department', 'LIKE', "%{$query}%");
+            });
+
+            // Coordinators can only see employees in their own department
+            if ($user->isProgramCoordinator()) {
+                $coordDept = optional($user->employee)->department;
+                if ($coordDept) {
+                    $employeeQuery->where('department', $coordDept);
+                }
+            }
+
+            $employees = $employeeQuery->limit(5)->get();
 
             foreach ($employees as $employee) {
                 $results[] = [

@@ -34,6 +34,11 @@ class Employee extends Model
         return $this->hasMany(PerformanceReport::class, 'employee_id', 'employee_id');
     }
 
+    public function skills()
+    {
+        return $this->hasMany(EmployeeSkill::class, 'employee_id', 'employee_id');
+    }
+
     public function getYearsOfService(): ?int
     {
         if (!$this->hire_date) {

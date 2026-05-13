@@ -538,7 +538,7 @@ body {
     @apply flex items-center gap-3 no-underline;
     padding: 0.6rem 1rem;
     margin: 1px 0;
-    color: rgba(255,255,255,0.82);
+    color: rgba(255,255,255,0.88) !important;
     font-size: 0.85rem;
     font-weight: 500;
     border-left: 3px solid transparent;
@@ -554,7 +554,7 @@ body {
 }
 
 .dark .menu-item {
-    color: rgba(255,255,255,0.78);
+    color: rgba(255,255,255,0.82) !important;
     background: transparent;
 }
 
@@ -4238,10 +4238,16 @@ body {
     outline: none;
     color: #6ec48a;
     cursor: pointer;
-    padding: 4px 6px;
+    padding: 0;
     font-size: 13px;
     border-radius: 4px;
     line-height: 1;
+    width: 28px;
+    height: 28px;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    flex-shrink: 0;
     transition: background 0.15s, color 0.15s;
 }
 .login-portal-pw-toggle:hover,

@@ -16,7 +16,7 @@ class AnnouncementController extends Controller
     ) {}
 
     /** Allowed reaction emojis (server-side whitelist). */
-    public const ALLOWED_REACTIONS = ['👍', '❤️', '✅', '🎉'];
+    public const ALLOWED_REACTIONS = ['👍'];
 
     public function index()
     {

@@ -150,26 +150,26 @@
                             ->pluck('emoji')
                             ->all();
                     @endphp
-                    <div class="flex items-center gap-1 flex-wrap"
+                    @php
+                        $likeEmoji = '👍';
+                        $likeCount = $reactionGroups->get($likeEmoji)?->count() ?? 0;
+                        $iLiked    = in_array($likeEmoji, $myReactions, true);
+                    @endphp
+                    <div class="flex items-center gap-1"
                          data-reaction-bar="{{ $announcement->announcement_id }}">
-                        @foreach($allowedReactions as $emoji)
-                            @php
-                                $count = $reactionGroups->get($emoji)?->count() ?? 0;
-                                $mine  = in_array($emoji, $myReactions, true);
-                            @endphp
-                            <button type="button"
-                                    data-reaction-btn="{{ $emoji }}"
-                                    data-announcement="{{ $announcement->announcement_id }}"
-                                    aria-pressed="{{ $mine ? 'true' : 'false' }}"
-                                    class="reaction-btn inline-flex items-center gap-1 px-2 py-1 text-xs border transition-colors cursor-pointer
-                                        {{ $mine
-                                            ? 'border-[#028a0f] bg-green-50 text-[#028a0f] dark:bg-[#1a2a1a] dark:text-[#02b815] dark:border-[#02b815]'
-                                            : 'border-gray-200 dark:border-gray-700 bg-white dark:bg-[#2a2a2a] text-gray-600 dark:text-gray-300 hover:border-[#028a0f] hover:text-[#028a0f] dark:hover:border-[#02b815] dark:hover:text-[#02b815]' }}">
-                                <span class="text-sm leading-none">{{ $emoji }}</span>
-                                <span data-reaction-count="{{ $emoji }}"
-                                      class="font-semibold {{ $count === 0 ? 'opacity-0 w-0' : '' }}">{{ $count }}</span>
-                            </button>
-                        @endforeach
+                        <button type="button"
+                                data-reaction-btn="{{ $likeEmoji }}"
+                                data-announcement="{{ $announcement->announcement_id }}"
+                                aria-pressed="{{ $iLiked ? 'true' : 'false' }}"
+                                class="reaction-btn inline-flex items-center gap-1.5 px-3 py-1.5 text-xs font-semibold border rounded-full transition-colors cursor-pointer
+                                    {{ $iLiked
+                                        ? 'border-[#028a0f] bg-[#028a0f] text-white dark:bg-[#026a0c] dark:border-[#026a0c]'
+                                        : 'border-gray-300 dark:border-gray-600 bg-white dark:bg-[#2a2a2a] text-gray-600 dark:text-gray-300 hover:border-[#028a0f] hover:text-[#028a0f] dark:hover:border-[#02b815] dark:hover:text-[#02b815]' }}">
+                            <span class="text-sm leading-none">{{ $likeEmoji }}</span>
+                            <span>Like</span>
+                            <span data-reaction-count="{{ $likeEmoji }}"
+                                  class="font-bold {{ $likeCount === 0 ? 'hidden' : '' }}">{{ $likeCount }}</span>
+                        </button>
                     </div>
 
                     {{-- Read status --}}
@@ -302,21 +302,20 @@
                 const userSet = new Set(data.user_reactions || []);
 
                 bar.querySelectorAll('[data-reaction-btn]').forEach(b => {
-                    const e2     = b.dataset.reactionBtn;
-                    const count  = (data.counts && data.counts[e2]) || 0;
-                    const mine   = userSet.has(e2);
-                    const countEl = b.querySelector(`[data-reaction-count="${CSS.escape(e2)}"]`);
+                    const e2      = b.dataset.reactionBtn;
+                    const count   = (data.counts && data.counts[e2]) || 0;
+                    const mine    = userSet.has(e2);
+                    const countEl = b.querySelector(`[data-reaction-count]`);
 
                     if (countEl) {
                         countEl.textContent = count;
-                        countEl.classList.toggle('opacity-0', count === 0);
-                        countEl.classList.toggle('w-0', count === 0);
+                        countEl.classList.toggle('hidden', count === 0);
                     }
 
                     b.setAttribute('aria-pressed', mine ? 'true' : 'false');
 
-                    const activeClasses   = ['border-[#028a0f]','bg-green-50','text-[#028a0f]','dark:bg-[#1a2a1a]','dark:text-[#02b815]','dark:border-[#02b815]'];
-                    const inactiveClasses = ['border-gray-200','dark:border-gray-700','bg-white','dark:bg-[#2a2a2a]','text-gray-600','dark:text-gray-300','hover:border-[#028a0f]','hover:text-[#028a0f]','dark:hover:border-[#02b815]','dark:hover:text-[#02b815]'];
+                    const activeClasses   = ['border-[#028a0f]','bg-[#028a0f]','text-white','dark:bg-[#026a0c]','dark:border-[#026a0c]'];
+                    const inactiveClasses = ['border-gray-300','dark:border-gray-600','bg-white','dark:bg-[#2a2a2a]','text-gray-600','dark:text-gray-300','hover:border-[#028a0f]','hover:text-[#028a0f]','dark:hover:border-[#02b815]','dark:hover:text-[#02b815]'];
 
                     if (mine) {
                         b.classList.remove(...inactiveClasses);

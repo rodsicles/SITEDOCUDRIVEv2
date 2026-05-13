@@ -117,11 +117,6 @@
                     </div>
                 </form>
 
-                <div style="text-align: center; margin-top: 1rem;">
-                    <a href="{{ route('register') }}" style="color: #6ee7b7; text-decoration: underline; font-size: 0.875rem;">
-                        <i class="fas fa-user-plus"></i> Create Account
-                    </a>
-                </div>
             </div>
         </div>
 

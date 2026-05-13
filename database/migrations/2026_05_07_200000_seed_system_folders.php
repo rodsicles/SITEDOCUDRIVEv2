@@ -107,7 +107,7 @@ return new class extends Migration
                 'sort_order'  => $sortOrder,
                 'created_at'  => $now,
                 'updated_at'  => $now,
-            ]);
+            ], 'folder_id');
         }
 
         if (!empty($data['children'])) {

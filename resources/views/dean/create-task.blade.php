@@ -10,6 +10,7 @@
 @endsection
 
 @section('content')
+    <div class="max-w-2xl mx-auto">
     <div class="content-card">
         <div class="card-header">
             <h3 class="card-title">Task Details</h3>
@@ -62,5 +63,6 @@
                 </a>
             </div>
         </form>
+    </div>
     </div>
 @endsection

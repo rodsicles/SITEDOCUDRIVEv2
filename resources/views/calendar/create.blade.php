@@ -113,17 +113,42 @@
                     </div>
                     <div class="form-group mb-0">
                         <label class="form-label">Invite Attendees</label>
-                        <select name="attendees[]" class="form-control h-auto" multiple size="5">
+
+                        {{-- Search box --}}
+                        <div class="relative mb-1.5">
+                            <i class="fas fa-search absolute left-3 top-1/2 -translate-y-1/2 text-gray-400 text-xs pointer-events-none"></i>
+                            <input type="text" id="attendeeSearch" placeholder="Search by name or role…"
+                                   class="form-control text-sm pl-8"
+                                   oninput="filterAttendees(this.value)">
+                        </div>
+
+                        {{-- Scrollable checkbox list --}}
+                        <div id="attendeeList"
+                             class="border border-gray-300 dark:border-gray-600 rounded overflow-y-auto bg-white dark:bg-[#1e1e1e]"
+                             style="max-height:200px;">
                             @foreach($users as $user)
-                                <option value="{{ $user->id }}">
-                                    {{ $user->employee->full_name ?? $user->username }} ({{ $user->role->role_name }})
-                                </option>
+                                @php $label = ($user->employee->full_name ?? $user->username) . ' (' . $user->role->role_name . ')'; @endphp
+                                <label class="attendee-row flex items-center gap-2.5 px-3 py-2 cursor-pointer hover:bg-gray-50 dark:hover:bg-[#2a2a2a] border-b border-gray-100 dark:border-gray-700 last:border-0"
+                                       data-label="{{ strtolower($label) }}">
+                                    <input type="checkbox" name="attendees[]" value="{{ $user->id }}"
+                                           class="rounded accent-[#028a0f]">
+                                    <span class="text-sm text-gray-800 dark:text-gray-200">{{ $label }}</span>
+                                </label>
                             @endforeach
-                        </select>
-                        <small class="text-gray-500 dark:text-gray-400 text-xs">
-                            Hold <kbd class="px-1 py-0.5 bg-gray-100 dark:bg-gray-700 rounded text-[0.65rem]">Ctrl</kbd> /
-                            <kbd class="px-1 py-0.5 bg-gray-100 dark:bg-gray-700 rounded text-[0.65rem]">Cmd</kbd> to select multiple
-                        </small>
+                            <div id="attendeeNoResults" class="hidden px-3 py-3 text-xs text-gray-400 text-center">
+                                No users match your search.
+                            </div>
+                        </div>
+
+                        <div class="flex items-center justify-between mt-1.5">
+                            <small class="text-gray-500 dark:text-gray-400 text-xs">
+                                <span id="attendeeSelectedCount">0</span> selected
+                            </small>
+                            <button type="button" onclick="clearAttendees()"
+                                    class="text-xs text-gray-400 hover:text-red-500 bg-transparent border-0 cursor-pointer">
+                                Clear all
+                            </button>
+                        </div>
                     </div>
 
                     <div class="grid grid-cols-1 md:grid-cols-2 gap-4 mt-4 items-end">
@@ -170,6 +195,33 @@
             startInput.type = 'datetime-local';
             endInput.type = 'datetime-local';
         }
+    }
+
+    // Attendee search filter
+    function filterAttendees(query) {
+        const q = query.toLowerCase().trim();
+        const rows = document.querySelectorAll('.attendee-row');
+        let visible = 0;
+        rows.forEach(row => {
+            const match = !q || row.dataset.label.includes(q);
+            row.style.display = match ? '' : 'none';
+            if (match) visible++;
+        });
+        document.getElementById('attendeeNoResults').classList.toggle('hidden', visible > 0);
+    }
+
+    // Update selected count
+    document.getElementById('attendeeList').addEventListener('change', function() {
+        const count = this.querySelectorAll('input[type="checkbox"]:checked').length;
+        document.getElementById('attendeeSelectedCount').textContent = count;
+    });
+
+    // Clear all checkboxes
+    function clearAttendees() {
+        document.querySelectorAll('#attendeeList input[type="checkbox"]').forEach(cb => cb.checked = false);
+        document.getElementById('attendeeSelectedCount').textContent = '0';
+        document.getElementById('attendeeSearch').value = '';
+        filterAttendees('');
     }
 
     // Validate end time is after start time

@@ -50,7 +50,7 @@
                     </div>
                     <div class="form-group mb-0">
                         <label class="form-label">Date Attended *</label>
-                        <input type="date" name="date_attended" class="form-control" required value="{{ old('date_attended') }}" min="{{ (date('Y') - 1) . '-01-01' }}" max="{{ date('Y') . '-12-31' }}">
+                        <input type="date" name="date_attended" class="form-control" required value="{{ old('date_attended') }}" min="{{ (date('Y') - 1) . '-01-01' }}" max="{{ date('Y-m-d') }}">
                     </div>
                     <div class="form-group mb-0">
                         <label class="form-label">Hours *</label>

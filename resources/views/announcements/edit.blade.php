@@ -73,7 +73,7 @@
             <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
                 <div class="form-group">
                     <label class="form-label" for="expires_at">Expires At <small class="text-gray-400 font-normal">(optional)</small></label>
-                    <input type="datetime-local" name="expires_at" id="expires_at" class="form-control" value="{{ old('expires_at', $announcement->expires_at ? $announcement->expires_at->format('Y-m-d\TH:i') : '') }}" min="{{ (date('Y') - 1) . '-01-01T00:00' }}" max="{{ date('Y') . '-12-31T23:59' }}">
+                    <input type="datetime-local" name="expires_at" id="expires_at" class="form-control" value="{{ old('expires_at', $announcement->expires_at ? $announcement->expires_at->format('Y-m-d\TH:i') : '') }}" min="{{ now()->format('Y-m-d') }}T00:00" max="{{ date('Y') . '-12-31T23:59' }}">
                     <small class="text-gray-500 dark:text-gray-400 mt-1 block">Leave empty for no expiration</small>
                 </div>
 

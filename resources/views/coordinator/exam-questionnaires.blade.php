@@ -16,7 +16,7 @@
             <span class="badge badge-info">{{ $questionnaires->total() }} Submissions</span>
         </div>
 
-        <div class="documents-filter flex items-center gap-4 flex-wrap">
+        <div class="px-4 pb-4 flex items-center gap-4 flex-wrap">
             <div class="flex items-center gap-2">
                 <label class="text-sm font-medium whitespace-nowrap text-gray-700 dark:text-gray-300">Status:</label>
                 <select onchange="window.location.href=this.value" class="form-control text-sm">

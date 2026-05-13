@@ -45,7 +45,7 @@
 
             <div class="form-group">
                 <label class="form-label">Due Date</label>
-                <input type="date" name="due_date" class="form-control" required>
+                <input type="date" name="due_date" class="form-control" required min="{{ date('Y') . '-01-01' }}" max="{{ date('Y') . '-12-31' }}">
             </div>
 
             <div class="form-group">

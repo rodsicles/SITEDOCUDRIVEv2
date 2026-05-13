@@ -2,6 +2,8 @@
 
 namespace App\Http\Controllers;
 
+use App\Models\AnnouncementRead;
+use App\Models\DocumentView;
 use App\Models\Employee;
 use App\Models\DashboardLog;
 use App\Models\PerformanceReport;
@@ -108,7 +110,20 @@ class DeanController extends Controller
             ->sortBy(fn($u) => $u->employee->full_name ?? $u->username)
             ->values();
 
-        return view('dean.audit-trail', compact('logs', 'activityTypes', 'users', 'filters'));
+        $recentDocReads = DocumentView::with(['user.employee', 'document'])
+            ->orderByDesc('viewed_at')
+            ->limit(20)
+            ->get();
+
+        $recentAnnouncementReads = AnnouncementRead::with(['user.employee', 'announcement'])
+            ->orderByDesc('read_at')
+            ->limit(20)
+            ->get();
+
+        return view('dean.audit-trail', compact(
+            'logs', 'activityTypes', 'users', 'filters',
+            'recentDocReads', 'recentAnnouncementReads'
+        ));
     }
 
     /**
@@ -268,7 +283,7 @@ class DeanController extends Controller
 
     public function viewDocument($id)
     {
-        return $this->documentService->viewDocument($id, auth()->user());
+        return $this->documentService->viewDocument($id, auth()->user(), true);
     }
 
     public function downloadDocument($id, Request $request)

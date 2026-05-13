@@ -54,11 +54,11 @@
                 </div>
                 <div>
                     <label class="text-xs font-semibold text-gray-600 dark:text-gray-300 block mb-1">Uploaded From</label>
-                    <input type="date" name="date_from" value="{{ request('date_from') }}" class="form-control text-sm">
+                    <input type="date" name="date_from" value="{{ request('date_from') }}" class="form-control text-sm" min="{{ (date('Y') - 1) . '-01-01' }}" max="{{ date('Y') . '-12-31' }}">
                 </div>
                 <div>
                     <label class="text-xs font-semibold text-gray-600 dark:text-gray-300 block mb-1">Uploaded To</label>
-                    <input type="date" name="date_to" value="{{ request('date_to') }}" class="form-control text-sm">
+                    <input type="date" name="date_to" value="{{ request('date_to') }}" class="form-control text-sm" min="{{ (date('Y') - 1) . '-01-01' }}" max="{{ date('Y') . '-12-31' }}">
                 </div>
                 <div class="flex items-end gap-2 md:col-span-2">
                     <button type="submit" class="btn btn-primary text-sm">

@@ -71,11 +71,11 @@
                     <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
                         <div class="form-group mb-0">
                             <label class="form-label">Start Date &amp; Time <span class="text-red-500">*</span></label>
-                            <input type="datetime-local" name="start_datetime" class="form-control" required>
+                            <input type="datetime-local" name="start_datetime" class="form-control" required min="{{ (date('Y') - 1) . '-01-01T00:00' }}" max="{{ date('Y') . '-12-31T23:59' }}">
                         </div>
                         <div class="form-group mb-0">
                             <label class="form-label">End Date &amp; Time <span class="text-red-500">*</span></label>
-                            <input type="datetime-local" name="end_datetime" class="form-control" required>
+                            <input type="datetime-local" name="end_datetime" class="form-control" required min="{{ (date('Y') - 1) . '-01-01T00:00' }}" max="{{ date('Y') . '-12-31T23:59' }}">
                         </div>
                     </div>
                     <label class="inline-flex items-center gap-2 mt-3 text-sm text-gray-700 dark:text-gray-300 cursor-pointer">

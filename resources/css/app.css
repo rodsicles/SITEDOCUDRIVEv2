@@ -2045,7 +2045,7 @@ body {
 }
 
 .documents-filter {
-    @apply px-4 pb-4 flex items-center gap-3;
+    @apply px-4 pb-4 flex flex-col gap-3;
 }
 
 .documents-filter label {
@@ -4231,8 +4231,9 @@ body {
 .login-portal-pw-toggle {
     position: absolute;
     right: 8px;
-    top: 50%;
-    transform: translateY(-50%);
+    top: 0;
+    bottom: 0;
+    margin: auto 0;
     background: transparent;
     border: 0;
     outline: none;

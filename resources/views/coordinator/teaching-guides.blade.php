@@ -50,9 +50,10 @@
                     @error('folder_id')<span class="text-red-500 text-xs">{{ $message }}</span>@enderror
                 </div>
                 <div class="form-group col-span-2">
-                    <label class="form-label">File (PDF or Word, max 10MB) <span class="text-red-500">*</span></label>
-                    <input type="file" name="file" class="form-control" accept=".pdf,.doc,.docx" required data-dropzone="1">
-                    @error('file')<span class="text-red-500 text-xs">{{ $message }}</span>@enderror
+                    <label class="form-label">Files (PDF or Word, max 10MB each) <span class="text-red-500">*</span></label>
+                    <input type="file" name="files[]" class="form-control" accept=".pdf,.doc,.docx" required multiple data-dropzone="1">
+                    @error('files')<span class="text-red-500 text-xs">{{ $message }}</span>@enderror
+                    @error('files.*')<span class="text-red-500 text-xs">{{ $message }}</span>@enderror
                 </div>
             </div>
             <div class="px-4 pb-4">

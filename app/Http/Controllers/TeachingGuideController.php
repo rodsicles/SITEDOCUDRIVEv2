@@ -57,38 +57,46 @@ class TeachingGuideController extends Controller
             'title'     => 'required|string|max:150',
             'subject'   => 'required|string|max:100',
             'folder_id' => 'required|exists:folders,folder_id',
-            'file'      => 'required|file|max:10240|mimes:pdf,doc,docx|mimetypes:application/pdf,application/msword,application/vnd.openxmlformats-officedocument.wordprocessingml.document',
+            'files'     => 'required|array|min:1',
+            'files.*'   => 'required|file|max:10240|mimes:pdf,doc,docx|mimetypes:application/pdf,application/msword,application/vnd.openxmlformats-officedocument.wordprocessingml.document',
         ]);
-
-        $file = $request->file('file');
-
-        // Block double-extension attacks
-        if (preg_match('/\.(php|phtml|exe|sh|bat|cmd|com|vbs|js|jsp|asp|aspx)(\.|$)/i', $file->getClientOriginalName())) {
-            return back()->with('error', 'Invalid file type.');
-        }
-
-        $quotaService = app(\App\Services\StorageQuotaService::class);
-        if (!$quotaService->hasQuotaForBytes($user->id, (int) ($file->getSize() ?? 0))) {
-            return back()->with('error', 'Storage quota exceeded (limit: ' . $quotaService->formatBytes(\App\Services\StorageQuotaService::DEFAULT_QUOTA_BYTES) . ').');
-        }
-
-        $extension = strtolower($file->getClientOriginalExtension());
-        $fileType  = $extension === 'pdf' ? 'pdf' : 'word';
-        $filename  = time() . '_' . $file->hashName();
-        $file->storeAs('teaching-guides', $filename, 'local');
 
         $folder = Folder::findOrFail($validated['folder_id']);
+        $quotaService = app(\App\Services\StorageQuotaService::class);
+        $uploadedCount = 0;
 
-        $guide = TeachingGuide::create([
-            'user_id'   => $user->id,
-            'title'     => $validated['title'],
-            'file_path' => 'teaching-guides/' . $filename,
-            'file_type' => $fileType,
-            'subject'   => $validated['subject'],
-            'folder_id' => $validated['folder_id'],
-            'semester'  => $this->semesterFromFolder($folder),
-            'academic_year' => $this->academicYearFromFolder($folder),
-        ]);
+        foreach ($request->file('files') as $file) {
+            // Block double-extension attacks
+            if (preg_match('/\.(php|phtml|exe|sh|bat|cmd|com|vbs|js|jsp|asp|aspx)(\.|$)/i', $file->getClientOriginalName())) {
+                continue;
+            }
+
+            if (!$quotaService->hasQuotaForBytes($user->id, (int) ($file->getSize() ?? 0))) {
+                return back()->with('error', 'Storage quota exceeded (limit: ' . $quotaService->formatBytes(\App\Services\StorageQuotaService::DEFAULT_QUOTA_BYTES) . ').');
+            }
+
+            $extension = strtolower($file->getClientOriginalExtension());
+            $fileType  = $extension === 'pdf' ? 'pdf' : 'word';
+            $filename  = time() . '_' . $file->hashName();
+            $file->storeAs('teaching-guides', $filename, 'local');
+
+            $guide = TeachingGuide::create([
+                'user_id'   => $user->id,
+                'title'     => $validated['title'],
+                'file_path' => 'teaching-guides/' . $filename,
+                'file_type' => $fileType,
+                'subject'   => $validated['subject'],
+                'folder_id' => $validated['folder_id'],
+                'semester'  => $this->semesterFromFolder($folder),
+                'academic_year' => $this->academicYearFromFolder($folder),
+            ]);
+
+            $uploadedCount++;
+        }
+
+        if ($uploadedCount === 0) {
+            return back()->with('error', 'No valid files were uploaded.');
+        }
 
         // Notify all active Faculty users
         $facultyIds = User::whereHas('role', fn($q) => $q->where('role_name', 'Faculty Employee'))
@@ -97,13 +105,20 @@ class TeachingGuideController extends Controller
             ->toArray();
 
         if (!empty($facultyIds)) {
+            $label = $uploadedCount === 1
+                ? "\"{$validated['title']}\" ({$folder->folder_name})"
+                : "{$uploadedCount} teaching guides in \"{$folder->folder_name}\"";
             $this->notificationService->notifyMany(
                 $facultyIds,
-                "A new teaching guide has been uploaded: \"{$guide->title}\" ({$folder->folder_name}). Check the Teaching Guides section."
+                "New teaching guide uploaded: {$label}. Check the Teaching Guides section."
             );
         }
 
-        return back()->with('success', 'Teaching guide uploaded and faculty notified.');
+        $msg = $uploadedCount === 1
+            ? 'Teaching guide uploaded and faculty notified.'
+            : "{$uploadedCount} teaching guides uploaded and faculty notified.";
+
+        return back()->with('success', $msg);
     }
 
     public function download($id)

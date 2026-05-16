@@ -22,6 +22,27 @@
         box-shadow: none !important;
         transform: none !important;
     }
+
+    /* Buttons: prevent text-selection flash and transparent active background */
+    button,
+    [type='button'],
+    [type='submit'],
+    [type='reset'],
+    .btn {
+        -webkit-tap-highlight-color: transparent;
+        user-select: none;
+        -webkit-user-select: none;
+    }
+
+    button::selection,
+    [type='button']::selection,
+    [type='submit']::selection,
+    .btn::selection,
+    button *::selection,
+    .btn *::selection {
+        background: transparent;
+        color: inherit;
+    }
 }
 
 @source '../../vendor/laravel/framework/src/Illuminate/Pagination/resources/views/*.blade.php';
@@ -635,11 +656,70 @@ body {
 }
 
 .btn {
-    @apply px-5 py-2 text-sm font-medium no-underline inline-block;
+    @apply px-5 py-2 text-sm font-medium no-underline;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    gap: 0.35rem;
+    line-height: 1.25;
+    vertical-align: middle;
+    cursor: pointer;
+    appearance: none;
+    -webkit-appearance: none;
+    border: none;
+    -webkit-tap-highlight-color: transparent;
+    user-select: none;
+    -webkit-user-select: none;
+    text-decoration: none;
+}
+
+/* Icons/labels inside buttons must not capture separate click/selection */
+.btn > i,
+.btn > span,
+.btn > svg {
+    pointer-events: none;
+    user-select: none;
+    -webkit-user-select: none;
+}
+
+.btn::selection,
+.btn *::selection {
+    background: transparent;
+    color: inherit;
+}
+
+.btn:focus {
+    outline: none;
 }
 
 .btn-primary {
-    @apply bg-[#028a0f] dark:bg-[#02b815] text-white;
+    background: #028a0f !important;
+    color: #ffffff !important;
+}
+
+.dark .btn-primary {
+    background: #02b815 !important;
+    color: #ffffff !important;
+}
+
+.btn-primary:hover:not(:disabled):not(.is-active) {
+    background: #026a0c !important;
+    color: #ffffff !important;
+}
+
+.dark .btn-primary:hover:not(:disabled):not(.is-active) {
+    background: #028a0f !important;
+}
+
+.btn-primary:active:not(:disabled),
+.btn-primary:focus:active:not(:disabled) {
+    background: #025509 !important;
+    color: #ffffff !important;
+    box-shadow: none !important;
+}
+
+.dark .btn-primary:active:not(:disabled) {
+    background: #026a0c !important;
 }
 
 .btn-secondary {
@@ -647,87 +727,39 @@ body {
 }
 
 .btn-success {
-    @apply bg-green-600 dark:bg-green-700 text-white;
-}
-
-/* Document folder toolbar — hover, press, and toggled (panel open) states */
-.doc-action-btn {
-    -webkit-tap-highlight-color: transparent;
-    user-select: none;
-    -webkit-user-select: none;
-    appearance: none;
-    -webkit-appearance: none;
-    border: none;
-    cursor: pointer;
-}
-
-.doc-action-btn::selection,
-.doc-action-btn *::selection {
-    background: transparent;
-    color: inherit;
-}
-
-.doc-action-btn:focus {
-    outline: none;
-}
-
-.doc-action-btn.btn-primary:hover:not(:disabled):not(.is-active) {
-    background-color: #026a0c !important;
+    background: #16a34a !important;
     color: #ffffff !important;
 }
 
-.doc-action-btn.btn-primary:active:not(:disabled),
-.doc-action-btn.btn-primary:focus:active:not(:disabled) {
-    background-color: #025509 !important;
+.dark .btn-success {
+    background: #15803d !important;
+}
+
+.btn-success:hover:not(:disabled):not(.is-active) {
+    background: #15803d !important;
+    color: #ffffff !important;
+}
+
+.btn-success:active:not(:disabled),
+.btn-success:focus:active:not(:disabled) {
+    background: #166534 !important;
     color: #ffffff !important;
     box-shadow: none !important;
 }
 
-.doc-action-btn.btn-primary.is-active,
-.doc-action-btn.btn-primary.is-active:hover:not(:disabled) {
-    background-color: #025509 !important;
-    color: #ffffff !important;
+/* Document toolbar: panel open = pressed look */
+.doc-action-btn.is-active.btn-primary {
+    background: #025509 !important;
     box-shadow: inset 0 2px 4px rgba(0, 0, 0, 0.25) !important;
 }
 
-.dark .doc-action-btn.btn-primary:hover:not(:disabled):not(.is-active) {
-    background-color: #028a0f !important;
+.dark .doc-action-btn.is-active.btn-primary {
+    background: #026a0c !important;
 }
 
-.dark .doc-action-btn.btn-primary:active:not(:disabled),
-.dark .doc-action-btn.btn-primary.is-active,
-.dark .doc-action-btn.btn-primary.is-active:hover:not(:disabled) {
-    background-color: #026a0c !important;
-    color: #ffffff !important;
-}
-
-.doc-action-btn.btn-success:hover:not(:disabled):not(.is-active) {
-    background-color: #15803d !important;
-    color: #ffffff !important;
-}
-
-.dark .doc-action-btn.btn-success:hover:not(:disabled):not(.is-active) {
-    background-color: #16a34a !important;
-}
-
-.doc-action-btn.btn-success:active:not(:disabled),
-.doc-action-btn.btn-success:focus:active:not(:disabled) {
-    background-color: #166534 !important;
-    color: #ffffff !important;
-    box-shadow: none !important;
-}
-
-.doc-action-btn.btn-success.is-active,
-.doc-action-btn.btn-success.is-active:hover:not(:disabled) {
-    background-color: #166534 !important;
-    color: #ffffff !important;
+.doc-action-btn.is-active.btn-success {
+    background: #166534 !important;
     box-shadow: inset 0 2px 4px rgba(0, 0, 0, 0.25) !important;
-}
-
-.dark .doc-action-btn.btn-success:active:not(:disabled),
-.dark .doc-action-btn.btn-success.is-active,
-.dark .doc-action-btn.btn-success.is-active:hover:not(:disabled) {
-    background-color: #15803d !important;
 }
 
 .doc-action-btn:focus-visible {

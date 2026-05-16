@@ -17,25 +17,6 @@ document.addEventListener('DOMContentLoaded', function() {
         });
     });
 
-    // Button click animation
-    const buttons = document.querySelectorAll('.btn');
-    buttons.forEach(btn => {
-        btn.addEventListener('click', function(e) {
-            const ripple = document.createElement('span');
-            ripple.style.position = 'absolute';
-            ripple.style.borderRadius = '50%';
-            ripple.style.background = 'rgba(255, 255, 255, 0.6)';
-            ripple.style.width = ripple.style.height = '100px';
-            ripple.style.left = e.clientX - this.offsetLeft - 50 + 'px';
-            ripple.style.top = e.clientY - this.offsetTop - 50 + 'px';
-            ripple.style.animation = 'ripple 0.6s ease-out';
-            this.style.position = 'relative';
-            this.style.overflow = 'hidden';
-            this.appendChild(ripple);
-            setTimeout(() => ripple.remove(), 600);
-        });
-    });
-
     // Auto-hide alerts after 5 seconds
     const alerts = document.querySelectorAll('.alert');
     alerts.forEach(alert => {
@@ -108,13 +89,6 @@ document.addEventListener('DOMContentLoaded', function() {
 // Add CSS animations dynamically
 const style = document.createElement('style');
 style.textContent = `
-    @keyframes ripple {
-        to {
-            transform: scale(4);
-            opacity: 0;
-        }
-    }
-    
     @keyframes pulse {
         0%, 100% { transform: scale(1); }
         50% { transform: scale(1.2); }

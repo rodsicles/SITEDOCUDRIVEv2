@@ -3,7 +3,7 @@
 namespace App\Http\Controllers;
 
 use Illuminate\Http\Request;
-use Illuminate\Support\Facades\Storage;
+use App\Support\UploadStorage;
 use App\Models\ProfessionalDevelopment;
 use App\Services\ProfessionalDevelopmentService;
 
@@ -75,15 +75,13 @@ class ProfessionalDevelopmentController extends Controller
             abort(403);
         }
 
-        if (!Storage::disk('local')->exists($pd->certificate_path)) {
-            abort(404, 'Certificate file not found.');
-        }
+        UploadStorage::assertPathInDirectory($pd->certificate_path, 'certificates');
 
-        $absolutePath = Storage::disk('local')->path($pd->certificate_path);
-
-        return response()->file($absolutePath, [
-            'Content-Type' => Storage::disk('local')->mimeType($pd->certificate_path),
-        ]);
+        return UploadStorage::inlineResponse(
+            $pd->certificate_path,
+            basename($pd->certificate_path),
+            UploadStorage::mimeType($pd->certificate_path)
+        );
     }
 
     public function destroy($id)

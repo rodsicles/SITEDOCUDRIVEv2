@@ -89,7 +89,7 @@ class BackupService
     public function restoreBackup(UploadedFile $file, User $user): void
     {
         $tempPath = $file->storeAs('backups/temp', 'restore_' . time() . '.sql', 'local');
-        $fullPath = storage_path('app/' . $tempPath);
+        $fullPath = \Illuminate\Support\Facades\Storage::disk('local')->path($tempPath);
 
         $dbConfig = config('database.connections.mysql');
 

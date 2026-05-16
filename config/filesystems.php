@@ -17,6 +17,20 @@ return [
 
     /*
     |--------------------------------------------------------------------------
+    | User Upload Disk
+    |--------------------------------------------------------------------------
+    |
+    | All uploaded files (documents, exam questionnaires, teaching guides,
+    | task attachments, certificates) use this disk. On Laravel Cloud, attach
+    | Object Storage to your environment and set FILESYSTEM_UPLOAD_DISK to the
+    | bucket disk name shown in your environment variables.
+    |
+    */
+
+    'upload_disk' => env('FILESYSTEM_UPLOAD_DISK', env('FILESYSTEM_DISK', 'local')),
+
+    /*
+    |--------------------------------------------------------------------------
     | Filesystem Disks
     |--------------------------------------------------------------------------
     |
@@ -47,16 +61,21 @@ return [
             'report' => false,
         ],
 
+        /*
+         * Laravel Cloud Object Storage (Cloudflare R2, S3-compatible).
+         * Set FILESYSTEM_DISK=s3 and FILESYSTEM_UPLOAD_DISK=s3 in production.
+         */
         's3' => [
             'driver' => 's3',
             'key' => env('AWS_ACCESS_KEY_ID'),
             'secret' => env('AWS_SECRET_ACCESS_KEY'),
-            'region' => env('AWS_DEFAULT_REGION'),
+            'region' => env('AWS_DEFAULT_REGION', 'auto'),
             'bucket' => env('AWS_BUCKET'),
             'url' => env('AWS_URL'),
             'endpoint' => env('AWS_ENDPOINT'),
             'use_path_style_endpoint' => env('AWS_USE_PATH_STYLE_ENDPOINT', false),
-            'throw' => false,
+            'visibility' => 'private',
+            'throw' => env('FILESYSTEM_THROW', false),
             'report' => false,
         ],
 

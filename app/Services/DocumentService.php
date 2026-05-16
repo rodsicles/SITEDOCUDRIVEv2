@@ -8,7 +8,7 @@ use App\Models\DocumentFavorite;
 use App\Models\DashboardLog;
 use App\Models\Folder;
 use App\Models\User;
-use Illuminate\Support\Facades\Storage;
+use App\Support\UploadStorage;
 use Illuminate\Support\Collection;
 use Illuminate\Pagination\LengthAwarePaginator;
 
@@ -131,20 +131,7 @@ class DocumentService
             abort(403, 'Unauthorized access');
         }
 
-        // Path traversal protection
-        if (str_contains($document->file_path, '..') || str_contains($document->file_path, './')) {
-            abort(403, 'Invalid file path');
-        }
-
-        $allowedDir = Storage::disk('local')->path('documents');
-        $realFilePath = realpath(Storage::disk('local')->path($document->file_path));
-        if (!$realFilePath || !str_starts_with($realFilePath, realpath($allowedDir))) {
-            abort(403, 'Unauthorized file access');
-        }
-
-        if (!Storage::disk('local')->exists($document->file_path)) {
-            abort(404, 'File not found');
-        }
+        UploadStorage::assertResolvedPath($document->file_path, 'documents');
 
         if ($trackView) {
             DocumentView::trackView($user->id, $documentId);
@@ -157,14 +144,14 @@ class DocumentService
             ]);
         }
 
-        $mimeType = Storage::disk('local')->mimeType($document->file_path);
+        $mimeType = UploadStorage::mimeType($document->file_path);
         $allowedMimes = ['application/pdf', 'image/jpeg', 'image/png'];
 
         // For Word docs: serve the sibling PDF for inline preview
         $serveFilePath = $document->file_path;
         if (!in_array($mimeType, $allowedMimes)) {
             $pdfSibling = preg_replace('/\.[^.]+$/', '.pdf', $document->file_path);
-            if (Storage::disk('local')->exists($pdfSibling)) {
+            if (UploadStorage::exists($pdfSibling)) {
                 $serveFilePath = $pdfSibling;
                 $mimeType      = 'application/pdf';
             } else {
@@ -172,12 +159,7 @@ class DocumentService
             }
         }
 
-        $absolutePath = Storage::disk('local')->path($serveFilePath);
-
-        return response()->file($absolutePath, [
-            'Content-Type'        => $mimeType,
-            'Content-Disposition' => 'inline; filename="' . basename($absolutePath) . '"',
-        ]);
+        return UploadStorage::inlineResponse($serveFilePath, basename($serveFilePath), $mimeType);
     }
 
     /**
@@ -191,28 +173,15 @@ class DocumentService
             abort(403, 'Unauthorized access');
         }
 
-        // Path traversal protection
-        if (str_contains($document->file_path, '..') || str_contains($document->file_path, './')) {
-            abort(403, 'Invalid file path');
-        }
-
-        $allowedDir = Storage::disk('local')->path('documents');
-        $realFilePath = realpath(Storage::disk('local')->path($document->file_path));
-        if (!$realFilePath || !str_starts_with($realFilePath, realpath($allowedDir))) {
-            abort(403, 'Unauthorized file access');
-        }
+        UploadStorage::assertResolvedPath($document->file_path, 'documents');
 
         // Determine which file to download
         $downloadPath = $document->file_path;
         if ($format === 'pdf') {
             $pdfPath = preg_replace('/\.[^.]+$/', '.pdf', $document->file_path);
-            if (Storage::disk('local')->exists($pdfPath)) {
+            if (UploadStorage::exists($pdfPath)) {
                 $downloadPath = $pdfPath;
             }
-        }
-
-        if (!Storage::disk('local')->exists($downloadPath)) {
-            abort(404, 'File not found');
         }
 
         DashboardLog::create([
@@ -222,7 +191,7 @@ class DocumentService
             'visibility' => 'own',
         ]);
 
-        return Storage::disk('local')->download($downloadPath, basename($downloadPath));
+        return UploadStorage::downloadResponse($downloadPath, basename($downloadPath));
     }
 
     /**
@@ -245,7 +214,7 @@ class DocumentService
         foreach ($files as $index => $file) {
             // Sanitize filename: use hash only, no original name
             $filename = time() . '_' . $index . '_' . $file->hashName();
-            Storage::disk('local')->putFileAs('documents', $file, $filename);
+            UploadStorage::putFileAs('documents', $file, $filename);
 
             Document::create([
                 'uploaded_by' => $userId,

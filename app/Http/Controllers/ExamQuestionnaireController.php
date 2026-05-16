@@ -3,8 +3,8 @@
 namespace App\Http\Controllers;
 
 use App\Models\ExamQuestionnaire;
+use App\Support\UploadStorage;
 use Illuminate\Http\Request;
-use Illuminate\Support\Facades\Storage;
 
 class ExamQuestionnaireController extends Controller
 {
@@ -89,12 +89,12 @@ class ExamQuestionnaireController extends Controller
         $extension = strtolower($file->getClientOriginalExtension());
         $fileType  = $extension === 'pdf' ? 'pdf' : 'word';
         $filename  = time() . '_' . $file->hashName();
-        $file->storeAs('exam-questionnaires', $filename, 'local');
+        $storedPath = UploadStorage::storeAs($file, 'exam-questionnaires', $filename);
 
         ExamQuestionnaire::create([
             'submitted_by'  => auth()->id(),
             'title'         => $title,
-            'file_path'     => 'exam-questionnaires/' . $filename,
+            'file_path'     => $storedPath,
             'file_type'     => $fileType,
             'subject'       => $validated['subject'],
             'exam_type'     => $validated['exam_type'],
@@ -116,21 +116,13 @@ class ExamQuestionnaireController extends Controller
             abort(403);
         }
 
-        // Path traversal protection
-        if (str_contains($questionnaire->file_path, '..') || str_contains($questionnaire->file_path, './')) {
-            abort(403, 'Invalid file path');
-        }
+        UploadStorage::assertResolvedPath($questionnaire->file_path, 'exam-questionnaires');
 
-        if (!Storage::disk('local')->exists($questionnaire->file_path)) {
-            abort(404, 'File not found.');
-        }
-
-        $path = Storage::disk('local')->path($questionnaire->file_path);
-
-        return response()->file($path, [
-            'Content-Type'        => 'application/pdf',
-            'Content-Disposition' => 'inline; filename="' . $questionnaire->title . '.pdf"',
-        ]);
+        return UploadStorage::inlineResponse(
+            $questionnaire->file_path,
+            $questionnaire->title . '.pdf',
+            'application/pdf'
+        );
     }
 
     public function download($id)
@@ -143,18 +135,9 @@ class ExamQuestionnaireController extends Controller
             abort(403);
         }
 
-        // Path traversal protection
-        if (str_contains($questionnaire->file_path, '..') || str_contains($questionnaire->file_path, './')) {
-            abort(403, 'Invalid file path');
-        }
+        UploadStorage::assertResolvedPath($questionnaire->file_path, 'exam-questionnaires');
 
-        if (!Storage::disk('local')->exists($questionnaire->file_path)) {
-            abort(404, 'File not found.');
-        }
-
-        $path = Storage::disk('local')->path($questionnaire->file_path);
-
-        return response()->download($path, $questionnaire->title . '.pdf');
+        return UploadStorage::downloadResponse($questionnaire->file_path, $questionnaire->title . '.pdf');
     }
 
     public function approve(Request $request, $id)
@@ -203,7 +186,7 @@ class ExamQuestionnaireController extends Controller
             }
         }
 
-        Storage::disk('local')->delete($questionnaire->file_path);
+        UploadStorage::delete($questionnaire->file_path);
         $questionnaire->delete();
 
         return back()->with('success', 'Questionnaire deleted.');

@@ -7,8 +7,8 @@ use App\Models\Notification;
 use App\Models\Task;
 use App\Models\TaskAttachment;
 use Illuminate\Http\RedirectResponse;
+use App\Support\UploadStorage;
 use Illuminate\Http\Request;
-use Illuminate\Support\Facades\Storage;
 
 class TaskAttachmentController extends Controller
 {
@@ -49,7 +49,7 @@ class TaskAttachmentController extends Controller
             return back()->with('error', 'Storage quota exceeded (limit: ' . $quotaService->formatBytes(\App\Services\StorageQuotaService::DEFAULT_QUOTA_BYTES) . ').');
         }
 
-        $storedPath = $file->store('task-attachments', 'local');
+        $storedPath = UploadStorage::store($file, 'task-attachments');
 
         TaskAttachment::create([
             'task_id' => $task->task_id,
@@ -88,11 +88,9 @@ class TaskAttachmentController extends Controller
             abort(403);
         }
 
-        if (!Storage::disk('local')->exists($attachment->file_path)) {
-            abort(404, 'Attachment file not found.');
-        }
+        UploadStorage::assertPathInDirectory($attachment->file_path, 'task-attachments');
 
-        return Storage::disk('local')->download($attachment->file_path, $attachment->original_name);
+        return UploadStorage::downloadResponse($attachment->file_path, $attachment->original_name);
     }
 
     private function canManageTask(Task $task, int $userId, bool $isDeanOrSecretary): bool

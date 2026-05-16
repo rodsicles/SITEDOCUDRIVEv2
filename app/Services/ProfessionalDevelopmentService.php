@@ -10,7 +10,7 @@ use Illuminate\Http\UploadedFile;
 use Illuminate\Pagination\LengthAwarePaginator;
 use Illuminate\Support\Collection;
 use Illuminate\Support\Facades\DB;
-use Illuminate\Support\Facades\Storage;
+use App\Support\UploadStorage;
 
 class ProfessionalDevelopmentService
 {
@@ -48,8 +48,7 @@ class ProfessionalDevelopmentService
             $certificatePath = null;
             if ($certificate) {
                 $filename = 'cert_' . time() . '_' . $certificate->hashName();
-                Storage::disk('local')->putFileAs("certificates/{$user->id}", $certificate, $filename);
-                $certificatePath = "certificates/{$user->id}/{$filename}";
+                $certificatePath = UploadStorage::putFileAs("certificates/{$user->id}", $certificate, $filename);
             }
 
             $pd = ProfessionalDevelopment::create([
@@ -95,12 +94,11 @@ class ProfessionalDevelopmentService
 
         if ($certificate) {
             // Delete old certificate
-            if ($pd->certificate_path && Storage::disk('local')->exists($pd->certificate_path)) {
-                Storage::disk('local')->delete($pd->certificate_path);
+            if ($pd->certificate_path && UploadStorage::exists($pd->certificate_path)) {
+                UploadStorage::delete($pd->certificate_path);
             }
             $filename = 'cert_' . time() . '_' . $certificate->hashName();
-            Storage::disk('local')->putFileAs("certificates/{$userId}", $certificate, $filename);
-            $pd->certificate_path = "certificates/{$userId}/{$filename}";
+            $pd->certificate_path = UploadStorage::putFileAs("certificates/{$userId}", $certificate, $filename);
         }
 
         $pd->update([
@@ -127,8 +125,8 @@ class ProfessionalDevelopmentService
             abort(403, 'Unauthorized');
         }
 
-        if ($pd->certificate_path && Storage::disk('local')->exists($pd->certificate_path)) {
-            Storage::disk('local')->delete($pd->certificate_path);
+        if ($pd->certificate_path && UploadStorage::exists($pd->certificate_path)) {
+            UploadStorage::delete($pd->certificate_path);
         }
 
         $seminarName = $pd->seminar_name;

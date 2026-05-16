@@ -6,8 +6,8 @@ use App\Models\Folder;
 use App\Models\TeachingGuide;
 use App\Models\User;
 use App\Services\NotificationService;
+use App\Support\UploadStorage;
 use Illuminate\Http\Request;
-use Illuminate\Support\Facades\Storage;
 
 class TeachingGuideController extends Controller
 {
@@ -78,12 +78,12 @@ class TeachingGuideController extends Controller
             $extension = strtolower($file->getClientOriginalExtension());
             $fileType  = $extension === 'pdf' ? 'pdf' : 'word';
             $filename  = time() . '_' . $file->hashName();
-            $file->storeAs('teaching-guides', $filename, 'local');
+            $storedPath = UploadStorage::storeAs($file, 'teaching-guides', $filename);
 
             $guide = TeachingGuide::create([
                 'user_id'   => $user->id,
                 'title'     => $validated['title'],
-                'file_path' => 'teaching-guides/' . $filename,
+                'file_path' => $storedPath,
                 'file_type' => $fileType,
                 'subject'   => $validated['subject'],
                 'folder_id' => $validated['folder_id'],
@@ -126,18 +126,9 @@ class TeachingGuideController extends Controller
         $user = auth()->user();
         $guide = TeachingGuide::findOrFail($id);
 
-        // Path traversal protection
-        if (str_contains($guide->file_path, '..') || str_contains($guide->file_path, './')) {
-            abort(403, 'Invalid file path');
-        }
+        UploadStorage::assertResolvedPath($guide->file_path, 'teaching-guides');
 
-        if (!Storage::disk('local')->exists($guide->file_path)) {
-            abort(404, 'File not found.');
-        }
-
-        $path = Storage::disk('local')->path($guide->file_path);
-
-        return response()->download($path, basename($guide->file_path));
+        return UploadStorage::downloadResponse($guide->file_path, basename($guide->file_path));
     }
 
     public function destroy($id)
@@ -148,7 +139,7 @@ class TeachingGuideController extends Controller
         if ($user->isFaculty()) abort(403);
 
         $guide = TeachingGuide::findOrFail($id);
-        Storage::disk('local')->delete($guide->file_path);
+        UploadStorage::delete($guide->file_path);
         $guide->delete();
 
         return back()->with('success', 'Teaching guide deleted.');

@@ -6,6 +6,7 @@ use App\Models\Task;
 use App\Models\TaskAttachment;
 use App\Models\Notification;
 use App\Models\DashboardLog;
+use App\Support\UploadStorage;
 use Illuminate\Http\UploadedFile;
 use Illuminate\Support\Collection;
 
@@ -30,7 +31,7 @@ class TaskService
                 continue;
             }
 
-            $storedPath = $attachment->store('task-attachments', 'local');
+            $storedPath = UploadStorage::store($attachment, 'task-attachments');
 
             TaskAttachment::create([
                 'task_id' => $task->task_id,

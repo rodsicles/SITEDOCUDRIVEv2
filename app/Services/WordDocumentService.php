@@ -7,7 +7,7 @@ use PhpOffice\PhpWord\PhpWord;
 use PhpOffice\PhpWord\IOFactory;
 use PhpOffice\PhpWord\SimpleType\Jc;
 use PhpOffice\PhpWord\SimpleType\TblWidth;
-use Illuminate\Support\Facades\Storage;
+use App\Support\UploadStorage;
 
 class WordDocumentService
 {
@@ -271,26 +271,24 @@ class WordDocumentService
             ['alignment' => Jc::CENTER]
         );
 
-        // Save file
+        // Save to temp, then persist on upload disk (local or cloud object storage)
         $filename = 'PRC_Results_' . str_replace(' ', '_', $batchLabel) . '_' . time() . '.docx';
-        $storagePath = Storage::disk('local')->path('documents/' . $filename);
-
-        // Ensure directory exists
-        $dir = dirname($storagePath);
-        if (!is_dir($dir)) {
-            mkdir($dir, 0755, true);
-        }
+        $relativePath = 'documents/' . $filename;
+        $tempDocx = sys_get_temp_dir() . DIRECTORY_SEPARATOR . uniqid('prc_', true) . '.docx';
+        $tempPdf = str_replace('.docx', '.pdf', $tempDocx);
 
         $writer = IOFactory::createWriter($phpWord, 'Word2007');
-        $writer->save($storagePath);
+        $writer->save($tempDocx);
 
-        // Also generate a PDF sibling (same base name, .pdf extension)
-        $this->generatePrcResultsPdf(
-            $examData, $batchLabel, $recorderName,
-            str_replace('.docx', '.pdf', $storagePath)
-        );
+        $this->generatePrcResultsPdf($examData, $batchLabel, $recorderName, $tempPdf);
 
-        return 'documents/' . $filename;
+        UploadStorage::putFromLocalFile($relativePath, $tempDocx);
+        UploadStorage::putFromLocalFile(str_replace('.docx', '.pdf', $relativePath), $tempPdf);
+
+        @unlink($tempDocx);
+        @unlink($tempPdf);
+
+        return $relativePath;
     }
 
     /**
@@ -337,13 +335,15 @@ class WordDocumentService
         $docPath = $this->generatePrcResultsDoc($examData, $batchLabel, $recorderName, $department);
 
         // Overwrite the auto-generated PDF sibling with the cert-specific PDF view
-        // so the title/subtitle reads "IT Certification Results".
-        $absoluteDocxPath = Storage::disk('local')->path($docPath);
-        $pdfStoragePath   = str_replace('.docx', '.pdf', $absoluteDocxPath);
+        $pdfRelativePath = preg_replace('/\.docx$/', '.pdf', $docPath);
+        $tempPdf = sys_get_temp_dir() . DIRECTORY_SEPARATOR . uniqid('cert_', true) . '.pdf';
 
         $this->generateCertResultsPdf(
-            $certName, $batchLabel, $passedCount, $passerNames, $recorderName, $pdfStoragePath
+            $certName, $batchLabel, $passedCount, $passerNames, $recorderName, $tempPdf
         );
+
+        UploadStorage::putFromLocalFile($pdfRelativePath, $tempPdf);
+        @unlink($tempPdf);
 
         return $docPath;
     }

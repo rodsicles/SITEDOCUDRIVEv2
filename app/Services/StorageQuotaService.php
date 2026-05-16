@@ -7,7 +7,7 @@ use App\Models\TaskAttachment;
 use App\Models\TeachingGuide;
 use App\Models\ExamQuestionnaire;
 use Illuminate\Support\Facades\Schema;
-use Illuminate\Support\Facades\Storage;
+use App\Support\UploadStorage;
 
 /**
  * Per-user storage quota helper.
@@ -101,8 +101,8 @@ class StorageQuotaService
                 continue;
             }
             try {
-                if (Storage::disk('local')->exists($path)) {
-                    $bytes += (int) Storage::disk('local')->size($path);
+                if (UploadStorage::exists($path)) {
+                    $bytes += UploadStorage::size($path);
                 }
             } catch (\Throwable $e) {
                 // Ignore filesystem errors; treat as 0.

@@ -650,6 +650,64 @@ body {
     @apply bg-green-600 dark:bg-green-700 text-white;
 }
 
+/* Document folder toolbar — hover, press, and toggled (panel open) states */
+.doc-action-btn {
+    transition: background-color 0.15s ease, box-shadow 0.15s ease, transform 0.1s ease;
+}
+
+.doc-action-btn.btn-primary:hover:not(:disabled):not(.is-active) {
+    background-color: #026a0c;
+}
+
+.doc-action-btn.btn-primary:active:not(:disabled) {
+    background-color: #025509;
+    transform: translateY(1px);
+}
+
+.doc-action-btn.btn-primary.is-active,
+.doc-action-btn.btn-primary.is-active:hover:not(:disabled) {
+    background-color: #025509;
+    box-shadow: inset 0 2px 4px rgba(0, 0, 0, 0.2);
+}
+
+.dark .doc-action-btn.btn-primary.is-active,
+.dark .doc-action-btn.btn-primary.is-active:hover:not(:disabled) {
+    background-color: #028a0f;
+}
+
+.doc-action-btn.btn-success:hover:not(:disabled):not(.is-active) {
+    background-color: #15803d;
+}
+
+.dark .doc-action-btn.btn-success:hover:not(:disabled):not(.is-active) {
+    background-color: #16a34a;
+}
+
+.doc-action-btn.btn-success:active:not(:disabled) {
+    background-color: #166534;
+    transform: translateY(1px);
+}
+
+.doc-action-btn.btn-success.is-active,
+.doc-action-btn.btn-success.is-active:hover:not(:disabled) {
+    background-color: #166534;
+    box-shadow: inset 0 2px 4px rgba(0, 0, 0, 0.2);
+}
+
+.dark .doc-action-btn.btn-success.is-active,
+.dark .doc-action-btn.btn-success.is-active:hover:not(:disabled) {
+    background-color: #15803d;
+}
+
+.doc-action-btn:focus-visible {
+    outline: 2px solid #028a0f;
+    outline-offset: 2px;
+}
+
+.dark .doc-action-btn:focus-visible {
+    outline-color: #02b815;
+}
+
 .btn-danger {
     @apply bg-red-600 dark:bg-red-700 text-white;
 }
@@ -781,6 +839,11 @@ body {
 /* Calendar container */
 #calendar {
     @apply p-4;
+}
+
+/* Nav controls on the left only — no duplicate prev/next/today on the right */
+.fc .fc-header-toolbar .fc-toolbar-chunk--end {
+    display: none !important;
 }
 
 /* Toolbar buttons */

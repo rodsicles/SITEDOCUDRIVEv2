@@ -72,19 +72,19 @@
                 @if($canUpload)
                 <div class="flex gap-2">
                     @if(isset($isPrcFolder) && $isPrcFolder)
-                    <button type="button" onclick="togglePrcForm()" class="btn btn-primary">
+                    <button type="button" id="btnPrcForm" onclick="togglePrcForm()" class="btn btn-primary doc-action-btn" aria-pressed="false">
                         <i class="fas fa-clipboard-list mr-1"></i> Record Exam Results
                     </button>
                     @endif
                     @if(isset($isCertFolder) && $isCertFolder)
-                    <button type="button" onclick="toggleCertForm()" class="btn btn-primary">
+                    <button type="button" id="btnCertForm" onclick="toggleCertForm()" class="btn btn-primary doc-action-btn" aria-pressed="false">
                         <i class="fas fa-plus-circle mr-1"></i> Record Passers
                     </button>
                     @endif
-                    <button type="button" onclick="toggleCreateSubfolder()" class="btn btn-primary">
+                    <button type="button" id="btnCreateFolder" onclick="toggleCreateSubfolder()" class="btn btn-primary doc-action-btn" aria-pressed="false">
                         <i class="fas fa-folder-plus mr-1"></i> Create Folder
                     </button>
-                    <button type="button" onclick="toggleFolderUpload()" class="btn btn-success">
+                    <button type="button" id="btnFolderUpload" onclick="toggleFolderUpload()" class="btn btn-success doc-action-btn" aria-pressed="false">
                         <i class="fas fa-upload mr-1"></i> Upload to this Folder
                     </button>
                 </div>
@@ -382,14 +382,27 @@
 @if(isset($isLeafFolder) && $isLeafFolder && $canUpload)
 @push('scripts')
 <script>
+    function syncDocActionBtn(btnId, formId) {
+        const btn = document.getElementById(btnId);
+        const form = document.getElementById(formId);
+        if (!btn || !form) return;
+        const isOpen = !form.classList.contains('hidden');
+        btn.classList.toggle('is-active', isOpen);
+        btn.setAttribute('aria-pressed', isOpen ? 'true' : 'false');
+    }
+
     function toggleFolderUpload() {
         const form = document.getElementById('folderUploadForm');
+        if (!form) return;
         form.classList.toggle('hidden');
+        syncDocActionBtn('btnFolderUpload', 'folderUploadForm');
     }
 
     function toggleCreateSubfolder() {
         const form = document.getElementById('createSubfolderForm');
-        if (form) form.classList.toggle('hidden');
+        if (!form) return;
+        form.classList.toggle('hidden');
+        syncDocActionBtn('btnCreateFolder', 'createSubfolderForm');
     }
 
     async function submitCreateSubfolder() {
@@ -434,12 +447,16 @@
 
     function togglePrcForm() {
         const form = document.getElementById('prcExamForm');
-        if (form) form.classList.toggle('hidden');
+        if (!form) return;
+        form.classList.toggle('hidden');
+        syncDocActionBtn('btnPrcForm', 'prcExamForm');
     }
 
     function toggleCertForm() {
         const form = document.getElementById('certCountForm');
-        if (form) form.classList.toggle('hidden');
+        if (!form) return;
+        form.classList.toggle('hidden');
+        syncDocActionBtn('btnCertForm', 'certCountForm');
     }
 
     function updatePasserCount(textarea, countFieldId) {

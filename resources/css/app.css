@@ -652,51 +652,82 @@ body {
 
 /* Document folder toolbar — hover, press, and toggled (panel open) states */
 .doc-action-btn {
-    transition: background-color 0.15s ease, box-shadow 0.15s ease, transform 0.1s ease;
+    -webkit-tap-highlight-color: transparent;
+    user-select: none;
+    -webkit-user-select: none;
+    appearance: none;
+    -webkit-appearance: none;
+    border: none;
+    cursor: pointer;
+}
+
+.doc-action-btn::selection,
+.doc-action-btn *::selection {
+    background: transparent;
+    color: inherit;
+}
+
+.doc-action-btn:focus {
+    outline: none;
 }
 
 .doc-action-btn.btn-primary:hover:not(:disabled):not(.is-active) {
-    background-color: #026a0c;
+    background-color: #026a0c !important;
+    color: #ffffff !important;
 }
 
-.doc-action-btn.btn-primary:active:not(:disabled) {
-    background-color: #025509;
-    transform: translateY(1px);
+.doc-action-btn.btn-primary:active:not(:disabled),
+.doc-action-btn.btn-primary:focus:active:not(:disabled) {
+    background-color: #025509 !important;
+    color: #ffffff !important;
+    box-shadow: none !important;
 }
 
 .doc-action-btn.btn-primary.is-active,
 .doc-action-btn.btn-primary.is-active:hover:not(:disabled) {
-    background-color: #025509;
-    box-shadow: inset 0 2px 4px rgba(0, 0, 0, 0.2);
+    background-color: #025509 !important;
+    color: #ffffff !important;
+    box-shadow: inset 0 2px 4px rgba(0, 0, 0, 0.25) !important;
 }
 
+.dark .doc-action-btn.btn-primary:hover:not(:disabled):not(.is-active) {
+    background-color: #028a0f !important;
+}
+
+.dark .doc-action-btn.btn-primary:active:not(:disabled),
 .dark .doc-action-btn.btn-primary.is-active,
 .dark .doc-action-btn.btn-primary.is-active:hover:not(:disabled) {
-    background-color: #028a0f;
+    background-color: #026a0c !important;
+    color: #ffffff !important;
 }
 
 .doc-action-btn.btn-success:hover:not(:disabled):not(.is-active) {
-    background-color: #15803d;
+    background-color: #15803d !important;
+    color: #ffffff !important;
 }
 
 .dark .doc-action-btn.btn-success:hover:not(:disabled):not(.is-active) {
-    background-color: #16a34a;
+    background-color: #16a34a !important;
 }
 
-.doc-action-btn.btn-success:active:not(:disabled) {
-    background-color: #166534;
-    transform: translateY(1px);
+.doc-action-btn.btn-success:active:not(:disabled),
+.doc-action-btn.btn-success:focus:active:not(:disabled) {
+    background-color: #166534 !important;
+    color: #ffffff !important;
+    box-shadow: none !important;
 }
 
 .doc-action-btn.btn-success.is-active,
 .doc-action-btn.btn-success.is-active:hover:not(:disabled) {
-    background-color: #166534;
-    box-shadow: inset 0 2px 4px rgba(0, 0, 0, 0.2);
+    background-color: #166534 !important;
+    color: #ffffff !important;
+    box-shadow: inset 0 2px 4px rgba(0, 0, 0, 0.25) !important;
 }
 
+.dark .doc-action-btn.btn-success:active:not(:disabled),
 .dark .doc-action-btn.btn-success.is-active,
 .dark .doc-action-btn.btn-success.is-active:hover:not(:disabled) {
-    background-color: #15803d;
+    background-color: #15803d !important;
 }
 
 .doc-action-btn:focus-visible {

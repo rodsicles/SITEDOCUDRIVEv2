@@ -2,8 +2,10 @@
 
 namespace App\Providers;
 
-use Illuminate\Support\ServiceProvider;
+use App\Console\Commands\CreateSchoolYearFolders;
+use App\Console\Commands\VerifyUploadStorageCommand;
 use Illuminate\Support\Facades\Schema;
+use Illuminate\Support\ServiceProvider;
 
 class AppServiceProvider extends ServiceProvider
 {
@@ -21,5 +23,12 @@ class AppServiceProvider extends ServiceProvider
     public function boot(): void
     {
         Schema::defaultStringLength(191);
+
+        if ($this->app->runningInConsole()) {
+            $this->commands([
+                CreateSchoolYearFolders::class,
+                VerifyUploadStorageCommand::class,
+            ]);
+        }
     }
 }

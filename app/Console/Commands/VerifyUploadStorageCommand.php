@@ -20,7 +20,7 @@ class VerifyUploadStorageCommand extends Command
         $payload = 'ok-' . now()->toIso8601String();
 
         try {
-            UploadStorage::disk()->put($testPath, $payload, ['visibility' => 'private']);
+            UploadStorage::disk()->put($testPath, $payload);
 
             if (!UploadStorage::exists($testPath)) {
                 $this->error('Write succeeded but file not found on read.');

@@ -537,6 +537,7 @@
                 headers: {
                     'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]').content,
                     'Accept': 'application/json',
+                    'X-Requested-With': 'XMLHttpRequest',
                 }
             });
 
@@ -547,17 +548,40 @@
                 return;
             }
 
-            const data = await response.json();
-            if (response.ok) {
+            const contentType = response.headers.get('content-type') || '';
+            let data = {};
+            if (contentType.includes('application/json')) {
+                data = await response.json();
+            } else {
+                const text = await response.text();
+                console.error('Upload non-JSON response', response.status, text.slice(0, 500));
+                showToast('Upload failed (server returned ' + response.status + '). Check browser console or application logs.', 'error');
+                submitBtn.disabled = false;
+                submitBtn.innerHTML = originalText;
+                return;
+            }
+
+            if (response.ok && data.success !== false) {
                 showToast(data.message || 'Uploaded successfully!', 'success');
                 setTimeout(() => window.location.reload(), 1500);
             } else {
-                showToast(data.message || 'Upload failed', 'error');
+                let msg = data.message || 'Upload failed';
+                if (data.errors) {
+                    const flat = Object.values(data.errors).flat();
+                    if (flat.length) msg = flat.join(', ');
+                }
+                if (data.debug) {
+                    console.error('Upload debug:', data.debug);
+                    msg += ' (see console for details)';
+                }
+                console.error('Upload failed', response.status, data);
+                showToast(msg, 'error');
                 submitBtn.disabled = false;
                 submitBtn.innerHTML = originalText;
             }
         } catch (error) {
-            showToast('Upload error. Please try again.', 'error');
+            console.error('Upload request error', error);
+            showToast('Upload error: ' + (error.message || 'network or server failure'), 'error');
             submitBtn.disabled = false;
             submitBtn.innerHTML = originalText;
         }

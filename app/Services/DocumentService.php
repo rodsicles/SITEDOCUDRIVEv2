@@ -15,9 +15,41 @@ use Illuminate\Pagination\LengthAwarePaginator;
 class DocumentService
 {
     /**
-     * Document categories available in the system.
+     * Document categories available in the system (must match documents.category ENUM).
      */
-    const CATEGORIES = ['Accreditation and Certifications', 'Academics'];
+    const CATEGORIES = [
+        'Accreditation and Certifications',
+        'Academics',
+        'Teaching Guides',
+        'Exam Questionnaires',
+    ];
+
+    /**
+     * All values allowed in documents.category column.
+     */
+    public static function allowedCategories(): array
+    {
+        return array_merge(self::CATEGORIES, ['Other']);
+    }
+
+    /**
+     * Resolve the documents.category value for a folder (walks to root system category).
+     */
+    public function resolveCategoryForFolder(?int $folderId): string
+    {
+        if (!$folderId) {
+            return 'Other';
+        }
+
+        $folder = Folder::find($folderId);
+        if (!$folder) {
+            return 'Other';
+        }
+
+        $rootName = $folder->top_level_category;
+
+        return in_array($rootName, self::allowedCategories(), true) ? $rootName : 'Other';
+    }
 
     /**
      * Get filtered and paginated documents for a user.
@@ -209,14 +241,7 @@ class DocumentService
     {
         $tags = !empty($validated['tags']) ? implode(',', array_map('trim', explode(',', $validated['tags']))) : '';
 
-        // Resolve folder + category once before the loop to avoid repeated queries.
-        $category = 'Other';
-        if (!empty($validated['folder_id'])) {
-            $folder = Folder::find($validated['folder_id']);
-            if ($folder) {
-                $category = $folder->top_level_category ?? 'Other';
-            }
-        }
+        $category = $this->resolveCategoryForFolder($validated['folder_id'] ?? null);
 
         $uploadedCount = 0;
         foreach ($files as $index => $file) {

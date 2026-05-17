@@ -96,15 +96,23 @@ class Folder extends Model
     }
 
     /**
-     * Get the top-level category name for this folder
+     * Get the root system category name for this folder (level-0 ancestor).
      */
     public function getTopLevelCategoryAttribute(): ?string
     {
-        if ($this->level === 0) {
-            return $this->folder_name;
+        $folder = $this;
+        while ($folder->parent_id !== null) {
+            if (!$folder->relationLoaded('parent')) {
+                $folder->load('parent');
+            }
+            $parent = $folder->parent;
+            if (!$parent) {
+                break;
+            }
+            $folder = $parent;
         }
-        $ancestors = $this->getAncestors();
-        return !empty($ancestors) ? $ancestors[0]->folder_name : $this->folder_name;
+
+        return $folder->folder_name;
     }
 
     /**

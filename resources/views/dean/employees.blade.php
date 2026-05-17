@@ -115,14 +115,8 @@
                 </div>
 
                 <div class="form-group">
-                    <label class="form-label">Employee Number</label>
-                    <input type="text" class="form-control bg-gray-100 dark:bg-gray-800" value="{{ $nextCoordinatorNo ?? 'SITECOOR001' }}" readonly>
-                    <small class="text-xs text-gray-500 dark:text-gray-400 mt-1">Auto-generated (SITECOOR001, SITECOOR002, …). Existing employee numbers are not changed.</small>
-                </div>
-
-                <div class="form-group">
                     <label class="form-label">Department *</label>
-                    <select name="department" class="form-control" required>
+                    <select id="coordinatorDepartment" name="department" class="form-control" required>
                         <option value="">Select Department</option>
                         <option value="Engineering" {{ (old('_form') === 'coordinator' && old('department') == 'Engineering') ? 'selected' : '' }}>Engineering</option>
                         <option value="Information Technology" {{ (old('_form') === 'coordinator' && old('department') == 'Information Technology') ? 'selected' : '' }}>Information Technology</option>
@@ -130,11 +124,16 @@
                 </div>
 
                 <div class="form-group">
+                    <label class="form-label">Employee Number</label>
+                    <input type="text" id="coordinatorEmployeeNo" class="form-control bg-gray-100 dark:bg-gray-800" value="" placeholder="Select department first" readonly disabled>
+                    <small class="text-xs text-gray-500 dark:text-gray-400 mt-1">Auto-generated per department (e.g. SITE-IT-COOR001, SITE-ENGR-COOR001). Existing numbers are not changed.</small>
+                </div>
+
+                <div class="form-group">
                     <label class="form-label">Username *</label>
                     <input type="text" name="username" class="form-control" placeholder="Enter username" required maxlength="20" value="{{ old('_form') === 'coordinator' ? old('username') : '' }}">
                 </div>
 
-                <div class="form-group">
                 <div class="form-group">
                     <label class="form-label">Password *</label>
                     <input type="password" name="password" class="form-control" placeholder="Enter password (min 8 characters)" required minlength="8" maxlength="40">
@@ -180,18 +179,18 @@
                 </div>
 
                 <div class="form-group">
-                    <label class="form-label">Employee Number</label>
-                    <input type="text" class="form-control bg-gray-100 dark:bg-gray-800" value="{{ $nextFacultyNo ?? 'SITEFAC001' }}" readonly>
-                    <small class="text-xs text-gray-500 dark:text-gray-400 mt-1">Auto-generated (SITEFAC001, SITEFAC002, …). Existing employee numbers are not changed.</small>
-                </div>
-
-                <div class="form-group">
                     <label class="form-label">Department *</label>
-                    <select name="department" class="form-control" required>
+                    <select id="facultyDepartment" name="department" class="form-control" required>
                         <option value="">Select Department</option>
                         <option value="Engineering" {{ (old('_form') === 'faculty' && old('department') == 'Engineering') ? 'selected' : '' }}>Engineering</option>
                         <option value="Information Technology" {{ (old('_form') === 'faculty' && old('department') == 'Information Technology') ? 'selected' : '' }}>Information Technology</option>
                     </select>
+                </div>
+
+                <div class="form-group">
+                    <label class="form-label">Employee Number</label>
+                    <input type="text" id="facultyEmployeeNo" class="form-control bg-gray-100 dark:bg-gray-800" value="" placeholder="Select department first" readonly disabled>
+                    <small class="text-xs text-gray-500 dark:text-gray-400 mt-1">Auto-generated per department (e.g. SITE-IT-FAC001, SITE-ENGR-FAC001). Existing numbers are not changed.</small>
                 </div>
 
                 <div class="form-group">
@@ -252,6 +251,39 @@
         document.addEventListener('DOMContentLoaded', function() {
             if (!document.querySelector('.tab-button[style*="color"]')) {
                 switchTab('list');
+            }
+        });
+
+        const employeeNumberPreview = {
+            coordinator: @json($coordinatorNumberPreview ?? []),
+            faculty: @json($facultyNumberPreview ?? []),
+        };
+
+        function updateEmployeeNumberPreview(formKey) {
+            const deptSelect = document.getElementById(formKey + 'Department');
+            const noInput = document.getElementById(formKey + 'EmployeeNo');
+            if (!deptSelect || !noInput) return;
+
+            const dept = deptSelect.value;
+            const previews = employeeNumberPreview[formKey] || {};
+
+            if (!dept || !previews[dept]) {
+                noInput.value = '';
+                noInput.placeholder = 'Select department first';
+                noInput.disabled = true;
+                return;
+            }
+
+            noInput.value = previews[dept];
+            noInput.placeholder = '';
+            noInput.disabled = false;
+        }
+
+        ['coordinator', 'faculty'].forEach(formKey => {
+            const deptSelect = document.getElementById(formKey + 'Department');
+            if (deptSelect) {
+                deptSelect.addEventListener('change', () => updateEmployeeNumberPreview(formKey));
+                updateEmployeeNumberPreview(formKey);
             }
         });
 

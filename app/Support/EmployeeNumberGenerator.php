@@ -6,27 +6,56 @@ use App\Models\Employee;
 
 class EmployeeNumberGenerator
 {
-    public const PREFIX_COORDINATOR = 'SITECOOR';
+    public const ROLE_FACULTY = 'FAC';
 
-    public const PREFIX_FACULTY = 'SITEFAC';
+    public const ROLE_COORDINATOR = 'COOR';
+
+    public function departmentCode(string $department): string
+    {
+        return match ($department) {
+            'Information Technology' => 'IT',
+            'Engineering' => 'ENGR',
+            default => 'GEN',
+        };
+    }
 
     /**
-     * Next sequential ID for new accounts (SITECOOR001, SITEFAC001, …).
-     * Only considers existing numbers matching the prefix; legacy numbers are ignored.
+     * e.g. SITE-IT-FAC, SITE-ENGR-COOR
      */
-    public function next(string $prefix): string
+    public function buildPrefix(string $department, string $role): string
     {
+        return 'SITE-' . $this->departmentCode($department) . '-' . $role;
+    }
+
+    /**
+     * Next number: SITE-IT-FAC001, SITE-ENGR-COOR002, etc.
+     * Only counts existing numbers with the same department+role prefix.
+     */
+    public function next(string $department, string $role): string
+    {
+        $prefix = $this->buildPrefix($department, $role);
         $max = 0;
 
         Employee::query()
             ->where('employee_no', 'like', $prefix . '%')
             ->pluck('employee_no')
             ->each(function (string $number) use ($prefix, &$max) {
-                if (preg_match('/^' . preg_quote($prefix, '/') . '(\d+)$/i', $number, $matches)) {
+                if (preg_match('/^' . preg_quote($prefix, '/') . '(\d{3})$/i', $number, $matches)) {
                     $max = max($max, (int) $matches[1]);
                 }
             });
 
         return $prefix . str_pad((string) ($max + 1), 3, '0', STR_PAD_LEFT);
+    }
+
+    /**
+     * @return array<string, string>
+     */
+    public function previewMap(string $role): array
+    {
+        return [
+            'Information Technology' => $this->next('Information Technology', $role),
+            'Engineering' => $this->next('Engineering', $role),
+        ];
     }
 }

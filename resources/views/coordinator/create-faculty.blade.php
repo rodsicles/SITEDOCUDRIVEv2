@@ -25,16 +25,16 @@
             </div>
 
             <div class="form-group">
-                <label class="form-label">Employee Number</label>
-                <input type="text" class="form-control bg-gray-100 dark:bg-gray-800" value="{{ $nextFacultyNo ?? 'SITEFAC001' }}" readonly>
-                <small class="text-xs text-gray-500 dark:text-gray-400 mt-1">Auto-generated (SITEFAC001, SITEFAC002, …).</small>
+                <label class="form-label">Department</label>
+                <input type="text" class="form-control" value="{{ $dept ?? auth()->user()->employee->department ?? 'N/A' }}" disabled>
+                <input type="hidden" name="department" value="{{ $dept ?? auth()->user()->employee->department }}">
+                <small class="text-xs text-gray-500 dark:text-gray-400 mt-1">Auto-assigned to your department</small>
             </div>
 
             <div class="form-group">
-                <label class="form-label">Department</label>
-                <input type="text" class="form-control" value="{{ auth()->user()->employee->department ?? 'N/A' }}" disabled>
-                <input type="hidden" name="department" value="{{ auth()->user()->employee->department }}">
-                <small class="text-xs text-gray-500 dark:text-gray-400 mt-1">Auto-assigned to your department</small>
+                <label class="form-label">Employee Number</label>
+                <input type="text" class="form-control bg-gray-100 dark:bg-gray-800" value="{{ $nextFacultyNo }}" readonly>
+                <small class="text-xs text-gray-500 dark:text-gray-400 mt-1">Auto-generated for your department (e.g. SITE-IT-FAC001, SITE-ENGR-FAC001).</small>
             </div>
 
             <div class="form-group">

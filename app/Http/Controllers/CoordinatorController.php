@@ -135,10 +135,12 @@ class CoordinatorController extends Controller
 
     public function createFaculty()
     {
-        $nextFacultyNo = app(\App\Support\EmployeeNumberGenerator::class)
-            ->next(\App\Support\EmployeeNumberGenerator::PREFIX_FACULTY);
+        $dept = $this->getCoordinatorDepartment();
+        $nextFacultyNo = $dept
+            ? app(\App\Support\EmployeeNumberGenerator::class)->next($dept, \App\Support\EmployeeNumberGenerator::ROLE_FACULTY)
+            : '';
 
-        return view('coordinator.create-faculty', compact('nextFacultyNo'));
+        return view('coordinator.create-faculty', compact('nextFacultyNo', 'dept'));
     }
 
     public function storeFaculty(Request $request)

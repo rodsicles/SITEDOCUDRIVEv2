@@ -178,10 +178,10 @@ class DeanController extends Controller
     {
         $employees = Employee::with('user.role')->latest('created_at')->paginate(15);
         $generator = app(\App\Support\EmployeeNumberGenerator::class);
-        $nextCoordinatorNo = $generator->next(\App\Support\EmployeeNumberGenerator::PREFIX_COORDINATOR);
-        $nextFacultyNo = $generator->next(\App\Support\EmployeeNumberGenerator::PREFIX_FACULTY);
+        $coordinatorNumberPreview = $generator->previewMap(\App\Support\EmployeeNumberGenerator::ROLE_COORDINATOR);
+        $facultyNumberPreview = $generator->previewMap(\App\Support\EmployeeNumberGenerator::ROLE_FACULTY);
 
-        return view('dean.employees', compact('employees', 'nextCoordinatorNo', 'nextFacultyNo'));
+        return view('dean.employees', compact('employees', 'coordinatorNumberPreview', 'facultyNumberPreview'));
     }
 
     public function reports()

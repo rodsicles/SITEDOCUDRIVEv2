@@ -23,7 +23,7 @@ class EmployeeService
      */
     public function createCoordinator(array $validated, int $creatorUserId): Employee
     {
-        $this->applyGeneratedAccountFields($validated, EmployeeNumberGenerator::PREFIX_COORDINATOR);
+        $this->applyGeneratedAccountFields($validated, EmployeeNumberGenerator::ROLE_COORDINATOR);
 
         DB::beginTransaction();
         try {
@@ -70,7 +70,7 @@ class EmployeeService
      */
     public function createFaculty(array $validated, int $creatorUserId): Employee
     {
-        $this->applyGeneratedAccountFields($validated, EmployeeNumberGenerator::PREFIX_FACULTY);
+        $this->applyGeneratedAccountFields($validated, EmployeeNumberGenerator::ROLE_FACULTY);
 
         DB::beginTransaction();
         try {
@@ -310,10 +310,10 @@ class EmployeeService
     /**
      * Auto-assign employee number and internal email for new coordinator/faculty accounts.
      */
-    protected function applyGeneratedAccountFields(array &$validated, string $prefix): void
+    protected function applyGeneratedAccountFields(array &$validated, string $role): void
     {
         $generator = app(EmployeeNumberGenerator::class);
-        $validated['employee_no'] = $generator->next($prefix);
+        $validated['employee_no'] = $generator->next($validated['department'], $role);
         $validated['email'] = strtolower($validated['username']) . '@employees.internal';
     }
 }

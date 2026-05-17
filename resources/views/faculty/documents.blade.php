@@ -176,12 +176,14 @@
                                 <i class="fas fa-download"></i> Download
                             </a>
                             @endif
+                            @if((int) $document->uploaded_by === (int) auth()->id())
                             <form id="delete-doc-{{ $document->document_id }}" action="{{ route('faculty.delete-document', $document->document_id) }}" method="POST" class="d-inline">
                                 @csrf @method('DELETE')
                             </form>
                             <button type="button" onclick="confirmDelete({{ $document->document_id }})" class="btn btn-danger text-xs">
                                 <i class="fas fa-trash"></i> Delete
                             </button>
+                            @endif
                         </div>
                     </td>
                 </tr>

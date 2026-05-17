@@ -28,5 +28,29 @@ return Application::configure(basePath: dirname(__DIR__))
         $middleware->appendToGroup('web', \App\Http\Middleware\EnsurePasswordChanged::class);
     })
     ->withExceptions(function (Exceptions $exceptions): void {
-        //
+        $exceptions->render(function (\App\Support\UploadStorageException $e, \Illuminate\Http\Request $request) {
+            if ($request->expectsJson()) {
+                return response()->json([
+                    'success' => false,
+                    'message' => $e->getMessage(),
+                ], 502);
+            }
+
+            return redirect()->back()->with('error', $e->getMessage())->withInput();
+        });
+
+        $exceptions->render(function (\League\Flysystem\FilesystemException $e, \Illuminate\Http\Request $request) {
+            report($e);
+
+            $message = 'File storage is unavailable. Verify Object Storage is attached on Laravel Cloud and FILESYSTEM_UPLOAD_DISK is set to your bucket disk (usually s3).';
+
+            if ($request->expectsJson()) {
+                return response()->json([
+                    'success' => false,
+                    'message' => $message,
+                ], 502);
+            }
+
+            return redirect()->back()->with('error', $message)->withInput();
+        });
     })->create();

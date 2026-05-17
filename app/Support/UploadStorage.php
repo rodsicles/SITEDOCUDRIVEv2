@@ -17,6 +17,8 @@ use Symfony\Component\HttpFoundation\StreamedResponse;
  */
 class UploadStorage
 {
+    private const UPLOAD_OPTIONS = [];
+
     public static function diskName(): string
     {
         return (string) config('filesystems.upload_disk', 'local');
@@ -24,12 +26,43 @@ class UploadStorage
 
     public static function disk(): Filesystem
     {
+        static::assertDiskConfigured();
+
         return Storage::disk(static::diskName());
     }
 
     public static function isLocal(): bool
     {
         return static::diskName() === 'local';
+    }
+
+    /**
+     * Fail fast when cloud upload disk is selected but credentials/bucket are missing.
+     */
+    public static function assertDiskConfigured(): void
+    {
+        if (static::isLocal()) {
+            return;
+        }
+
+        $diskName = static::diskName();
+        $disk = config("filesystems.disks.{$diskName}");
+
+        if (!is_array($disk)) {
+            throw new UploadStorageException(
+                "Upload disk \"{$diskName}\" is not defined. Set FILESYSTEM_UPLOAD_DISK in Laravel Cloud to your Object Storage disk name (usually s3)."
+            );
+        }
+
+        if (($disk['driver'] ?? '') === 's3') {
+            foreach (['key', 'secret', 'bucket'] as $key) {
+                if (empty($disk[$key])) {
+                    throw new UploadStorageException(
+                        'Object storage is not configured. Attach Object Storage in Laravel Cloud and ensure AWS_ACCESS_KEY_ID, AWS_SECRET_ACCESS_KEY, and AWS_BUCKET are set.'
+                    );
+                }
+            }
+        }
     }
 
     public static function assertSafeRelativePath(string $path): void
@@ -91,21 +124,55 @@ class UploadStorage
 
     public static function putFileAs(string $directory, UploadedFile $file, string $name): string
     {
-        static::disk()->putFileAs($directory, $file, $name);
+        $relativePath = rtrim($directory, '/') . '/' . $name;
 
-        return rtrim($directory, '/') . '/' . $name;
+        try {
+            $stored = static::disk()->putFileAs($directory, $file, $name, static::UPLOAD_OPTIONS);
+        } catch (\Throwable $e) {
+            static::fail('Could not save the uploaded file to storage.', $e);
+        }
+
+        if ($stored === false || !static::exists($relativePath)) {
+            static::fail('The file was not saved to storage. Check bucket permissions and FILESYSTEM_UPLOAD_DISK on Laravel Cloud.');
+        }
+
+        return $relativePath;
     }
 
     public static function store(UploadedFile $file, string $directory): string
     {
-        return $file->store($directory, static::diskName());
+        try {
+            $path = $file->store($directory, [
+                'disk' => static::diskName(),
+            ]);
+        } catch (\Throwable $e) {
+            static::fail('Could not save the uploaded file to storage.', $e);
+        }
+
+        if ($path === false || !static::exists($path)) {
+            static::fail('The file was not saved to storage. Check bucket permissions and FILESYSTEM_UPLOAD_DISK on Laravel Cloud.');
+        }
+
+        return $path;
     }
 
     public static function storeAs(UploadedFile $file, string $directory, string $name): string
     {
-        $file->storeAs($directory, $name, static::diskName());
+        $relativePath = rtrim($directory, '/') . '/' . $name;
 
-        return rtrim($directory, '/') . '/' . $name;
+        try {
+            $stored = $file->storeAs($directory, $name, [
+                'disk' => static::diskName(),
+            ]);
+        } catch (\Throwable $e) {
+            static::fail('Could not save the uploaded file to storage.', $e);
+        }
+
+        if ($stored === false || !static::exists($relativePath)) {
+            static::fail('The file was not saved to storage. Check bucket permissions and FILESYSTEM_UPLOAD_DISK on Laravel Cloud.');
+        }
+
+        return $relativePath;
     }
 
     /**
@@ -130,7 +197,27 @@ class UploadStorage
             return;
         }
 
-        static::disk()->put($relativePath, file_get_contents($absoluteLocalPath), ['visibility' => 'private']);
+        try {
+            $ok = static::disk()->put($relativePath, file_get_contents($absoluteLocalPath), static::UPLOAD_OPTIONS);
+        } catch (\Throwable $e) {
+            static::fail('Could not save the generated file to storage.', $e);
+        }
+
+        if ($ok === false || !static::exists($relativePath)) {
+            static::fail('The generated file was not saved to storage. Check bucket permissions on Laravel Cloud.');
+        }
+    }
+
+    /**
+     * @return never
+     */
+    private static function fail(string $message, ?\Throwable $previous = null): void
+    {
+        if ($previous !== null) {
+            report($previous);
+        }
+
+        throw new UploadStorageException($message, 0, $previous);
     }
 
     public static function inlineResponse(string $path, string $displayName, ?string $mimeType = null): BinaryFileResponse|StreamedResponse

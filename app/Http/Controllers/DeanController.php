@@ -22,6 +22,8 @@ use Illuminate\Support\Facades\Hash;
 
 class DeanController extends Controller
 {
+    use \App\Http\Controllers\Concerns\HandlesUploadExceptions;
+
     public function __construct(
         protected DashboardService $dashboardService,
         protected DocumentService $documentService,
@@ -317,19 +319,29 @@ class DeanController extends Controller
         foreach ($files as $file) {
             $originalName = $file->getClientOriginalName();
             if (preg_match('/\.(php|phtml|phar|exe|sh|bat|cmd|com|cgi|pl|py|jsp|asp|aspx|htaccess)/i', pathinfo($originalName, PATHINFO_FILENAME))) {
-                return back()->with('error', 'File contains a forbidden extension in its name.');
+                $msg = 'File contains a forbidden extension in its name.';
+                return $request->expectsJson()
+                    ? response()->json(['success' => false, 'message' => $msg], 422)
+                    : back()->with('error', $msg);
             }
         }
 
         $quotaService = app(\App\Services\StorageQuotaService::class);
         $needed = $quotaService->sumUploadedSizes($files);
         if (!$quotaService->hasQuotaForBytes(auth()->id(), $needed)) {
-            return back()->with('error', 'Storage quota exceeded (limit: ' . $quotaService->formatBytes(\App\Services\StorageQuotaService::DEFAULT_QUOTA_BYTES) . ').');
+            $msg = 'Storage quota exceeded (limit: ' . $quotaService->formatBytes(\App\Services\StorageQuotaService::DEFAULT_QUOTA_BYTES) . ').';
+            return $request->expectsJson()
+                ? response()->json(['success' => false, 'message' => $msg], 422)
+                : back()->with('error', $msg);
         }
 
-        $uploadedCount = $this->documentService->uploadDocuments(
-            $validated, $files, auth()->id()
-        );
+        try {
+            $uploadedCount = $this->documentService->uploadDocuments(
+                $validated, $files, auth()->id()
+            );
+        } catch (\Throwable $e) {
+            return $this->uploadFailedResponse($request, $e);
+        }
 
         if ($request->expectsJson()) {
             return response()->json([

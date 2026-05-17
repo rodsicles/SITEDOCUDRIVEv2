@@ -9,6 +9,8 @@ use App\Services\ProfessionalDevelopmentService;
 
 class ProfessionalDevelopmentController extends Controller
 {
+    use \App\Http\Controllers\Concerns\HandlesUploadExceptions;
+
     public function __construct(
         protected ProfessionalDevelopmentService $pdService
     ) {}
@@ -41,7 +43,11 @@ class ProfessionalDevelopmentController extends Controller
             'certificate' => 'nullable|image|mimes:jpg,jpeg,png|max:5120|mimetypes:image/jpeg,image/png',
         ]);
 
-        $this->pdService->create($validated, $request->file('certificate'), auth()->user());
+        try {
+            $this->pdService->create($validated, $request->file('certificate'), auth()->user());
+        } catch (\Throwable $e) {
+            return $this->uploadFailedResponse($request, $e);
+        }
         return redirect()->back()->with('success', 'Training record added successfully.');
     }
 
@@ -57,7 +63,11 @@ class ProfessionalDevelopmentController extends Controller
             'certificate' => 'nullable|image|mimes:jpg,jpeg,png|max:5120|mimetypes:image/jpeg,image/png',
         ]);
 
-        $this->pdService->update($pd, $validated, $request->file('certificate'), auth()->id());
+        try {
+            $this->pdService->update($pd, $validated, $request->file('certificate'), auth()->id());
+        } catch (\Throwable $e) {
+            return $this->uploadFailedResponse($request, $e);
+        }
         return redirect()->back()->with('success', 'Training record updated.');
     }
 

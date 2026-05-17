@@ -12,6 +12,8 @@ use Illuminate\Http\Request;
 
 class TaskAttachmentController extends Controller
 {
+    use \App\Http\Controllers\Concerns\HandlesUploadExceptions;
+
     public function store(Request $request, int $id): RedirectResponse
     {
         $task = Task::with(['assignedBy', 'assignedTo'])->findOrFail($id);
@@ -49,16 +51,20 @@ class TaskAttachmentController extends Controller
             return back()->with('error', 'Storage quota exceeded (limit: ' . $quotaService->formatBytes(\App\Services\StorageQuotaService::DEFAULT_QUOTA_BYTES) . ').');
         }
 
-        $storedPath = UploadStorage::store($file, 'task-attachments');
+        try {
+            $storedPath = UploadStorage::store($file, 'task-attachments');
 
-        TaskAttachment::create([
-            'task_id' => $task->task_id,
-            'uploaded_by' => $user->id,
-            'original_name' => $file->getClientOriginalName(),
-            'file_path' => $storedPath,
-            'mime_type' => $file->getClientMimeType(),
-            'file_size' => $file->getSize(),
-        ]);
+            TaskAttachment::create([
+                'task_id' => $task->task_id,
+                'uploaded_by' => $user->id,
+                'original_name' => $file->getClientOriginalName(),
+                'file_path' => $storedPath,
+                'mime_type' => $file->getClientMimeType(),
+                'file_size' => $file->getSize(),
+            ]);
+        } catch (\Throwable $e) {
+            return $this->uploadFailedResponse($request, $e);
+        }
 
         $notifyUserId = $user->id === $task->assigned_by ? $task->assigned_to : $task->assigned_by;
         if ($notifyUserId && $notifyUserId !== $user->id) {

@@ -116,7 +116,8 @@
 
                 <div class="form-group">
                     <label class="form-label">Employee Number</label>
-                    <input type="text" name="employee_no" class="form-control" placeholder="Enter employee number (optional)" maxlength="15" pattern="[0-9]*" title="Numbers only" value="{{ old('_form') === 'coordinator' ? old('employee_no') : '' }}">
+                    <input type="text" class="form-control bg-gray-100 dark:bg-gray-800" value="{{ $nextCoordinatorNo ?? 'SITECOOR001' }}" readonly>
+                    <small class="text-xs text-gray-500 dark:text-gray-400 mt-1">Auto-generated (SITECOOR001, SITECOOR002, …). Existing employee numbers are not changed.</small>
                 </div>
 
                 <div class="form-group">
@@ -134,10 +135,6 @@
                 </div>
 
                 <div class="form-group">
-                    <label class="form-label">Email Address *</label>
-                    <input type="email" name="email" class="form-control" placeholder="Enter email address" required maxlength="45" value="{{ old('_form') === 'coordinator' ? old('email') : '' }}">
-                </div>
-
                 <div class="form-group">
                     <label class="form-label">Password *</label>
                     <input type="password" name="password" class="form-control" placeholder="Enter password (min 8 characters)" required minlength="8" maxlength="40">
@@ -184,7 +181,8 @@
 
                 <div class="form-group">
                     <label class="form-label">Employee Number</label>
-                    <input type="text" name="employee_no" class="form-control" placeholder="Enter employee number (optional)" maxlength="15" pattern="[0-9]*" title="Numbers only" value="{{ old('_form') === 'faculty' ? old('employee_no') : '' }}">
+                    <input type="text" class="form-control bg-gray-100 dark:bg-gray-800" value="{{ $nextFacultyNo ?? 'SITEFAC001' }}" readonly>
+                    <small class="text-xs text-gray-500 dark:text-gray-400 mt-1">Auto-generated (SITEFAC001, SITEFAC002, …). Existing employee numbers are not changed.</small>
                 </div>
 
                 <div class="form-group">
@@ -199,11 +197,6 @@
                 <div class="form-group">
                     <label class="form-label">Username *</label>
                     <input type="text" name="username" class="form-control" placeholder="Enter username" required maxlength="20" value="{{ old('_form') === 'faculty' ? old('username') : '' }}">
-                </div>
-
-                <div class="form-group">
-                    <label class="form-label">Email Address *</label>
-                    <input type="email" name="email" class="form-control" placeholder="Enter email address" required maxlength="45" value="{{ old('_form') === 'faculty' ? old('email') : '' }}">
                 </div>
 
                 <div class="form-group">

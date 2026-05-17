@@ -10,11 +10,6 @@
     <i class="fas fa-history"></i> Activity Log
 </a>
 
-<div class="sidebar-section-label">Schedule</div>
-<a href="{{ route('calendar.index') }}" class="menu-item {{ request()->routeIs('calendar.index') ? 'active' : '' }}">
-    <i class="fas fa-calendar"></i> Calendar
-</a>
-
 <div class="sidebar-section-label">Communication</div>
 <a href="{{ route('announcements.index') }}" class="menu-item {{ request()->routeIs('announcements.index', 'announcements.show') ? 'active' : '' }}">
     <i class="fas fa-bullhorn"></i> Announcements

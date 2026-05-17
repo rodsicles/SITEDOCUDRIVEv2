@@ -11,6 +11,7 @@ use App\Models\Report;
 use App\Models\Notification;
 use App\Models\DashboardLog;
 use App\Models\PerformanceReport;
+use App\Support\EmployeeNumberGenerator;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Cache;
 use Illuminate\Support\Facades\Hash;
@@ -22,6 +23,8 @@ class EmployeeService
      */
     public function createCoordinator(array $validated, int $creatorUserId): Employee
     {
+        $this->applyGeneratedAccountFields($validated, EmployeeNumberGenerator::PREFIX_COORDINATOR);
+
         DB::beginTransaction();
         try {
             $user = User::create([
@@ -67,6 +70,8 @@ class EmployeeService
      */
     public function createFaculty(array $validated, int $creatorUserId): Employee
     {
+        $this->applyGeneratedAccountFields($validated, EmployeeNumberGenerator::PREFIX_FACULTY);
+
         DB::beginTransaction();
         try {
             $user = User::create([
@@ -300,5 +305,15 @@ class EmployeeService
         $data['performanceReports'] = collect(); // Coordinator cannot see performance reports
 
         return $data;
+    }
+
+    /**
+     * Auto-assign employee number and internal email for new coordinator/faculty accounts.
+     */
+    protected function applyGeneratedAccountFields(array &$validated, string $prefix): void
+    {
+        $generator = app(EmployeeNumberGenerator::class);
+        $validated['employee_no'] = $generator->next($prefix);
+        $validated['email'] = strtolower($validated['username']) . '@employees.internal';
     }
 }

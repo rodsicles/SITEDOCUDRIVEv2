@@ -26,8 +26,8 @@
 
             <div class="form-group">
                 <label class="form-label">Employee Number</label>
-                <input type="text" name="employee_no" class="form-control" 
-                       placeholder="Enter employee number (optional)" maxlength="15" pattern="[0-9]*" title="Numbers only" value="{{ old('employee_no') }}">
+                <input type="text" class="form-control bg-gray-100 dark:bg-gray-800" value="{{ $nextFacultyNo ?? 'SITEFAC001' }}" readonly>
+                <small class="text-xs text-gray-500 dark:text-gray-400 mt-1">Auto-generated (SITEFAC001, SITEFAC002, …).</small>
             </div>
 
             <div class="form-group">
@@ -41,12 +41,6 @@
                 <label class="form-label">Username</label>
                 <input type="text" name="username" class="form-control" 
                        placeholder="Enter username" required maxlength="20" value="{{ old('username') }}">
-            </div>
-
-            <div class="form-group">
-                <label class="form-label">Email Address</label>
-                <input type="email" name="email" class="form-control" 
-                       placeholder="Enter email address" required maxlength="45" value="{{ old('email') }}">
             </div>
 
             <div class="form-group">

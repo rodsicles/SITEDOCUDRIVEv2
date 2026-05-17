@@ -7,7 +7,6 @@ use App\Http\Controllers\CoordinatorController;
 use App\Http\Controllers\FacultyController;
 use App\Http\Controllers\SearchController;
 use App\Http\Controllers\ProfileController;
-use App\Http\Controllers\CalendarController;
 use App\Http\Controllers\FolderController;
 use App\Http\Controllers\AnnouncementController;
 use App\Http\Controllers\ProfessionalDevelopmentController;
@@ -54,24 +53,6 @@ Route::middleware(['auth', 'no.back'])->prefix('document-filters')->name('docume
 
 Route::middleware(['auth', 'no.back'])->prefix('task-attachments')->name('task-attachments.')->group(function () {
     Route::get('/{id}/download', [TaskAttachmentController::class, 'download'])->middleware('throttle:30,1')->name('download');
-});
-
-// Calendar/Events (All authenticated users can view, only Dean/Coordinator can create/edit)
-Route::middleware(['auth', 'no.back'])->prefix('calendar')->name('calendar.')->group(function () {
-    Route::get('/', [CalendarController::class, 'index'])->name('index');
-    Route::get('/events/json', [CalendarController::class, 'getEvents'])->name('events.json');
-    
-    // Only Dean and Coordinator can create/edit/delete events
-    Route::middleware('role:Dean,Program Coordinator')->group(function () {
-        Route::get('/create', [CalendarController::class, 'create'])->name('create');
-        Route::post('/', [CalendarController::class, 'store'])->middleware('throttle:20,1')->name('store');
-        Route::put('/{id}', [CalendarController::class, 'update'])->middleware('throttle:20,1')->name('update');
-        Route::delete('/{id}', [CalendarController::class, 'destroy'])->middleware('throttle:20,1')->name('destroy');
-    });
-    
-    // Show and respond routes - MUST come after /create to avoid conflicts
-    Route::get('/{id}', [CalendarController::class, 'show'])->whereNumber('id')->name('show');
-    Route::post('/{id}/respond', [CalendarController::class, 'respond'])->whereNumber('id')->name('respond');
 });
 
 // Announcements (All authenticated users can view, only Dean/Coordinator can create/edit/delete)

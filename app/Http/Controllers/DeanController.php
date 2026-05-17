@@ -177,7 +177,11 @@ class DeanController extends Controller
     public function employees()
     {
         $employees = Employee::with('user.role')->latest('created_at')->paginate(15);
-        return view('dean.employees', compact('employees'));
+        $generator = app(\App\Support\EmployeeNumberGenerator::class);
+        $nextCoordinatorNo = $generator->next(\App\Support\EmployeeNumberGenerator::PREFIX_COORDINATOR);
+        $nextFacultyNo = $generator->next(\App\Support\EmployeeNumberGenerator::PREFIX_FACULTY);
+
+        return view('dean.employees', compact('employees', 'nextCoordinatorNo', 'nextFacultyNo'));
     }
 
     public function reports()
@@ -405,10 +409,8 @@ class DeanController extends Controller
     {
         $validated = $request->validate([
             'username' => 'required|string|unique:users,username|max:20',
-            'email' => 'required|email|unique:users,email|max:45',
             'password' => 'required|string|min:8|max:40',
             'full_name' => 'required|string|max:45',
-            'employee_no' => 'nullable|string|unique:employees,employee_no|max:15|regex:/^[0-9]*$/',
             'department' => 'required|in:Engineering,Information Technology',
         ]);
 
@@ -425,10 +427,8 @@ class DeanController extends Controller
     {
         $validated = $request->validate([
             'username' => 'required|string|unique:users,username|max:20',
-            'email' => 'required|email|unique:users,email|max:45',
             'password' => 'required|string|min:8|max:40',
             'full_name' => 'required|string|max:45',
-            'employee_no' => 'nullable|string|unique:employees,employee_no|max:15|regex:/^[0-9]*$/',
             'department' => 'required|in:Engineering,Information Technology',
         ]);
 

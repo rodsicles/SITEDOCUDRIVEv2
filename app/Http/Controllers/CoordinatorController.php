@@ -135,7 +135,10 @@ class CoordinatorController extends Controller
 
     public function createFaculty()
     {
-        return view('coordinator.create-faculty');
+        $nextFacultyNo = app(\App\Support\EmployeeNumberGenerator::class)
+            ->next(\App\Support\EmployeeNumberGenerator::PREFIX_FACULTY);
+
+        return view('coordinator.create-faculty', compact('nextFacultyNo'));
     }
 
     public function storeFaculty(Request $request)
@@ -144,10 +147,8 @@ class CoordinatorController extends Controller
 
         $validated = $request->validate([
             'username' => 'required|string|unique:users,username|max:20',
-            'email' => 'required|email|unique:users,email|max:45',
             'password' => 'required|string|min:8|max:40',
             'full_name' => 'required|string|max:45',
-            'employee_no' => 'nullable|string|unique:employees,employee_no|max:15|regex:/^[0-9]*$/',
             'department' => 'required|in:Engineering,Information Technology',
         ]);
 

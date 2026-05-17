@@ -8,6 +8,8 @@ use Illuminate\Http\Request;
 
 class ExamQuestionnaireController extends Controller
 {
+    use \App\Http\Controllers\Concerns\HandlesUploadExceptions;
+
     public function index(Request $request)
     {
         $user = auth()->user();
@@ -86,22 +88,26 @@ class ExamQuestionnaireController extends Controller
         // Auto-generate title
         $title = $validated['subject'] . ' - ' . $validated['exam_type'] . ' Questionnaire';
 
-        $extension = strtolower($file->getClientOriginalExtension());
-        $fileType  = $extension === 'pdf' ? 'pdf' : 'word';
-        $filename  = time() . '_' . $file->hashName();
-        $storedPath = UploadStorage::storeAs($file, 'exam-questionnaires', $filename);
+        try {
+            $extension = strtolower($file->getClientOriginalExtension());
+            $fileType  = $extension === 'pdf' ? 'pdf' : 'word';
+            $filename  = time() . '_' . $file->hashName();
+            $storedPath = UploadStorage::storeAs($file, 'exam-questionnaires', $filename);
 
-        ExamQuestionnaire::create([
-            'submitted_by'  => auth()->id(),
-            'title'         => $title,
-            'file_path'     => $storedPath,
-            'file_type'     => $fileType,
-            'subject'       => $validated['subject'],
-            'exam_type'     => $validated['exam_type'],
-            'semester'      => $semester,
-            'academic_year' => $academicYear,
-            'status'        => 'pending',
-        ]);
+            ExamQuestionnaire::create([
+                'submitted_by'  => auth()->id(),
+                'title'         => $title,
+                'file_path'     => $storedPath,
+                'file_type'     => $fileType,
+                'subject'       => $validated['subject'],
+                'exam_type'     => $validated['exam_type'],
+                'semester'      => $semester,
+                'academic_year' => $academicYear,
+                'status'        => 'pending',
+            ]);
+        } catch (\Throwable $e) {
+            return $this->uploadFailedResponse($request, $e);
+        }
 
         return back()->with('success', 'Exam questionnaire submitted successfully.');
     }

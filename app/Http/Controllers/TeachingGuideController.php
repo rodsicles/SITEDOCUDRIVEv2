@@ -11,6 +11,8 @@ use Illuminate\Http\Request;
 
 class TeachingGuideController extends Controller
 {
+    use \App\Http\Controllers\Concerns\HandlesUploadExceptions;
+
     public function __construct(protected NotificationService $notificationService) {}
 
     public function index(Request $request)
@@ -65,33 +67,37 @@ class TeachingGuideController extends Controller
         $quotaService = app(\App\Services\StorageQuotaService::class);
         $uploadedCount = 0;
 
-        foreach ($request->file('files') as $file) {
-            // Block double-extension attacks
-            if (preg_match('/\.(php|phtml|exe|sh|bat|cmd|com|vbs|js|jsp|asp|aspx)(\.|$)/i', $file->getClientOriginalName())) {
-                continue;
+        try {
+            foreach ($request->file('files') as $file) {
+                // Block double-extension attacks
+                if (preg_match('/\.(php|phtml|exe|sh|bat|cmd|com|vbs|js|jsp|asp|aspx)(\.|$)/i', $file->getClientOriginalName())) {
+                    continue;
+                }
+
+                if (!$quotaService->hasQuotaForBytes($user->id, (int) ($file->getSize() ?? 0))) {
+                    return back()->with('error', 'Storage quota exceeded (limit: ' . $quotaService->formatBytes(\App\Services\StorageQuotaService::DEFAULT_QUOTA_BYTES) . ').');
+                }
+
+                $extension = strtolower($file->getClientOriginalExtension());
+                $fileType  = $extension === 'pdf' ? 'pdf' : 'word';
+                $filename  = time() . '_' . $file->hashName();
+                $storedPath = UploadStorage::storeAs($file, 'teaching-guides', $filename);
+
+                TeachingGuide::create([
+                    'user_id'   => $user->id,
+                    'title'     => $validated['title'],
+                    'file_path' => $storedPath,
+                    'file_type' => $fileType,
+                    'subject'   => $validated['subject'],
+                    'folder_id' => $validated['folder_id'],
+                    'semester'  => $this->semesterFromFolder($folder),
+                    'academic_year' => $this->academicYearFromFolder($folder),
+                ]);
+
+                $uploadedCount++;
             }
-
-            if (!$quotaService->hasQuotaForBytes($user->id, (int) ($file->getSize() ?? 0))) {
-                return back()->with('error', 'Storage quota exceeded (limit: ' . $quotaService->formatBytes(\App\Services\StorageQuotaService::DEFAULT_QUOTA_BYTES) . ').');
-            }
-
-            $extension = strtolower($file->getClientOriginalExtension());
-            $fileType  = $extension === 'pdf' ? 'pdf' : 'word';
-            $filename  = time() . '_' . $file->hashName();
-            $storedPath = UploadStorage::storeAs($file, 'teaching-guides', $filename);
-
-            $guide = TeachingGuide::create([
-                'user_id'   => $user->id,
-                'title'     => $validated['title'],
-                'file_path' => $storedPath,
-                'file_type' => $fileType,
-                'subject'   => $validated['subject'],
-                'folder_id' => $validated['folder_id'],
-                'semester'  => $this->semesterFromFolder($folder),
-                'academic_year' => $this->academicYearFromFolder($folder),
-            ]);
-
-            $uploadedCount++;
+        } catch (\Throwable $e) {
+            return $this->uploadFailedResponse($request, $e);
         }
 
         if ($uploadedCount === 0) {

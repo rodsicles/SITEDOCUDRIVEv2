@@ -24,6 +24,11 @@ class AppServiceProvider extends ServiceProvider
     {
         Schema::defaultStringLength(191);
 
+        $uploadDisk = config('filesystems.upload_disk');
+        if (is_string($uploadDisk) && $uploadDisk !== '' && $uploadDisk !== 'local') {
+            config(["filesystems.disks.{$uploadDisk}.throw" => true]);
+        }
+
         if ($this->app->runningInConsole()) {
             $this->commands([
                 CreateSchoolYearFolders::class,

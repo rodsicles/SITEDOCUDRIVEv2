@@ -36,6 +36,10 @@
         </div>
     </div>
 
+    @php
+        $useItSubjectPicker = \App\Support\IteSubjects::userIsInformationTechnology(auth()->user());
+    @endphp
+
     {{-- Submit Form --}}
     <div class="content-card mb-5">
         <div class="card-header">
@@ -44,6 +48,9 @@
         <form action="{{ route('faculty.exam-questionnaires.store') }}" method="POST" enctype="multipart/form-data">
             @csrf
             <div class="grid grid-cols-2 gap-4 p-4">
+                @if($useItSubjectPicker)
+                    @include('partials.ite-subject-picker', ['pickerId' => 'eqSubjectPicker'])
+                @else
                 <div class="form-group">
                     <label class="form-label">Subject <span class="text-red-500">*</span></label>
                     <input type="text" name="subject" class="form-control" maxlength="100" required
@@ -51,6 +58,7 @@
                            value="{{ old('subject') }}">
                     @error('subject')<span class="text-red-500 text-xs">{{ $message }}</span>@enderror
                 </div>
+                @endif
                 <div class="form-group">
                     <label class="form-label">Exam Type <span class="text-red-500">*</span></label>
                     <select name="exam_type" class="form-control" required>
@@ -68,7 +76,8 @@
                 </div>
             </div>
             <div class="px-4 pb-4">
-                <button type="submit" class="btn btn-primary">
+                <button type="submit" class="btn btn-primary"
+                        onclick="return typeof eqSubjectPickerValidate !== 'function' || eqSubjectPickerValidate();">
                     <i class="fas fa-paper-plane"></i> Submit for Review
                 </button>
             </div>

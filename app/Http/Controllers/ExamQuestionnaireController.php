@@ -3,8 +3,10 @@
 namespace App\Http\Controllers;
 
 use App\Models\ExamQuestionnaire;
+use App\Support\IteSubjects;
 use App\Support\UploadStorage;
 use Illuminate\Http\Request;
+use Illuminate\Validation\Rule;
 
 class ExamQuestionnaireController extends Controller
 {
@@ -55,8 +57,12 @@ class ExamQuestionnaireController extends Controller
 
     public function store(Request $request)
     {
+        $subjectRules = IteSubjects::userIsInformationTechnology(auth()->user())
+            ? ['required', 'string', Rule::in(IteSubjects::labels())]
+            : ['required', 'string', 'max:100'];
+
         $validated = $request->validate([
-            'subject'   => 'required|string|max:100',
+            'subject'   => $subjectRules,
             'exam_type' => 'required|in:Quiz,Prelim,Midterm,Pre-Final,Final',
             'file'      => 'required|file|max:10240|mimes:pdf|mimetypes:application/pdf',
         ]);

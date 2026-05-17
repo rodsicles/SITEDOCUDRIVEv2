@@ -36,6 +36,27 @@ class FolderService
     }
 
     /**
+     * Replace documents_count with total visible files in folder + all descendants.
+     */
+    public function attachSubtreeDocumentCounts(Collection $folders, ?User $viewer): Collection
+    {
+        return $folders->map(function (Folder $folder) use ($viewer) {
+            $folder->loadMissing(['children.children']);
+
+            $folderIds = array_merge([$folder->folder_id], $folder->getDescendantIds());
+            $query = Document::query()->whereIn('folder_id', $folderIds);
+
+            if ($viewer) {
+                $query->visibleTo($viewer);
+            }
+
+            $folder->setAttribute('documents_count', $query->count());
+
+            return $folder;
+        });
+    }
+
+    /**
      * Get uploadable folders (leaf folders or folders that accept documents) grouped by category.
      */
     public function getUploadableFolders(): array

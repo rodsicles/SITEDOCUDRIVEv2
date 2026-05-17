@@ -16,6 +16,7 @@ class Document extends Model
         'uploaded_by',
         'folder_id',
         'document_title',
+        'subject',
         'file_path',
         'file_size',
         'document_type',

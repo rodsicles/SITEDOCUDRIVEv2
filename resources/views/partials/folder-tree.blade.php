@@ -14,8 +14,10 @@
     @php
         $validTabs = $folderTree->pluck('folder_name')->map(fn($n) => \Illuminate\Support\Str::slug($n))->toArray();
         $activeTab = in_array($tab, $validTabs) ? $tab : ($validTabs[0] ?? '');
-        $shareableUploadTab = in_array($activeTab, ['teaching-guides', 'exam-questionnaires'], true)
+        $shareableCategoryTab = in_array($activeTab, ['teaching-guides', 'exam-questionnaires'], true);
+        $shareableUploadTab = $shareableCategoryTab
             && $documentViewer && $documentViewer->canUploadSharedDocuments();
+        $useItSubjectPicker = \App\Support\IteSubjects::shouldUseSubjectPicker($documentViewer, $shareableCategoryTab);
     @endphp
     <div class="category-tabs">
         @foreach($folderTree as $category)
@@ -64,6 +66,11 @@
                     break;
                 }
             }
+        }
+
+        if ($displayFolders->isNotEmpty()) {
+            $displayFolders = app(\App\Services\FolderService::class)
+                ->attachSubtreeDocumentCounts($displayFolders, $documentViewer);
         }
     @endphp
 
@@ -324,15 +331,16 @@
                             <option value="image">Image File</option>
                         </select>
                     </div>
+                    @unless($useItSubjectPicker)
                     <div class="form-group">
                         <label class="form-label">Tags (max 15 characters)</label>
                         <input type="text" name="tags" id="folderTagsInput" class="form-control" placeholder="e.g. urgent" maxlength="15">
                     </div>
+                    @endunless
+                    @if($useItSubjectPicker)
+                    @include('partials.ite-subject-picker', ['pickerId' => 'folderSubjectPicker'])
+                    @endif
                     @if($shareableUploadTab)
-                    <div class="form-group">
-                        <label class="form-label">Subject (for Teaching Guides list)</label>
-                        <input type="text" name="subject" class="form-control" placeholder="e.g. IT 101" maxlength="100">
-                    </div>
                     @include('partials.recipient-picker', ['pickerId' => 'folderRecipientPicker', 'role' => $role])
                     @endif
                     <div class="form-group">
@@ -533,8 +541,17 @@
             if (docType === 'image' && !['jpg','jpeg','png'].includes(ext)) { alert('File ' + files[i].name + ' is not an image.'); return; }
         }
 
-        const tagsVal = document.getElementById('folderTagsInput')?.value || '';
-        if (tagsVal.trim().length > 15) { alert('Tags max 15 characters.'); return; }
+        const tagsInput = document.getElementById('folderTagsInput');
+        if (tagsInput) {
+            const tagsVal = tagsInput.value || '';
+            if (tagsVal.trim().length > 15) { alert('Tags max 15 characters.'); return; }
+        }
+
+        @if($useItSubjectPicker)
+        if (typeof folderSubjectPickerValidate === 'function' && !folderSubjectPickerValidate()) {
+            return;
+        }
+        @endif
 
         @if($shareableUploadTab)
         if (typeof folderRecipientPickerValidate === 'function' && !folderRecipientPickerValidate()) {

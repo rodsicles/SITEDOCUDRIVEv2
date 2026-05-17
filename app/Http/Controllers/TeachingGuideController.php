@@ -7,8 +7,10 @@ use App\Models\TeachingGuide;
 use App\Models\User;
 use App\Services\NotificationService;
 use App\Services\TeachingGuideSyncService;
+use App\Support\IteSubjects;
 use App\Support\UploadStorage;
 use Illuminate\Http\Request;
+use Illuminate\Validation\Rule;
 
 class TeachingGuideController extends Controller
 {
@@ -61,7 +63,7 @@ class TeachingGuideController extends Controller
 
         $validated = $request->validate([
             'title'     => 'required|string|max:150',
-            'subject'   => 'required|string|max:100',
+            'subject'   => ['required', 'string', Rule::in(IteSubjects::labels())],
             'folder_id' => 'required|exists:folders,folder_id',
             'files'     => 'required|array|min:1',
             'files.*'   => 'required|file|max:10240|mimes:pdf,doc,docx|mimetypes:application/pdf,application/msword,application/vnd.openxmlformats-officedocument.wordprocessingml.document',

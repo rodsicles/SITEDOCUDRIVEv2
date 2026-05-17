@@ -23,11 +23,7 @@
                     <input type="text" name="title" class="form-control" maxlength="150" required value="{{ old('title') }}">
                     @error('title')<span class="text-red-500 text-xs">{{ $message }}</span>@enderror
                 </div>
-                <div class="form-group">
-                    <label class="form-label">Subject <span class="text-red-500">*</span></label>
-                    <input type="text" name="subject" class="form-control" maxlength="100" required value="{{ old('subject') }}">
-                    @error('subject')<span class="text-red-500 text-xs">{{ $message }}</span>@enderror
-                </div>
+                @include('partials.ite-subject-picker', ['pickerId' => 'tgSubjectPicker'])
                 <div class="form-group col-span-2">
                     <label class="form-label">Upload to Folder <span class="text-red-500">*</span></label>
                     <select name="folder_id" class="form-control" required>
@@ -58,7 +54,7 @@
                 </div>
             </div>
             <div class="px-4 pb-4">
-                <button type="submit" class="btn btn-primary" onclick="return typeof tgRecipientPickerValidate === 'function' ? tgRecipientPickerValidate() : true;">
+                <button type="submit" class="btn btn-primary" onclick="return (typeof tgSubjectPickerValidate !== 'function' || tgSubjectPickerValidate()) && (typeof tgRecipientPickerValidate !== 'function' || tgRecipientPickerValidate());">
                     <i class="fas fa-upload"></i> Upload & Notify Recipients
                 </button>
             </div>

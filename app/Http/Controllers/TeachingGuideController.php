@@ -6,6 +6,7 @@ use App\Models\Folder;
 use App\Models\TeachingGuide;
 use App\Models\User;
 use App\Services\NotificationService;
+use App\Services\TeachingGuideSyncService;
 use App\Support\UploadStorage;
 use Illuminate\Http\Request;
 
@@ -13,7 +14,10 @@ class TeachingGuideController extends Controller
 {
     use \App\Http\Controllers\Concerns\HandlesUploadExceptions;
 
-    public function __construct(protected NotificationService $notificationService) {}
+    public function __construct(
+        protected NotificationService $notificationService,
+        protected TeachingGuideSyncService $teachingGuideSync,
+    ) {}
 
     public function index(Request $request)
     {
@@ -61,7 +65,11 @@ class TeachingGuideController extends Controller
             'folder_id' => 'required|exists:folders,folder_id',
             'files'     => 'required|array|min:1',
             'files.*'   => 'required|file|max:10240|mimes:pdf,doc,docx|mimetypes:application/pdf,application/msword,application/vnd.openxmlformats-officedocument.wordprocessingml.document',
+            'recipient_ids' => 'required|array|min:1',
+            'recipient_ids.*' => 'integer|exists:users,id',
         ]);
+
+        $recipientIds = array_values(array_unique(array_map('intval', $validated['recipient_ids'])));
 
         $folder = Folder::findOrFail($validated['folder_id']);
         $quotaService = app(\App\Services\StorageQuotaService::class);
@@ -83,16 +91,19 @@ class TeachingGuideController extends Controller
                 $filename  = time() . '_' . $file->hashName();
                 $storedPath = UploadStorage::storeAs($file, 'teaching-guides', $filename);
 
-                TeachingGuide::create([
+                $guide = TeachingGuide::create([
                     'user_id'   => $user->id,
                     'title'     => $validated['title'],
                     'file_path' => $storedPath,
                     'file_type' => $fileType,
                     'subject'   => $validated['subject'],
                     'folder_id' => $validated['folder_id'],
-                    'semester'  => $this->semesterFromFolder($folder),
-                    'academic_year' => $this->academicYearFromFolder($folder),
+                    'semester'  => $this->teachingGuideSync->semesterFromFolder($folder),
+                    'academic_year' => $this->teachingGuideSync->academicYearFromFolder($folder),
                 ]);
+
+                $this->teachingGuideSync->syncRecipients($guide, $recipientIds);
+                $this->teachingGuideSync->syncDocumentFromGuide($guide, $user, $recipientIds);
 
                 $uploadedCount++;
             }
@@ -104,18 +115,12 @@ class TeachingGuideController extends Controller
             return back()->with('error', 'No valid files were uploaded.');
         }
 
-        // Notify all active Faculty users
-        $facultyIds = User::whereHas('role', fn($q) => $q->where('role_name', 'Faculty Employee'))
-            ->where('status', 'Active')
-            ->pluck('id')
-            ->toArray();
-
-        if (!empty($facultyIds)) {
+        if (!empty($recipientIds)) {
             $label = $uploadedCount === 1
                 ? "\"{$validated['title']}\" ({$folder->folder_name})"
                 : "{$uploadedCount} teaching guides in \"{$folder->folder_name}\"";
             $this->notificationService->notifyMany(
-                $facultyIds,
+                $recipientIds,
                 "New teaching guide uploaded: {$label}. Check the Teaching Guides section."
             );
         }
@@ -130,9 +135,10 @@ class TeachingGuideController extends Controller
     public function download($id)
     {
         $user = auth()->user();
-        $guide = TeachingGuide::findOrFail($id);
+        $guide = TeachingGuide::forUser($user)->findOrFail($id);
 
-        UploadStorage::assertResolvedPath($guide->file_path, 'teaching-guides');
+        $storageDir = str_starts_with($guide->file_path, 'documents/') ? 'documents' : 'teaching-guides';
+        UploadStorage::assertResolvedPath($guide->file_path, $storageDir);
 
         if (!UploadStorage::exists($guide->file_path)) {
             return back()->with('error', 'This file is no longer available. It was uploaded to a previous storage provider and no longer exists in the current storage.');
@@ -162,23 +168,4 @@ class TeachingGuideController extends Controller
         return 'faculty';
     }
 
-    /** Derive semester label from folder name (e.g. "1st Semester AY...") */
-    private function semesterFromFolder(Folder $folder): string
-    {
-        $name = $folder->folder_name . ($folder->parent ? ' ' . $folder->parent->folder_name : '');
-        if (str_contains($name, '1st')) return '1st';
-        if (str_contains($name, '2nd')) return '2nd';
-        return '1st';
-    }
-
-    private function academicYearFromFolder(Folder $folder): string
-    {
-        // Try to extract "2025-2026" pattern from folder name or parent
-        $text = $folder->folder_name . ' ' . ($folder->parent?->folder_name ?? '');
-        if (preg_match('/(\d{4})-(\d{4})/', $text, $m)) {
-            return $m[1] . '-' . $m[2];
-        }
-        $y = now()->month >= 8 ? now()->year : now()->year - 1;
-        return $y . '-' . ($y + 1);
-    }
 }

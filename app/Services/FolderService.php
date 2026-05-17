@@ -5,6 +5,7 @@ namespace App\Services;
 use App\Models\Folder;
 use App\Models\Document;
 use App\Models\DashboardLog;
+use App\Models\User;
 use Illuminate\Support\Collection;
 
 class FolderService
@@ -12,18 +13,24 @@ class FolderService
     /**
      * Get the system folder tree: top-level categories with children eager-loaded.
      */
-    public function getSystemFolderTree(): Collection
+    public function getSystemFolderTree(?User $viewer = null): Collection
     {
+        $documentCount = function ($query) use ($viewer) {
+            if ($viewer) {
+                $query->visibleTo($viewer);
+            }
+        };
+
         return Folder::system()
             ->topLevel()
-            ->with(['children' => function ($query) {
+            ->with(['children' => function ($query) use ($documentCount) {
                 $query->system()->orderBy('sort_order')
-                    ->withCount('documents')
-                    ->with(['children' => function ($q) {
-                        $q->system()->orderBy('sort_order')->withCount('documents');
+                    ->withCount(['documents' => $documentCount])
+                    ->with(['children' => function ($q) use ($documentCount) {
+                        $q->system()->orderBy('sort_order')->withCount(['documents' => $documentCount]);
                     }]);
             }])
-            ->withCount('documents')
+            ->withCount(['documents' => $documentCount])
             ->orderBy('sort_order')
             ->get();
     }

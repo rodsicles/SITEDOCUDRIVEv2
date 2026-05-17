@@ -60,6 +60,19 @@ class Document extends Model
         return $this->hasMany(DocumentView::class, 'document_id', 'document_id');
     }
 
+    public function recipients()
+    {
+        return $this->belongsToMany(User::class, 'document_recipients', 'document_id', 'user_id')
+            ->withTimestamps();
+    }
+
+    public function teachingGuide()
+    {
+        return $this->hasOne(TeachingGuide::class, 'document_id', 'document_id');
+    }
+
+    public const SHAREABLE_CATEGORIES = ['Teaching Guides', 'Exam Questionnaires'];
+
     // Check if document is favorited by user
     public function isFavoritedBy($userId)
     {
@@ -87,16 +100,19 @@ class Document extends Model
      */
     public function canView(User $user): bool
     {
-        if ($user->isDean()) {
+        if ($user->isDean() || $user->isSecretary()) {
             return true;
         }
 
-        if ($user->role_id === 2) { // Program Coordinator
-            if ($this->uploaded_by === $user->id) {
-                return true;
-            }
+        if ($this->uploaded_by === $user->id) {
+            return true;
+        }
 
-            // Faculty uploads from same department only
+        if ($this->recipients()->where('users.id', $user->id)->exists()) {
+            return true;
+        }
+
+        if ($user->isProgramCoordinator()) {
             if (optional($this->uploader)->role_id === 3) {
                 $coordinatorDept = optional($user->employee)->department;
                 $uploaderDept = optional(optional($this->uploader)->employee)->department;
@@ -107,8 +123,64 @@ class Document extends Model
             return false;
         }
 
-        // Faculty – own documents only
-        return $this->uploaded_by === $user->id;
+        if ($this->isSharedWithAllFaculty()) {
+            return true;
+        }
+
+        return false;
+    }
+
+    /**
+     * Teaching Guides / Exam Questionnaires with no explicit recipients are visible to all faculty.
+     */
+    public function isSharedWithAllFaculty(): bool
+    {
+        if (!in_array($this->category, self::SHAREABLE_CATEGORIES, true)) {
+            return false;
+        }
+
+        if ($this->recipients()->exists()) {
+            return false;
+        }
+
+        return $this->uploader && $this->uploader->canUploadSharedDocuments();
+    }
+
+    public function scopeVisibleTo($query, User $user)
+    {
+        if ($user->isDean() || $user->isSecretary()) {
+            return $query;
+        }
+
+        if ($user->isProgramCoordinator()) {
+            $coordinatorDept = optional($user->employee)->department;
+
+            return $query->where(function ($q) use ($user, $coordinatorDept) {
+                $q->where('uploaded_by', $user->id)
+                    ->orWhereHas('recipients', fn ($r) => $r->where('users.id', $user->id));
+
+                if ($coordinatorDept) {
+                    $q->orWhereHas('uploader', function ($subQ) use ($coordinatorDept) {
+                        $subQ->where('role_id', 3)
+                            ->whereHas('employee', function ($empQ) use ($coordinatorDept) {
+                                $empQ->where('department', $coordinatorDept);
+                            });
+                    });
+                }
+            });
+        }
+
+        return $query->where(function ($q) use ($user) {
+            $q->where('uploaded_by', $user->id)
+                ->orWhereHas('recipients', fn ($r) => $r->where('users.id', $user->id))
+                ->orWhere(function ($shared) {
+                    $shared->whereIn('category', self::SHAREABLE_CATEGORIES)
+                        ->whereDoesntHave('recipients')
+                        ->whereHas('uploader', fn ($u) => $u->whereHas('role', function ($roleQ) {
+                            $roleQ->whereIn('role_name', ['Dean', 'Secretary', 'Program Coordinator']);
+                        }));
+                });
+        });
     }
 
     /**
@@ -118,31 +190,7 @@ class Document extends Model
      */
     public static function getFilteredDocuments($user, $categoryFilter = null)
     {
-        $query = self::with(['uploader.employee', 'category']);
-
-        if ($user->isDean()) {
-            // Dean sees all documents from both departments
-        } elseif ($user->role_id === 2) { // Program Coordinator
-            $coordinatorDept = optional($user->employee)->department;
-
-            $query->where(function($q) use ($user, $coordinatorDept) {
-                // Own documents
-                $q->where('uploaded_by', $user->id);
-
-                // Faculty documents from same department only
-                if ($coordinatorDept) {
-                    $q->orWhereHas('uploader', function($subQ) use ($coordinatorDept) {
-                        $subQ->where('role_id', 3)
-                             ->whereHas('employee', function($empQ) use ($coordinatorDept) {
-                                 $empQ->where('department', $coordinatorDept);
-                             });
-                    });
-                }
-            });
-        } else { // Faculty
-            // Faculty sees only their own documents
-            $query->where('uploaded_by', $user->id);
-        }
+        $query = self::with(['uploader.employee', 'category'])->visibleTo($user);
 
         if ($categoryFilter) {
             $query->where('category', $categoryFilter);

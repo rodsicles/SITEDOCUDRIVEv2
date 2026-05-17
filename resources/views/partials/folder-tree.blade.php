@@ -6,6 +6,7 @@
     elseif (request()->routeIs('dean.*')) $role = 'dean';
     $docsRoute = $role . '.documents';
     $canUpload = in_array($role, ['faculty', 'coordinator', 'dean']);
+    $documentViewer = auth()->user();
 @endphp
 
 <div class="content-card mb-6">
@@ -13,6 +14,8 @@
     @php
         $validTabs = $folderTree->pluck('folder_name')->map(fn($n) => \Illuminate\Support\Str::slug($n))->toArray();
         $activeTab = in_array($tab, $validTabs) ? $tab : ($validTabs[0] ?? '');
+        $shareableUploadTab = in_array($activeTab, ['teaching-guides', 'exam-questionnaires'], true)
+            && $documentViewer && $documentViewer->canUploadSharedDocuments();
     @endphp
     <div class="category-tabs">
         @foreach($folderTree as $category)
@@ -49,7 +52,9 @@
         $displayFolders = collect();
         $isLeafFolder = false;
         if (isset($currentFolder) && $currentFolder) {
-            $displayFolders = $currentFolder->children()->system()->orderBy('sort_order')->withCount('documents')->get();
+            $displayFolders = $currentFolder->children()->system()->orderBy('sort_order')
+                ->withCount(['documents' => fn ($q) => $q->visibleTo($documentViewer)])
+                ->get();
             $isLeafFolder = $displayFolders->isEmpty();
         } else {
             foreach ($folderTree as $category) {
@@ -323,6 +328,13 @@
                         <label class="form-label">Tags (max 15 characters)</label>
                         <input type="text" name="tags" id="folderTagsInput" class="form-control" placeholder="e.g. urgent" maxlength="15">
                     </div>
+                    @if($shareableUploadTab)
+                    <div class="form-group">
+                        <label class="form-label">Subject (for Teaching Guides list)</label>
+                        <input type="text" name="subject" class="form-control" placeholder="e.g. IT 101" maxlength="100">
+                    </div>
+                    @include('partials.recipient-picker', ['pickerId' => 'folderRecipientPicker', 'role' => $role])
+                    @endif
                     <div class="form-group">
                         <label class="form-label">Choose Files * (Max 3)</label>
                         <input type="file" name="documents[]" id="folderFileInput" class="form-control" multiple required disabled data-dropzone="1">
@@ -523,6 +535,12 @@
 
         const tagsVal = document.getElementById('folderTagsInput')?.value || '';
         if (tagsVal.trim().length > 15) { alert('Tags max 15 characters.'); return; }
+
+        @if($shareableUploadTab)
+        if (typeof folderRecipientPickerValidate === 'function' && !folderRecipientPickerValidate()) {
+            return;
+        }
+        @endif
 
         const submitBtn = this.querySelector('button[type="submit"]');
         const originalText = submitBtn.innerHTML;

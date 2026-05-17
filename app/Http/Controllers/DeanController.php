@@ -23,6 +23,7 @@ use Illuminate\Support\Facades\Hash;
 class DeanController extends Controller
 {
     use \App\Http\Controllers\Concerns\HandlesUploadExceptions;
+    use \App\Http\Controllers\Concerns\ValidatesDocumentUpload;
 
     public function __construct(
         protected DashboardService $dashboardService,
@@ -246,7 +247,7 @@ class DeanController extends Controller
         $folderFilter = $request->query('folder');
         $tab = $request->query('tab', 'accreditation');
 
-        $folderTree = $this->folderService->getSystemFolderTree();
+        $folderTree = $this->folderService->getSystemFolderTree(auth()->user());
         $currentFolder = $folderFilter && $folderFilter !== 'uncategorized'
             ? \App\Models\Folder::with('parent.parent')->find($folderFilter)
             : null;
@@ -310,18 +311,8 @@ class DeanController extends Controller
 
     public function uploadDocument(Request $request)
     {
-        $validated = $request->validate([
-            'document_title' => 'required|string|max:13',
-            'document_type' => 'required|in:pdf,image,word',
-            'documents' => 'required|array|max:3',
-            'documents.*' => match($request->input('document_type')) {
-                'pdf' => 'required|file|max:10240|mimes:pdf|mimetypes:application/pdf',
-                'word' => 'required|file|max:10240|mimes:doc,docx',
-                default => 'required|file|max:10240|mimes:jpg,jpeg,png|mimetypes:image/jpeg,image/png',
-            },
-            'tags' => 'nullable|string|max:15',
-            'folder_id' => 'required|exists:folders,folder_id',
-        ]);
+        $validated = $this->validateDocumentUpload($request);
+        $recipientIds = $validated['recipient_ids'] ?? [];
 
         $files = $request->file('documents');
         foreach ($files as $file) {
@@ -345,7 +336,7 @@ class DeanController extends Controller
 
         try {
             $uploadedCount = $this->documentService->uploadDocuments(
-                $validated, $files, auth()->id()
+                $validated, $files, auth()->id(), $recipientIds
             );
         } catch (\Throwable $e) {
             return $this->uploadFailedResponse($request, $e);
@@ -354,11 +345,11 @@ class DeanController extends Controller
         if ($request->expectsJson()) {
             return response()->json([
                 'success' => true,
-                'message' => "$uploadedCount document(s) uploaded successfully"
+                'message' => "$uploadedCount document(s) uploaded and shared successfully"
             ]);
         }
 
-        return redirect()->back()->with('success', "$uploadedCount document(s) uploaded successfully");
+        return redirect()->back()->with('success', "$uploadedCount document(s) uploaded and shared successfully");
     }
 
     public function storeExamRecord(Request $request)

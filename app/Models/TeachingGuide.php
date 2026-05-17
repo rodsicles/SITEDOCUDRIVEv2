@@ -13,6 +13,7 @@ class TeachingGuide extends Model
         'file_type',
         'subject',
         'folder_id',
+        'document_id',
         'semester',
         'academic_year',
         'description',
@@ -28,10 +29,26 @@ class TeachingGuide extends Model
         return $this->belongsTo(\App\Models\Folder::class, 'folder_id', 'folder_id');
     }
 
+    public function recipients()
+    {
+        return $this->belongsToMany(User::class, 'teaching_guide_recipients', 'teaching_guide_id', 'user_id')
+            ->withTimestamps();
+    }
+
+    public function document()
+    {
+        return $this->belongsTo(Document::class, 'document_id', 'document_id');
+    }
+
     public function scopeForUser($query, User $user)
     {
-        // Faculty sees ALL teaching guides (they are the recipients)
-        // Dean, Secretary, Coordinator see all
-        return $query;
+        if ($user->isDean() || $user->isSecretary() || $user->isProgramCoordinator()) {
+            return $query;
+        }
+
+        return $query->where(function ($q) use ($user) {
+            $q->whereHas('recipients', fn ($r) => $r->where('users.id', $user->id))
+                ->orWhereDoesntHave('recipients');
+        });
     }
 }

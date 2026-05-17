@@ -17,7 +17,7 @@
     <div class="content-card mb-5">
         <div class="card-header">
             <h3 class="card-title">Upload Teaching Guide</h3>
-            <span class="text-xs text-gray-500 dark:text-gray-400">Faculty will be notified automatically after upload.</span>
+            <span class="text-xs text-gray-500 dark:text-gray-400">Select faculty or coordinators who should receive this guide.</span>
         </div>
         <form action="{{ route('dean.teaching-guides.store') }}" method="POST" enctype="multipart/form-data">
             @csrf
@@ -53,6 +53,7 @@
                     </select>
                     @error('folder_id')<span class="text-red-500 text-xs">{{ $message }}</span>@enderror
                 </div>
+                @include('partials.recipient-picker', ['pickerId' => 'tgRecipientPicker', 'role' => 'dean'])
                 <div class="form-group col-span-2">
                     <label class="form-label">Files (PDF or Word, max 10MB each) <span class="text-red-500">*</span></label>
                     <input type="file" name="files[]" class="form-control" accept=".pdf,.doc,.docx" required multiple data-dropzone="1">
@@ -61,8 +62,8 @@
                 </div>
             </div>
             <div class="px-4 pb-4">
-                <button type="submit" class="btn btn-primary">
-                    <i class="fas fa-upload"></i> Upload & Notify Faculty
+                <button type="submit" class="btn btn-primary" onclick="return typeof tgRecipientPickerValidate === 'function' ? tgRecipientPickerValidate() : true;">
+                    <i class="fas fa-upload"></i> Upload & Notify Recipients
                 </button>
             </div>
         </form>

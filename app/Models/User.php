@@ -152,4 +152,9 @@ class User extends Authenticatable
     {
         return $this->isDean() || $this->isSecretary() || $this->isProgramCoordinator();
     }
+
+    public function canUploadSharedDocuments(): bool
+    {
+        return $this->canManageDocuments();
+    }
 }

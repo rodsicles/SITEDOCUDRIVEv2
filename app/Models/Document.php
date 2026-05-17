@@ -128,6 +128,10 @@ class Document extends Model
             return true;
         }
 
+        if ($this->isApprovedFacultyExamQuestionnaire()) {
+            return true;
+        }
+
         return false;
     }
 
@@ -145,6 +149,25 @@ class Document extends Model
         }
 
         return $this->uploader && $this->uploader->canUploadSharedDocuments();
+    }
+
+    /**
+     * Approved faculty exam questionnaires synced into Documents are visible to all faculty.
+     */
+    public function isApprovedFacultyExamQuestionnaire(): bool
+    {
+        if ($this->category !== 'Exam Questionnaires') {
+            return false;
+        }
+
+        return $this->uploader
+            && (int) $this->uploader->role_id === 3
+            && $this->examQuestionnaire()->where('status', 'approved')->exists();
+    }
+
+    public function examQuestionnaire()
+    {
+        return $this->hasOne(ExamQuestionnaire::class, 'document_id', 'document_id');
     }
 
     public function scopeVisibleTo($query, User $user)
@@ -180,6 +203,11 @@ class Document extends Model
                         ->whereHas('uploader', fn ($u) => $u->whereHas('role', function ($roleQ) {
                             $roleQ->whereIn('role_name', ['Dean', 'Secretary', 'Program Coordinator']);
                         }));
+                })
+                ->orWhere(function ($approvedExams) {
+                    $approvedExams->where('category', 'Exam Questionnaires')
+                        ->whereHas('examQuestionnaire', fn ($eq) => $eq->where('status', 'approved'))
+                        ->whereHas('uploader', fn ($u) => $u->where('role_id', 3));
                 });
         });
     }

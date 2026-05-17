@@ -8,6 +8,7 @@ class ExamQuestionnaire extends Model
 {
     protected $fillable = [
         'submitted_by',
+        'document_id',
         'title',
         'file_path',
         'file_type',
@@ -28,6 +29,11 @@ class ExamQuestionnaire extends Model
     public function submitter()
     {
         return $this->belongsTo(User::class, 'submitted_by');
+    }
+
+    public function document()
+    {
+        return $this->belongsTo(Document::class, 'document_id', 'document_id');
     }
 
     public function reviewer()

@@ -3,6 +3,7 @@
 namespace App\Http\Controllers;
 
 use App\Models\ExamQuestionnaire;
+use App\Services\ExamQuestionnaireSyncService;
 use App\Support\IteSubjects;
 use App\Support\UploadStorage;
 use Illuminate\Http\Request;
@@ -173,7 +174,12 @@ class ExamQuestionnaireController extends Controller
             'remarks'     => $request->input('remarks'),
         ]);
 
-        return back()->with('success', 'Questionnaire approved.');
+        $document = app(ExamQuestionnaireSyncService::class)->syncToDocument($questionnaire->fresh());
+        if (!$document) {
+            return back()->with('warning', 'Questionnaire approved, but it could not be placed in the Documents folder. Check that system folders exist for this semester and exam type.');
+        }
+
+        return back()->with('success', 'Questionnaire approved and added to Documents.');
     }
 
     public function reject(Request $request, $id)

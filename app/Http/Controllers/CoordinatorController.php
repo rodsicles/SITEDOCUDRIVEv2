@@ -411,13 +411,21 @@ class CoordinatorController extends Controller
 
     public function viewDocument($id)
     {
-        return $this->documentService->viewDocument($id, auth()->user(), true);
+        try {
+            return $this->documentService->viewDocument($id, auth()->user(), true);
+        } catch (\RuntimeException $e) {
+            return back()->with('error', $e->getMessage());
+        }
     }
 
     public function downloadDocument($id, Request $request)
     {
         $format = in_array($request->query('format'), ['pdf', 'word']) ? $request->query('format') : 'word';
-        return $this->documentService->downloadDocument($id, auth()->user(), $format);
+        try {
+            return $this->documentService->downloadDocument($id, auth()->user(), $format);
+        } catch (\RuntimeException $e) {
+            return back()->with('error', $e->getMessage());
+        }
     }
 
     public function deleteDocument($id)

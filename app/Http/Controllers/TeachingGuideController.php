@@ -134,6 +134,10 @@ class TeachingGuideController extends Controller
 
         UploadStorage::assertResolvedPath($guide->file_path, 'teaching-guides');
 
+        if (!UploadStorage::exists($guide->file_path)) {
+            return back()->with('error', 'This file is no longer available. It was uploaded to a previous storage provider and no longer exists in the current storage.');
+        }
+
         return UploadStorage::downloadResponse($guide->file_path, basename($guide->file_path));
     }
 

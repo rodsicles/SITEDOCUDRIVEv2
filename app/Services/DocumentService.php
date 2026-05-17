@@ -133,6 +133,10 @@ class DocumentService
 
         UploadStorage::assertResolvedPath($document->file_path, 'documents');
 
+        if (!UploadStorage::exists($document->file_path)) {
+            throw new \RuntimeException('This file is no longer available. It was uploaded to a previous storage provider and no longer exists in the current storage.');
+        }
+
         if ($trackView) {
             DocumentView::trackView($user->id, $documentId);
 
@@ -174,6 +178,10 @@ class DocumentService
         }
 
         UploadStorage::assertResolvedPath($document->file_path, 'documents');
+
+        if (!UploadStorage::exists($document->file_path)) {
+            throw new \RuntimeException('This file is no longer available. It was uploaded to a previous storage provider and no longer exists in the current storage.');
+        }
 
         // Determine which file to download
         $downloadPath = $document->file_path;

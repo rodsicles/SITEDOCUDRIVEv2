@@ -124,6 +124,10 @@ class ExamQuestionnaireController extends Controller
 
         UploadStorage::assertResolvedPath($questionnaire->file_path, 'exam-questionnaires');
 
+        if (!UploadStorage::exists($questionnaire->file_path)) {
+            return back()->with('error', 'This file is no longer available. It was uploaded to a previous storage provider and no longer exists in the current storage.');
+        }
+
         return UploadStorage::inlineResponse(
             $questionnaire->file_path,
             $questionnaire->title . '.pdf',
@@ -142,6 +146,10 @@ class ExamQuestionnaireController extends Controller
         }
 
         UploadStorage::assertResolvedPath($questionnaire->file_path, 'exam-questionnaires');
+
+        if (!UploadStorage::exists($questionnaire->file_path)) {
+            return back()->with('error', 'This file is no longer available. It was uploaded to a previous storage provider and no longer exists in the current storage.');
+        }
 
         return UploadStorage::downloadResponse($questionnaire->file_path, $questionnaire->title . '.pdf');
     }

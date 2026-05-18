@@ -8,7 +8,10 @@ class IteSubjects
 {
     public static function courses(): array
     {
-        return config('ite_subjects', []);
+        $courses = config('ite_subjects', []);
+        uksort($courses, fn (string $a, string $b) => strnatcmp($a, $b));
+
+        return $courses;
     }
 
     /** @return list<string> */
@@ -20,6 +23,21 @@ class IteSubjects
         }
 
         return $labels;
+    }
+
+    public static function codeFromLabel(string $label): ?string
+    {
+        if (preg_match('/^(ITE\d+)/i', trim($label), $matches)) {
+            return strtoupper($matches[1]);
+        }
+
+        return null;
+    }
+
+    /** Short title for documents.document_title (max 13 characters). */
+    public static function documentTitleFromLabel(string $label): string
+    {
+        return mb_substr(self::codeFromLabel($label) ?? trim($label), 0, 13);
     }
 
     public static function formatLabel(string $code, string $title): string

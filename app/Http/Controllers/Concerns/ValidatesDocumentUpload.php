@@ -3,6 +3,8 @@
 namespace App\Http\Controllers\Concerns;
 
 use App\Models\Document;
+use App\Models\Folder;
+use App\Services\AcademicHierarchyService;
 use App\Services\DocumentService;
 use App\Support\IteSubjects;
 use Illuminate\Http\Request;
@@ -12,12 +14,15 @@ trait ValidatesDocumentUpload
 {
     protected function validateDocumentUpload(Request $request): array
     {
-        $category = app(DocumentService::class)->resolveCategoryForFolder(
-            $request->input('folder_id') ? (int) $request->input('folder_id') : null
-        );
+        $folderId = $request->input('folder_id') ? (int) $request->input('folder_id') : null;
+        $folder = $folderId ? Folder::find($folderId) : null;
+        $hierarchy = app(AcademicHierarchyService::class);
+        $category = app(DocumentService::class)->resolveCategoryForFolder($folderId);
+        $useCourseSelect = $folder
+            && in_array($category, Document::SHAREABLE_CATEGORIES, true)
+            && $hierarchy->isSemesterCourseLeafFolder($folder);
 
         $rules = [
-            'document_title' => 'required|string|max:13',
             'document_type' => 'required|in:pdf,image,word',
             'documents' => 'required|array|max:3',
             'documents.*' => match ($request->input('document_type')) {
@@ -28,6 +33,12 @@ trait ValidatesDocumentUpload
             'folder_id' => 'required|exists:folders,folder_id',
         ];
 
+        if ($useCourseSelect) {
+            $rules['subject'] = ['required', 'string', Rule::in(IteSubjects::labels())];
+        } else {
+            $rules['document_title'] = 'required|string|max:13';
+        }
+
         $isShareable = in_array($category, Document::SHAREABLE_CATEGORIES, true);
         $user = auth()->user();
 
@@ -37,7 +48,7 @@ trait ValidatesDocumentUpload
                 $rules['recipient_ids.*'] = 'integer|exists:users,id';
             }
 
-            if (IteSubjects::shouldUseSubjectPicker($user, true)) {
+            if (!$useCourseSelect && IteSubjects::shouldUseSubjectPicker($user, true)) {
                 $rules['subject'] = ['required', 'string', Rule::in(IteSubjects::labels())];
             }
 
@@ -49,6 +60,12 @@ trait ValidatesDocumentUpload
             $rules['tags'] = 'nullable|string|max:15';
         }
 
-        return $request->validate($rules);
+        $validated = $request->validate($rules);
+
+        if ($useCourseSelect && !empty($validated['subject'])) {
+            $validated['document_title'] = IteSubjects::documentTitleFromLabel($validated['subject']);
+        }
+
+        return $validated;
     }
 }

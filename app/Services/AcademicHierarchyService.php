@@ -148,6 +148,28 @@ class AcademicHierarchyService
         return false;
     }
 
+    /**
+     * Leaf semester folders where uploads use the ITE course list (TG, LB, TOS, TOQ).
+     */
+    public function isSemesterCourseLeafFolder(?Folder $folder): bool
+    {
+        if (!$folder || !$this->isTeachingGuidesOrExamCategory($folder)) {
+            return false;
+        }
+
+        $slug = strtolower($folder->slug ?? '');
+        foreach (array_merge(self::TG_SUBFOLDERS, self::EQ_SUBFOLDERS) as $suffix) {
+            if (str_ends_with($slug, '-' . $suffix)) {
+                return true;
+            }
+        }
+
+        $name = strtolower($folder->folder_name ?? '');
+
+        return str_contains($name, 'table of')
+            || in_array(trim($name), ['tg', 'lb', 'tos', 'toq'], true);
+    }
+
     protected function firstOrCreateSystemFolder(array $data, int $parentId, int $level, int $sortOrder, ?int $schoolYearId = null): Folder
     {
         $folder = Folder::firstOrCreate(

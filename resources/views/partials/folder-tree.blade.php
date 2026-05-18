@@ -18,6 +18,8 @@
         $shareableUploadTab = $shareableCategoryTab
             && $documentViewer && $documentViewer->canUploadSharedDocuments();
         $useItSubjectPicker = \App\Support\IteSubjects::shouldUseSubjectPicker($documentViewer, $shareableCategoryTab);
+        $academicHierarchy = app(\App\Services\AcademicHierarchyService::class);
+        $useCourseSelect = false;
     @endphp
     <div class="category-tabs">
         @foreach($folderTree as $category)
@@ -69,6 +71,12 @@
                 $displayFolders = $folderService->attachSubtreeDocumentCounts($displayFolders, $documentViewer);
             }
         }
+
+        $useCourseSelect = isset($currentFolder)
+            && $currentFolder
+            && $shareableCategoryTab
+            && $isLeafFolder
+            && $academicHierarchy->isSemesterCourseLeafFolder($currentFolder);
     @endphp
 
     @if($isLeafFolder)
@@ -315,20 +323,26 @@
                 @csrf
                 <input type="hidden" name="folder_id" value="{{ $currentFolder->folder_id }}">
                 <div class="grid grid-cols-1 md:grid-cols-2 gap-4 mb-4">
+                    @if($useCourseSelect)
+                    @include('partials.ite-course-select', ['inputId' => 'folderCourseSelect'])
+                    @else
                     <div class="form-group">
                         <label class="form-label">Document Title *</label>
                         <input type="text" name="document_title" class="form-control" placeholder="Enter document title" required maxlength="13">
                     </div>
+                    @endif
                     <div class="form-group">
                         <label class="form-label">Document Type *</label>
                         <select name="document_type" id="folderDocType" class="form-control" required>
                             <option value="">Select Document Type</option>
                             <option value="pdf">PDF Document</option>
+                            @if(!($useCourseSelect && $activeTab === 'exam-questionnaires'))
                             <option value="word">Word Document</option>
                             <option value="image">Image File</option>
+                            @endif
                         </select>
                     </div>
-                    @if($useItSubjectPicker)
+                    @if($useItSubjectPicker && !$useCourseSelect)
                     @include('partials.ite-subject-picker', ['pickerId' => 'folderSubjectPicker'])
                     @endif
                     @if($activeTab === 'exam-questionnaires')
@@ -543,8 +557,16 @@
             if (docType === 'image' && !['jpg','jpeg','png'].includes(ext)) { alert('File ' + files[i].name + ' is not an image.'); return; }
         }
 
-        @if($useItSubjectPicker)
+        @if($useItSubjectPicker && !$useCourseSelect)
         if (typeof folderSubjectPickerValidate === 'function' && !folderSubjectPickerValidate()) {
+            return;
+        }
+        @endif
+
+        @if($useCourseSelect)
+        const courseSelect = document.getElementById('folderCourseSelect');
+        if (!courseSelect || !courseSelect.value) {
+            alert('Please select an ITE course.');
             return;
         }
         @endif

@@ -299,11 +299,14 @@ class DocumentService
                 $storedPath = UploadStorage::storeAs($file, 'exam-questionnaires', $filename);
                 $examType = $validated['exam_type'] ?? 'Quiz';
                 $status = $autoApprove ? 'approved' : 'pending';
+                $submissionTitle = $subject
+                    ? $subject . ' - ' . $examType . ' Questionnaire'
+                    : $title;
 
                 $questionnaire = $this->examQuestionnaireSync->createFromFolderUpload(
                     $userId,
                     $folder,
-                    $title,
+                    $submissionTitle,
                     $storedPath,
                     $fileType,
                     $examType,
@@ -317,7 +320,7 @@ class DocumentService
                 } else {
                     $submittedForApproval = true;
                     $this->notificationService->notifySupervisors(
-                        "Exam questionnaire pending approval: \"{$title}\" in {$folder->folder_name}."
+                        "Exam questionnaire pending approval: \"{$submissionTitle}\" in {$folder->folder_name}."
                     );
                 }
 
@@ -329,11 +332,12 @@ class DocumentService
                 $filename = time() . '_' . $index . '_' . $file->hashName();
                 $storedPath = UploadStorage::storeAs($file, 'teaching-guides', $filename);
                 $status = $autoApprove ? 'approved' : 'pending';
+                $guideTitle = $subject ?? $title;
 
                 $guide = $this->teachingGuideSync->createFromFolderUpload(
                     $userId,
                     $folder,
-                    $title,
+                    $guideTitle,
                     $storedPath,
                     $fileType,
                     $subject,
@@ -351,7 +355,7 @@ class DocumentService
                 } else {
                     $submittedForApproval = true;
                     $this->notificationService->notifySupervisors(
-                        "Teaching guide pending approval: \"{$title}\" in {$folder->folder_name}."
+                        "Teaching guide pending approval: \"{$guideTitle}\" in {$folder->folder_name}."
                     );
                 }
 

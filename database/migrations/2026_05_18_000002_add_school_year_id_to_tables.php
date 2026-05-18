@@ -23,10 +23,6 @@ return new class extends Migration
                 ->constrained('school_years')->nullOnDelete();
         });
 
-        Schema::table('folders', function (Blueprint $table) {
-            $table->foreignId('school_year_id')->nullable()->after('is_system')
-                ->constrained('school_years')->nullOnDelete();
-        });
     }
 
     public function down(): void
@@ -40,10 +36,6 @@ return new class extends Migration
         });
 
         Schema::table('exam_questionnaires', function (Blueprint $table) {
-            $table->dropConstrainedForeignId('school_year_id');
-        });
-
-        Schema::table('folders', function (Blueprint $table) {
             $table->dropConstrainedForeignId('school_year_id');
         });
     }

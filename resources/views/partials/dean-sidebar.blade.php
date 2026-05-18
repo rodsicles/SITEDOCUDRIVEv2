@@ -22,6 +22,9 @@
 <a href="{{ route('dean.reports') }}" class="menu-item {{ request()->routeIs('dean.reports') ? 'active' : '' }}">
     <i class="fas fa-file-alt"></i> Reports
 </a>
+<a href="{{ route('dean.courses') }}" class="menu-item {{ request()->routeIs('dean.courses*') ? 'active' : '' }}">
+    <i class="fas fa-book"></i> Course Catalog
+</a>
 <a href="{{ route('dean.analytics') }}" class="menu-item {{ request()->routeIs('dean.analytics') ? 'active' : '' }}">
     <i class="fas fa-chart-pie"></i> Analytics
 </a>

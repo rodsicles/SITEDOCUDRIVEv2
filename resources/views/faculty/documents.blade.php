@@ -13,6 +13,13 @@
     {{-- Include Folder Navigation --}}
     @include('partials.folder-tree')
 
+    @php
+        $hideDocumentsList = isset($currentFolder)
+            && $currentFolder
+            && app(\App\Services\AcademicHierarchyService::class)->isSemesterTypeLeafFolder($currentFolder);
+    @endphp
+
+    @if(!$hideDocumentsList)
     <!-- Documents List -->
     <div class="content-card">
         <div class="card-header">
@@ -201,6 +208,7 @@
             {{ $documents->links() }}
         </div>
     </div>
+    @endif
 
 
 @endsection

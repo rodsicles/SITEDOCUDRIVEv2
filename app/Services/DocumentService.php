@@ -284,6 +284,12 @@ class DocumentService
         $recipientIds = array_values(array_unique(array_filter(array_map('intval', $recipientIds))));
         $subject = $validated['subject'] ?? null;
         $uploader = User::findOrFail($userId);
+        $hierarchy = app(AcademicHierarchyService::class);
+
+        if ($folder && $subject && $hierarchy->isSemesterTypeLeafFolder($folder)) {
+            $folder = $hierarchy->ensureCourseFolder($folder, $subject);
+            $validated['folder_id'] = $folder->folder_id;
+        }
         $autoApprove = $uploader->isDean() || $uploader->isSecretary();
         $submittedForApproval = false;
 
@@ -299,9 +305,7 @@ class DocumentService
                 $storedPath = UploadStorage::storeAs($file, 'exam-questionnaires', $filename);
                 $examType = $validated['exam_type'] ?? 'Quiz';
                 $status = $autoApprove ? 'approved' : 'pending';
-                $submissionTitle = $subject
-                    ? $subject . ' - ' . $examType . ' Questionnaire'
-                    : $title;
+                $submissionTitle = $validated['document_title'];
 
                 $questionnaire = $this->examQuestionnaireSync->createFromFolderUpload(
                     $userId,
@@ -332,7 +336,7 @@ class DocumentService
                 $filename = time() . '_' . $index . '_' . $file->hashName();
                 $storedPath = UploadStorage::storeAs($file, 'teaching-guides', $filename);
                 $status = $autoApprove ? 'approved' : 'pending';
-                $guideTitle = $subject ?? $title;
+                $guideTitle = $validated['document_title'];
 
                 $guide = $this->teachingGuideSync->createFromFolderUpload(
                     $userId,

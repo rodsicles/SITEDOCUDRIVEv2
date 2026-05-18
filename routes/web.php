@@ -18,6 +18,7 @@ use App\Http\Controllers\DocumentRecipientController;
 use App\Http\Controllers\TaskAttachmentController;
 use App\Http\Controllers\SchoolYearController;
 use App\Http\Controllers\AnalyticsController;
+use App\Http\Controllers\DeanCourseController;
 
 // Authentication Routes
 Route::get('/', [AuthController::class, 'showLogin'])->name('login');
@@ -105,6 +106,11 @@ Route::middleware(['auth', 'no.back', 'role:Dean,Secretary'])->prefix('dean')->n
     Route::get('/accounts/{id}/edit', [DeanController::class, 'editEmployee'])->name('edit-employee');
     Route::patch('/accounts/{id}', [DeanController::class, 'updateEmployee'])->middleware('throttle:10,60')->name('update-employee');
     Route::post('/accounts/{id}/reset-password', [DeanController::class, 'resetEmployeePassword'])->middleware('throttle:5,1')->name('reset-password');
+
+    Route::get('/courses', [DeanCourseController::class, 'index'])->name('courses');
+    Route::post('/courses', [DeanCourseController::class, 'store'])->name('courses.store');
+    Route::delete('/courses/{course}', [DeanCourseController::class, 'destroy'])->name('courses.destroy');
+    Route::post('/courses/{course}/restore', [DeanCourseController::class, 'restore'])->name('courses.restore');
 
     Route::get('/reports', [DeanController::class, 'reports'])->name('reports');
     Route::get('/analytics', [AnalyticsController::class, 'index'])->name('analytics');

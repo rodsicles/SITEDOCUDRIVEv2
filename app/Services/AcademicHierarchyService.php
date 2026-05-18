@@ -2,6 +2,7 @@
 
 namespace App\Services;
 
+use App\Models\Course;
 use App\Models\Folder;
 use App\Models\SchoolYear;
 use App\Support\IteSubjects;
@@ -149,11 +150,15 @@ class AcademicHierarchyService
     }
 
     /**
-     * Leaf semester folders where uploads use the ITE course list (TG, LB, TOS, TOQ).
+     * TG / LB / TOS / TOQ folders — upload picks a course; a child folder is created per course.
      */
-    public function isSemesterCourseLeafFolder(?Folder $folder): bool
+    public function isSemesterTypeLeafFolder(?Folder $folder): bool
     {
         if (!$folder || !$this->isTeachingGuidesOrExamCategory($folder)) {
+            return false;
+        }
+
+        if ($this->isCourseSubfolder($folder)) {
             return false;
         }
 
@@ -168,6 +173,56 @@ class AcademicHierarchyService
 
         return str_contains($name, 'table of')
             || in_array(trim($name), ['tg', 'lb', 'tos', 'toq'], true);
+    }
+
+    /** @deprecated Use isSemesterTypeLeafFolder() */
+    public function isSemesterCourseLeafFolder(?Folder $folder): bool
+    {
+        return $this->isSemesterTypeLeafFolder($folder);
+    }
+
+    /**
+     * Child folder under TG/LB/TOS/TOQ named after an ITE/Engineering course.
+     */
+    public function isCourseSubfolder(?Folder $folder): bool
+    {
+        if (!$folder || !$folder->parent_id) {
+            return false;
+        }
+
+        $parent = $folder->relationLoaded('parent') ? $folder->parent : Folder::find($folder->parent_id);
+
+        return $parent && $this->isSemesterTypeLeafFolder($parent);
+    }
+
+    /**
+     * Find or create a course-named folder under a TG/LB/TOS/TOQ folder.
+     */
+    public function ensureCourseFolder(Folder $typeLeafFolder, string $subjectLabel): Folder
+    {
+        if (!$this->isSemesterTypeLeafFolder($typeLeafFolder)) {
+            return $typeLeafFolder;
+        }
+
+        $code = IteSubjects::codeFromLabel($subjectLabel) ?? 'course';
+        $slug = ($typeLeafFolder->slug ?? 'leaf') . '-course-' . strtolower($code);
+        $sortOrder = (int) Course::query()
+            ->where('code', strtoupper($code))
+            ->value('sort_order');
+
+        return Folder::firstOrCreate(
+            ['slug' => $slug],
+            [
+                'folder_name' => $subjectLabel,
+                'parent_id' => $typeLeafFolder->folder_id,
+                'user_id' => null,
+                'color' => '#028a0f',
+                'is_system' => true,
+                'level' => ($typeLeafFolder->level ?? 2) + 1,
+                'sort_order' => $sortOrder ?: 999,
+                'school_year_id' => $typeLeafFolder->school_year_id,
+            ]
+        );
     }
 
     protected function firstOrCreateSystemFolder(array $data, int $parentId, int $level, int $sortOrder, ?int $schoolYearId = null): Folder
@@ -193,8 +248,8 @@ class AcademicHierarchyService
         return $folder;
     }
 
-    public function validateSubjectLabel(string $label): bool
+    public function validateSubjectLabel(string $label, ?\App\Models\User $user = null): bool
     {
-        return IteSubjects::isValidLabel($label);
+        return IteSubjects::isValidLabel($label, $user);
     }
 }

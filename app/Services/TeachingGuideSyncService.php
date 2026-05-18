@@ -10,8 +10,22 @@ use App\Models\User;
 
 class TeachingGuideSyncService
 {
+    public function __construct(
+        protected AcademicHierarchyService $hierarchy,
+    ) {}
+
+    protected function typeLeafFolder(Folder $folder): Folder
+    {
+        if ($this->hierarchy->isCourseSubfolder($folder) && $folder->parent) {
+            return $folder->parent;
+        }
+
+        return $folder;
+    }
+
     public function semesterFromFolder(Folder $folder): string
     {
+        $folder = $this->typeLeafFolder($folder);
         $name = $folder->folder_name . ($folder->parent ? ' ' . $folder->parent->folder_name : '');
         if (str_contains($name, '1st')) {
             return '1st';
@@ -25,6 +39,7 @@ class TeachingGuideSyncService
 
     public function academicYearFromFolder(Folder $folder): string
     {
+        $folder = $this->typeLeafFolder($folder);
         $text = $folder->folder_name . ' ' . ($folder->parent?->folder_name ?? '');
         if (preg_match('/(\d{4})-(\d{4})/', $text, $m)) {
             return $m[1] . '-' . $m[2];

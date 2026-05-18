@@ -72,14 +72,63 @@
             }
         }
 
-        $useCourseSelect = isset($currentFolder)
+        $isTypeLeafFolder = isset($currentFolder)
             && $currentFolder
             && $shareableCategoryTab
-            && $isLeafFolder
-            && $academicHierarchy->isSemesterCourseLeafFolder($currentFolder);
+            && $academicHierarchy->isSemesterTypeLeafFolder($currentFolder);
+        $isCourseFolder = isset($currentFolder)
+            && $currentFolder
+            && $academicHierarchy->isCourseSubfolder($currentFolder);
+        if (isset($currentFolder) && $currentFolder) {
+            $isCourseFolder = $isCourseFolder || $academicHierarchy->isCourseSubfolder($currentFolder);
+            $isTypeLeafFolder = $isTypeLeafFolder && !$isCourseFolder;
+            $isLeafFolder = $isCourseFolder || (!$isTypeLeafFolder && $displayFolders->isEmpty());
+        }
+        $useCourseSelect = $isTypeLeafFolder && $shareableCategoryTab;
+        $useCourseFolderUpload = $isCourseFolder && $shareableCategoryTab;
     @endphp
 
-    @if($isLeafFolder)
+    @if($isTypeLeafFolder)
+        {{-- TYPE LEAF (TG/LB/TOS/TOQ): course folders + upload with course picker --}}
+        <div class="px-6 py-4">
+            <div class="flex items-center justify-between mb-4">
+                <div class="text-sm text-gray-600 dark:text-gray-400">
+                    <i class="fas fa-layer-group mr-1"></i> Select a course folder below, or upload to create one
+                </div>
+                @if($canUpload)
+                <div class="flex gap-2">
+                    <button type="button" id="btnFolderUpload" onclick="toggleFolderUpload()" class="btn btn-success doc-action-btn" aria-pressed="false">
+                        <i class="fas fa-upload mr-1"></i> Upload to this Folder
+                    </button>
+                </div>
+                @endif
+            </div>
+
+            @if($canUpload)
+            @include('partials.folder-tree-upload-form')
+            @endif
+
+            <div class="folder-container-new flex gap-3 flex-wrap mt-4">
+                @forelse($displayFolders as $folder)
+                <div class="folder-card-new">
+                    <a href="{{ route($docsRoute, ['tab' => $tab, 'folder' => $folder->folder_id]) }}" class="folder-card-link-new">
+                        <div class="folder-icon-new" style="background-color: #028a0f; color: white;">
+                            <i class="fas fa-folder"></i>
+                        </div>
+                        <div class="folder-info-new">
+                            <div class="folder-name-new">{{ $folder->folder_name }}</div>
+                            <div class="folder-count-new">{{ $folder->documents_count }} Files</div>
+                        </div>
+                    </a>
+                </div>
+                @empty
+                <p class="text-sm text-gray-500 dark:text-gray-400 w-full py-4 text-center">
+                    No course folders yet. Upload a file and pick a course — a folder will be created automatically.
+                </p>
+                @endforelse
+            </div>
+        </div>
+    @elseif($isLeafFolder)
         {{-- LEAF FOLDER: Show upload button + documents --}}
         <div class="px-6 py-4">
             <div class="flex items-center justify-between mb-4">
@@ -98,9 +147,11 @@
                         <i class="fas fa-plus-circle mr-1"></i> Record Passers
                     </button>
                     @endif
+                    @if(!($isTypeLeafFolder ?? false) && !($useCourseFolderUpload ?? false))
                     <button type="button" id="btnCreateFolder" onclick="toggleCreateSubfolder()" class="btn btn-primary doc-action-btn" aria-pressed="false">
                         <i class="fas fa-folder-plus mr-1"></i> Create Folder
                     </button>
+                    @endif
                     <button type="button" id="btnFolderUpload" onclick="toggleFolderUpload()" class="btn btn-success doc-action-btn" aria-pressed="false">
                         <i class="fas fa-upload mr-1"></i> Upload to this Folder
                     </button>
@@ -324,7 +375,24 @@
                 <input type="hidden" name="folder_id" value="{{ $currentFolder->folder_id }}">
                 <div class="grid grid-cols-1 md:grid-cols-2 gap-4 mb-4">
                     @if($useCourseSelect)
-                    @include('partials.ite-subject-picker', ['pickerId' => 'folderCoursePicker'])
+                    @include('partials.ite-subject-picker', [
+                        'pickerId' => 'folderCoursePicker',
+                        'subjects' => \App\Support\IteSubjects::labelsForUser(auth()->user()),
+                    ])
+                    <div class="form-group">
+                        <label class="form-label">File Name <span class="text-red-500">*</span></label>
+                        <input type="text" name="document_title" class="form-control" placeholder="Enter file name" required maxlength="13" value="{{ old('document_title') }}">
+                        <p class="text-xs text-gray-500 dark:text-gray-400 mt-1">A course folder will be created automatically from your selection.</p>
+                    </div>
+                    @elseif($useCourseFolderUpload ?? false)
+                    <div class="form-group md:col-span-2">
+                        <label class="form-label">Course</label>
+                        <input type="text" class="form-control bg-gray-100 dark:bg-gray-800" value="{{ $currentFolder->folder_name }}" readonly>
+                    </div>
+                    <div class="form-group">
+                        <label class="form-label">File Name <span class="text-red-500">*</span></label>
+                        <input type="text" name="document_title" class="form-control" placeholder="Enter file name" required maxlength="13" value="{{ old('document_title') }}">
+                    </div>
                     @else
                     <div class="form-group">
                         <label class="form-label">Document Title *</label>
@@ -415,7 +483,7 @@
     @endif
 </div>
 
-@if(isset($isLeafFolder) && $isLeafFolder && $canUpload)
+@if($canUpload && (($isLeafFolder ?? false) || ($isTypeLeafFolder ?? false)))
 @push('scripts')
 <script>
     function syncDocActionBtn(btnId, formId) {

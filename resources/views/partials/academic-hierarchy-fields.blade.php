@@ -25,7 +25,10 @@
             @endforeach
         </select>
     </div>
-    @include('partials.ite-subject-picker', ['pickerId' => $pickerId ?? 'hierarchySubjectPicker'])
+    @include('partials.ite-subject-picker', [
+        'pickerId' => $pickerId ?? 'hierarchySubjectPicker',
+        'subjects' => \App\Support\IteSubjects::labelsForUser(auth()->user()),
+    ])
     @if($mode === 'teaching-guide')
     <div class="form-group">
         <label class="form-label">Folder <span class="text-red-500">*</span></label>

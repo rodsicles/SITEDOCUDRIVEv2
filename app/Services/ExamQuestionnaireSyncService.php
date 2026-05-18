@@ -21,6 +21,10 @@ class ExamQuestionnaireSyncService
 
     public function submissionTypeFromFolder(Folder $folder): string
     {
+        if ($this->hierarchy->isCourseSubfolder($folder) && $folder->parent) {
+            $folder = $folder->parent;
+        }
+
         $slug = strtolower($folder->slug ?? '');
         $name = strtolower($folder->folder_name ?? '');
 
@@ -33,6 +37,10 @@ class ExamQuestionnaireSyncService
 
     public function semesterFromFolder(Folder $folder): string
     {
+        if ($this->hierarchy->isCourseSubfolder($folder) && $folder->parent) {
+            $folder = $folder->parent;
+        }
+
         $name = $folder->folder_name . ' ' . ($folder->parent?->folder_name ?? '');
         if (str_contains($name, '2nd')) {
             return '2nd';
@@ -43,6 +51,10 @@ class ExamQuestionnaireSyncService
 
     public function academicYearFromFolder(Folder $folder): string
     {
+        if ($this->hierarchy->isCourseSubfolder($folder) && $folder->parent) {
+            $folder = $folder->parent;
+        }
+
         $text = $folder->folder_name . ' ' . ($folder->parent?->folder_name ?? '');
         if (preg_match('/(\d{4})-(\d{4})/', $text, $m)) {
             return $m[1] . '-' . $m[2];
@@ -120,6 +132,10 @@ class ExamQuestionnaireSyncService
         $folder = $this->resolveTargetFolder($questionnaire);
         if (!$folder) {
             return null;
+        }
+
+        if ($questionnaire->subject) {
+            $folder = $this->hierarchy->ensureCourseFolder($folder, $questionnaire->subject);
         }
 
         $fileSize = 0;

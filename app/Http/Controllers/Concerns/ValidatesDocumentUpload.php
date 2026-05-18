@@ -18,9 +18,12 @@ trait ValidatesDocumentUpload
         $folder = $folderId ? Folder::find($folderId) : null;
         $hierarchy = app(AcademicHierarchyService::class);
         $category = app(DocumentService::class)->resolveCategoryForFolder($folderId);
-        $useCourseSelect = $folder
+        $isTypeLeafFolder = $folder
             && in_array($category, Document::SHAREABLE_CATEGORIES, true)
-            && $hierarchy->isSemesterCourseLeafFolder($folder);
+            && $hierarchy->isSemesterTypeLeafFolder($folder);
+        $isCourseFolder = $folder && $hierarchy->isCourseSubfolder($folder);
+        $useCourseSelect = $isTypeLeafFolder;
+        $user = auth()->user();
 
         $rules = [
             'document_type' => 'required|in:pdf,image,word',
@@ -34,13 +37,15 @@ trait ValidatesDocumentUpload
         ];
 
         if ($useCourseSelect) {
-            $rules['subject'] = ['required', 'string', Rule::in(IteSubjects::labels())];
+            $rules['subject'] = ['required', 'string', Rule::in(IteSubjects::labelsForUser($user))];
+            $rules['document_title'] = 'required|string|max:13';
+        } elseif ($isCourseFolder) {
+            $rules['document_title'] = 'required|string|max:13';
         } else {
             $rules['document_title'] = 'required|string|max:13';
         }
 
         $isShareable = in_array($category, Document::SHAREABLE_CATEGORIES, true);
-        $user = auth()->user();
 
         if ($isShareable) {
             if ($user->canUploadSharedDocuments()) {
@@ -48,8 +53,8 @@ trait ValidatesDocumentUpload
                 $rules['recipient_ids.*'] = 'integer|exists:users,id';
             }
 
-            if (!$useCourseSelect && IteSubjects::shouldUseSubjectPicker($user, true)) {
-                $rules['subject'] = ['required', 'string', Rule::in(IteSubjects::labels())];
+            if (!$useCourseSelect && !$isCourseFolder && IteSubjects::shouldUseSubjectPicker($user, true)) {
+                $rules['subject'] = ['required', 'string', Rule::in(IteSubjects::labelsForUser($user))];
             }
 
             if ($category === 'Exam Questionnaires') {
@@ -62,8 +67,8 @@ trait ValidatesDocumentUpload
 
         $validated = $request->validate($rules);
 
-        if ($useCourseSelect && !empty($validated['subject'])) {
-            $validated['document_title'] = IteSubjects::documentTitleFromLabel($validated['subject']);
+        if ($isCourseFolder && empty($validated['subject'] ?? null)) {
+            $validated['subject'] = $folder->folder_name;
         }
 
         return $validated;

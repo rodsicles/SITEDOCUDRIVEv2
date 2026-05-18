@@ -1,7 +1,7 @@
 {{-- Searchable ITE course subject picker (Information Technology) --}}
 @php
     $pickerId = $pickerId ?? 'iteSubjectPicker';
-    $subjects = \App\Support\IteSubjects::labels();
+    $subjects = $subjects ?? \App\Support\IteSubjects::labelsForUser(auth()->user());
     $required = $required ?? true;
     $label = $label ?? 'Subject (ITE Course)';
 @endphp

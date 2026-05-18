@@ -2197,6 +2197,78 @@ body {
     color: #bbf7d0;
 }
 
+/* Semester subject picker + Open folder button (aligned with search input) */
+.semester-subject-open-form {
+    display: grid;
+    grid-template-columns: minmax(0, 1fr) auto;
+    column-gap: 1rem;
+    row-gap: 0.35rem;
+    align-items: end;
+}
+
+.semester-subject-open-form > .ite-subject-picker {
+    display: contents;
+}
+
+.semester-subject-open-form > .ite-subject-picker > .form-label,
+.semester-subject-open-form > .ite-subject-picker > p.text-xs {
+    grid-column: 1 / -1;
+}
+
+.semester-subject-open-form > .ite-subject-picker > .ite-subject-picker-field {
+    grid-column: 1;
+    min-width: 0;
+}
+
+.semester-subject-open-form > .subject-open-folder-btn {
+    grid-column: 2;
+    align-self: end;
+    margin-bottom: 0;
+}
+
+@media (max-width: 639px) {
+    .semester-subject-open-form {
+        grid-template-columns: 1fr;
+    }
+
+    .semester-subject-open-form > .subject-open-folder-btn {
+        grid-column: 1;
+    }
+}
+
+/* Faculty notification tones */
+.notification-row--danger {
+    border-left: 3px solid #dc2626;
+}
+
+.notification-row--danger:not(.is-read-row) {
+    background: rgba(220, 38, 38, 0.06);
+}
+
+.dark .notification-row--danger:not(.is-read-row) {
+    background: rgba(220, 38, 38, 0.12);
+}
+
+.notification-row--danger .notification-dot {
+    background: #dc2626 !important;
+}
+
+.notification-row--danger .notification-message {
+    color: #b91c1c;
+}
+
+.dark .notification-row--danger .notification-message {
+    color: #fca5a5;
+}
+
+.notification-row--success:not(.is-read-row) {
+    background: rgba(2, 138, 15, 0.06);
+}
+
+.notification-row--success .notification-dot {
+    background: #028a0f !important;
+}
+
 .stats-grid-horizontal {
     @apply flex flex-wrap gap-6 mb-6;
 }

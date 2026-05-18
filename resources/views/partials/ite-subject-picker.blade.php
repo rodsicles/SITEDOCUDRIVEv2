@@ -4,8 +4,9 @@
     $subjects = $subjects ?? \App\Support\IteSubjects::labelsForUser(auth()->user());
     $required = $required ?? true;
     $label = $label ?? 'Subject (ITE Course)';
+    $compact = $compact ?? false;
 @endphp
-<div class="form-group md:col-span-2 ite-subject-picker" id="{{ $pickerId }}">
+<div class="form-group {{ $compact ? '' : 'md:col-span-2' }} ite-subject-picker" id="{{ $pickerId }}">
     <label class="form-label" for="{{ $pickerId }}Search">{{ $label }} @if($required)<span class="text-red-500">*</span>@endif</label>
     <p class="text-xs text-gray-500 dark:text-gray-400 mb-2">Information Technology courses only. Search by code or title.</p>
     <input type="hidden" name="subject" id="{{ $pickerId }}Value" value="{{ old('subject') }}" @if($required) required @endif>

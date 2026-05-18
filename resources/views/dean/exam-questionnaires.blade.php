@@ -1,8 +1,8 @@
 @extends('layouts.dashboard')
 
-@section('title', 'Exam Questionnaires - Dean')
-@section('page-title', 'Exam Questionnaires')
-@section('page-subtitle', 'Review and approve faculty exam questionnaires')
+@section('title', 'Pending Exam Questionnaires - Dean')
+@section('page-title', 'Pending Exam Questionnaires')
+@section('page-subtitle', 'Review and approve faculty exam questionnaire submissions')
 
 @section('sidebar')
     @if(auth()->user()->isSecretary())

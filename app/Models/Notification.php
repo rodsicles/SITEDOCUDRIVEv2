@@ -11,9 +11,14 @@ class Notification extends Model
 
     protected $primaryKey = 'notification_id';
     
+    public const TONE_SUCCESS = 'success';
+
+    public const TONE_DANGER = 'danger';
+
     protected $fillable = [
         'user_id',
         'message',
+        'tone',
         'is_read',
     ];
 

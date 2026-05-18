@@ -51,10 +51,44 @@
     </div>
 
     <div class="content-card">
-        <div class="card-header">
-            <h3 class="card-title">All Courses</h3>
-            <span class="badge badge-info">{{ $courses->count() }} total</span>
+        <div class="card-header flex-col sm:flex-row gap-3 items-start sm:items-center">
+            <h3 class="card-title mb-0">All Courses</h3>
+            <div class="flex flex-col sm:flex-row sm:items-center gap-3 w-full sm:w-auto sm:ml-auto">
+                <form action="{{ route('dean.courses') }}" method="GET" class="flex items-center gap-2 w-full sm:w-auto">
+                    @if(($departmentFilter ?? 'all') !== 'all')
+                        <input type="hidden" name="department" value="{{ $departmentFilter }}">
+                    @endif
+                    <input type="search" name="search" value="{{ $search ?? '' }}" class="form-control text-sm w-full sm:min-w-[220px]" placeholder="Search code or title...">
+                    <button type="submit" class="btn btn-primary text-sm whitespace-nowrap">
+                        <i class="fas fa-search"></i>
+                    </button>
+                    @if($search ?? false)
+                        <a href="{{ route('dean.courses', ['department' => $departmentFilter ?? 'all']) }}" class="btn bg-gray-200 dark:bg-gray-700 text-gray-700 dark:text-gray-300 text-sm">
+                            <i class="fas fa-times"></i>
+                        </a>
+                    @endif
+                </form>
+                <span class="badge badge-info whitespace-nowrap">{{ $courses->count() }} shown</span>
+            </div>
         </div>
+
+        <div class="px-4 pb-3 flex flex-wrap gap-2 border-b border-gray-200 dark:border-gray-700">
+            @php
+                $dept = $departmentFilter ?? 'all';
+                $deptLinks = [
+                    ['label' => 'All courses', 'value' => 'all'],
+                    ['label' => 'Information Technology', 'value' => 'it'],
+                    ['label' => 'Engineering', 'value' => 'engineering'],
+                ];
+            @endphp
+            @foreach($deptLinks as $link)
+                <a href="{{ route('dean.courses', array_filter(['department' => $link['value'], 'search' => $search ?? null])) }}"
+                   class="btn text-sm {{ $dept === $link['value'] ? 'btn-primary' : 'bg-gray-200 dark:bg-gray-700 text-gray-700 dark:text-gray-300' }}">
+                    {{ $link['label'] }}
+                </a>
+            @endforeach
+        </div>
+
         <table class="data-table">
             <thead>
                 <tr>

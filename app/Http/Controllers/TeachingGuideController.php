@@ -207,6 +207,8 @@ class TeachingGuideController extends Controller
             'remarks' => $request->input('remarks'),
         ]);
 
+        $this->notificationService->notifyTeachingGuideRejected($guide->fresh(), $user);
+
         return back()->with('success', 'Teaching guide rejected.');
     }
 

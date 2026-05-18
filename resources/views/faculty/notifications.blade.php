@@ -29,17 +29,30 @@
             </thead>
             <tbody>
                 @forelse($notifications as $notification)
-                <tr class="notification-row {{ !$notification->is_read ? 'bg-[#028a0f]/5 dark:bg-[#028a0f]/10 cursor-pointer' : '' }}"
+                @php
+                    $tone = $notification->tone ?? null;
+                    $isDanger = $tone === \App\Models\Notification::TONE_DANGER;
+                    $isSuccess = $tone === \App\Models\Notification::TONE_SUCCESS;
+                    $rowClasses = 'notification-row';
+                    if (!$notification->is_read) {
+                        $rowClasses .= ' cursor-pointer';
+                        $rowClasses .= $isDanger ? ' notification-row--danger' : ($isSuccess ? ' notification-row--success' : ' bg-[#028a0f]/5 dark:bg-[#028a0f]/10');
+                    } elseif ($isDanger) {
+                        $rowClasses .= ' notification-row--danger';
+                    }
+                @endphp
+                <tr class="{{ $rowClasses }}"
                     @if(!$notification->is_read)
                         data-notification-id="{{ $notification->notification_id }}"
                         data-mark-url="{{ route('faculty.notifications.read-json', $notification->notification_id) }}"
+                        data-tone="{{ $tone }}"
                         title="Click to mark as read"
                     @endif>
                     <td class="{{ !$notification->is_read ? 'font-semibold' : '' }}">
                         @if(!$notification->is_read)
-                            <span class="inline-block w-2 h-2 bg-[#028a0f] mr-2 align-middle"></span>
+                            <span class="inline-block w-2 h-2 mr-2 align-middle notification-dot {{ $isDanger ? '' : 'bg-[#028a0f]' }}"></span>
                         @endif
-                        {{ $notification->message }}
+                        <span class="notification-message">{{ $notification->message }}</span>
                     </td>
                     <td>{{ $notification->created_at->format('M d, Y h:i A') }}</td>
                     <td>

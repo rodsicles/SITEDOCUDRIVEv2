@@ -232,6 +232,8 @@ class ExamQuestionnaireController extends Controller
             'remarks' => $request->input('remarks'),
         ]);
 
+        $this->notificationService->notifyExamQuestionnaireRejected($questionnaire->fresh(), $user);
+
         return back()->with('success', 'Questionnaire rejected.');
     }
 

@@ -1,8 +1,8 @@
 @extends('layouts.dashboard')
 
-@section('title', 'Teaching Guides')
-@section('page-title', 'Teaching Guides')
-@section('page-subtitle', 'Upload and manage teaching guides for faculty — organized by school year, semester, and subject')
+@section('title', 'Pending Teaching Guides')
+@section('page-title', 'Pending Teaching Guides')
+@section('page-subtitle', 'Review and approve faculty teaching guide submissions')
 
 @section('sidebar')
     @if(auth()->user()->isSecretary())
@@ -13,39 +13,9 @@
 @endsection
 
 @section('content')
-    <div class="content-card mb-5">
-        <div class="card-header">
-            <h3 class="card-title">Upload Teaching Guide</h3>
-            <span class="text-xs text-gray-500 dark:text-gray-400">I.T. subjects only — folders are created automatically.</span>
-        </div>
-        <form action="{{ route('dean.teaching-guides.store') }}" method="POST" enctype="multipart/form-data" data-request-guard>
-            @csrf
-            <div class="grid grid-cols-2 gap-4 p-4">
-                <div class="form-group">
-                    <label class="form-label">Title <span class="text-red-500">*</span></label>
-                    <input type="text" name="title" class="form-control" maxlength="150" required value="{{ old('title') }}">
-                    @error('title')<span class="text-red-500 text-xs">{{ $message }}</span>@enderror
-                </div>
-                @include('partials.academic-hierarchy-fields', ['mode' => 'teaching-guide', 'pickerId' => 'tgSubjectPicker'])
-                @include('partials.recipient-picker', ['pickerId' => 'tgRecipientPicker', 'role' => 'dean'])
-                <div class="form-group col-span-2">
-                    <label class="form-label">Files (PDF or Word, max 10MB each) <span class="text-red-500">*</span></label>
-                    <input type="file" name="files[]" class="form-control" accept=".pdf,.doc,.docx" required multiple data-dropzone="1">
-                    @error('files')<span class="text-red-500 text-xs">{{ $message }}</span>@enderror
-                    @error('files.*')<span class="text-red-500 text-xs">{{ $message }}</span>@enderror
-                </div>
-            </div>
-            <div class="px-4 pb-4">
-                <button type="submit" class="btn btn-primary" onclick="return (typeof tgSubjectPickerValidate !== 'function' || tgSubjectPickerValidate()) && (typeof tgRecipientPickerValidate !== 'function' || tgRecipientPickerValidate());">
-                    <i class="fas fa-upload"></i> Upload & Notify Recipients
-                </button>
-            </div>
-        </form>
-    </div>
-
     <div class="content-card">
         <div class="card-header">
-            <h3 class="card-title">All Teaching Guides</h3>
+            <h3 class="card-title">Teaching Guide Submissions</h3>
             <span class="badge badge-info">{{ $guides->total() }} Files</span>
         </div>
 

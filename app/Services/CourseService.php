@@ -9,9 +9,29 @@ use Illuminate\Support\Collection;
 
 class CourseService
 {
-    public function listAll(): Collection
+    public function listAll(?string $departmentFilter = null, ?string $search = null): Collection
     {
-        return Course::query()->ordered()->get();
+        $query = Course::query()->ordered();
+
+        if ($departmentFilter && $departmentFilter !== 'all') {
+            $map = [
+                'it' => Course::DEPT_IT,
+                'engineering' => Course::DEPT_ENGINEERING,
+            ];
+            if (isset($map[$departmentFilter])) {
+                $query->where('department', $map[$departmentFilter]);
+            }
+        }
+
+        if ($search !== null && trim($search) !== '') {
+            $term = '%' . trim($search) . '%';
+            $query->where(function ($q) use ($term) {
+                $q->where('code', 'like', $term)
+                    ->orWhere('title', 'like', $term);
+            });
+        }
+
+        return $query->get();
     }
 
     public function create(array $data, int $deanUserId): Course

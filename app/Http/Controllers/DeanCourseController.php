@@ -13,12 +13,15 @@ class DeanCourseController extends Controller
         protected CourseService $courseService,
     ) {}
 
-    public function index()
+    public function index(Request $request)
     {
-        $courses = $this->courseService->listAll();
+        $departmentFilter = $request->query('department', 'all');
+        $search = $request->query('search');
+
+        $courses = $this->courseService->listAll($departmentFilter, $search);
         $departments = CourseService::departments();
 
-        return view('dean.courses', compact('courses', 'departments'));
+        return view('dean.courses', compact('courses', 'departments', 'departmentFilter', 'search'));
     }
 
     public function store(Request $request)

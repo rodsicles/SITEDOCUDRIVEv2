@@ -8,21 +8,26 @@ return new class extends Migration
 {
     public function up(): void
     {
-        Schema::table('documents', function (Blueprint $table) {
-            $table->foreignId('school_year_id')->nullable()->after('category_id')
-                ->constrained('school_years')->nullOnDelete();
-        });
+        if (!Schema::hasColumn('documents', 'school_year_id')) {
+            Schema::table('documents', function (Blueprint $table) {
+                $table->foreignId('school_year_id')->nullable()->after('category_id')
+                    ->constrained('school_years')->nullOnDelete();
+            });
+        }
 
-        Schema::table('teaching_guides', function (Blueprint $table) {
-            $table->foreignId('school_year_id')->nullable()->after('folder_id')
-                ->constrained('school_years')->nullOnDelete();
-        });
+        if (!Schema::hasColumn('teaching_guides', 'school_year_id')) {
+            Schema::table('teaching_guides', function (Blueprint $table) {
+                $table->foreignId('school_year_id')->nullable()->after('folder_id')
+                    ->constrained('school_years')->nullOnDelete();
+            });
+        }
 
-        Schema::table('exam_questionnaires', function (Blueprint $table) {
-            $table->foreignId('school_year_id')->nullable()->after('document_id')
-                ->constrained('school_years')->nullOnDelete();
-        });
-
+        if (!Schema::hasColumn('exam_questionnaires', 'school_year_id')) {
+            Schema::table('exam_questionnaires', function (Blueprint $table) {
+                $table->foreignId('school_year_id')->nullable()->after('document_id')
+                    ->constrained('school_years')->nullOnDelete();
+            });
+        }
     }
 
     public function down(): void

@@ -8,10 +8,12 @@ return new class extends Migration
 {
     public function up(): void
     {
-        Schema::table('folders', function (Blueprint $table) {
-            $table->unsignedBigInteger('school_year_id')->nullable()->after('slug');
-            $table->foreign('school_year_id')->references('id')->on('school_years')->onDelete('set null');
-        });
+        if (!Schema::hasColumn('folders', 'school_year_id')) {
+            Schema::table('folders', function (Blueprint $table) {
+                $table->unsignedBigInteger('school_year_id')->nullable()->after('slug');
+                $table->foreign('school_year_id')->references('id')->on('school_years')->onDelete('set null');
+            });
+        }
     }
 
     public function down(): void

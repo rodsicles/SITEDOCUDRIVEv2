@@ -69,10 +69,16 @@ class DocumentService
         $query->where(function ($q) {
             $q->where(function ($sub) {
                 $sub->where('category', 'Teaching Guides')
-                    ->whereHas('teachingGuide', fn ($tg) => $tg->where('status', 'approved'));
+                    ->where(function ($inner) {
+                        $inner->whereHas('teachingGuide', fn ($tg) => $tg->where('status', 'approved'))
+                              ->orWhereDoesntHave('teachingGuide');
+                    });
             })->orWhere(function ($sub) {
                 $sub->where('category', 'Exam Questionnaires')
-                    ->whereHas('examQuestionnaire', fn ($eq) => $eq->where('status', 'approved'));
+                    ->where(function ($inner) {
+                        $inner->whereHas('examQuestionnaire', fn ($eq) => $eq->where('status', 'approved'))
+                              ->orWhereDoesntHave('examQuestionnaire');
+                    });
             })->orWhere(function ($sub) {
                 $sub->whereNotIn('category', ['Teaching Guides', 'Exam Questionnaires']);
             })->orWhereNull('category');

@@ -2,7 +2,9 @@
 
 namespace App\Services;
 
+use App\Models\ExamQuestionnaire;
 use App\Models\Notification;
+use App\Models\TeachingGuide;
 use App\Models\User;
 
 class NotificationService
@@ -46,6 +48,51 @@ class NotificationService
     {
         $supervisorIds = User::whereIn('role_id', [1, 2])->pluck('id')->toArray();
         $this->notifyMany($supervisorIds, $message);
+    }
+
+    /**
+     * Notify the faculty submitter that their exam questionnaire was approved.
+     */
+    public function notifyExamQuestionnaireApproved(ExamQuestionnaire $questionnaire, User $reviewer): void
+    {
+        $submitterId = (int) $questionnaire->submitted_by;
+        if ($submitterId <= 0 || $submitterId === (int) $reviewer->id) {
+            return;
+        }
+
+        $label = $questionnaire->title ?: $questionnaire->subject ?: 'your file';
+        $type = strtoupper((string) ($questionnaire->submission_type ?: 'EQ'));
+        $examPart = $questionnaire->exam_type ? " ({$questionnaire->exam_type})" : '';
+        $reviewerLabel = $this->reviewerLabel($reviewer);
+
+        $this->notify(
+            $submitterId,
+            "Your {$type} submission \"{$label}\"{$examPart} has been approved by the {$reviewerLabel}. Check Exam Questionnaires or Documents."
+        );
+    }
+
+    /**
+     * Notify the faculty submitter that their teaching guide was approved.
+     */
+    public function notifyTeachingGuideApproved(TeachingGuide $guide, User $reviewer): void
+    {
+        $submitterId = (int) $guide->user_id;
+        if ($submitterId <= 0 || $submitterId === (int) $reviewer->id) {
+            return;
+        }
+
+        $label = $guide->title ?: $guide->subject ?: 'your file';
+        $reviewerLabel = $this->reviewerLabel($reviewer);
+
+        $this->notify(
+            $submitterId,
+            "Your teaching guide \"{$label}\" has been approved by the {$reviewerLabel}. Check Teaching Guides or Documents."
+        );
+    }
+
+    protected function reviewerLabel(User $reviewer): string
+    {
+        return $reviewer->isSecretary() ? 'Secretary' : 'Dean';
     }
 
     /**

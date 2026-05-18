@@ -176,8 +176,11 @@ class TeachingGuideController extends Controller
             'remarks' => $request->input('remarks'),
         ]);
 
-        $recipientIds = $guide->recipients()->pluck('users.id')->all();
-        $this->teachingGuideSync->syncDocumentFromGuide($guide, $user, $recipientIds);
+        $fresh = $guide->fresh();
+        $recipientIds = $fresh->recipients()->pluck('users.id')->all();
+        $this->teachingGuideSync->syncDocumentFromGuide($fresh, $user, $recipientIds);
+
+        $this->notificationService->notifyTeachingGuideApproved($fresh, $user);
 
         return back()->with('success', 'Teaching guide approved and now visible in Documents.');
     }

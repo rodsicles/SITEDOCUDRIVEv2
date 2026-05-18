@@ -6,6 +6,7 @@ use App\Models\ExamQuestionnaire;
 use App\Models\SchoolYear;
 use App\Services\AcademicHierarchyService;
 use App\Services\ExamQuestionnaireSyncService;
+use App\Services\NotificationService;
 use App\Support\AcademicYear;
 use App\Support\IteSubjects;
 use App\Support\UploadStorage;
@@ -18,6 +19,7 @@ class ExamQuestionnaireController extends Controller
 
     public function __construct(
         protected AcademicHierarchyService $hierarchy,
+        protected NotificationService $notificationService,
     ) {}
 
     public function index(Request $request)
@@ -195,8 +197,12 @@ class ExamQuestionnaireController extends Controller
             'remarks' => $request->input('remarks'),
         ]);
 
+        $fresh = $questionnaire->fresh();
         $sync = app(ExamQuestionnaireSyncService::class);
-        $document = $sync->syncToDocument($questionnaire->fresh());
+        $document = $sync->syncToDocument($fresh);
+
+        $this->notificationService->notifyExamQuestionnaireApproved($fresh, $user);
+
         if (!$document) {
             return back()->with('warning', 'Questionnaire approved, but it could not be placed in the Documents folder. Ensure TOS/TOQ folders exist for the active school year.');
         }

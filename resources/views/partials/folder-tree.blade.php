@@ -53,10 +53,9 @@
     @php
         $displayFolders = collect();
         $isLeafFolder = false;
+        $folderService = app(\App\Services\FolderService::class);
         if (isset($currentFolder) && $currentFolder) {
-            $displayFolders = $currentFolder->children()->system()->orderBy('sort_order')
-                ->withCount(['documents' => fn ($q) => $q->visibleTo($documentViewer)])
-                ->get();
+            $displayFolders = $folderService->getDisplayFolders($currentFolder, $documentViewer);
             $isLeafFolder = $displayFolders->isEmpty();
         } else {
             foreach ($folderTree as $category) {
@@ -66,18 +65,9 @@
                     break;
                 }
             }
-        }
-
-        if (in_array($activeTab, ['teaching-guides', 'exam-questionnaires'], true) && !isset($currentFolder)) {
-            $activeSchoolYearId = \App\Models\SchoolYear::activeId();
-            $displayFolders = $displayFolders->filter(
-                fn ($f) => $f->school_year_id === $activeSchoolYearId
-            );
-        }
-
-        if ($displayFolders->isNotEmpty()) {
-            $displayFolders = app(\App\Services\FolderService::class)
-                ->attachSubtreeDocumentCounts($displayFolders, $documentViewer);
+            if ($displayFolders->isNotEmpty()) {
+                $displayFolders = $folderService->attachSubtreeDocumentCounts($displayFolders, $documentViewer);
+            }
         }
     @endphp
 

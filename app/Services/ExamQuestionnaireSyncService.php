@@ -35,13 +35,12 @@ class ExamQuestionnaireSyncService
             return null;
         }
 
-        $assessmentSlug = $this->examFolderSlugSegment($questionnaire->exam_type);
+        $subfolder = $questionnaire->submission_type ?? 'toq';
 
         return $this->hierarchy->resolveExamQuestionnaireFolder(
             $startYear,
             $semester,
-            $questionnaire->subject,
-            $assessmentSlug,
+            $subfolder,
         );
     }
 
@@ -72,6 +71,7 @@ class ExamQuestionnaireSyncService
                 'file_size' => $fileSize,
                 'document_type' => $questionnaire->file_type === 'word' ? 'word' : 'pdf',
                 'category' => 'Exam Questionnaires',
+                'school_year_id' => $questionnaire->school_year_id,
                 'tags' => 'exam-questionnaire',
             ]
         );

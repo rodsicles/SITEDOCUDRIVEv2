@@ -2,7 +2,7 @@
 
 @section('title', 'Exam Questionnaires - Coordinator')
 @section('page-title', 'Exam Questionnaires')
-@section('page-subtitle', 'Review and approve faculty exam questionnaires')
+@section('page-subtitle', 'View faculty submissions — Dean approves all uploads')
 
 @section('sidebar')
     @include('partials.coordinator-sidebar')
@@ -53,9 +53,10 @@
                     <th>Title</th>
                     <th>Subject</th>
                     <th>Faculty</th>
+                    <th>Type</th>
                     <th>Exam Type</th>
                     <th>Semester</th>
-                    <th>Status</th>
+                    <th>Approval</th>
                     <th>Submitted</th>
                     <th>Actions</th>
                 </tr>
@@ -75,15 +76,16 @@
                     <td><strong>{{ $q->title }}</strong></td>
                     <td><span class="doc-category-badge">{{ $q->subject }}</span></td>
                     <td>{{ $q->submitter->employee->full_name ?? $q->submitter->username }}</td>
+                    <td><span class="doc-category-badge">{{ strtoupper($q->submission_type ?? 'toq') }}</span></td>
                     <td>{{ $q->exam_type }}</td>
                     <td>{{ $q->semester }}</td>
                     <td>
                         @if($q->isPending())
-                            <span class="badge" style="background:#b45309;color:#fff;">Pending</span>
+                            <span class="badge" style="background:#b45309;color:#fff;"><i class="fas fa-clock"></i> Awaiting Dean</span>
                         @elseif($q->isApproved())
-                            <span class="badge badge-success">Approved</span>
+                            <span class="badge badge-success"><i class="fas fa-check"></i> Approved</span>
                         @else
-                            <span class="badge badge-danger">Rejected</span>
+                            <span class="badge badge-danger"><i class="fas fa-times"></i> Rejected</span>
                             @if($q->remarks)
                                 <div class="text-xs text-gray-500 mt-1">{{ $q->remarks }}</div>
                             @endif
@@ -98,15 +100,6 @@
                             <a href="{{ route('coordinator.exam-questionnaires.download', $q->id) }}" class="btn btn-success text-xs">
                                 <i class="fas fa-download"></i> Download
                             </a>
-                            @if($q->isPending())
-                                <form action="{{ route('coordinator.exam-questionnaires.approve', $q->id) }}" method="POST">
-                                    @csrf
-                                    <button type="submit" class="btn btn-primary text-xs"><i class="fas fa-check"></i> Approve</button>
-                                </form>
-                                <button type="button" class="btn btn-danger text-xs" onclick="openRejectModal({{ $q->id }})">
-                                    <i class="fas fa-times"></i> Reject
-                                </button>
-                            @endif
                         </div>
                     </td>
                 </tr>

@@ -5,6 +5,7 @@ namespace App\Services;
 use App\Models\Folder;
 use App\Models\Document;
 use App\Models\DashboardLog;
+use App\Models\SchoolYear;
 use App\Models\User;
 use Illuminate\Support\Collection;
 
@@ -15,16 +16,21 @@ class FolderService
      */
     public function getSystemFolderTree(?User $viewer = null): Collection
     {
+        app(AcademicHierarchyService::class)->ensureActiveSchoolYearStructures();
+
+        $activeSchoolYearId = SchoolYear::activeId();
+
         $documentCount = function ($query) use ($viewer) {
             if ($viewer) {
                 $query->visibleTo($viewer);
             }
         };
 
-        return Folder::system()
+        $tree = Folder::system()
             ->topLevel()
-            ->with(['children' => function ($query) use ($documentCount) {
+            ->with(['children' => function ($query) use ($documentCount, $activeSchoolYearId) {
                 $query->system()->orderBy('sort_order')
+                    ->when($activeSchoolYearId, fn ($q) => $q->where('school_year_id', $activeSchoolYearId))
                     ->withCount(['documents' => $documentCount])
                     ->with(['children' => function ($q) use ($documentCount) {
                         $q->system()->orderBy('sort_order')->withCount(['documents' => $documentCount]);
@@ -33,6 +39,49 @@ class FolderService
             ->withCount(['documents' => $documentCount])
             ->orderBy('sort_order')
             ->get();
+
+        return $tree->map(function (Folder $category) use ($activeSchoolYearId) {
+            if (!in_array($category->slug, ['tg-category', 'eq-category'], true)) {
+                return $category;
+            }
+
+            if ($activeSchoolYearId) {
+                $category->setRelation(
+                    'children',
+                    $category->children->filter(
+                        fn (Folder $f) => (int) $f->school_year_id === (int) $activeSchoolYearId
+                    )->values()
+                );
+            }
+
+            return $category;
+        });
+    }
+
+    /**
+     * System subfolders for navigation, scoped to active school year when applicable.
+     */
+    public function getDisplayFolders(Folder $parent, ?User $viewer = null): Collection
+    {
+        $documentCount = function ($query) use ($viewer) {
+            if ($viewer) {
+                $query->visibleTo($viewer);
+            }
+        };
+
+        $query = $parent->children()->system()->orderBy('sort_order')
+            ->withCount(['documents' => $documentCount]);
+
+        $activeSchoolYearId = SchoolYear::activeId();
+        $hierarchy = app(AcademicHierarchyService::class);
+
+        if ($activeSchoolYearId && $hierarchy->isTeachingGuidesOrExamCategory($parent)) {
+            $query->where('school_year_id', $activeSchoolYearId);
+        }
+
+        $folders = $query->get();
+
+        return $this->attachSubtreeDocumentCounts($folders, $viewer);
     }
 
     /**

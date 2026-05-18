@@ -77,9 +77,7 @@ class TeachingGuideController extends Controller
             'subject' => ['required', 'string', Rule::in(IteSubjects::labels())],
             'academic_year_start' => 'required|integer',
             'semester' => 'required|in:1st,2nd',
-            'assessment_period' => 'required|in:prelims,midterms,finals',
             'guide_type' => 'required|in:teaching-guides,lesson,lab-manual',
-            'version_type' => 'required|in:revisions,final',
             'files' => 'required|array|min:1',
             'files.*' => 'required|file|max:10240|mimes:pdf,doc,docx|mimetypes:application/pdf,application/msword,application/vnd.openxmlformats-officedocument.wordprocessingml.document',
             'recipient_ids' => 'required|array|min:1',
@@ -90,10 +88,7 @@ class TeachingGuideController extends Controller
         $folder = $this->hierarchy->resolveTeachingGuideFolder(
             $startYear,
             $validated['semester'],
-            $validated['subject'],
-            $validated['assessment_period'],
             $validated['guide_type'],
-            $validated['version_type'],
         );
 
         if (!$folder) {

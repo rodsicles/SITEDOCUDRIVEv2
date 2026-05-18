@@ -4,13 +4,13 @@ namespace App\Services;
 
 use App\Models\Folder;
 use App\Models\SchoolYear;
-use App\Support\AcademicYear;
 use App\Support\IteSubjects;
 use Database\Seeders\SystemFolderSeeder;
 
 class AcademicHierarchyService
 {
-    public const ASSESSMENT_SLUGS = ['prelims', 'midterms', 'finals'];
+    public const TG_SUBFOLDERS = ['tg', 'lb'];
+    public const EQ_SUBFOLDERS = ['tos', 'toq'];
 
     public function subjectCodeFromLabel(string $subjectLabel): string
     {
@@ -31,7 +31,7 @@ class AcademicHierarchyService
     }
 
     /**
-     * Ensure semester + assessment folders exist for a school year (archive-safe).
+     * Ensure semester + TG/LB or TOS/TOQ folders exist for a school year.
      */
     public function ensureSchoolYearStructure(string $prefix, int $startYear): void
     {
@@ -52,59 +52,70 @@ class AcademicHierarchyService
         }
     }
 
+    public function ensureActiveSchoolYearStructures(): void
+    {
+        $active = SchoolYear::active();
+        if (!$active) {
+            return;
+        }
+
+        $this->ensureSchoolYearStructure('tg', $active->start_year);
+        $this->ensureSchoolYearStructure('eq', $active->start_year);
+    }
+
     /**
-     * Resolve or create full path: Semester → Assessment → Subject → Guide Type → Version.
+     * Resolve a semester leaf folder (TG, LB, TOS, or TOQ).
+     */
+    public function resolveSemesterSubfolder(
+        string $prefix,
+        int $startYear,
+        string $semester,
+        string $subfolderSlug,
+    ): ?Folder {
+        $this->ensureSchoolYearStructure($prefix, $startYear);
+
+        $endYear = $startYear + 1;
+        $sem = $semester === '2nd' ? '2nd' : '1st';
+        $subfolderSlug = strtolower($subfolderSlug);
+        $slug = "{$prefix}-{$sem}-{$startYear}-{$endYear}-{$subfolderSlug}";
+
+        return Folder::where('slug', $slug)->where('is_system', true)->first();
+    }
+
+    /**
+     * Teaching guide uploads: Semester → TG or LB.
      */
     public function resolveTeachingGuideFolder(
         int $startYear,
         string $semester,
-        string $subjectLabel,
-        string $assessmentSlug,
         string $guideTypeSlug,
-        string $versionSlug,
     ): ?Folder {
-        $this->ensureSchoolYearStructure('tg', $startYear);
+        $subfolder = $guideTypeSlug === 'lab-manual' ? 'lb' : 'tg';
 
-        $assessmentFolder = $this->resolveAssessmentFolder('tg', $startYear, $semester, $assessmentSlug);
-        if (!$assessmentFolder) {
-            return null;
-        }
-
-        return $this->ensureSubjectPath($assessmentFolder, $subjectLabel, $guideTypeSlug, $versionSlug);
+        return $this->resolveSemesterSubfolder('tg', $startYear, $semester, $subfolder);
     }
 
     /**
-     * Resolve or create: Semester → Assessment → Subject (for exam questionnaires).
+     * Approved exam questionnaires: Semester → TOS or TOQ.
      */
     public function resolveExamQuestionnaireFolder(
         int $startYear,
         string $semester,
-        string $subjectLabel,
-        string $assessmentSlug,
+        string $subfolder = 'toq',
     ): ?Folder {
-        $this->ensureSchoolYearStructure('eq', $startYear);
+        $subfolder = in_array($subfolder, self::EQ_SUBFOLDERS, true) ? $subfolder : 'toq';
 
-        $assessmentFolder = $this->resolveAssessmentFolder('eq', $startYear, $semester, $assessmentSlug);
-        if (!$assessmentFolder) {
-            return null;
-        }
-
-        $subjectSlug = $this->subjectCodeFromLabel($subjectLabel);
-
-        return $this->firstOrCreateSystemFolder([
-            'name' => $subjectLabel,
-            'slug' => $assessmentFolder->slug . '-' . $subjectSlug,
-        ], $assessmentFolder->folder_id, 3, 0);
+        return $this->resolveSemesterSubfolder('eq', $startYear, $semester, $subfolder);
     }
 
+    /** @deprecated Use resolveSemesterSubfolder() — kept for legacy callers */
     public function resolveAssessmentFolder(string $prefix, int $startYear, string $semester, string $assessmentSlug): ?Folder
     {
-        $endYear = $startYear + 1;
-        $sem = $semester === '2nd' ? '2nd' : '1st';
-        $assessmentSlug = in_array($assessmentSlug, self::ASSESSMENT_SLUGS, true) ? $assessmentSlug : 'prelims';
-        $slug = "{$prefix}-{$sem}-{$startYear}-{$endYear}-{$assessmentSlug}";
+        if ($prefix === 'eq') {
+            return $this->resolveExamQuestionnaireFolder($startYear, $semester, 'toq');
+        }
 
-        return Folder::where('slug', $slug)->where('is_system', true)->first();
+        return $this->resolveTeachingGuideFolder($startYear, $semester, 'teaching-guides');
     }
 
     /** @return list<int> Folder IDs under a school year for filtering */
@@ -119,37 +130,27 @@ class AcademicHierarchyService
             ->all();
     }
 
-    protected function ensureSubjectPath(
-        Folder $assessmentFolder,
-        string $subjectLabel,
-        string $guideTypeSlug,
-        string $versionSlug,
-    ): Folder {
-        $subjectSlug = $this->subjectCodeFromLabel($subjectLabel);
-        $subjectFolder = $this->firstOrCreateSystemFolder([
-            'name' => $subjectLabel,
-            'slug' => $assessmentFolder->slug . '-' . $subjectSlug,
-        ], $assessmentFolder->folder_id, 3, 0);
+    public function isTeachingGuidesOrExamCategory(?Folder $folder): bool
+    {
+        if (!$folder) {
+            return false;
+        }
 
-        $guideTypes = config('academic.guide_types', []);
-        $guideName = $guideTypes[$guideTypeSlug] ?? 'Teaching Guides';
-        $guideFolder = $this->firstOrCreateSystemFolder([
-            'name' => $guideName,
-            'slug' => $subjectFolder->slug . '-' . $guideTypeSlug,
-        ], $subjectFolder->folder_id, 4, 0);
+        $slugs = ['tg-category', 'eq-category'];
+        $current = $folder;
+        while ($current) {
+            if (in_array($current->slug, $slugs, true)) {
+                return true;
+            }
+            $current = $current->parent;
+        }
 
-        $versionTypes = config('academic.version_types', []);
-        $versionName = $versionTypes[$versionSlug] ?? ucfirst($versionSlug);
-
-        return $this->firstOrCreateSystemFolder([
-            'name' => $versionName,
-            'slug' => $guideFolder->slug . '-' . $versionSlug,
-        ], $guideFolder->folder_id, 5, 0);
+        return false;
     }
 
     protected function firstOrCreateSystemFolder(array $data, int $parentId, int $level, int $sortOrder, ?int $schoolYearId = null): Folder
     {
-        return Folder::firstOrCreate(
+        $folder = Folder::firstOrCreate(
             ['slug' => $data['slug']],
             [
                 'folder_name' => $data['name'],
@@ -162,6 +163,12 @@ class AcademicHierarchyService
                 'school_year_id' => $schoolYearId,
             ]
         );
+
+        if ($schoolYearId && !$folder->school_year_id) {
+            $folder->update(['school_year_id' => $schoolYearId]);
+        }
+
+        return $folder;
     }
 
     public function validateSubjectLabel(string $label): bool

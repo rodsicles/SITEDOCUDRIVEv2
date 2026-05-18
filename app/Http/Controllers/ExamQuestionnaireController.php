@@ -60,6 +60,9 @@ class ExamQuestionnaireController extends Controller
         }
 
         $questionnaires = $query->paginate(15)->appends($request->query());
+        $pendingCount = ($user->isDean() || $user->isSecretary())
+            ? ExamQuestionnaire::where('status', 'pending')->count()
+            : 0;
         $archiveYears = array_filter(
             AcademicYear::availableStartYears(),
             fn ($y) => AcademicYear::isArchived($y)
@@ -69,7 +72,7 @@ class ExamQuestionnaireController extends Controller
 
         return view("{$role}.exam-questionnaires", compact(
             'questionnaires', 'search', 'statusFilter', 'examTypeFilter',
-            'semesterFilter', 'academicYearStart', 'archiveYears'
+            'semesterFilter', 'academicYearStart', 'archiveYears', 'pendingCount'
         ));
     }
 
@@ -78,6 +81,7 @@ class ExamQuestionnaireController extends Controller
         $validated = $request->validate([
             'subject' => ['required', 'string', Rule::in(IteSubjects::labels())],
             'exam_type' => 'required|in:Quiz,Prelim,Midterm,Pre-Final,Final',
+            'submission_type' => 'required|in:tos,toq',
             'academic_year_start' => 'nullable|integer',
             'semester' => 'nullable|in:1st,2nd',
             'file' => 'required|file|max:10240|mimes:pdf|mimetypes:application/pdf',
@@ -113,6 +117,7 @@ class ExamQuestionnaireController extends Controller
                 'file_type' => $fileType,
                 'subject' => $validated['subject'],
                 'exam_type' => $validated['exam_type'],
+                'submission_type' => $validated['submission_type'],
                 'school_year_id' => SchoolYear::activeId(),
                 'semester' => $semester,
                 'academic_year' => $academicYear,
@@ -168,11 +173,26 @@ class ExamQuestionnaireController extends Controller
     public function approve(Request $request, $id)
     {
         $user = auth()->user();
-        if ($user->isFaculty()) {
-            abort(403);
+        if (!$user->isDean() && !$user->isSecretary()) {
+            abort(403, 'Only the Dean or Secretary can approve submissions.');
         }
 
         $questionnaire = ExamQuestionnaire::findOrFail($id);
+
+        if (!$questionnaire->isPending()) {
+            if ($questionnaire->isApproved() && !$questionnaire->document_id) {
+                $sync = app(ExamQuestionnaireSyncService::class);
+                $document = $sync->syncToDocument($questionnaire->fresh());
+                if ($document) {
+                    return back()->with('success', 'Approved file synced to Documents folder.');
+                }
+
+                return back()->with('warning', 'Submission is approved but could not be synced. Ensure TOS/TOQ folders exist for the active school year.');
+            }
+
+            return back()->with('info', 'This submission has already been reviewed.');
+        }
+
         $questionnaire->update([
             'status' => 'approved',
             'reviewed_by' => $user->id,
@@ -183,7 +203,7 @@ class ExamQuestionnaireController extends Controller
         $sync = app(ExamQuestionnaireSyncService::class);
         $document = $sync->syncToDocument($questionnaire->fresh());
         if (!$document) {
-            return back()->with('warning', 'Questionnaire approved, but it could not be placed in the Documents folder. Check that system folders exist for this semester and exam type.');
+            return back()->with('warning', 'Questionnaire approved, but it could not be placed in the Documents folder. Ensure TOS/TOQ folders exist for the active school year.');
         }
 
         return back()->with('success', 'Questionnaire approved and added to Documents.');
@@ -192,13 +212,18 @@ class ExamQuestionnaireController extends Controller
     public function reject(Request $request, $id)
     {
         $user = auth()->user();
-        if ($user->isFaculty()) {
-            abort(403);
+        if (!$user->isDean() && !$user->isSecretary()) {
+            abort(403, 'Only the Dean or Secretary can reject submissions.');
         }
 
         $request->validate(['remarks' => 'required|string|max:500']);
 
         $questionnaire = ExamQuestionnaire::findOrFail($id);
+
+        if (!$questionnaire->isPending()) {
+            return back()->with('info', 'This submission has already been reviewed.');
+        }
+
         $questionnaire->update([
             'status' => 'rejected',
             'reviewed_by' => $user->id,

@@ -42,6 +42,15 @@
                 <input type="hidden" name="academic_year_start" value="{{ $ayStart }}">
                 <input type="hidden" name="semester" value="{{ \App\Support\AcademicYear::currentSemester() }}">
                 <div class="form-group">
+                    <label class="form-label">Document Type <span class="text-red-500">*</span></label>
+                    <select name="submission_type" class="form-control" required>
+                        <option value="">-- Select Type --</option>
+                        <option value="tos" {{ old('submission_type') === 'tos' ? 'selected' : '' }}>TOS (Table of Specification)</option>
+                        <option value="toq" {{ old('submission_type', 'toq') === 'toq' ? 'selected' : '' }}>TOQ (Table of Question)</option>
+                    </select>
+                    @error('submission_type')<span class="text-red-500 text-xs">{{ $message }}</span>@enderror
+                </div>
+                <div class="form-group">
                     <label class="form-label">Exam Type <span class="text-red-500">*</span></label>
                     <select name="exam_type" class="form-control" required>
                         <option value="">-- Select Exam Type --</option>
@@ -103,6 +112,7 @@
                 <tr>
                     <th class="w-10"></th>
                     <th>Subject</th>
+                    <th>Type</th>
                     <th>Exam Type</th>
                     <th>Semester</th>
                     <th>Academic Year</th>
@@ -128,6 +138,7 @@
                         <strong>{{ $q->subject }}</strong>
                         <div class="text-xs text-gray-500 dark:text-gray-400 mt-1">{{ $q->title }}</div>
                     </td>
+                    <td><span class="doc-category-badge">{{ strtoupper($q->submission_type ?? 'toq') }}</span></td>
                     <td><span class="doc-category-badge">{{ $q->exam_type }}</span></td>
                     <td>{{ $q->semester }}</td>
                     <td>{{ $q->academic_year }}</td>
@@ -164,7 +175,7 @@
                 </tr>
                 @empty
                 <tr>
-                    <td colspan="9" class="text-center text-gray-500 dark:text-gray-400 py-8">
+                    <td colspan="10" class="text-center text-gray-500 dark:text-gray-400 py-8">
                         No submissions yet. Use the form above to submit your first questionnaire.
                     </td>
                 </tr>

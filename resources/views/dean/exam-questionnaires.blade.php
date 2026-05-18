@@ -18,6 +18,9 @@
         <div class="card-header">
             <h3 class="card-title">Exam Questionnaire Submissions</h3>
             <span class="badge badge-info">{{ $questionnaires->total() }} Submissions</span>
+            @if(($pendingCount ?? 0) > 0)
+                <span class="badge" style="background:#b45309;color:#fff;">{{ $pendingCount }} Pending Review</span>
+            @endif
         </div>
 
         <div class="px-4 pb-4 flex items-center gap-4 flex-wrap">
@@ -57,9 +60,10 @@
                     <th>Title</th>
                     <th>Subject</th>
                     <th>Faculty</th>
+                    <th>Type</th>
                     <th>Exam Type</th>
                     <th>Semester</th>
-                    <th>Status</th>
+                    <th>Approval</th>
                     <th>Submitted</th>
                     <th>Actions</th>
                 </tr>
@@ -79,15 +83,25 @@
                     <td><strong>{{ $q->title }}</strong></td>
                     <td><span class="doc-category-badge">{{ $q->subject }}</span></td>
                     <td>{{ $q->submitter->employee->full_name ?? $q->submitter->username }}</td>
+                    <td><span class="doc-category-badge">{{ strtoupper($q->submission_type ?? 'toq') }}</span></td>
                     <td>{{ $q->exam_type }}</td>
                     <td>{{ $q->semester }}</td>
                     <td>
                         @if($q->isPending())
-                            <span class="badge" style="background:#b45309;color:#fff;">Pending</span>
+                            <span class="badge" style="background:#b45309;color:#fff;" title="Awaiting Dean approval">
+                                <i class="fas fa-clock"></i> Not Approved
+                            </span>
                         @elseif($q->isApproved())
-                            <span class="badge badge-success">Approved</span>
+                            <span class="badge badge-success">
+                                <i class="fas fa-check"></i> Approved
+                            </span>
+                            @if($q->reviewer)
+                                <div class="text-xs text-gray-500 mt-1">by {{ $q->reviewer->employee->full_name ?? $q->reviewer->username }}</div>
+                            @endif
                         @else
-                            <span class="badge badge-danger">Rejected</span>
+                            <span class="badge badge-danger">
+                                <i class="fas fa-times"></i> Rejected
+                            </span>
                             @if($q->remarks)
                                 <div class="text-xs text-gray-500 mt-1">{{ $q->remarks }}</div>
                             @endif
@@ -116,7 +130,7 @@
                 </tr>
                 @empty
                 <tr>
-                    <td colspan="9" class="text-center text-gray-500 dark:text-gray-400 py-8">No submissions found.</td>
+                    <td colspan="10" class="text-center text-gray-500 dark:text-gray-400 py-8">No submissions found.</td>
                 </tr>
                 @endforelse
             </tbody>
@@ -147,7 +161,7 @@
 
     <script>
         function openRejectModal(id) {
-            document.getElementById('rejectForm').action = '/dean/exam-questionnaires/' + id + '/reject';
+            document.getElementById('rejectForm').action = '{{ url('/dean/exam-questionnaires') }}/' + id + '/reject';
             var modal = document.getElementById('rejectModal');
             modal.style.display = 'flex';
         }

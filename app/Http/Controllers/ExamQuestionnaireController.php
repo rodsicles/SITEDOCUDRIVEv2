@@ -56,12 +56,24 @@ class ExamQuestionnaireController extends Controller
 
         if ($academicYearStart) {
             $query->where('academic_year', AcademicYear::rangeString($academicYearStart));
+        } else {
+            $activeId = SchoolYear::activeId();
+            $query->where(function ($q) use ($activeId) {
+                $q->where('school_year_id', $activeId)
+                  ->orWhereNull('school_year_id');
+            });
         }
 
         $questionnaires = $query->paginate(15)->appends($request->query());
+
+        $activeId = $activeId ?? SchoolYear::activeId();
+        $pendingScope = fn ($q) => $q->where('status', 'pending')
+            ->where(function ($q2) use ($activeId) {
+                $q2->where('school_year_id', $activeId)->orWhereNull('school_year_id');
+            });
         $pendingCount = match (true) {
-            $user->isDean(), $user->isSecretary() => ExamQuestionnaire::where('status', 'pending')->count(),
-            $user->isProgramCoordinator() => ExamQuestionnaire::visibleTo($user)->where('status', 'pending')->count(),
+            $user->isDean(), $user->isSecretary() => ExamQuestionnaire::where($pendingScope)->count(),
+            $user->isProgramCoordinator() => ExamQuestionnaire::visibleTo($user)->where($pendingScope)->count(),
             default => 0,
         };
         $archiveYears = array_filter(

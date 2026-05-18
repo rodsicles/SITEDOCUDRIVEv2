@@ -25,12 +25,18 @@ class SchoolYearController extends Controller
         $archivedYears = $this->schoolYearService->getArchived();
 
         // Counts for active year
-        $activeDocCount = Document::where('school_year_id', $activeSchoolYear->id)
-            ->orWhereNull('school_year_id')->count();
-        $activeTgCount = TeachingGuide::where('school_year_id', $activeSchoolYear->id)
-            ->orWhereNull('school_year_id')->count();
-        $activeEqCount = ExamQuestionnaire::where('school_year_id', $activeSchoolYear->id)
-            ->orWhereNull('school_year_id')->count();
+        $activeDocCount = Document::where(function ($q) use ($activeSchoolYear) {
+            $q->where('school_year_id', $activeSchoolYear->id)
+              ->orWhereNull('school_year_id');
+        })->count();
+        $activeTgCount = TeachingGuide::where(function ($q) use ($activeSchoolYear) {
+            $q->where('school_year_id', $activeSchoolYear->id)
+              ->orWhereNull('school_year_id');
+        })->count();
+        $activeEqCount = ExamQuestionnaire::where(function ($q) use ($activeSchoolYear) {
+            $q->where('school_year_id', $activeSchoolYear->id)
+              ->orWhereNull('school_year_id');
+        })->count();
 
         // Suggest next school year
         $suggestedStartYear = $activeSchoolYear->start_year + 1;

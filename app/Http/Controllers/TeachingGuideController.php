@@ -49,6 +49,12 @@ class TeachingGuideController extends Controller
         if ($academicYearStart) {
             $range = AcademicYear::rangeString($academicYearStart);
             $query->where('academic_year', $range);
+        } else {
+            $activeId = SchoolYear::activeId();
+            $query->where(function ($q) use ($activeId) {
+                $q->where('school_year_id', $activeId)
+                  ->orWhereNull('school_year_id');
+            });
         }
 
         $guides = $query->paginate(15)->appends($request->query());

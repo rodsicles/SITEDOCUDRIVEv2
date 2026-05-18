@@ -136,6 +136,12 @@ class DocumentService
             if (!empty($folderIds)) {
                 $query->whereIn('folder_id', $folderIds);
             }
+        } else {
+            $activeId = SchoolYear::activeId();
+            $query->where(function ($q) use ($activeId) {
+                $q->where('school_year_id', $activeId)
+                  ->orWhereNull('school_year_id');
+            });
         }
 
         return $query->paginate($perPage)->appends($queryParams);

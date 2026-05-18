@@ -28,9 +28,8 @@ class FolderService
 
         $tree = Folder::system()
             ->topLevel()
-            ->with(['children' => function ($query) use ($documentCount, $activeSchoolYearId) {
+            ->with(['children' => function ($query) use ($documentCount) {
                 $query->system()->orderBy('sort_order')
-                    ->when($activeSchoolYearId, fn ($q) => $q->where('school_year_id', $activeSchoolYearId))
                     ->withCount(['documents' => $documentCount])
                     ->with(['children' => function ($q) use ($documentCount) {
                         $q->system()->orderBy('sort_order')->withCount(['documents' => $documentCount]);

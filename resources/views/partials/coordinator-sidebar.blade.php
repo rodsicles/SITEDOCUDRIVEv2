@@ -14,6 +14,12 @@
 <a href="{{ route('announcements.index') }}" class="menu-item {{ request()->routeIs('announcements.index', 'announcements.show') ? 'active' : '' }}">
     <i class="fas fa-bullhorn"></i> Announcements
 </a>
+<a href="{{ route('coordinator.notifications') }}" class="menu-item {{ request()->routeIs('coordinator.notifications') ? 'active' : '' }}">
+    <i class="fas fa-bell"></i> Notifications
+    @if(isset($unreadNotifications) && $unreadNotifications > 0)
+    <span class="badge badge-danger ml-auto">{{ $unreadNotifications }}</span>
+    @endif
+</a>
 
 <div class="sidebar-section-label">Management</div>
 <a href="{{ route('coordinator.faculty') }}" class="menu-item {{ request()->routeIs('coordinator.faculty', 'coordinator.create-faculty', 'coordinator.edit-faculty') ? 'active' : '' }}">

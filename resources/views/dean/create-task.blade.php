@@ -25,7 +25,8 @@
                     <option value="">Select User</option>
                     @foreach($assignableUsers as $user)
                         <option value="{{ $user->id }}">
-                            {{ $user->employee->full_name ?? $user->username }} - {{ $user->role->role_name }}
+                            {{ $user->employee->full_name ?? $user->username }}
+                            ({{ $user->username }}) — {{ $user->role->role_name }}
                         </option>
                     @endforeach
                 </select>

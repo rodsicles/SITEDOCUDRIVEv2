@@ -146,6 +146,23 @@ class NotificationService
     }
 
     /**
+     * Notify a faculty member or program coordinator that a task was assigned to them.
+     */
+    public function notifyTaskAssigned(int $assigneeUserId, string $taskTitle, ?User $assignedBy = null): Notification
+    {
+        $creator = $assignedBy?->employee?->full_name
+            ?? $assignedBy?->name
+            ?? $assignedBy?->username
+            ?? 'the Dean';
+
+        return $this->notify(
+            $assigneeUserId,
+            "New task assigned: \"{$taskTitle}\" from {$creator}. View it under My Tasks.",
+            Notification::TONE_SUCCESS,
+        );
+    }
+
+    /**
      * Mark a notification as read (owned by user).
      */
     public function markAsRead(int $notificationId, int $userId): void

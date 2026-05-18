@@ -6,67 +6,79 @@ use App\Models\Task;
 use App\Models\TaskAttachment;
 use App\Models\Notification;
 use App\Models\DashboardLog;
+use App\Models\User;
 use App\Support\UploadStorage;
 use Illuminate\Http\UploadedFile;
 use Illuminate\Support\Collection;
+use Illuminate\Support\Facades\DB;
 
 class TaskService
 {
+    public function __construct(
+        protected NotificationService $notificationService,
+    ) {}
+
     /**
      * Create a new task with notification and logging.
      */
     public function createTask(array $validated, int $assignedByUserId, array $attachments = []): Task
     {
-        $task = Task::create([
-            'assigned_by' => $assignedByUserId,
-            'assigned_to' => $validated['assigned_to'],
-            'task_title' => $validated['task_title'],
-            'task_description' => $validated['task_description'],
-            'due_date' => $validated['due_date'],
-            'status' => 'Pending',
-        ]);
+        $assigneeUserId = (int) $validated['assigned_to'];
+        $assignedBy = User::find($assignedByUserId);
 
-        foreach ($attachments as $attachment) {
-            if (!$attachment instanceof UploadedFile) {
-                continue;
+        return DB::transaction(function () use ($validated, $assigneeUserId, $assignedByUserId, $assignedBy, $attachments) {
+            $task = Task::create([
+                'assigned_by' => $assignedByUserId,
+                'assigned_to' => $assigneeUserId,
+                'task_title' => $validated['task_title'],
+                'task_description' => $validated['task_description'],
+                'due_date' => $validated['due_date'],
+                'status' => 'Pending',
+            ]);
+
+            foreach ($attachments as $attachment) {
+                if (!$attachment instanceof UploadedFile) {
+                    continue;
+                }
+
+                $storedPath = UploadStorage::store($attachment, 'task-attachments');
+
+                TaskAttachment::create([
+                    'task_id' => $task->task_id,
+                    'uploaded_by' => $assignedByUserId,
+                    'original_name' => $attachment->getClientOriginalName(),
+                    'file_path' => $storedPath,
+                    'mime_type' => $attachment->getClientMimeType(),
+                    'file_size' => $attachment->getSize(),
+                ]);
             }
 
-            $storedPath = UploadStorage::store($attachment, 'task-attachments');
+            $this->notificationService->notifyTaskAssigned(
+                $assigneeUserId,
+                $validated['task_title'],
+                $assignedBy,
+            );
 
-            TaskAttachment::create([
-                'task_id' => $task->task_id,
-                'uploaded_by' => $assignedByUserId,
-                'original_name' => $attachment->getClientOriginalName(),
-                'file_path' => $storedPath,
-                'mime_type' => $attachment->getClientMimeType(),
-                'file_size' => $attachment->getSize(),
-            ]);
-        }
-
-        Notification::create([
-            'user_id' => $validated['assigned_to'],
-            'message' => 'New task assigned: ' . $validated['task_title'],
-        ]);
-
-        DashboardLog::create([
-            'user_id' => $assignedByUserId,
-            'target_user_id' => $validated['assigned_to'],
-            'activity' => 'Created task: ' . $validated['task_title'],
-            'activity_type' => 'task_created',
-            'visibility' => 'dean',
-        ]);
-
-        if (!empty($attachments)) {
             DashboardLog::create([
                 'user_id' => $assignedByUserId,
-                'target_user_id' => $validated['assigned_to'],
-                'activity' => 'Added task attachment(s) to: ' . $validated['task_title'],
-                'activity_type' => 'task_attachment',
+                'target_user_id' => $assigneeUserId,
+                'activity' => 'Created task: ' . $validated['task_title'],
+                'activity_type' => 'task_created',
                 'visibility' => 'dean',
             ]);
-        }
 
-        return $task;
+            if (!empty($attachments)) {
+                DashboardLog::create([
+                    'user_id' => $assignedByUserId,
+                    'target_user_id' => $assigneeUserId,
+                    'activity' => 'Added task attachment(s) to: ' . $validated['task_title'],
+                    'activity_type' => 'task_attachment',
+                    'visibility' => 'dean',
+                ]);
+            }
+
+            return $task;
+        });
     }
 
     /**

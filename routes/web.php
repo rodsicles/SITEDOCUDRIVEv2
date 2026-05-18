@@ -192,6 +192,11 @@ Route::middleware(['auth', 'no.back', 'role:Program Coordinator'])->prefix('coor
     Route::get('/tasks', [CoordinatorController::class, 'tasks'])->name('tasks');
     Route::patch('/tasks/{id}', [CoordinatorController::class, 'updateTask'])->middleware('throttle:30,1')->name('update-task');
     Route::post('/tasks/{id}/attachments', [TaskAttachmentController::class, 'store'])->middleware('throttle:30,1')->name('tasks.attachments.store');
+
+    Route::get('/notifications', [CoordinatorController::class, 'notifications'])->name('notifications');
+    Route::get('/notifications/unread-count', [CoordinatorController::class, 'unreadNotificationCount'])->name('notifications.unread-count');
+    Route::post('/notifications/{id}/read-json', [CoordinatorController::class, 'markNotificationReadJson'])->middleware('throttle:120,1')->name('notifications.read-json');
+    Route::post('/notifications/{id}/read', [CoordinatorController::class, 'markNotificationRead'])->middleware('throttle:120,1')->name('mark-notification-read');
     
     // Faculty Management
     Route::get('/faculty', [CoordinatorController::class, 'faculty'])->name('faculty');

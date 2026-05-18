@@ -5,7 +5,9 @@ namespace App\Providers;
 use App\Console\Commands\CreateSchoolYearFolders;
 use App\Console\Commands\EnsureAcademicYearFolders;
 use App\Console\Commands\VerifyUploadStorageCommand;
+use App\Services\DashboardService;
 use Illuminate\Support\Facades\Schema;
+use Illuminate\Support\Facades\View;
 use Illuminate\Support\ServiceProvider;
 
 class AppServiceProvider extends ServiceProvider
@@ -37,5 +39,17 @@ class AppServiceProvider extends ServiceProvider
                 VerifyUploadStorageCommand::class,
             ]);
         }
+
+        View::composer('layouts.dashboard', function ($view) {
+            $user = auth()->user();
+            if (!$user || (!$user->isFaculty() && !$user->isProgramCoordinator())) {
+                return;
+            }
+
+            $view->with(
+                'unreadNotifications',
+                app(DashboardService::class)->getUnreadNotificationCount($user->id),
+            );
+        });
     }
 }

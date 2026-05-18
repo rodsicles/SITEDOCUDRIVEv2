@@ -21,6 +21,7 @@ class CoordinatorController extends Controller
 {
     use \App\Http\Controllers\Concerns\HandlesUploadExceptions;
     use \App\Http\Controllers\Concerns\ValidatesDocumentUpload;
+    use \App\Http\Controllers\Concerns\ManagesUserNotifications;
 
     public function __construct(
         protected DashboardService $dashboardService,
@@ -123,6 +124,11 @@ class CoordinatorController extends Controller
         $this->taskService->updateTaskByAssignee($id, $validated['status'], auth()->id());
 
         return redirect()->back()->with('success', 'Task status updated successfully');
+    }
+
+    protected function notificationsView(): string
+    {
+        return 'coordinator.notifications';
     }
 
     public function faculty()

@@ -4,7 +4,6 @@ namespace App\Http\Controllers;
 
 use App\Models\Task;
 use App\Models\DashboardLog;
-use App\Models\Notification;
 use App\Models\PerformanceReport;
 use App\Services\DashboardService;
 use App\Services\DocumentService;
@@ -18,6 +17,7 @@ class FacultyController extends Controller
 {
     use \App\Http\Controllers\Concerns\HandlesUploadExceptions;
     use \App\Http\Controllers\Concerns\ValidatesDocumentUpload;
+    use \App\Http\Controllers\Concerns\ManagesUserNotifications;
 
     public function __construct(
         protected DashboardService $dashboardService,
@@ -145,25 +145,9 @@ class FacultyController extends Controller
         return view('faculty.tasks', compact('tasks', 'filter', 'counts'));
     }
 
-    /**
-     * JSON endpoint: mark a notification as read (used by row-click UX).
-     */
-    public function markNotificationReadJson($id)
+    protected function notificationsView(): string
     {
-        $this->notificationService->markAsRead($id, auth()->id());
-        return response()->json(['success' => true]);
-    }
-
-    /**
-     * JSON endpoint: current unread notification count for the auth user.
-     * Used by the top-bar badge to auto-refresh every 30s without a page reload.
-     */
-    public function unreadNotificationCount()
-    {
-        $count = Notification::where('user_id', auth()->id())
-            ->where('is_read', false)
-            ->count();
-        return response()->json(['count' => $count]);
+        return 'faculty.notifications';
     }
 
     public function updateTaskStatus(Request $request, $id)
@@ -181,20 +165,6 @@ class FacultyController extends Controller
     {
         $activities = DashboardLog::getPaginatedLogs(auth()->user(), 20);
         return view('activity-log', compact('activities'));
-    }
-
-    public function notifications()
-    {
-        $notifications = Notification::where('user_id', auth()->id())
-            ->latest()
-            ->paginate(20);
-        return view('faculty.notifications', compact('notifications'));
-    }
-
-    public function markNotificationRead($id)
-    {
-        $this->notificationService->markAsRead($id, auth()->id());
-        return redirect()->back();
     }
 
     public function documents(Request $request)

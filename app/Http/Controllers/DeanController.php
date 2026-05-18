@@ -202,24 +202,35 @@ class DeanController extends Controller
 
     public function createTask()
     {
-        $assignableUsers = User::with('employee')
+        $assignableUsers = User::with(['employee', 'role'])
             ->whereIn('role_id', [2, 3])
             ->where('status', 'Active')
+            ->whereHas('employee')
             ->get()
-            ->sortBy(fn($u) => $u->employee->full_name ?? $u->username);
+            ->sortBy(fn ($u) => $u->employee->full_name ?? $u->username);
+
         return view('dean.create-task', compact('assignableUsers'));
     }
 
     public function storeTask(Request $request)
     {
         $validated = $request->validate([
-            'assigned_to' => 'required|exists:users,id',
+            'assigned_to' => 'required|integer|exists:users,id',
             'task_title' => 'required|string|max:15',
             'task_description' => 'nullable|string|max:150',
             'due_date' => 'required|date',
             'attachments' => 'nullable|array|max:5',
             'attachments.*' => 'file|max:10240|mimes:pdf,doc,docx,xls,xlsx,csv,txt,jpg,jpeg,png',
         ]);
+
+        $assignee = User::query()
+            ->whereKey((int) $validated['assigned_to'])
+            ->whereIn('role_id', [2, 3])
+            ->where('status', 'Active')
+            ->whereHas('employee')
+            ->firstOrFail();
+
+        $validated['assigned_to'] = $assignee->id;
 
         $this->taskService->createTask($validated, auth()->id(), $request->file('attachments', []));
 

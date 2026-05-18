@@ -21,6 +21,7 @@ class FolderService
         $activeSchoolYearId = SchoolYear::activeId();
 
         $documentCount = function ($query) use ($viewer) {
+            $query->onlyApprovedShareable();
             if ($viewer) {
                 $query->visibleTo($viewer);
             }
@@ -63,6 +64,7 @@ class FolderService
     public function getDisplayFolders(Folder $parent, ?User $viewer = null): Collection
     {
         $documentCount = function ($query) use ($viewer) {
+            $query->onlyApprovedShareable();
             if ($viewer) {
                 $query->visibleTo($viewer);
             }
@@ -92,7 +94,9 @@ class FolderService
             $folder->loadMissing(['children.children']);
 
             $folderIds = array_merge([$folder->folder_id], $folder->getDescendantIds());
-            $query = Document::query()->whereIn('folder_id', $folderIds);
+            $query = Document::query()
+                ->whereIn('folder_id', $folderIds)
+                ->onlyApprovedShareable();
 
             if ($viewer) {
                 $query->visibleTo($viewer);

@@ -339,21 +339,24 @@ class DeanController extends Controller
         }
 
         try {
-            $uploadedCount = $this->documentService->uploadDocuments(
+            $result = $this->documentService->uploadDocuments(
                 $validated, $files, auth()->id(), $recipientIds
             );
         } catch (\Throwable $e) {
             return $this->uploadFailedResponse($request, $e);
         }
 
+        $count = $result['count'];
+        $message = "{$count} document(s) uploaded and shared successfully.";
+
         if ($request->expectsJson()) {
             return response()->json([
                 'success' => true,
-                'message' => "$uploadedCount document(s) uploaded and shared successfully"
+                'message' => $message,
             ]);
         }
 
-        return redirect()->back()->with('success', "$uploadedCount document(s) uploaded and shared successfully");
+        return redirect()->back()->with('success', $message);
     }
 
     public function storeExamRecord(Request $request)

@@ -127,7 +127,11 @@ class ExamQuestionnaireController extends Controller
             return $this->uploadFailedResponse($request, $e);
         }
 
-        return back()->with('success', 'Exam questionnaire submitted successfully.');
+        app(\App\Services\NotificationService::class)->notifySupervisors(
+            'Exam questionnaire pending approval: ' . $title . '.'
+        );
+
+        return back()->with('success', 'Exam questionnaire submitted for Dean approval.');
     }
 
     public function view($id)

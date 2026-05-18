@@ -40,6 +40,11 @@ trait ValidatesDocumentUpload
             if (IteSubjects::shouldUseSubjectPicker($user, true)) {
                 $rules['subject'] = ['required', 'string', Rule::in(IteSubjects::labels())];
             }
+
+            if ($category === 'Exam Questionnaires') {
+                $rules['exam_type'] = 'required|in:Quiz,Prelim,Midterm,Pre-Final,Final';
+                $rules['documents.*'] = 'required|file|max:10240|mimes:pdf|mimetypes:application/pdf';
+            }
         } else {
             $rules['tags'] = 'nullable|string|max:15';
         }

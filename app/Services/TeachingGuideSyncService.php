@@ -35,7 +35,46 @@ class TeachingGuideSyncService
     }
 
     /**
+     * Create a teaching guide submission from a Documents-tab folder upload (no Document row yet).
+     */
+    public function createFromFolderUpload(
+        int $userId,
+        Folder $folder,
+        string $title,
+        string $storedPath,
+        string $fileType,
+        ?string $subject = null,
+        string $status = 'pending',
+        ?int $reviewedBy = null,
+        array $recipientIds = [],
+    ): ?TeachingGuide {
+        if (!in_array($fileType, ['pdf', 'word'], true)) {
+            return null;
+        }
+
+        $guide = TeachingGuide::create([
+            'user_id' => $userId,
+            'title' => $title,
+            'file_path' => $storedPath,
+            'file_type' => $fileType === 'pdf' ? 'pdf' : 'word',
+            'subject' => $subject ?? $title,
+            'folder_id' => $folder->folder_id,
+            'school_year_id' => SchoolYear::activeId(),
+            'semester' => $this->semesterFromFolder($folder),
+            'academic_year' => $this->academicYearFromFolder($folder),
+            'status' => $status,
+            'reviewed_by' => $reviewedBy,
+            'reviewed_at' => $status !== 'pending' ? now() : null,
+        ]);
+
+        $this->syncRecipients($guide, $recipientIds);
+
+        return $guide;
+    }
+
+    /**
      * Create or update a teaching guide row linked to a documents-tab upload.
+     * @deprecated Prefer createFromFolderUpload(); kept for legacy data repair only.
      */
     public function syncFromDocument(Document $document, Folder $folder, array $recipientIds = [], ?string $subject = null): ?TeachingGuide
     {

@@ -5,6 +5,7 @@ namespace App\Services;
 use App\Models\Document;
 use App\Models\ExamQuestionnaire;
 use App\Models\Folder;
+use App\Models\SchoolYear;
 use App\Support\UploadStorage;
 
 class ExamQuestionnaireSyncService
@@ -16,6 +17,72 @@ class ExamQuestionnaireSyncService
     public function examFolderSlugSegment(string $examType): string
     {
         return $this->hierarchy->examTypeToAssessmentSlug($examType);
+    }
+
+    public function submissionTypeFromFolder(Folder $folder): string
+    {
+        $slug = strtolower($folder->slug ?? '');
+        $name = strtolower($folder->folder_name ?? '');
+
+        if (str_contains($slug, '-tos') || str_contains($name, 'tos')) {
+            return 'tos';
+        }
+
+        return 'toq';
+    }
+
+    public function semesterFromFolder(Folder $folder): string
+    {
+        $name = $folder->folder_name . ' ' . ($folder->parent?->folder_name ?? '');
+        if (str_contains($name, '2nd')) {
+            return '2nd';
+        }
+
+        return '1st';
+    }
+
+    public function academicYearFromFolder(Folder $folder): string
+    {
+        $text = $folder->folder_name . ' ' . ($folder->parent?->folder_name ?? '');
+        if (preg_match('/(\d{4})-(\d{4})/', $text, $m)) {
+            return $m[1] . '-' . $m[2];
+        }
+        $y = now()->month >= 8 ? now()->year : now()->year - 1;
+
+        return $y . '-' . ($y + 1);
+    }
+
+    /**
+     * Create a pending (or approved) exam questionnaire from a Documents-tab folder upload.
+     */
+    public function createFromFolderUpload(
+        int $userId,
+        Folder $folder,
+        string $title,
+        string $storedPath,
+        string $fileType,
+        string $examType,
+        ?string $subject = null,
+        string $status = 'pending',
+        ?int $reviewedBy = null,
+    ): ExamQuestionnaire {
+        $subjectLabel = $subject ?? $title;
+
+        return ExamQuestionnaire::create([
+            'submitted_by' => $userId,
+            'title' => $title,
+            'file_path' => $storedPath,
+            'file_type' => $fileType === 'word' ? 'word' : 'pdf',
+            'subject' => $subjectLabel,
+            'exam_type' => $examType,
+            'submission_type' => $this->submissionTypeFromFolder($folder),
+            'school_year_id' => SchoolYear::activeId(),
+            'semester' => $this->semesterFromFolder($folder),
+            'academic_year' => $this->academicYearFromFolder($folder),
+            'status' => $status,
+            'reviewed_by' => $reviewedBy,
+            'reviewed_at' => $status !== 'pending' ? now() : null,
+        ]);
     }
 
     public function resolveTargetFolder(ExamQuestionnaire $questionnaire): ?Folder

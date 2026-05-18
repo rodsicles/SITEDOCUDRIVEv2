@@ -265,21 +265,26 @@ class FacultyController extends Controller
         }
 
         try {
-            $uploadedCount = $this->documentService->uploadDocuments(
+            $result = $this->documentService->uploadDocuments(
                 $validated, $files, auth()->id(), $recipientIds
             );
         } catch (\Throwable $e) {
             return $this->uploadFailedResponse($request, $e);
         }
 
+        $count = $result['count'];
+        $message = $result['submitted_for_approval']
+            ? "{$count} file(s) submitted for Dean approval."
+            : "{$count} document(s) uploaded successfully.";
+
         if ($request->expectsJson()) {
             return response()->json([
                 'success' => true,
-                'message' => "$uploadedCount document(s) uploaded successfully"
+                'message' => $message,
             ]);
         }
 
-        return redirect()->back()->with('success', "$uploadedCount document(s) uploaded successfully");
+        return redirect()->back()->with('success', $message);
     }
 
     public function viewDocument($id)

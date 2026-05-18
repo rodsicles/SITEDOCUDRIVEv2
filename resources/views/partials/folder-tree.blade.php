@@ -331,6 +331,17 @@
                     @if($useItSubjectPicker)
                     @include('partials.ite-subject-picker', ['pickerId' => 'folderSubjectPicker'])
                     @endif
+                    @if($activeTab === 'exam-questionnaires')
+                    <div class="form-group">
+                        <label class="form-label">Exam Type <span class="text-red-500">*</span></label>
+                        <select name="exam_type" class="form-control" required>
+                            <option value="">-- Select Exam Type --</option>
+                            @foreach(['Quiz','Prelim','Midterm','Pre-Final','Final'] as $type)
+                                <option value="{{ $type }}" {{ old('exam_type') === $type ? 'selected' : '' }}>{{ $type }}</option>
+                            @endforeach
+                        </select>
+                    </div>
+                    @endif
                     @if($shareableUploadTab)
                     @include('partials.recipient-picker', ['pickerId' => 'folderRecipientPicker', 'role' => $role])
                     @endif

@@ -153,6 +153,25 @@ class Document extends Model
         return $this->hasOne(ExamQuestionnaire::class, 'document_id', 'document_id');
     }
 
+    /**
+     * Hide Teaching Guides / Exam Questionnaires until linked submission is approved.
+     */
+    public function scopeOnlyApprovedShareable($query)
+    {
+        return $query->where(function ($q) {
+            $q->whereNotIn('category', self::SHAREABLE_CATEGORIES)
+                ->orWhereNull('category')
+                ->orWhere(function ($sub) {
+                    $sub->where('category', 'Teaching Guides')
+                        ->whereHas('teachingGuide', fn ($tg) => $tg->where('status', 'approved'));
+                })
+                ->orWhere(function ($sub) {
+                    $sub->where('category', 'Exam Questionnaires')
+                        ->whereHas('examQuestionnaire', fn ($eq) => $eq->where('status', 'approved'));
+                });
+        });
+    }
+
     public function scopeVisibleTo($query, User $user)
     {
         if ($user->isDean() || $user->isSecretary()) {

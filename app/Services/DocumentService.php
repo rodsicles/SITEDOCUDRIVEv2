@@ -20,6 +20,7 @@ class DocumentService
 {
     public function __construct(
         protected TeachingGuideSyncService $teachingGuideSync,
+        protected ExamQuestionnaireSyncService $examQuestionnaireSync,
         protected NotificationService $notificationService,
     ) {}
     /**
@@ -64,25 +65,8 @@ class DocumentService
      */
     public function getFilteredDocuments(User $user, ?string $categoryFilter, ?string $folderFilter, array $queryParams = [], int $perPage = 15): LengthAwarePaginator
     {
-        $query = Document::getFilteredDocuments($user, $categoryFilter);
-
-        $query->where(function ($q) {
-            $q->where(function ($sub) {
-                $sub->where('category', 'Teaching Guides')
-                    ->where(function ($inner) {
-                        $inner->whereHas('teachingGuide', fn ($tg) => $tg->where('status', 'approved'))
-                              ->orWhereDoesntHave('teachingGuide');
-                    });
-            })->orWhere(function ($sub) {
-                $sub->where('category', 'Exam Questionnaires')
-                    ->where(function ($inner) {
-                        $inner->whereHas('examQuestionnaire', fn ($eq) => $eq->where('status', 'approved'))
-                              ->orWhereDoesntHave('examQuestionnaire');
-                    });
-            })->orWhere(function ($sub) {
-                $sub->whereNotIn('category', ['Teaching Guides', 'Exam Questionnaires']);
-            })->orWhereNull('category');
-        });
+        $query = Document::getFilteredDocuments($user, $categoryFilter)
+            ->onlyApprovedShareable();
 
         if ($folderFilter !== null) {
             if ($folderFilter === 'uncategorized') {
@@ -287,9 +271,11 @@ class DocumentService
     }
 
     /**
-     * Upload one or more documents and return the count of uploaded files.
+     * Upload one or more documents.
+     *
+     * @return array{count: int, submitted_for_approval: bool}
      */
-    public function uploadDocuments(array $validated, array $files, int $userId, array $recipientIds = []): int
+    public function uploadDocuments(array $validated, array $files, int $userId, array $recipientIds = []): array
     {
         $tags = !empty($validated['tags']) ? implode(',', array_map('trim', explode(',', $validated['tags']))) : '';
 
@@ -297,18 +283,89 @@ class DocumentService
         $folder = !empty($validated['folder_id']) ? Folder::find($validated['folder_id']) : null;
         $recipientIds = array_values(array_unique(array_filter(array_map('intval', $recipientIds))));
         $subject = $validated['subject'] ?? null;
+        $uploader = User::findOrFail($userId);
+        $autoApprove = $uploader->isDean() || $uploader->isSecretary();
+        $submittedForApproval = false;
 
         $uploadedCount = 0;
-        $createdDocuments = [];
 
         foreach ($files as $index => $file) {
+            $title = $validated['document_title'] . ($uploadedCount > 0 ? ' (' . ($uploadedCount + 1) . ')' : '');
+            $extension = strtolower($file->getClientOriginalExtension());
+            $fileType = $validated['document_type'] === 'pdf' || $extension === 'pdf' ? 'pdf' : 'word';
+
+            if ($category === 'Exam Questionnaires' && $folder) {
+                $filename = time() . '_' . $index . '_' . $file->hashName();
+                $storedPath = UploadStorage::storeAs($file, 'exam-questionnaires', $filename);
+                $examType = $validated['exam_type'] ?? 'Quiz';
+                $status = $autoApprove ? 'approved' : 'pending';
+
+                $questionnaire = $this->examQuestionnaireSync->createFromFolderUpload(
+                    $userId,
+                    $folder,
+                    $title,
+                    $storedPath,
+                    $fileType,
+                    $examType,
+                    $subject,
+                    $status,
+                    $autoApprove ? $userId : null,
+                );
+
+                if ($autoApprove) {
+                    $this->examQuestionnaireSync->syncToDocument($questionnaire->fresh());
+                } else {
+                    $submittedForApproval = true;
+                    $this->notificationService->notifySupervisors(
+                        "Exam questionnaire pending approval: \"{$title}\" in {$folder->folder_name}."
+                    );
+                }
+
+                $uploadedCount++;
+                continue;
+            }
+
+            if ($category === 'Teaching Guides' && $folder) {
+                $filename = time() . '_' . $index . '_' . $file->hashName();
+                $storedPath = UploadStorage::storeAs($file, 'teaching-guides', $filename);
+                $status = $autoApprove ? 'approved' : 'pending';
+
+                $guide = $this->teachingGuideSync->createFromFolderUpload(
+                    $userId,
+                    $folder,
+                    $title,
+                    $storedPath,
+                    $fileType,
+                    $subject,
+                    $status,
+                    $autoApprove ? $userId : null,
+                    $recipientIds,
+                );
+
+                if (!$guide) {
+                    continue;
+                }
+
+                if ($autoApprove) {
+                    $this->teachingGuideSync->syncDocumentFromGuide($guide, $uploader, $recipientIds);
+                } else {
+                    $submittedForApproval = true;
+                    $this->notificationService->notifySupervisors(
+                        "Teaching guide pending approval: \"{$title}\" in {$folder->folder_name}."
+                    );
+                }
+
+                $uploadedCount++;
+                continue;
+            }
+
             $filename = time() . '_' . $index . '_' . $file->hashName();
             UploadStorage::putFileAs('documents', $file, $filename);
 
             $document = Document::create([
                 'uploaded_by' => $userId,
                 'folder_id' => $validated['folder_id'] ?? null,
-                'document_title' => $validated['document_title'] . ($uploadedCount > 0 ? ' (' . ($uploadedCount + 1) . ')' : ''),
+                'document_title' => $title,
                 'subject' => $subject,
                 'file_path' => 'documents/' . $filename,
                 'file_size' => (int) ($file->getSize() ?? 0),
@@ -322,18 +379,10 @@ class DocumentService
                 $document->recipients()->sync($recipientIds);
             }
 
-            if ($category === 'Teaching Guides' && $folder) {
-                $guide = $this->teachingGuideSync->syncFromDocument($document, $folder, $recipientIds, $subject);
-                if ($guide) {
-                    $guide->update(['status' => 'pending']);
-                }
-            }
-
-            $createdDocuments[] = $document;
             $uploadedCount++;
         }
 
-        if (!empty($recipientIds) && $uploadedCount > 0) {
+        if (!empty($recipientIds) && $uploadedCount > 0 && !$submittedForApproval) {
             $label = $uploadedCount === 1
                 ? "\"{$validated['document_title']}\""
                 : "{$uploadedCount} document(s)";
@@ -343,14 +392,21 @@ class DocumentService
             );
         }
 
+        $activity = $submittedForApproval
+            ? 'Submitted ' . $uploadedCount . ' file(s) for Dean approval: ' . $validated['document_title']
+            : 'Uploaded ' . $uploadedCount . ' document(s): ' . $validated['document_title'];
+
         DashboardLog::create([
             'user_id' => $userId,
-            'activity' => 'Uploaded ' . $uploadedCount . ' document(s): ' . $validated['document_title'],
+            'activity' => $activity,
             'activity_type' => 'document_upload',
             'visibility' => 'own',
         ]);
 
-        return $uploadedCount;
+        return [
+            'count' => $uploadedCount,
+            'submitted_for_approval' => $submittedForApproval,
+        ];
     }
 
     /**

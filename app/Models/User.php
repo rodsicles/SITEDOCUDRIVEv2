@@ -1,0 +1,160 @@
+<?php
+
+namespace App\Models;
+
+// use Illuminate\Contracts\Auth\MustVerifyEmail;
+use Illuminate\Database\Eloquent\Factories\HasFactory;
+use Illuminate\Foundation\Auth\User as Authenticatable;
+use Illuminate\Notifications\Notifiable;
+
+class User extends Authenticatable
+{
+    /** @use HasFactory<\Database\Factories\UserFactory> */
+    use HasFactory, Notifiable;
+
+    /**
+     * The attributes that are mass assignable.
+     *
+     * @var list<string>
+     */
+    protected $fillable = [
+        'role_id',
+        'username',
+        'name',
+        'email',
+        'password',
+        'status',
+        'must_change_password',
+        'password_changed_at',
+    ];
+
+    /**
+     * The attributes that should be hidden for serialization.
+     *
+     * @var list<string>
+     */
+    protected $hidden = [
+        'password',
+        'remember_token',
+    ];
+
+    /**
+     * Get the attributes that should be cast.
+     *
+     * @return array<string, string>
+     */
+    protected function casts(): array
+    {
+        return [
+            'email_verified_at' => 'datetime',
+            'password' => 'hashed',
+            'must_change_password' => 'boolean',
+            'password_changed_at' => 'datetime',
+        ];
+    }
+
+    public function role()
+    {
+        return $this->belongsTo(Role::class, 'role_id', 'role_id');
+    }
+
+    public function employee()
+    {
+        return $this->hasOne(Employee::class, 'user_id');
+    }
+
+    public function tasksAssigned()
+    {
+        return $this->hasMany(Task::class, 'assigned_to');
+    }
+
+    public function tasksCreated()
+    {
+        return $this->hasMany(Task::class, 'assigned_by');
+    }
+
+    public function notifications()
+    {
+        return $this->hasMany(Notification::class, 'user_id', 'id');
+    }
+
+    public function documents()
+    {
+        return $this->hasMany(Document::class, 'uploaded_by');
+    }
+
+    public function calendarEvents()
+    {
+        return $this->hasMany(CalendarEvent::class, 'created_by');
+    }
+
+    public function eventAttendances()
+    {
+        return $this->hasMany(EventAttendee::class, 'user_id');
+    }
+
+    public function documentFavorites()
+    {
+        return $this->hasMany(DocumentFavorite::class, 'user_id');
+    }
+
+    public function documentViews()
+    {
+        return $this->hasMany(DocumentView::class, 'user_id');
+    }
+
+    public function documentFilters()
+    {
+        return $this->hasMany(DocumentFilter::class, 'user_id');
+    }
+
+    public function announcements()
+    {
+        return $this->hasMany(Announcement::class, 'author_id');
+    }
+
+    public function professionalDevelopments()
+    {
+        return $this->hasMany(ProfessionalDevelopment::class, 'user_id');
+    }
+
+    public function taskAttachments()
+    {
+        return $this->hasMany(TaskAttachment::class, 'uploaded_by');
+    }
+
+    public function isDean()
+    {
+        return $this->role->role_name === 'Dean';
+    }
+
+    public function isProgramCoordinator()
+    {
+        return $this->role->role_name === 'Program Coordinator';
+    }
+
+    public function isFaculty()
+    {
+        return $this->role->role_name === 'Faculty Employee';
+    }
+
+    public function isSecretary()
+    {
+        return $this->role->role_name === 'Secretary';
+    }
+
+    public function isDeanOrSecretary()
+    {
+        return $this->isDean() || $this->isSecretary();
+    }
+
+    public function canManageDocuments()
+    {
+        return $this->isDean() || $this->isSecretary() || $this->isProgramCoordinator();
+    }
+
+    public function canUploadSharedDocuments(): bool
+    {
+        return $this->canManageDocuments();
+    }
+}

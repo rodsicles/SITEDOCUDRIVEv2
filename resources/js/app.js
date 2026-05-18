@@ -1,0 +1,137 @@
+import './bootstrap';
+import './request-guard';
+import Swal from 'sweetalert2';
+window.Swal = Swal;
+
+// Page ready - instant load, no slide-down animations
+document.addEventListener('DOMContentLoaded', function() {
+
+    // Table row hover effect
+    const tableRows = document.querySelectorAll('.data-table tbody tr');
+    tableRows.forEach(row => {
+        row.addEventListener('mouseenter', function() {
+            this.style.transform = 'scale(1.01)';
+            this.style.transition = 'all 0.2s ease';
+        });
+        row.addEventListener('mouseleave', function() {
+            this.style.transform = 'scale(1)';
+        });
+    });
+
+    // Auto-hide alerts after 5 seconds
+    const alerts = document.querySelectorAll('.alert');
+    alerts.forEach(alert => {
+        setTimeout(() => {
+            alert.style.opacity = '0';
+            alert.style.transform = 'translateY(-20px)';
+            alert.style.transition = 'all 0.3s ease';
+            setTimeout(() => alert.remove(), 300);
+        }, 5000);
+    });
+
+    // Sidebar menu active state
+    const currentPath = window.location.pathname;
+    const menuItems = document.querySelectorAll('.menu-item');
+    menuItems.forEach(item => {
+        if (item.getAttribute('href') === currentPath) {
+            item.classList.add('active');
+        }
+    });
+
+    // Form submit guard (skip forms with dedicated data-request-guard handling)
+    const forms = document.querySelectorAll('form:not([data-request-guard])');
+    forms.forEach(form => {
+        form.addEventListener('submit', function () {
+            if (window.requestGuard && !window.requestGuard.canProceed(form.action || 'form')) {
+                return;
+            }
+            const submitBtn = this.querySelector('button[type="submit"]');
+            if (submitBtn && !submitBtn.disabled) {
+                submitBtn.disabled = true;
+                if (!submitBtn.dataset.originalHtml) {
+                    submitBtn.dataset.originalHtml = submitBtn.innerHTML;
+                }
+                submitBtn.innerHTML = '<span class="loading"></span> Processing...';
+            }
+        });
+    });
+
+    // Number counter animation for stats
+    const animateValue = (element, start, end, duration) => {
+        let startTimestamp = null;
+        const step = (timestamp) => {
+            if (!startTimestamp) startTimestamp = timestamp;
+            const progress = Math.min((timestamp - startTimestamp) / duration, 1);
+            element.textContent = Math.floor(progress * (end - start) + start);
+            if (progress < 1) {
+                window.requestAnimationFrame(step);
+            }
+        };
+        window.requestAnimationFrame(step);
+    };
+
+    const statValues = document.querySelectorAll('.stat-value');
+    statValues.forEach(stat => {
+        const value = parseInt(stat.textContent);
+        if (!isNaN(value)) {
+            stat.textContent = '0';
+            setTimeout(() => {
+                animateValue(stat, 0, value, 1000);
+            }, 500);
+        }
+    });
+
+    // Notification badge pulse
+    const notifBadge = document.querySelector('.notification-badge');
+    if (notifBadge) {
+        setInterval(() => {
+            notifBadge.style.animation = 'pulse 0.5s ease';
+            setTimeout(() => {
+                notifBadge.style.animation = '';
+            }, 500);
+        }, 3000);
+    }
+});
+
+// Add CSS animations dynamically
+const style = document.createElement('style');
+style.textContent = `
+    @keyframes pulse {
+        0%, 100% { transform: scale(1); }
+        50% { transform: scale(1.2); }
+    }
+
+    .stat-card, .content-card {
+        opacity: 1 !important;
+        transform: translateY(0) !important;
+    }
+
+    /* Smooth transitions */
+    * {
+        transition: background-color 0.3s ease, color 0.3s ease;
+    }
+
+    /* Loading spinner */
+    @keyframes spin {
+        to { transform: rotate(360deg); }
+    }
+`;
+document.head.appendChild(style);
+
+// ============================================
+// Lazy Loading for Heavy Libraries
+// ============================================
+
+// Lazy load Chart.js only if chart element exists
+if (document.getElementById('systemUsageChart')) {
+    import('./chart-loader.js').catch(err => {
+        console.error('Failed to load Chart.js:', err);
+    });
+}
+
+// Lazy load FullCalendar only if calendar element exists
+if (document.getElementById('calendar')) {
+    import('./calendar-loader.js').catch(err => {
+        console.error('Failed to load FullCalendar:', err);
+    });
+}

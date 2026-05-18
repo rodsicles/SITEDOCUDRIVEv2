@@ -1,0 +1,144 @@
+/* =====================================================
+   Integrated Employee Dashboard with Data Analytics
+   FULL DATABASE SQL (COPY-PASTE READY)
+   ===================================================== */
+
+-- 1. Create Database
+CREATE DATABASE employee_dashboard;
+USE employee_dashboard;
+
+-- 2. Roles Table (RBAC)
+CREATE TABLE roles (
+    role_id INT AUTO_INCREMENT PRIMARY KEY,
+    role_name VARCHAR(50) NOT NULL UNIQUE
+);
+
+INSERT INTO roles (role_name) VALUES
+('Dean'),
+('Program Coordinator'),
+('Faculty Employee');
+
+-- 3. Users Table (Login & Access)
+CREATE TABLE users (
+    user_id INT AUTO_INCREMENT PRIMARY KEY,
+    role_id INT NOT NULL,
+    username VARCHAR(50) NOT NULL UNIQUE,
+    email VARCHAR(100) NOT NULL UNIQUE,
+    password VARCHAR(255) NOT NULL,
+    status ENUM('Active','Inactive') DEFAULT 'Active',
+    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    FOREIGN KEY (role_id) REFERENCES roles(role_id)
+);
+
+-- 4. Employee Profiles
+CREATE TABLE employees (
+    employee_id INT AUTO_INCREMENT PRIMARY KEY,
+    user_id INT NOT NULL,
+    employee_no VARCHAR(30) UNIQUE,
+    full_name VARCHAR(100) NOT NULL,
+    department VARCHAR(100),
+    position VARCHAR(100),
+    hire_date DATE,
+    FOREIGN KEY (user_id) REFERENCES users(user_id)
+);
+
+-- 5. Task Assignment (Program Coordinator)
+CREATE TABLE tasks (
+    task_id INT AUTO_INCREMENT PRIMARY KEY,
+    assigned_by INT NOT NULL,
+    assigned_to INT NOT NULL,
+    task_title VARCHAR(150),
+    task_description TEXT,
+    due_date DATE,
+    status ENUM('Pending','In Progress','Completed') DEFAULT 'Pending',
+    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    FOREIGN KEY (assigned_by) REFERENCES users(user_id),
+    FOREIGN KEY (assigned_to) REFERENCES users(user_id)
+);
+
+-- 6. Performance Monitoring & Reports
+CREATE TABLE performance_reports (
+    report_id INT AUTO_INCREMENT PRIMARY KEY,
+    employee_id INT NOT NULL,
+    evaluator_id INT NOT NULL,
+    rating INT CHECK (rating BETWEEN 1 AND 5),
+    remarks TEXT,
+    report_date DATE,
+    FOREIGN KEY (employee_id) REFERENCES employees(employee_id),
+    FOREIGN KEY (evaluator_id) REFERENCES users(user_id)
+);
+
+-- 7. Document Management
+CREATE TABLE documents (
+    document_id INT AUTO_INCREMENT PRIMARY KEY,
+    uploaded_by INT NOT NULL,
+    document_title VARCHAR(150),
+    file_path VARCHAR(255),
+    document_type VARCHAR(50),
+    uploaded_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    FOREIGN KEY (uploaded_by) REFERENCES users(user_id)
+);
+
+-- 8. Notifications & Announcements
+CREATE TABLE notifications (
+    notification_id INT AUTO_INCREMENT PRIMARY KEY,
+    user_id INT NOT NULL,
+    message TEXT,
+    is_read BOOLEAN DEFAULT FALSE,
+    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    FOREIGN KEY (user_id) REFERENCES users(user_id)
+);
+
+-- 9. Dashboard Logs (Data Analytics)
+CREATE TABLE dashboard_logs (
+    log_id INT AUTO_INCREMENT PRIMARY KEY,
+    user_id INT,
+    activity VARCHAR(255),
+    log_date TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    FOREIGN KEY (user_id) REFERENCES users(user_id)
+);
+
+-- 10. IT FEATURE
+-- Program Coordinator can ONLY create Faculty Employee accounts
+
+DELIMITER $$
+
+CREATE PROCEDURE create_faculty_account (
+    IN creator_id INT,
+    IN faculty_username VARCHAR(50),
+    IN faculty_email VARCHAR(100),
+    IN faculty_password VARCHAR(255)
+)
+BEGIN
+    DECLARE creator_role INT;
+
+    SELECT role_id INTO creator_role
+    FROM users
+    WHERE user_id = creator_id;
+
+    IF creator_role = 2 THEN
+        INSERT INTO users (role_id, username, email, password)
+        VALUES (3, faculty_username, faculty_email, faculty_password);
+    ELSE
+        SIGNAL SQLSTATE '45000'
+        SET MESSAGE_TEXT = 'Access Denied: Only Program Coordinator can create Faculty accounts';
+    END IF;
+END$$
+
+DELIMITER ;
+
+-- 11. Auto-Create Employee Profile for Faculty
+
+DELIMITER $$
+
+CREATE TRIGGER after_faculty_created
+AFTER INSERT ON users
+FOR EACH ROW
+BEGIN
+    IF NEW.role_id = 3 THEN
+        INSERT INTO employees (user_id, full_name, position)
+        VALUES (NEW.user_id, 'Pending Update', 'Faculty Employee');
+    END IF;
+END$$
+
+DELIMITER ;

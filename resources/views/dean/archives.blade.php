@@ -100,30 +100,45 @@
                     </p>
                 </div>
 
-                <form action="{{ route('dean.archives.archive') }}" method="POST" id="archiveForm">
+                {{-- In-modal validation errors --}}
+                @if($errors->any())
+                <div class="bg-red-50 dark:bg-red-900/20 border border-red-200 dark:border-red-800 rounded p-3 mb-4">
+                    <ul class="text-sm text-red-700 dark:text-red-300 list-disc list-inside">
+                        @foreach($errors->all() as $error)
+                            <li>{{ $error }}</li>
+                        @endforeach
+                    </ul>
+                </div>
+                @endif
+
+                <form action="{{ route('dean.archives.archive') }}" method="POST" id="archiveForm" data-request-guard>
                     @csrf
                     <div class="space-y-4">
                         <div>
                             <label class="text-sm font-semibold text-gray-600 dark:text-gray-300 block mb-1">Archive Name</label>
-                            <input type="text" name="archive_name" value="{{ $activeSchoolYear->name }}" class="form-control" required maxlength="50">
+                            <input type="text" name="archive_name" value="{{ old('archive_name', $activeSchoolYear->name) }}" class="form-control" required maxlength="50">
                             <p class="text-xs text-gray-400 mt-1">Name for the archived school year</p>
                         </div>
                         <div>
                             <label class="text-sm font-semibold text-gray-600 dark:text-gray-300 block mb-1">New School Year Name</label>
-                            <input type="text" name="new_name" value="S.Y. {{ $suggestedStartYear }}-{{ $suggestedStartYear + 1 }}" class="form-control" required maxlength="50">
+                            <input type="text" name="new_name" value="{{ old('new_name', 'S.Y. ' . $suggestedStartYear . '-' . ($suggestedStartYear + 1)) }}" class="form-control" required maxlength="50">
                         </div>
                         <div>
                             <label class="text-sm font-semibold text-gray-600 dark:text-gray-300 block mb-1">New School Year Start</label>
-                            <input type="number" name="new_start_year" value="{{ $suggestedStartYear }}" class="form-control" required min="2020" max="2099">
+                            <input type="number" name="new_start_year" value="{{ old('new_start_year', $suggestedStartYear) }}" class="form-control" required min="2020" max="2099">
                             <p class="text-xs text-gray-400 mt-1">The start year of the new school year (e.g. {{ $suggestedStartYear }} for {{ $suggestedStartYear }}-{{ $suggestedStartYear + 1 }})</p>
                         </div>
                     </div>
 
-                    <div class="flex justify-end gap-3 mt-6">
-                        <button type="button" class="btn bg-gray-200 dark:bg-gray-700 text-gray-700 dark:text-gray-300" onclick="document.getElementById('archiveModal').classList.add('hidden')">
+                    <p class="text-xs text-gray-400 dark:text-gray-500 mt-4">
+                        <i class="fas fa-info-circle mr-1"></i>This may take a few seconds. Please click only once and do not refresh the page.
+                    </p>
+
+                    <div class="flex justify-end gap-3 mt-4">
+                        <button type="button" id="archiveCancelBtn" class="btn bg-gray-200 dark:bg-gray-700 text-gray-700 dark:text-gray-300" onclick="document.getElementById('archiveModal').classList.add('hidden')">
                             Cancel
                         </button>
-                        <button type="submit" class="btn btn-danger border-0" onclick="return confirm('Are you absolutely sure? This cannot be undone.')">
+                        <button type="submit" id="archiveSubmitBtn" class="btn btn-danger border-0" onclick="return confirm('Are you absolutely sure? This cannot be undone.')">
                             <i class="fas fa-archive"></i> Confirm Archive
                         </button>
                     </div>
@@ -131,4 +146,12 @@
             </div>
         </div>
     </div>
+
+    @if($errors->any())
+    <script>
+        document.addEventListener('DOMContentLoaded', function () {
+            document.getElementById('archiveModal').classList.remove('hidden');
+        });
+    </script>
+    @endif
 @endsection

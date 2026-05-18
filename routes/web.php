@@ -177,7 +177,7 @@ Route::middleware(['auth', 'no.back', 'role:Dean,Secretary'])->prefix('dean')->n
 
     // Archives (Dean manages + browses)
     Route::get('/archives', [SchoolYearController::class, 'index'])->name('archives.index');
-    Route::post('/archives', [SchoolYearController::class, 'archive'])->middleware('throttle:1,60')->name('archives.archive');
+    Route::post('/archives', [SchoolYearController::class, 'archive'])->middleware('throttle:2,60')->name('archives.archive');
     Route::get('/archives/list', [SchoolYearController::class, 'list'])->name('archives.list');
     Route::get('/archives/{id}', [SchoolYearController::class, 'show'])->name('archives.show');
 });

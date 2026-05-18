@@ -57,7 +57,7 @@ class SchoolYearController extends Controller
 
         // Prevent archiving if a year with that start_year already exists
         if (SchoolYear::where('start_year', $request->new_start_year)->exists()) {
-            return back()->with('error', 'A school year starting in ' . $request->new_start_year . ' already exists.');
+            return back()->withInput()->with('error', 'A school year starting in ' . $request->new_start_year . ' already exists.');
         }
 
         $newSchoolYear = $this->schoolYearService->archive(

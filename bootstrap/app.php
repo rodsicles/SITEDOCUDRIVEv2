@@ -30,6 +30,21 @@ return Application::configure(basePath: dirname(__DIR__))
         $middleware->appendToGroup('web', \App\Http\Middleware\EnsurePasswordChanged::class);
     })
     ->withExceptions(function (Exceptions $exceptions): void {
+        $exceptions->render(function (\Illuminate\Http\Exceptions\ThrottleRequestsException $e, \Illuminate\Http\Request $request) {
+            if ($request->expectsJson()) {
+                return response()->json([
+                    'success' => false,
+                    'message' => 'Too many requests. Please wait a moment before trying again.',
+                ], 429);
+            }
+
+            $seconds = $e->getHeaders()['Retry-After'] ?? 60;
+
+            return redirect()->back()
+                ->with('error', "Too many requests. Please wait about {$seconds} seconds before trying again.")
+                ->withInput();
+        });
+
         $exceptions->render(function (\App\Support\UploadStorageException $e, \Illuminate\Http\Request $request) {
             if ($request->expectsJson()) {
                 return response()->json([

@@ -328,12 +328,6 @@
                             <option value="image">Image File</option>
                         </select>
                     </div>
-                    @unless($useItSubjectPicker)
-                    <div class="form-group">
-                        <label class="form-label">Tags (max 15 characters)</label>
-                        <input type="text" name="tags" id="folderTagsInput" class="form-control" placeholder="e.g. urgent" maxlength="15">
-                    </div>
-                    @endunless
                     @if($useItSubjectPicker)
                     @include('partials.ite-subject-picker', ['pickerId' => 'folderSubjectPicker'])
                     @endif
@@ -536,12 +530,6 @@
             if (docType === 'pdf' && ext !== 'pdf') { alert('File ' + files[i].name + ' is not a PDF.'); return; }
             if (docType === 'word' && !['doc','docx'].includes(ext)) { alert('File ' + files[i].name + ' is not a Word document.'); return; }
             if (docType === 'image' && !['jpg','jpeg','png'].includes(ext)) { alert('File ' + files[i].name + ' is not an image.'); return; }
-        }
-
-        const tagsInput = document.getElementById('folderTagsInput');
-        if (tagsInput) {
-            const tagsVal = tagsInput.value || '';
-            if (tagsVal.trim().length > 15) { alert('Tags max 15 characters.'); return; }
         }
 
         @if($useItSubjectPicker)

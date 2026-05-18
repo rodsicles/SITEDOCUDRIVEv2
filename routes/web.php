@@ -142,10 +142,12 @@ Route::middleware(['auth', 'no.back', 'role:Dean,Secretary'])->prefix('dean')->n
     Route::post('/backup/restore', [BackupController::class, 'restore'])->middleware('throttle:2,60')->name('backup.restore');
     Route::delete('/backup/{filename}', [BackupController::class, 'destroy'])->middleware('throttle:10,60')->name('backup.destroy');
 
-    // Teaching Guides (Dean + Secretary can upload and delete)
+    // Teaching Guides (Dean + Secretary can upload, approve, reject, delete)
     Route::get('/teaching-guides', [TeachingGuideController::class, 'index'])->name('teaching-guides.index');
     Route::post('/teaching-guides', [TeachingGuideController::class, 'store'])->middleware('throttle:6,60')->name('teaching-guides.store');
     Route::get('/teaching-guides/{id}/download', [TeachingGuideController::class, 'download'])->name('teaching-guides.download');
+    Route::post('/teaching-guides/{id}/approve', [TeachingGuideController::class, 'approve'])->middleware('throttle:30,1')->name('teaching-guides.approve');
+    Route::post('/teaching-guides/{id}/reject', [TeachingGuideController::class, 'reject'])->middleware('throttle:30,1')->name('teaching-guides.reject');
     Route::delete('/teaching-guides/{id}', [TeachingGuideController::class, 'destroy'])->name('teaching-guides.destroy');
 
     // Exam Questionnaires

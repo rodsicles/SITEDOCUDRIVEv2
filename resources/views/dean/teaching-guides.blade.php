@@ -76,10 +76,10 @@
                     <th class="w-10"></th>
                     <th>Title</th>
                     <th>Subject</th>
-                    <th>School Year</th>
                     <th>Semester</th>
                     <th>Folder</th>
                     <th>Uploaded By</th>
+                    <th>Approval</th>
                     <th>Date</th>
                     <th>Actions</th>
                 </tr>
@@ -98,16 +98,36 @@
                     </td>
                     <td><strong>{{ $guide->title }}</strong></td>
                     <td><span class="doc-category-badge">{{ $guide->subject }}</span></td>
-                    <td class="text-xs">{{ $guide->academic_year ? 'AY '.$guide->academic_year : '—' }}</td>
                     <td class="text-xs">{{ $guide->semester ?? '—' }}</td>
                     <td class="text-xs text-gray-600 dark:text-gray-400">{{ $guide->folder?->folder_name ?? '—' }}</td>
                     <td>{{ $guide->uploader->employee->full_name ?? $guide->uploader->username }}</td>
+                    <td>
+                        @if($guide->isPending())
+                            <span class="badge" style="background:#b45309;color:#fff;"><i class="fas fa-clock"></i> Not Approved</span>
+                        @elseif($guide->isApproved())
+                            <span class="badge badge-success"><i class="fas fa-check"></i> Approved</span>
+                        @else
+                            <span class="badge badge-danger"><i class="fas fa-times"></i> Rejected</span>
+                            @if($guide->remarks)
+                                <div class="text-xs text-gray-500 mt-1">{{ $guide->remarks }}</div>
+                            @endif
+                        @endif
+                    </td>
                     <td>{{ $guide->created_at->format('M d, Y') }}</td>
                     <td>
                         <div class="doc-action-btns">
                             <a href="{{ route('dean.teaching-guides.download', $guide->id) }}" class="btn btn-success text-xs">
                                 <i class="fas fa-download"></i> Download
                             </a>
+                            @if($guide->isPending())
+                                <form action="{{ route('dean.teaching-guides.approve', $guide->id) }}" method="POST" data-request-guard>
+                                    @csrf
+                                    <button type="submit" class="btn btn-primary text-xs"><i class="fas fa-check"></i> Approve</button>
+                                </form>
+                                <button type="button" class="btn btn-danger text-xs" onclick="openTgRejectModal({{ $guide->id }})">
+                                    <i class="fas fa-times"></i> Reject
+                                </button>
+                            @endif
                             <form action="{{ route('dean.teaching-guides.destroy', $guide->id) }}" method="POST" onsubmit="return confirm('Delete this guide?')" data-request-guard>
                                 @csrf @method('DELETE')
                                 <button type="submit" class="btn btn-danger text-xs"><i class="fas fa-trash"></i></button>
@@ -124,4 +144,35 @@
         </table>
         <div class="mt-5">{{ $guides->links() }}</div>
     </div>
+
+    {{-- Reject Modal --}}
+    <div id="tgRejectModal" style="display:none;position:fixed;inset:0;background:rgba(0,0,0,0.5);z-index:1000;align-items:center;justify-content:center;">
+        <div class="content-card" style="width:100%;max-width:480px;margin:auto;">
+            <div class="card-header">
+                <h3 class="card-title">Reject Teaching Guide</h3>
+                <button onclick="closeTgRejectModal()" class="btn btn-sm bg-gray-200 dark:bg-gray-700"><i class="fas fa-times"></i></button>
+            </div>
+            <form id="tgRejectForm" method="POST">
+                @csrf
+                <div class="p-4">
+                    <label class="form-label">Reason for Rejection <span class="text-red-500">*</span></label>
+                    <textarea name="remarks" class="form-control" rows="3" maxlength="500" required placeholder="Provide feedback..."></textarea>
+                </div>
+                <div class="px-4 pb-4 flex gap-2">
+                    <button type="submit" class="btn btn-danger"><i class="fas fa-times"></i> Reject</button>
+                    <button type="button" onclick="closeTgRejectModal()" class="btn bg-gray-200 dark:bg-gray-700 text-gray-700 dark:text-gray-300">Cancel</button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <script>
+        function openTgRejectModal(id) {
+            document.getElementById('tgRejectForm').action = '{{ url("/dean/teaching-guides") }}/' + id + '/reject';
+            document.getElementById('tgRejectModal').style.display = 'flex';
+        }
+        function closeTgRejectModal() {
+            document.getElementById('tgRejectModal').style.display = 'none';
+        }
+    </script>
 @endsection

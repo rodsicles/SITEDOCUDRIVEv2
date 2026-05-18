@@ -18,6 +18,14 @@ class TeachingGuide extends Model
         'semester',
         'academic_year',
         'description',
+        'status',
+        'reviewed_by',
+        'reviewed_at',
+        'remarks',
+    ];
+
+    protected $casts = [
+        'reviewed_at' => 'datetime',
     ];
 
     public function uploader()
@@ -27,7 +35,7 @@ class TeachingGuide extends Model
 
     public function folder()
     {
-        return $this->belongsTo(\App\Models\Folder::class, 'folder_id', 'folder_id');
+        return $this->belongsTo(Folder::class, 'folder_id', 'folder_id');
     }
 
     public function recipients()
@@ -39,6 +47,26 @@ class TeachingGuide extends Model
     public function document()
     {
         return $this->belongsTo(Document::class, 'document_id', 'document_id');
+    }
+
+    public function reviewer()
+    {
+        return $this->belongsTo(User::class, 'reviewed_by');
+    }
+
+    public function isPending(): bool
+    {
+        return ($this->status ?? 'pending') === 'pending';
+    }
+
+    public function isApproved(): bool
+    {
+        return $this->status === 'approved';
+    }
+
+    public function isRejected(): bool
+    {
+        return $this->status === 'rejected';
     }
 
     public function scopeForUser($query, User $user)

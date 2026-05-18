@@ -66,6 +66,18 @@ class DocumentService
     {
         $query = Document::getFilteredDocuments($user, $categoryFilter);
 
+        $query->where(function ($q) {
+            $q->where(function ($sub) {
+                $sub->where('category', 'Teaching Guides')
+                    ->whereHas('teachingGuide', fn ($tg) => $tg->where('status', 'approved'));
+            })->orWhere(function ($sub) {
+                $sub->where('category', 'Exam Questionnaires')
+                    ->whereHas('examQuestionnaire', fn ($eq) => $eq->where('status', 'approved'));
+            })->orWhere(function ($sub) {
+                $sub->whereNotIn('category', ['Teaching Guides', 'Exam Questionnaires']);
+            })->orWhereNull('category');
+        });
+
         if ($folderFilter !== null) {
             if ($folderFilter === 'uncategorized') {
                 $query->whereNull('folder_id');
@@ -305,7 +317,10 @@ class DocumentService
             }
 
             if ($category === 'Teaching Guides' && $folder) {
-                $this->teachingGuideSync->syncFromDocument($document, $folder, $recipientIds, $subject);
+                $guide = $this->teachingGuideSync->syncFromDocument($document, $folder, $recipientIds, $subject);
+                if ($guide) {
+                    $guide->update(['status' => 'pending']);
+                }
             }
 
             $createdDocuments[] = $document;

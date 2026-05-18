@@ -125,11 +125,10 @@ class TeachingGuideController extends Controller
                     'school_year_id' => SchoolYear::activeId(),
                     'semester' => $validated['semester'],
                     'academic_year' => $academicYear,
+                    'status' => 'pending',
                 ]);
 
                 $this->teachingGuideSync->syncRecipients($guide, $recipientIds);
-                $this->teachingGuideSync->syncDocumentFromGuide($guide, $user, $recipientIds);
-
                 $uploadedCount++;
             }
         } catch (\Throwable $e) {
@@ -146,15 +145,66 @@ class TeachingGuideController extends Controller
                 : "{$uploadedCount} teaching guides in \"{$folder->folder_name}\"";
             $this->notificationService->notifyMany(
                 $recipientIds,
-                "New teaching guide uploaded: {$label}. Check the Teaching Guides section."
+                "New teaching guide uploaded: {$label}. Awaiting Dean approval."
             );
         }
 
         $msg = $uploadedCount === 1
-            ? 'Teaching guide uploaded and faculty notified.'
-            : "{$uploadedCount} teaching guides uploaded and faculty notified.";
+            ? 'Teaching guide submitted for Dean approval.'
+            : "{$uploadedCount} teaching guides submitted for Dean approval.";
 
         return back()->with('success', $msg);
+    }
+
+    public function approve(Request $request, $id)
+    {
+        $user = auth()->user();
+        if (!$user->isDean() && !$user->isSecretary()) {
+            abort(403, 'Only the Dean or Secretary can approve.');
+        }
+
+        $guide = TeachingGuide::findOrFail($id);
+
+        if (!$guide->isPending()) {
+            return back()->with('info', 'This guide has already been reviewed.');
+        }
+
+        $guide->update([
+            'status' => 'approved',
+            'reviewed_by' => $user->id,
+            'reviewed_at' => now(),
+            'remarks' => $request->input('remarks'),
+        ]);
+
+        $recipientIds = $guide->recipients()->pluck('users.id')->all();
+        $this->teachingGuideSync->syncDocumentFromGuide($guide, $user, $recipientIds);
+
+        return back()->with('success', 'Teaching guide approved and now visible in Documents.');
+    }
+
+    public function reject(Request $request, $id)
+    {
+        $user = auth()->user();
+        if (!$user->isDean() && !$user->isSecretary()) {
+            abort(403, 'Only the Dean or Secretary can reject.');
+        }
+
+        $request->validate(['remarks' => 'required|string|max:500']);
+
+        $guide = TeachingGuide::findOrFail($id);
+
+        if (!$guide->isPending()) {
+            return back()->with('info', 'This guide has already been reviewed.');
+        }
+
+        $guide->update([
+            'status' => 'rejected',
+            'reviewed_by' => $user->id,
+            'reviewed_at' => now(),
+            'remarks' => $request->input('remarks'),
+        ]);
+
+        return back()->with('success', 'Teaching guide rejected.');
     }
 
     public function download($id)

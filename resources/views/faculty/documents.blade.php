@@ -17,10 +17,15 @@
     <div class="content-card">
         <div class="card-header">
             <h3 class="card-title">Available Documents</h3>
-            <span class="badge badge-info">{{ $documents->total() }} Files</span>
+            <div class="flex items-center gap-2">
+                <span class="badge badge-info">{{ $documents->total() }} Files</span>
+                <button type="button" class="btn btn-sm bg-gray-200 dark:bg-gray-700 text-gray-700 dark:text-gray-300" onclick="toggleDocFilters()">
+                    <i class="fas fa-filter"></i> Filters
+                </button>
+            </div>
         </div>
 
-        <div class="documents-filter space-y-4">
+        <div id="docFiltersPanel" class="documents-filter space-y-4" style="display:none;">
             <form action="{{ route('faculty.documents') }}" method="GET" class="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-4 gap-3">
                 <input type="hidden" name="folder" value="{{ $folderFilter }}">
                 <input type="hidden" name="tab" value="{{ $tab }}">
@@ -38,10 +43,6 @@
                     <input type="text" name="search" value="{{ request('search') }}" class="form-control text-sm" placeholder="Title or keyword">
                 </div>
                 <div>
-                    <label class="text-xs font-semibold text-gray-600 dark:text-gray-300 block mb-1">Tag</label>
-                    <input type="text" name="tag" value="{{ request('tag') }}" class="form-control text-sm" placeholder="Filter by tag">
-                </div>
-                <div>
                     <label class="text-xs font-semibold text-gray-600 dark:text-gray-300 block mb-1">Uploader</label>
                     <select name="uploaded_by" class="form-control text-sm">
                         <option value="">All Uploaders</option>
@@ -54,11 +55,11 @@
                 </div>
                 <div>
                     <label class="text-xs font-semibold text-gray-600 dark:text-gray-300 block mb-1">Uploaded From</label>
-                    <input type="date" name="date_from" value="{{ request('date_from') }}" class="form-control text-sm" min="{{ (date('Y') - 1) . '-01-01' }}" max="{{ date('Y') . '-12-31' }}">
+                    <input type="date" name="date_from" value="{{ request('date_from') }}" class="form-control text-sm">
                 </div>
                 <div>
                     <label class="text-xs font-semibold text-gray-600 dark:text-gray-300 block mb-1">Uploaded To</label>
-                    <input type="date" name="date_to" value="{{ request('date_to') }}" class="form-control text-sm" min="{{ (date('Y') - 1) . '-01-01' }}" max="{{ date('Y') . '-12-31' }}">
+                    <input type="date" name="date_to" value="{{ request('date_to') }}" class="form-control text-sm">
                 </div>
                 <div class="flex items-end gap-2 md:col-span-2">
                     <button type="submit" class="btn btn-primary text-sm">
@@ -77,7 +78,6 @@
                     <input type="hidden" name="folder" value="{{ $folderFilter }}">
                     <input type="hidden" name="tab" value="{{ $tab }}">
                     <input type="hidden" name="search" value="{{ request('search') }}">
-                    <input type="hidden" name="tag" value="{{ request('tag') }}">
                     <input type="hidden" name="uploaded_by" value="{{ request('uploaded_by') }}">
                     <input type="hidden" name="date_from" value="{{ request('date_from') }}">
                     <input type="hidden" name="date_to" value="{{ request('date_to') }}">
@@ -207,6 +207,14 @@
 
 @push('scripts')
 <script>
+function toggleDocFilters() {
+    var panel = document.getElementById('docFiltersPanel');
+    if (panel.style.display === 'none') {
+        panel.style.display = 'block';
+    } else {
+        panel.style.display = 'none';
+    }
+}
 function confirmDelete(id) {
     Swal.fire({
         title: 'Delete Document?',

@@ -14,6 +14,7 @@ class TeachingGuide extends Model
         'subject',
         'folder_id',
         'document_id',
+        'school_year_id',
         'semester',
         'academic_year',
         'description',

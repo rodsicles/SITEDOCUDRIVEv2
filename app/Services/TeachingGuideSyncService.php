@@ -4,6 +4,7 @@ namespace App\Services;
 
 use App\Models\Document;
 use App\Models\Folder;
+use App\Models\SchoolYear;
 use App\Models\TeachingGuide;
 use App\Models\User;
 
@@ -51,6 +52,7 @@ class TeachingGuideSyncService
                 'file_type' => $document->document_type === 'pdf' ? 'pdf' : 'word',
                 'subject' => $subject ?? $document->document_title,
                 'folder_id' => $document->folder_id,
+                'school_year_id' => $document->school_year_id ?? SchoolYear::activeId(),
                 'semester' => $this->semesterFromFolder($folder),
                 'academic_year' => $this->academicYearFromFolder($folder),
             ]
@@ -76,6 +78,7 @@ class TeachingGuideSyncService
                 'file_size' => 0,
                 'document_type' => $guide->file_type,
                 'category' => 'Teaching Guides',
+                'school_year_id' => $guide->school_year_id ?? SchoolYear::activeId(),
                 'tags' => 'teaching-guide',
             ]
         );

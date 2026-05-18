@@ -3,6 +3,7 @@
 namespace App\Http\Controllers;
 
 use App\Models\ExamQuestionnaire;
+use App\Models\SchoolYear;
 use App\Services\AcademicHierarchyService;
 use App\Services\ExamQuestionnaireSyncService;
 use App\Support\AcademicYear;
@@ -112,6 +113,7 @@ class ExamQuestionnaireController extends Controller
                 'file_type' => $fileType,
                 'subject' => $validated['subject'],
                 'exam_type' => $validated['exam_type'],
+                'school_year_id' => SchoolYear::activeId(),
                 'semester' => $semester,
                 'academic_year' => $academicYear,
                 'status' => 'pending',

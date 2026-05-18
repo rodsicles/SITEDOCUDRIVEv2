@@ -3,6 +3,7 @@
 namespace App\Console\Commands;
 
 use App\Models\Folder;
+use App\Models\SchoolYear;
 use Database\Seeders\SystemFolderSeeder;
 use Illuminate\Console\Command;
 
@@ -25,6 +26,8 @@ class CreateSchoolYearFolders extends Command
             'eq' => 'eq-category',
         ];
 
+        $schoolYearId = SchoolYear::where('start_year', $startYear)->value('id');
+
         foreach ($roots as $prefix => $rootSlug) {
             $root = Folder::where('slug', $rootSlug)->first();
 
@@ -43,31 +46,33 @@ class CreateSchoolYearFolders extends Command
                 }
 
                 $semFolder = Folder::create([
-                    'folder_name' => $semData['name'],
-                    'slug'        => $semData['slug'],
-                    'parent_id'   => $root->folder_id,
-                    'user_id'     => null,
-                    'color'       => '#028a0f',
-                    'is_system'   => true,
-                    'level'       => 1,
-                    'sort_order'  => $semOrder,
+                    'folder_name'    => $semData['name'],
+                    'slug'           => $semData['slug'],
+                    'parent_id'      => $root->folder_id,
+                    'user_id'        => null,
+                    'color'          => '#028a0f',
+                    'is_system'      => true,
+                    'level'          => 1,
+                    'sort_order'     => $semOrder,
+                    'school_year_id' => $schoolYearId,
                 ]);
 
                 $this->line("  Created: {$semData['name']}");
 
-                foreach ($semData['children'] as $examOrder => $examData) {
+                foreach ($semData['children'] as $subOrder => $subData) {
                     Folder::create([
-                        'folder_name' => $examData['name'],
-                        'slug'        => $examData['slug'],
-                        'parent_id'   => $semFolder->folder_id,
-                        'user_id'     => null,
-                        'color'       => '#028a0f',
-                        'is_system'   => true,
-                        'level'       => 2,
-                        'sort_order'  => $examOrder,
+                        'folder_name'    => $subData['name'],
+                        'slug'           => $subData['slug'],
+                        'parent_id'      => $semFolder->folder_id,
+                        'user_id'        => null,
+                        'color'          => '#028a0f',
+                        'is_system'      => true,
+                        'level'          => 2,
+                        'sort_order'     => $subOrder,
+                        'school_year_id' => $schoolYearId,
                     ]);
 
-                    $this->line("    Created: {$examData['name']}");
+                    $this->line("    Created: {$subData['name']}");
                 }
             }
         }

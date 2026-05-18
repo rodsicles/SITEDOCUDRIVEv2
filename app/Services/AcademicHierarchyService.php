@@ -3,6 +3,7 @@
 namespace App\Services;
 
 use App\Models\Folder;
+use App\Models\SchoolYear;
 use App\Support\AcademicYear;
 use App\Support\IteSubjects;
 use Database\Seeders\SystemFolderSeeder;
@@ -40,11 +41,13 @@ class AcademicHierarchyService
             return;
         }
 
+        $schoolYearId = SchoolYear::where('start_year', $startYear)->value('id');
+
         $semesters = SystemFolderSeeder::buildSchoolYearFolders($prefix, $startYear);
         foreach ($semesters as $semOrder => $semData) {
-            $semFolder = $this->firstOrCreateSystemFolder($semData, $root->folder_id, 1, $semOrder);
-            foreach ($semData['children'] ?? [] as $examOrder => $examData) {
-                $this->firstOrCreateSystemFolder($examData, $semFolder->folder_id, 2, $examOrder);
+            $semFolder = $this->firstOrCreateSystemFolder($semData, $root->folder_id, 1, $semOrder, $schoolYearId);
+            foreach ($semData['children'] ?? [] as $subOrder => $subData) {
+                $this->firstOrCreateSystemFolder($subData, $semFolder->folder_id, 2, $subOrder, $schoolYearId);
             }
         }
     }
@@ -144,7 +147,7 @@ class AcademicHierarchyService
         ], $guideFolder->folder_id, 5, 0);
     }
 
-    protected function firstOrCreateSystemFolder(array $data, int $parentId, int $level, int $sortOrder): Folder
+    protected function firstOrCreateSystemFolder(array $data, int $parentId, int $level, int $sortOrder, ?int $schoolYearId = null): Folder
     {
         return Folder::firstOrCreate(
             ['slug' => $data['slug']],
@@ -156,6 +159,7 @@ class AcademicHierarchyService
                 'is_system' => true,
                 'level' => $level,
                 'sort_order' => $sortOrder,
+                'school_year_id' => $schoolYearId,
             ]
         );
     }

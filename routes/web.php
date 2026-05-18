@@ -16,6 +16,7 @@ use App\Http\Controllers\ExamQuestionnaireController;
 use App\Http\Controllers\DocumentFilterController;
 use App\Http\Controllers\DocumentRecipientController;
 use App\Http\Controllers\TaskAttachmentController;
+use App\Http\Controllers\SchoolYearController;
 
 // Authentication Routes
 Route::get('/', [AuthController::class, 'showLogin'])->name('login');
@@ -153,6 +154,12 @@ Route::middleware(['auth', 'no.back', 'role:Dean,Secretary'])->prefix('dean')->n
     Route::get('/exam-questionnaires/{id}/download', [ExamQuestionnaireController::class, 'download'])->name('exam-questionnaires.download');
     Route::post('/exam-questionnaires/{id}/approve', [ExamQuestionnaireController::class, 'approve'])->middleware('throttle:30,1')->name('exam-questionnaires.approve');
     Route::post('/exam-questionnaires/{id}/reject', [ExamQuestionnaireController::class, 'reject'])->middleware('throttle:30,1')->name('exam-questionnaires.reject');
+
+    // Archives (Dean manages + browses)
+    Route::get('/archives', [SchoolYearController::class, 'index'])->name('archives.index');
+    Route::post('/archives', [SchoolYearController::class, 'archive'])->middleware('throttle:1,60')->name('archives.archive');
+    Route::get('/archives/list', [SchoolYearController::class, 'list'])->name('archives.list');
+    Route::get('/archives/{id}', [SchoolYearController::class, 'show'])->name('archives.show');
 });
 
 // Program Coordinator Routes
@@ -200,6 +207,10 @@ Route::middleware(['auth', 'no.back', 'role:Program Coordinator'])->prefix('coor
     Route::post('/exam-questionnaires/{id}/approve', [ExamQuestionnaireController::class, 'approve'])->middleware('throttle:30,1')->name('exam-questionnaires.approve');
     Route::post('/exam-questionnaires/{id}/reject', [ExamQuestionnaireController::class, 'reject'])->middleware('throttle:30,1')->name('exam-questionnaires.reject');
     Route::get('/activity-log', [CoordinatorController::class, 'activityLog'])->name('activity-log');
+
+    // Archives (browse only)
+    Route::get('/archives', [SchoolYearController::class, 'list'])->name('archives.list');
+    Route::get('/archives/{id}', [SchoolYearController::class, 'show'])->name('archives.show');
 });
 
 // Faculty Employee Routes
@@ -241,4 +252,8 @@ Route::middleware(['auth', 'no.back', 'role:Faculty Employee'])->prefix('faculty
     Route::get('/exam-questionnaires/{id}/download', [ExamQuestionnaireController::class, 'download'])->name('exam-questionnaires.download');
     Route::delete('/exam-questionnaires/{id}', [ExamQuestionnaireController::class, 'destroy'])->name('exam-questionnaires.destroy');
     Route::get('/activity-log', [FacultyController::class, 'activityLog'])->name('activity-log');
+
+    // Archives (browse only)
+    Route::get('/archives', [SchoolYearController::class, 'list'])->name('archives.list');
+    Route::get('/archives/{id}', [SchoolYearController::class, 'show'])->name('archives.show');
 });

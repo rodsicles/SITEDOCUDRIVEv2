@@ -22,6 +22,7 @@ class Document extends Model
         'document_type',
         'category',
         'category_id',
+        'school_year_id',
         'tags',
     ];
 

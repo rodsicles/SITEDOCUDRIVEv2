@@ -30,3 +30,6 @@
 <a href="{{ route('coordinator.exam-questionnaires.index') }}" class="menu-item {{ request()->routeIs('coordinator.exam-questionnaires.*') ? 'active' : '' }}">
     <i class="fas fa-file-alt"></i> Exam Questionnaires
 </a>
+<a href="{{ route('coordinator.archives.list') }}" class="menu-item {{ request()->routeIs('coordinator.archives.*') ? 'active' : '' }}">
+    <i class="fas fa-box-archive"></i> Archives
+</a>

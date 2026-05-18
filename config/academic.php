@@ -1,7 +1,7 @@
 <?php
 
 return [
-    'school_years' => [2023, 2024, 2025, 2026, 2027],
+    'school_years' => [2025],
 
     'assessment_periods' => [
         'prelims' => 'Prelims',

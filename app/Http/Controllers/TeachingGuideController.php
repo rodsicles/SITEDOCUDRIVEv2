@@ -3,6 +3,7 @@
 namespace App\Http\Controllers;
 
 use App\Models\Folder;
+use App\Models\SchoolYear;
 use App\Models\TeachingGuide;
 use App\Services\AcademicHierarchyService;
 use App\Services\NotificationService;
@@ -126,6 +127,7 @@ class TeachingGuideController extends Controller
                     'file_type' => $fileType,
                     'subject' => $validated['subject'],
                     'folder_id' => $folder->folder_id,
+                    'school_year_id' => SchoolYear::activeId(),
                     'semester' => $validated['semester'],
                     'academic_year' => $academicYear,
                 ]);

@@ -5,6 +5,7 @@ namespace App\Models;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Relations\HasMany;
+use App\Models\SchoolYear;
 
 class Folder extends Model
 {
@@ -19,6 +20,7 @@ class Folder extends Model
         'level',
         'sort_order',
         'slug',
+        'school_year_id',
     ];
 
     protected $casts = [
@@ -55,6 +57,11 @@ class Folder extends Model
     public function documents(): HasMany
     {
         return $this->hasMany(Document::class, 'folder_id', 'folder_id');
+    }
+
+    public function schoolYear(): BelongsTo
+    {
+        return $this->belongsTo(SchoolYear::class);
     }
 
     /**

@@ -36,3 +36,6 @@
 <a href="{{ route('dean.exam-questionnaires.index') }}" class="menu-item {{ request()->routeIs('dean.exam-questionnaires.*') ? 'active' : '' }}">
     <i class="fas fa-file-alt"></i> Exam Questionnaires
 </a>
+<a href="{{ route('dean.archives.index') }}" class="menu-item {{ request()->routeIs('dean.archives.*') ? 'active' : '' }}">
+    <i class="fas fa-box-archive"></i> Archives
+</a>

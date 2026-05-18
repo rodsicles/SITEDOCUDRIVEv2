@@ -68,6 +68,13 @@
             }
         }
 
+        if (in_array($activeTab, ['teaching-guides', 'exam-questionnaires'], true) && !isset($currentFolder)) {
+            $activeSchoolYearId = \App\Models\SchoolYear::activeId();
+            $displayFolders = $displayFolders->filter(
+                fn ($f) => $f->school_year_id === $activeSchoolYearId
+            );
+        }
+
         if ($displayFolders->isNotEmpty()) {
             $displayFolders = app(\App\Services\FolderService::class)
                 ->attachSubtreeDocumentCounts($displayFolders, $documentViewer);

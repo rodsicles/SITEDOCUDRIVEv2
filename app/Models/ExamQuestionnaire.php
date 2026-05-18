@@ -14,6 +14,7 @@ class ExamQuestionnaire extends Model
         'file_type',
         'subject',
         'exam_type',
+        'school_year_id',
         'semester',
         'academic_year',
         'status',

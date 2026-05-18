@@ -3,6 +3,7 @@
 namespace Database\Seeders;
 
 use App\Models\Folder;
+use App\Models\SchoolYear;
 use Illuminate\Database\Seeder;
 
 class SystemFolderSeeder extends Seeder
@@ -71,10 +72,16 @@ class SystemFolderSeeder extends Seeder
      */
     public static function buildArchiveSchoolYears(string $prefix): array
     {
-        $years = config('academic.school_years', [2023, 2024, 2025, 2026, 2027]);
+        $years = config('academic.school_years', [2025]);
         $folders = [];
         foreach ($years as $startYear) {
-            $folders = array_merge($folders, self::buildSchoolYearFolders($prefix, $startYear));
+            $schoolYearId = SchoolYear::where('start_year', $startYear)->value('id');
+            $built = self::buildSchoolYearFolders($prefix, $startYear);
+            foreach ($built as &$sem) {
+                $sem['school_year_id'] = $schoolYearId;
+            }
+            unset($sem);
+            $folders = array_merge($folders, $built);
         }
 
         return $folders;
@@ -85,45 +92,59 @@ class SystemFolderSeeder extends Seeder
         $endYear = $startYear + 1;
         $ay      = "AY {$startYear}-{$endYear}";
 
+        if ($prefix === 'tg') {
+            $subfolders = [
+                ['name' => 'TG',  'slug_suffix' => 'tg'],
+                ['name' => 'LB',  'slug_suffix' => 'lb'],
+            ];
+        } else {
+            $subfolders = [
+                ['name' => 'TOS (Table of Specification)', 'slug_suffix' => 'tos'],
+                ['name' => 'TOQ (Table of Question)',      'slug_suffix' => 'toq'],
+            ];
+        }
+
         return [
             [
-                'name' => "1st Semester {$ay} (Aug {$startYear} - Jan {$endYear})",
+                'name' => "1st Semester {$ay}",
                 'slug' => "{$prefix}-1st-{$startYear}-{$endYear}",
-                'children' => [
-                    ['name' => 'Prelims',  'slug' => "{$prefix}-1st-{$startYear}-{$endYear}-prelims"],
-                    ['name' => 'Midterms', 'slug' => "{$prefix}-1st-{$startYear}-{$endYear}-midterms"],
-                    ['name' => 'Finals',   'slug' => "{$prefix}-1st-{$startYear}-{$endYear}-finals"],
-                ],
+                'children' => array_map(fn ($sf) => [
+                    'name' => $sf['name'],
+                    'slug' => "{$prefix}-1st-{$startYear}-{$endYear}-{$sf['slug_suffix']}",
+                ], $subfolders),
             ],
             [
-                'name' => "2nd Semester {$ay} (Feb {$endYear} - Jun {$endYear})",
+                'name' => "2nd Semester {$ay}",
                 'slug' => "{$prefix}-2nd-{$startYear}-{$endYear}",
-                'children' => [
-                    ['name' => 'Prelims',  'slug' => "{$prefix}-2nd-{$startYear}-{$endYear}-prelims"],
-                    ['name' => 'Midterms', 'slug' => "{$prefix}-2nd-{$startYear}-{$endYear}-midterms"],
-                    ['name' => 'Finals',   'slug' => "{$prefix}-2nd-{$startYear}-{$endYear}-finals"],
-                ],
+                'children' => array_map(fn ($sf) => [
+                    'name' => $sf['name'],
+                    'slug' => "{$prefix}-2nd-{$startYear}-{$endYear}-{$sf['slug_suffix']}",
+                ], $subfolders),
             ],
         ];
     }
 
     private function createFolder(array $data, ?int $parentId, int $level, int $sortOrder): void
     {
+        $schoolYearId = $data['school_year_id'] ?? null;
+
         $folder = Folder::firstOrCreate(
             ['slug' => $data['slug']],
             [
-                'folder_name' => $data['name'],
-                'parent_id'   => $parentId,
-                'user_id'     => null,
-                'color'       => '#028a0f',
-                'is_system'   => true,
-                'level'       => $level,
-                'sort_order'  => $sortOrder,
+                'folder_name'    => $data['name'],
+                'parent_id'      => $parentId,
+                'user_id'        => null,
+                'color'          => '#028a0f',
+                'is_system'      => true,
+                'level'          => $level,
+                'sort_order'     => $sortOrder,
+                'school_year_id' => $schoolYearId,
             ]
         );
 
         if (!empty($data['children'])) {
             foreach ($data['children'] as $childSort => $child) {
+                $child['school_year_id'] = $schoolYearId;
                 $this->createFolder($child, $folder->folder_id, $level + 1, $childSort);
             }
         }

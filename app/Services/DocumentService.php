@@ -10,6 +10,7 @@ use App\Models\Folder;
 use App\Models\User;
 use App\Services\NotificationService;
 use App\Services\TeachingGuideSyncService;
+use App\Models\SchoolYear;
 use App\Support\AcademicYear;
 use App\Support\UploadStorage;
 use Illuminate\Support\Collection;
@@ -295,6 +296,7 @@ class DocumentService
                 'file_size' => (int) ($file->getSize() ?? 0),
                 'document_type' => $validated['document_type'],
                 'category' => $category,
+                'school_year_id' => SchoolYear::activeId(),
                 'tags' => in_array($category, Document::SHAREABLE_CATEGORIES, true) ? '' : $tags,
             ]);
 

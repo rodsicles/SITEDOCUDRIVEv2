@@ -14,9 +14,14 @@
     @include('partials.folder-tree')
 
     @php
+        $hierarchy = app(\App\Services\AcademicHierarchyService::class);
         $hideDocumentsList = isset($currentFolder)
             && $currentFolder
-            && app(\App\Services\AcademicHierarchyService::class)->isSemesterTypeLeafFolder($currentFolder);
+            && (
+                $hierarchy->isSemesterTypeLeafFolder($currentFolder)
+                || $hierarchy->isTgSemesterFolder($currentFolder)
+                || $hierarchy->isTgSubjectFolder($currentFolder)
+            );
     @endphp
 
     @if(!$hideDocumentsList)

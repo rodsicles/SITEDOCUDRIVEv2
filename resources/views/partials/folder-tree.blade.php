@@ -84,11 +84,87 @@
             $isTypeLeafFolder = $isTypeLeafFolder && !$isCourseFolder;
             $isLeafFolder = $isCourseFolder || (!$isTypeLeafFolder && $displayFolders->isEmpty());
         }
-        $useCourseSelect = $isTypeLeafFolder && $shareableCategoryTab;
-        $useCourseFolderUpload = $isCourseFolder && $shareableCategoryTab;
+        $isTgSemesterFolder = isset($currentFolder)
+            && $currentFolder
+            && $activeTab === 'teaching-guides'
+            && $academicHierarchy->isTgSemesterFolder($currentFolder);
+        $isTgSubjectFolder = isset($currentFolder)
+            && $currentFolder
+            && $academicHierarchy->isTgSubjectFolder($currentFolder);
+        $isTgUploadLeaf = isset($currentFolder)
+            && $currentFolder
+            && $academicHierarchy->isTgUploadLeafFolder($currentFolder);
+
+        if (isset($currentFolder) && $currentFolder && $activeTab === 'teaching-guides') {
+            if ($isTgUploadLeaf) {
+                $isLeafFolder = true;
+            } elseif ($isTgSubjectFolder) {
+                $isLeafFolder = false;
+            } elseif ($isTgSemesterFolder) {
+                $isLeafFolder = false;
+            }
+        }
+
+        $useCourseSelect = $isTypeLeafFolder && $shareableCategoryTab && $activeTab === 'exam-questionnaires';
+        $useCourseFolderUpload = $isCourseFolder && $shareableCategoryTab && $activeTab === 'exam-questionnaires';
+        $useTgUploadLeaf = $isTgUploadLeaf && $shareableCategoryTab;
     @endphp
 
-    @if($isTypeLeafFolder)
+    @if($isTgSemesterFolder)
+        {{-- TG: Semester → pick subject → auto-create Subject/TG/LB --}}
+        <div class="px-6 py-4">
+            <div class="text-sm text-gray-600 dark:text-gray-400 mb-4">
+                <i class="fas fa-graduation-cap mr-1"></i>
+                Select a subject to open its folder (TG and LB are created automatically).
+            </div>
+
+            @include('partials.tg-semester-subject-form')
+
+            <div class="folder-container-new flex gap-3 flex-wrap mt-4">
+                @forelse($displayFolders as $folder)
+                <div class="folder-card-new">
+                    <a href="{{ route($docsRoute, ['tab' => $tab, 'folder' => $folder->folder_id]) }}" class="folder-card-link-new">
+                        <div class="folder-icon-new" style="background-color: #028a0f; color: white;">
+                            <i class="fas fa-folder"></i>
+                        </div>
+                        <div class="folder-info-new">
+                            <div class="folder-name-new">{{ $folder->folder_name }}</div>
+                            <div class="folder-count-new">{{ $folder->documents_count }} Files</div>
+                        </div>
+                    </a>
+                </div>
+                @empty
+                <p class="text-sm text-gray-500 dark:text-gray-400 w-full py-4 text-center">
+                    No subject folders yet. Choose a subject above to get started.
+                </p>
+                @endforelse
+            </div>
+        </div>
+    @elseif($isTgSubjectFolder)
+        {{-- TG: Subject folder → TG and LB only --}}
+        <div class="px-6 py-4">
+            <div class="text-sm text-gray-600 dark:text-gray-400 mb-4">
+                <i class="fas fa-book mr-1"></i> {{ $currentFolder->folder_name }} — open <strong>TG</strong> or <strong>LB</strong> to upload files.
+            </div>
+            <div class="folder-container-new flex gap-3 flex-wrap">
+                @forelse($displayFolders as $folder)
+                <div class="folder-card-new">
+                    <a href="{{ route($docsRoute, ['tab' => $tab, 'folder' => $folder->folder_id]) }}" class="folder-card-link-new">
+                        <div class="folder-icon-new" style="background-color: #028a0f; color: white;">
+                            <i class="fas fa-folder"></i>
+                        </div>
+                        <div class="folder-info-new">
+                            <div class="folder-name-new">{{ $folder->folder_name }}</div>
+                            <div class="folder-count-new">{{ $folder->documents_count }} Files</div>
+                        </div>
+                    </a>
+                </div>
+                @empty
+                <p class="text-sm text-gray-500 dark:text-gray-400 w-full py-4 text-center">TG and LB folders are being prepared.</p>
+                @endforelse
+            </div>
+        </div>
+    @elseif($isTypeLeafFolder)
         {{-- TYPE LEAF (TG/LB/TOS/TOQ): course folders + upload with course picker --}}
         <div class="px-6 py-4">
             <div class="flex items-center justify-between mb-4">
@@ -147,7 +223,7 @@
                         <i class="fas fa-plus-circle mr-1"></i> Record Passers
                     </button>
                     @endif
-                    @if(!($isTypeLeafFolder ?? false) && !($useCourseFolderUpload ?? false))
+                    @if(!($isTypeLeafFolder ?? false) && !($useCourseFolderUpload ?? false) && !($isTgUploadLeaf ?? false) && !($isTgSemesterFolder ?? false) && !($isTgSubjectFolder ?? false))
                     <button type="button" id="btnCreateFolder" onclick="toggleCreateSubfolder()" class="btn btn-primary doc-action-btn" aria-pressed="false">
                         <i class="fas fa-folder-plus mr-1"></i> Create Folder
                     </button>
@@ -369,81 +445,34 @@
                 @endif
             @endif
 
+            @if($isTgUploadLeaf ?? false)
+                @php
+                    $pendingTgGuides = \App\Models\TeachingGuide::query()
+                        ->where('folder_id', $currentFolder->folder_id)
+                        ->where('status', 'pending')
+                        ->when($role === 'faculty', fn ($q) => $q->where('user_id', auth()->id()))
+                        ->orderByDesc('created_at')
+                        ->get();
+                @endphp
+                @if($pendingTgGuides->isNotEmpty())
+                <div class="mb-4 p-4 border border-amber-200 dark:border-amber-800 bg-amber-50 dark:bg-amber-950/30">
+                    <h4 class="text-sm font-semibold text-amber-900 dark:text-amber-200 mb-2">
+                        <i class="fas fa-clock mr-1"></i> Pending Dean approval ({{ $pendingTgGuides->count() }})
+                    </h4>
+                    <ul class="text-sm text-gray-700 dark:text-gray-300 space-y-1">
+                        @foreach($pendingTgGuides as $guide)
+                        <li>
+                            <strong>{{ $guide->title }}</strong>
+                            <span class="text-xs text-gray-500">— uploaded {{ $guide->created_at->format('M d, Y') }}</span>
+                        </li>
+                        @endforeach
+                    </ul>
+                </div>
+                @endif
+            @endif
+
             @if($canUpload)
-            <form action="{{ route($role . '.upload-document') }}" method="POST" enctype="multipart/form-data" id="folderUploadForm" class="hidden mb-4 overflow-visible" style="border: 1px solid #e0e0e0; padding: 16px; background: #f9fafb;">
-                @csrf
-                <input type="hidden" name="folder_id" value="{{ $currentFolder->folder_id }}">
-                <div class="grid grid-cols-1 md:grid-cols-2 gap-4 mb-4">
-                    @if($useCourseSelect)
-                    @include('partials.ite-subject-picker', [
-                        'pickerId' => 'folderCoursePicker',
-                        'subjects' => \App\Support\IteSubjects::labelsForUser(auth()->user()),
-                    ])
-                    <div class="form-group">
-                        <label class="form-label">File Name <span class="text-red-500">*</span></label>
-                        <input type="text" name="document_title" class="form-control" placeholder="Enter file name" required maxlength="13" value="{{ old('document_title') }}">
-                        <p class="text-xs text-gray-500 dark:text-gray-400 mt-1">A course folder will be created automatically from your selection.</p>
-                    </div>
-                    @elseif($useCourseFolderUpload ?? false)
-                    <div class="form-group md:col-span-2">
-                        <label class="form-label">Course</label>
-                        <input type="text" class="form-control bg-gray-100 dark:bg-gray-800" value="{{ $currentFolder->folder_name }}" readonly>
-                    </div>
-                    <div class="form-group">
-                        <label class="form-label">File Name <span class="text-red-500">*</span></label>
-                        <input type="text" name="document_title" class="form-control" placeholder="Enter file name" required maxlength="13" value="{{ old('document_title') }}">
-                    </div>
-                    @else
-                    <div class="form-group">
-                        <label class="form-label">Document Title *</label>
-                        <input type="text" name="document_title" class="form-control" placeholder="Enter document title" required maxlength="13">
-                    </div>
-                    @endif
-                    <div class="form-group">
-                        <label class="form-label">Document Type *</label>
-                        <select name="document_type" id="folderDocType" class="form-control" required>
-                            <option value="">Select Document Type</option>
-                            <option value="pdf">PDF Document</option>
-                            @if(!($useCourseSelect && $activeTab === 'exam-questionnaires'))
-                            <option value="word">Word Document</option>
-                            <option value="image">Image File</option>
-                            @endif
-                        </select>
-                    </div>
-                    @if($useItSubjectPicker && !$useCourseSelect)
-                    @include('partials.ite-subject-picker', ['pickerId' => 'folderSubjectPicker'])
-                    @endif
-                    @if($activeTab === 'exam-questionnaires')
-                    <div class="form-group">
-                        <label class="form-label">Exam Type <span class="text-red-500">*</span></label>
-                        <select name="exam_type" class="form-control" required>
-                            <option value="">-- Select Exam Type --</option>
-                            @foreach(['Quiz','Prelim','Midterm','Pre-Final','Final'] as $type)
-                                <option value="{{ $type }}" {{ old('exam_type') === $type ? 'selected' : '' }}>{{ $type }}</option>
-                            @endforeach
-                        </select>
-                    </div>
-                    @endif
-                    @if($shareableUploadTab)
-                    @include('partials.recipient-picker', ['pickerId' => 'folderRecipientPicker', 'role' => $role])
-                    @endif
-                    <div class="form-group">
-                        <label class="form-label">Choose Files * (Max 3)</label>
-                        <input type="file" name="documents[]" id="folderFileInput" class="form-control" multiple required disabled data-dropzone="1">
-                        <small id="folderFileHelp" class="text-xs text-gray-500 dark:text-gray-400 mt-1">
-                            <i class="fas fa-lock"></i> Select Document Type first
-                        </small>
-                    </div>
-                </div>
-                <div class="flex gap-2">
-                    <button type="submit" class="btn btn-primary">
-                        <i class="fas fa-upload"></i> Upload
-                    </button>
-                    <button type="button" onclick="toggleFolderUpload()" class="btn btn-sm bg-gray-200 dark:bg-gray-700 text-gray-700 dark:text-gray-300">
-                        Cancel
-                    </button>
-                </div>
-            </form>
+            @include('partials.folder-tree-upload-form')
             @endif
         </div>
     @else

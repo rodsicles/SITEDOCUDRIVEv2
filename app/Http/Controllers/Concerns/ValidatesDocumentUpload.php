@@ -22,6 +22,7 @@ trait ValidatesDocumentUpload
             && in_array($category, Document::SHAREABLE_CATEGORIES, true)
             && $hierarchy->isSemesterTypeLeafFolder($folder);
         $isCourseFolder = $folder && $hierarchy->isCourseSubfolder($folder);
+        $isTgUploadLeaf = $folder && $hierarchy->isTgUploadLeafFolder($folder);
         $useCourseSelect = $isTypeLeafFolder;
         $user = auth()->user();
 
@@ -39,6 +40,8 @@ trait ValidatesDocumentUpload
         if ($useCourseSelect) {
             $rules['subject'] = ['required', 'string', Rule::in(IteSubjects::labelsForUser($user))];
             $rules['document_title'] = 'required|string|max:13';
+        } elseif ($isTgUploadLeaf) {
+            $rules['document_title'] = 'required|string|max:13';
         } elseif ($isCourseFolder) {
             $rules['document_title'] = 'required|string|max:13';
         } else {
@@ -53,8 +56,12 @@ trait ValidatesDocumentUpload
                 $rules['recipient_ids.*'] = 'integer|exists:users,id';
             }
 
-            if (!$useCourseSelect && !$isCourseFolder && IteSubjects::shouldUseSubjectPicker($user, true)) {
+            if (!$useCourseSelect && !$isCourseFolder && !$isTgUploadLeaf && IteSubjects::shouldUseSubjectPicker($user, true)) {
                 $rules['subject'] = ['required', 'string', Rule::in(IteSubjects::labelsForUser($user))];
+            }
+
+            if ($category === 'Teaching Guides' && $isTgUploadLeaf) {
+                $rules['documents.*'] = 'required|file|max:10240|mimes:pdf,doc,docx|mimetypes:application/pdf,application/msword,application/vnd.openxmlformats-officedocument.wordprocessingml.document';
             }
 
             if ($category === 'Exam Questionnaires') {
@@ -69,6 +76,11 @@ trait ValidatesDocumentUpload
 
         if ($isCourseFolder && empty($validated['subject'] ?? null)) {
             $validated['subject'] = $folder->folder_name;
+        }
+
+        if ($isTgUploadLeaf) {
+            $validated['subject'] = $hierarchy->subjectLabelFromTgUploadFolder($folder)
+                ?? $folder->parent?->folder_name;
         }
 
         return $validated;

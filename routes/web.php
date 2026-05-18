@@ -19,6 +19,7 @@ use App\Http\Controllers\TaskAttachmentController;
 use App\Http\Controllers\SchoolYearController;
 use App\Http\Controllers\AnalyticsController;
 use App\Http\Controllers\DeanCourseController;
+use App\Http\Controllers\TgSubjectFolderController;
 
 // Authentication Routes
 Route::get('/', [AuthController::class, 'showLogin'])->name('login');
@@ -41,6 +42,11 @@ Route::middleware('auth')->group(function () {
 
 // Global Search (All authenticated users)
 Route::get('/search', [SearchController::class, 'search'])->middleware(['auth', 'no.back', 'throttle:20,1'])->name('search');
+
+// Teaching Guides: open or create subject folder (TG/LB) from semester picker
+Route::post('/documents/open-tg-subject', [TgSubjectFolderController::class, 'store'])
+    ->middleware(['auth', 'no.back', 'throttle:30,1'])
+    ->name('documents.open-tg-subject');
 
 // Profile Management (All authenticated users)
 Route::middleware(['auth', 'no.back'])->prefix('profile')->name('profile.')->group(function () {

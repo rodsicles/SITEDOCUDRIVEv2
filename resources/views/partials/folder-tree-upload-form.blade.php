@@ -12,6 +12,16 @@
                 <input type="text" name="document_title" class="form-control" placeholder="Enter file name" required maxlength="13" value="{{ old('document_title') }}">
                 <p class="text-xs text-gray-500 dark:text-gray-400 mt-1">A course folder will be created from your selection if it does not exist yet.</p>
             </div>
+        @elseif($useTgUploadLeaf ?? false)
+            <div class="form-group md:col-span-2">
+                <label class="form-label">Subject</label>
+                <input type="text" class="form-control bg-gray-100 dark:bg-gray-800" value="{{ app(\App\Services\AcademicHierarchyService::class)->subjectLabelFromTgUploadFolder($currentFolder) ?? ($currentFolder->parent?->folder_name ?? '') }}" readonly>
+            </div>
+            <div class="form-group">
+                <label class="form-label">File Name <span class="text-red-500">*</span></label>
+                <input type="text" name="document_title" class="form-control" placeholder="Enter file name" required maxlength="13" value="{{ old('document_title') }}">
+                <p class="text-xs text-gray-500 dark:text-gray-400 mt-1">Files are stored in cloud storage. Faculty uploads stay pending until the Dean approves them.</p>
+            </div>
         @elseif($useCourseFolderUpload ?? false)
             <div class="form-group md:col-span-2">
                 <label class="form-label">Course</label>
@@ -34,11 +44,13 @@
                 <option value="pdf">PDF Document</option>
                 @if(!(($useCourseSelect ?? false) && $activeTab === 'exam-questionnaires'))
                 <option value="word">Word Document</option>
+                @endif
+                @if(!($useTgUploadLeaf ?? false) && !($useCourseSelect ?? false))
                 <option value="image">Image File</option>
                 @endif
             </select>
         </div>
-        @if(($useItSubjectPicker ?? false) && !($useCourseSelect ?? false) && !($useCourseFolderUpload ?? false))
+        @if(($useItSubjectPicker ?? false) && !($useCourseSelect ?? false) && !($useCourseFolderUpload ?? false) && !($useTgUploadLeaf ?? false))
         @include('partials.ite-subject-picker', [
             'pickerId' => 'folderSubjectPicker',
             'subjects' => \App\Support\IteSubjects::labelsForUser(auth()->user()),

@@ -14,22 +14,17 @@ class TeachingGuideSyncService
         protected AcademicHierarchyService $hierarchy,
     ) {}
 
-    protected function typeLeafFolder(Folder $folder): Folder
-    {
-        if ($this->hierarchy->isCourseSubfolder($folder) && $folder->parent) {
-            return $folder->parent;
-        }
-
-        return $folder;
-    }
-
     public function semesterFromFolder(Folder $folder): string
     {
-        $folder = $this->typeLeafFolder($folder);
-        $name = $folder->folder_name . ($folder->parent ? ' ' . $folder->parent->folder_name : '');
-        if (str_contains($name, '1st')) {
-            return '1st';
+        $current = $folder;
+        while ($current) {
+            if ($this->hierarchy->isTgSemesterFolder($current)) {
+                return str_contains($current->folder_name, '2nd') ? '2nd' : '1st';
+            }
+            $current = $current->parent;
         }
+
+        $name = $folder->folder_name . ' ' . ($folder->parent?->folder_name ?? '');
         if (str_contains($name, '2nd')) {
             return '2nd';
         }
@@ -39,7 +34,19 @@ class TeachingGuideSyncService
 
     public function academicYearFromFolder(Folder $folder): string
     {
-        $folder = $this->typeLeafFolder($folder);
+        $current = $folder;
+        while ($current) {
+            if ($this->hierarchy->isTgSemesterFolder($current)) {
+                if (preg_match('/(\d{4})-(\d{4})/', $current->folder_name, $m)) {
+                    return $m[1] . '-' . $m[2];
+                }
+                if (preg_match('/(\d{4})-(\d{4})/', (string) $current->slug, $m)) {
+                    return $m[1] . '-' . $m[2];
+                }
+            }
+            $current = $current->parent;
+        }
+
         $text = $folder->folder_name . ' ' . ($folder->parent?->folder_name ?? '');
         if (preg_match('/(\d{4})-(\d{4})/', $text, $m)) {
             return $m[1] . '-' . $m[2];

@@ -82,6 +82,20 @@ class FolderService
 
         $folders = $query->get();
 
+        if ($hierarchy->isTgSemesterFolder($parent)) {
+            $folders = $folders->filter(function (Folder $folder) {
+                $slug = strtolower((string) $folder->slug);
+
+                return str_contains($slug, '-subject-') || str_contains($slug, '-course-');
+            })->values();
+        }
+
+        if ($hierarchy->isTgSubjectFolder($parent)) {
+            $folders = $folders->filter(function (Folder $folder) {
+                return in_array(strtoupper(trim((string) $folder->folder_name)), ['TG', 'LB'], true);
+            })->values();
+        }
+
         return $this->attachSubtreeDocumentCounts($folders, $viewer);
     }
 
@@ -182,6 +196,13 @@ class FolderService
                     $query->where('user_id', $userId)->orWhere('is_system', true);
                 })
                 ->firstOrFail();
+            $hierarchy = app(AcademicHierarchyService::class);
+            if ($hierarchy->isTgSemesterFolder($parent)
+                || $hierarchy->isTgSubjectFolder($parent)
+                || $hierarchy->isTgUploadLeafFolder($parent)) {
+                throw new \InvalidArgumentException('You cannot create folders here. Use TG or LB to upload files.');
+            }
+
             $data['parent_id'] = $parentId;
             $data['is_system'] = $parent->is_system;
             $data['level'] = $parent->level + 1;

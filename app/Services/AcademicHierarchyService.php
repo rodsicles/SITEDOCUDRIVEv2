@@ -46,9 +46,14 @@ class AcademicHierarchyService
 
         $semesters = SystemFolderSeeder::buildSchoolYearFolders($prefix, $startYear);
         foreach ($semesters as $semOrder => $semData) {
-            $semFolder = $this->firstOrCreateSystemFolder($semData, $root->folder_id, 1, $semOrder, $schoolYearId);
-            foreach ($semData['children'] ?? [] as $subOrder => $subData) {
-                $this->firstOrCreateSystemFolder($subData, $semFolder->folder_id, 2, $subOrder, $schoolYearId);
+            $this->firstOrCreateSystemFolder($semData, $root->folder_id, 1, $semOrder, $schoolYearId);
+            if ($prefix !== 'tg') {
+                $semFolder = Folder::where('slug', $semData['slug'])->first();
+                if ($semFolder) {
+                    foreach ($semData['children'] ?? [] as $subOrder => $subData) {
+                        $this->firstOrCreateSystemFolder($subData, $semFolder->folder_id, 2, $subOrder, $schoolYearId);
+                    }
+                }
             }
         }
     }
@@ -149,12 +154,137 @@ class AcademicHierarchyService
         return false;
     }
 
+    public function isUnderTgCategory(?Folder $folder): bool
+    {
+        if (!$folder) {
+            return false;
+        }
+
+        $current = $folder;
+        while ($current) {
+            if ($current->slug === 'tg-category') {
+                return true;
+            }
+            $current = $current->parent;
+        }
+
+        return false;
+    }
+
+    /** Semester folder under Teaching Guides (e.g. tg-2nd-2025-2026). */
+    public function isTgSemesterFolder(?Folder $folder): bool
+    {
+        if (!$folder) {
+            return false;
+        }
+
+        return (bool) preg_match('/^tg-(1st|2nd)-\d{4}-\d{4}$/i', (string) $folder->slug);
+    }
+
+    /** Subject folder under a TG semester (children: TG, LB). */
+    public function isTgSubjectFolder(?Folder $folder): bool
+    {
+        if (!$folder || !$folder->parent_id) {
+            return false;
+        }
+
+        $slug = strtolower((string) ($folder->slug ?? ''));
+
+        if (!str_contains($slug, '-subject-') && !str_contains($slug, '-course-')) {
+            return false;
+        }
+
+        $parent = $folder->relationLoaded('parent') ? $folder->parent : Folder::find($folder->parent_id);
+
+        return $parent && $this->isTgSemesterFolder($parent);
+    }
+
+    /** Final upload path: TG or LB under a subject folder. */
+    public function isTgUploadLeafFolder(?Folder $folder): bool
+    {
+        if (!$folder || !$folder->parent_id) {
+            return false;
+        }
+
+        $name = strtoupper(trim((string) $folder->folder_name));
+        if (!in_array($name, ['TG', 'LB'], true)) {
+            return false;
+        }
+
+        $parent = $folder->relationLoaded('parent') ? $folder->parent : Folder::find($folder->parent_id);
+
+        return $parent && $this->isTgSubjectFolder($parent);
+    }
+
     /**
-     * TG / LB / TOS / TOQ folders — upload picks a course; a child folder is created per course.
+     * Create subject folder + mandatory TG and LB children under a semester.
+     */
+    public function ensureSubjectWithTgLb(Folder $semesterFolder, string $subjectLabel): Folder
+    {
+        if (!$this->isTgSemesterFolder($semesterFolder)) {
+            return $semesterFolder;
+        }
+
+        $code = IteSubjects::codeFromLabel($subjectLabel) ?? 'course';
+        $baseSlug = ($semesterFolder->slug ?? 'tg-sem') . '-subject-' . strtolower($code);
+        $sortOrder = (int) Course::query()
+            ->where('code', strtoupper($code))
+            ->value('sort_order');
+
+        $subject = Folder::firstOrCreate(
+            ['slug' => $baseSlug],
+            [
+                'folder_name' => $subjectLabel,
+                'parent_id' => $semesterFolder->folder_id,
+                'user_id' => null,
+                'color' => '#028a0f',
+                'is_system' => true,
+                'level' => ($semesterFolder->level ?? 1) + 1,
+                'sort_order' => $sortOrder ?: 999,
+                'school_year_id' => $semesterFolder->school_year_id,
+            ]
+        );
+
+        foreach (['tg' => 'TG', 'lb' => 'LB'] as $suffix => $name) {
+            Folder::firstOrCreate(
+                ['slug' => $baseSlug . '-' . $suffix],
+                [
+                    'folder_name' => $name,
+                    'parent_id' => $subject->folder_id,
+                    'user_id' => null,
+                    'color' => '#028a0f',
+                    'is_system' => true,
+                    'level' => ($subject->level ?? 2) + 1,
+                    'sort_order' => $suffix === 'tg' ? 0 : 1,
+                    'school_year_id' => $semesterFolder->school_year_id,
+                ]
+            );
+        }
+
+        return $subject;
+    }
+
+    public function subjectLabelFromTgUploadFolder(Folder $folder): ?string
+    {
+        if (!$this->isTgUploadLeafFolder($folder)) {
+            return null;
+        }
+
+        $subjectFolder = $folder->relationLoaded('parent') ? $folder->parent : Folder::find($folder->parent_id);
+
+        return $subjectFolder?->folder_name;
+    }
+
+    /**
+     * EQ: TOS / TOQ folders — upload picks a course; a child folder is created per course.
      */
     public function isSemesterTypeLeafFolder(?Folder $folder): bool
     {
         if (!$folder || !$this->isTeachingGuidesOrExamCategory($folder)) {
+            return false;
+        }
+
+        if ($this->isUnderTgCategory($folder)) {
             return false;
         }
 

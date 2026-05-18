@@ -183,6 +183,19 @@ class FacultyDocumentTreeService
         );
 
         $semesterKey = $this->resolveSemesterFolderLabel($folder, $semester, $academicYear);
+
+        if ($folder && $this->hierarchy->isTgUploadLeafFolder($folder)) {
+            $subjectFolder = $folder->parent;
+            $subjectKey = $subjectFolder?->folder_name ?? $course;
+            $leafKey = $folder->folder_name;
+            $branch[$semesterKey] ??= [];
+            $branch[$semesterKey][$subjectKey] ??= [];
+            $branch[$semesterKey][$subjectKey][$leafKey] ??= [];
+            $branch[$semesterKey][$subjectKey][$leafKey][] = $node;
+
+            return;
+        }
+
         $leafKey = $this->resolveLeafFolderLabel($folder, $submissionTypeSlug);
 
         $branch[$semesterKey] ??= [];

@@ -2,10 +2,12 @@
 
 namespace App\Models;
 
+use App\Models\Concerns\ScopesSubmissionVisibility;
 use Illuminate\Database\Eloquent\Model;
 
 class TeachingGuide extends Model
 {
+    use ScopesSubmissionVisibility;
     protected $fillable = [
         'user_id',
         'title',
@@ -69,15 +71,13 @@ class TeachingGuide extends Model
         return $this->status === 'rejected';
     }
 
-    public function scopeForUser($query, User $user)
+    protected function submissionOwnerColumn(): string
     {
-        if ($user->isDean() || $user->isSecretary() || $user->isProgramCoordinator()) {
-            return $query;
-        }
+        return 'user_id';
+    }
 
-        return $query->where(function ($q) use ($user) {
-            $q->whereHas('recipients', fn ($r) => $r->where('users.id', $user->id))
-                ->orWhereDoesntHave('recipients');
-        });
+    protected function submissionSubmitterRelation(): string
+    {
+        return 'uploader';
     }
 }

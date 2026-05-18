@@ -2,10 +2,12 @@
 
 namespace App\Models;
 
+use App\Models\Concerns\ScopesSubmissionVisibility;
 use Illuminate\Database\Eloquent\Model;
 
 class ExamQuestionnaire extends Model
 {
+    use ScopesSubmissionVisibility;
     protected $fillable = [
         'submitted_by',
         'document_id',
@@ -56,5 +58,15 @@ class ExamQuestionnaire extends Model
     public function isRejected(): bool
     {
         return $this->status === 'rejected';
+    }
+
+    protected function submissionOwnerColumn(): string
+    {
+        return 'submitted_by';
+    }
+
+    protected function submissionSubmitterRelation(): string
+    {
+        return 'submitter';
     }
 }

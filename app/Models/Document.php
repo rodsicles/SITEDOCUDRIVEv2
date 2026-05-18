@@ -115,9 +115,14 @@ class Document extends Model
         }
 
         if ($user->isProgramCoordinator()) {
-            if (optional($this->uploader)->role_id === 3) {
+            if ($this->recipients()->where('users.id', $user->id)->exists()) {
+                return true;
+            }
+
+            $uploader = $this->uploader;
+            if ($uploader && $uploader->isFaculty()) {
                 $coordinatorDept = optional($user->employee)->department;
-                $uploaderDept = optional(optional($this->uploader)->employee)->department;
+                $uploaderDept = optional($uploader->employee)->department;
 
                 return $coordinatorDept && $uploaderDept && $coordinatorDept === $uploaderDept;
             }
@@ -187,20 +192,19 @@ class Document extends Model
 
                 if ($coordinatorDept) {
                     $q->orWhereHas('uploader', function ($subQ) use ($coordinatorDept) {
-                        $subQ->where('role_id', 3)
-                            ->whereHas('employee', function ($empQ) use ($coordinatorDept) {
-                                $empQ->where('department', $coordinatorDept);
-                            });
+                        $subQ->whereHas('role', fn ($r) => $r->where('role_name', 'Faculty Employee'))
+                            ->whereHas('employee', fn ($empQ) => $empQ->where('department', $coordinatorDept));
                     });
                 }
             });
         }
 
+        // Faculty: own uploads, explicit shares, or dean/secretary/coordinator broadcasts only.
         return $query->where(function ($q) use ($user) {
             $q->where('uploaded_by', $user->id)
                 ->orWhereHas('recipients', fn ($r) => $r->where('users.id', $user->id))
-                ->orWhere(function ($shared) {
-                    $shared->whereIn('category', self::SHAREABLE_CATEGORIES)
+                ->orWhere(function ($broadcast) {
+                    $broadcast->whereIn('category', self::SHAREABLE_CATEGORIES)
                         ->whereDoesntHave('recipients')
                         ->whereHas('uploader', fn ($u) => $u->whereHas('role', function ($roleQ) {
                             $roleQ->whereIn('role_name', ['Dean', 'Secretary', 'Program Coordinator']);

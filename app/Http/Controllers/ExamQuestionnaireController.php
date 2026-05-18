@@ -30,11 +30,8 @@ class ExamQuestionnaireController extends Controller
         $academicYearStart = AcademicYear::startYearFromQuery($request->query('academic_year'));
 
         $query = ExamQuestionnaire::with('submitter.employee', 'reviewer.employee')
+            ->visibleTo($user)
             ->latest();
-
-        if ($user->isFaculty()) {
-            $query->where('submitted_by', $user->id);
-        }
 
         if ($search) {
             $query->where(function ($q) use ($search) {
@@ -60,9 +57,11 @@ class ExamQuestionnaireController extends Controller
         }
 
         $questionnaires = $query->paginate(15)->appends($request->query());
-        $pendingCount = ($user->isDean() || $user->isSecretary())
-            ? ExamQuestionnaire::where('status', 'pending')->count()
-            : 0;
+        $pendingCount = match (true) {
+            $user->isDean(), $user->isSecretary() => ExamQuestionnaire::where('status', 'pending')->count(),
+            $user->isProgramCoordinator() => ExamQuestionnaire::visibleTo($user)->where('status', 'pending')->count(),
+            default => 0,
+        };
         $archiveYears = array_filter(
             AcademicYear::availableStartYears(),
             fn ($y) => AcademicYear::isArchived($y)
@@ -137,11 +136,7 @@ class ExamQuestionnaireController extends Controller
     public function view($id)
     {
         $user = auth()->user();
-        $questionnaire = ExamQuestionnaire::findOrFail($id);
-
-        if ($user->isFaculty() && (int) $questionnaire->submitted_by !== (int) $user->id) {
-            abort(403);
-        }
+        $questionnaire = ExamQuestionnaire::visibleTo($user)->findOrFail($id);
 
         UploadStorage::assertResolvedPath($questionnaire->file_path, 'exam-questionnaires');
 
@@ -159,11 +154,7 @@ class ExamQuestionnaireController extends Controller
     public function download($id)
     {
         $user = auth()->user();
-        $questionnaire = ExamQuestionnaire::findOrFail($id);
-
-        if ($user->isFaculty() && (int) $questionnaire->submitted_by !== (int) $user->id) {
-            abort(403);
-        }
+        $questionnaire = ExamQuestionnaire::visibleTo($user)->findOrFail($id);
 
         UploadStorage::assertResolvedPath($questionnaire->file_path, 'exam-questionnaires');
 
@@ -241,12 +232,10 @@ class ExamQuestionnaireController extends Controller
     public function destroy($id)
     {
         $user = auth()->user();
-        $questionnaire = ExamQuestionnaire::findOrFail($id);
+        $questionnaire = ExamQuestionnaire::visibleTo($user)->findOrFail($id);
 
-        if ($user->isFaculty()) {
-            if ((int) $questionnaire->submitted_by !== (int) $user->id || !$questionnaire->isPending()) {
-                abort(403);
-            }
+        if ($user->isFaculty() && !$questionnaire->isPending()) {
+            abort(403);
         }
 
         UploadStorage::delete($questionnaire->file_path);

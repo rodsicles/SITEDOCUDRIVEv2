@@ -210,7 +210,7 @@ class TeachingGuideController extends Controller
     public function download($id)
     {
         $user = auth()->user();
-        $guide = TeachingGuide::forUser($user)->findOrFail($id);
+        $guide = TeachingGuide::visibleTo($user)->findOrFail($id);
 
         $storageDir = str_starts_with($guide->file_path, 'documents/') ? 'documents' : 'teaching-guides';
         UploadStorage::assertResolvedPath($guide->file_path, $storageDir);
@@ -230,7 +230,7 @@ class TeachingGuideController extends Controller
             abort(403);
         }
 
-        $guide = TeachingGuide::findOrFail($id);
+        $guide = TeachingGuide::visibleTo($user)->findOrFail($id);
         UploadStorage::delete($guide->file_path);
         $guide->delete();
 

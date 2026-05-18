@@ -21,6 +21,7 @@ use App\Http\Controllers\AnalyticsController;
 use App\Http\Controllers\DeanCourseController;
 use App\Http\Controllers\TgSubjectFolderController;
 use App\Http\Controllers\EqSubjectFolderController;
+use App\Http\Controllers\RecycleBinController;
 
 // Authentication Routes
 Route::get('/', [AuthController::class, 'showLogin'])->name('login');
@@ -146,6 +147,10 @@ Route::middleware(['auth', 'no.back', 'role:Dean,Secretary'])->prefix('dean')->n
     Route::get('/documents/{id}/download', [DeanController::class, 'downloadDocument'])->name('download-document');
     Route::delete('/documents/{id}', [DeanController::class, 'deleteDocument'])->name('delete-document');
 
+    Route::get('/recycle-bin', [RecycleBinController::class, 'index'])->name('recycle-bin.index');
+    Route::post('/recycle-bin/{id}/restore', [RecycleBinController::class, 'restore'])->middleware('throttle:30,1')->name('recycle-bin.restore');
+    Route::delete('/recycle-bin/{id}', [RecycleBinController::class, 'forceDelete'])->middleware('throttle:10,1')->name('recycle-bin.force-delete');
+
     // Folder Management - Rate Limited: 3 folders per hour
     Route::post('/folders', [FolderController::class, 'store'])->middleware('throttle:3,60')->name('folders.store');
     Route::patch('/folders/{folder}', [FolderController::class, 'update'])->middleware('throttle:10,60')->name('folders.update');
@@ -213,6 +218,9 @@ Route::middleware(['auth', 'no.back', 'role:Program Coordinator'])->prefix('coor
     Route::get('/documents/{id}/download', [CoordinatorController::class, 'downloadDocument'])->name('download-document');
     Route::delete('/documents/{id}', [CoordinatorController::class, 'deleteDocument'])->name('delete-document');
 
+    Route::get('/recycle-bin', [RecycleBinController::class, 'index'])->name('recycle-bin.index');
+    Route::post('/recycle-bin/{id}/restore', [RecycleBinController::class, 'restore'])->middleware('throttle:30,1')->name('recycle-bin.restore');
+
     // Folder Management - Rate Limited: 3 folders per hour
     Route::post('/folders', [FolderController::class, 'store'])->middleware('throttle:3,60')->name('folders.store');
     Route::patch('/folders/{folder}', [FolderController::class, 'update'])->middleware('throttle:10,60')->name('folders.update');
@@ -265,6 +273,10 @@ Route::middleware(['auth', 'no.back', 'role:Faculty Employee'])->prefix('faculty
     Route::post('/documents/{id}/favorite', [FacultyController::class, 'toggleFavorite'])->middleware('throttle:60,1')->name('toggle-favorite');
     Route::get('/documents/{id}/download', [FacultyController::class, 'downloadDocument'])->name('download-document');
     Route::delete('/documents/{id}', [FacultyController::class, 'deleteDocument'])->name('delete-document');
+
+    Route::get('/recycle-bin', [RecycleBinController::class, 'index'])->name('recycle-bin.index');
+    Route::post('/recycle-bin/{id}/restore', [RecycleBinController::class, 'restore'])->middleware('throttle:30,1')->name('recycle-bin.restore');
+
     Route::get('/profile', [FacultyController::class, 'profile'])->name('profile');
 
     // Teaching Guides (Faculty: read-only, download only)

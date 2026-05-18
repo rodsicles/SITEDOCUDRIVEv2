@@ -28,6 +28,9 @@
 <a href="{{ route('faculty.documents') }}" class="menu-item {{ request()->routeIs('faculty.documents', 'faculty.upload-document') ? 'active' : '' }}">
     <i class="fas fa-folder"></i> Documents
 </a>
+<a href="{{ route('faculty.recycle-bin.index') }}" class="menu-item {{ request()->routeIs('faculty.recycle-bin.*') ? 'active' : '' }}">
+    <i class="fas fa-recycle"></i> Recycle Bin
+</a>
 <a href="{{ route('faculty.teaching-guides.index') }}" class="menu-item {{ request()->routeIs('faculty.teaching-guides.*') ? 'active' : '' }}">
     <i class="fas fa-book-open"></i> Teaching Guides
 </a>

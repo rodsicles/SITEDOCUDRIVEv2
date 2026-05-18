@@ -233,8 +233,8 @@ function toggleDocFilters() {
 }
 function confirmDelete(id) {
     Swal.fire({
-        title: 'Delete Document?',
-        text: 'This document will be removed. The record will be kept for backup.',
+        title: 'Move to Recycle Bin?',
+        text: 'This file will be removed from Documents and moved to the Recycle Bin. You can restore it later.',
         icon: 'warning',
         showCancelButton: true,
         confirmButtonText: 'Yes, delete it',

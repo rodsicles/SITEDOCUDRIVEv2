@@ -4,6 +4,7 @@ namespace App\Providers;
 
 use App\Console\Commands\CreateSchoolYearFolders;
 use App\Console\Commands\EnsureAcademicYearFolders;
+use App\Console\Commands\PurgeOldTrashedDocuments;
 use App\Console\Commands\VerifyUploadStorageCommand;
 use App\Services\DashboardService;
 use Illuminate\Support\Facades\Schema;
@@ -36,6 +37,7 @@ class AppServiceProvider extends ServiceProvider
             $this->commands([
                 CreateSchoolYearFolders::class,
                 EnsureAcademicYearFolders::class,
+                PurgeOldTrashedDocuments::class,
                 VerifyUploadStorageCommand::class,
             ]);
         }

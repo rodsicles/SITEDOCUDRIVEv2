@@ -33,6 +33,9 @@
 <a href="{{ route('coordinator.documents') }}" class="menu-item {{ request()->routeIs('coordinator.documents', 'coordinator.upload-document') ? 'active' : '' }}">
     <i class="fas fa-folder"></i> Documents
 </a>
+<a href="{{ route('coordinator.recycle-bin.index') }}" class="menu-item {{ request()->routeIs('coordinator.recycle-bin.*') ? 'active' : '' }}">
+    <i class="fas fa-recycle"></i> Recycle Bin
+</a>
 <a href="{{ route('coordinator.teaching-guides.index') }}" class="menu-item {{ request()->routeIs('coordinator.teaching-guides.*') ? 'active' : '' }}">
     <i class="fas fa-book-open"></i> Teaching Guides
 </a>

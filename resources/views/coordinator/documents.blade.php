@@ -193,7 +193,7 @@
                                 <i class="fas fa-download"></i> Download
                             </a>
                             @endif
-                            <form id="delete-doc-{{ $document->document_id }}" action="{{ route('dean.delete-document', $document->document_id) }}" method="POST" class="d-inline">
+                            <form id="delete-doc-{{ $document->document_id }}" action="{{ route('coordinator.delete-document', $document->document_id) }}" method="POST" class="d-inline">
                                 @csrf @method('DELETE')
                             </form>
                             <button type="button" onclick="confirmDelete({{ $document->document_id }})" class="btn btn-danger text-xs">
@@ -233,8 +233,8 @@ function toggleDocFilters() {
 }
 function confirmDelete(id) {
     Swal.fire({
-        title: 'Delete Document?',
-        text: 'This document will be removed. The record will be kept for backup.',
+        title: 'Move to Recycle Bin?',
+        text: 'This file will be removed from Documents and moved to your Recycle Bin. You can restore it later.',
         icon: 'warning',
         showCancelButton: true,
         confirmButtonText: 'Yes, delete it',

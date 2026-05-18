@@ -481,7 +481,7 @@ class DocumentService
     }
 
     /**
-     * Soft delete a document.
+     * Move a document to the Recycle Bin (soft delete).
      */
     public function deleteDocument(int $documentId, User $user): void
     {
@@ -493,11 +493,11 @@ class DocumentService
 
         DashboardLog::create([
             'user_id' => $user->id,
-            'activity' => 'Deleted document: ' . $document->document_title,
+            'activity' => 'Moved document to Recycle Bin: ' . $document->document_title,
             'activity_type' => 'document_deleted',
-            'visibility' => 'own',
+            'visibility' => $user->isDeanOrSecretary() ? 'dean' : 'own',
         ]);
 
-        $document->delete();
+        app(RecycleBinService::class)->moveToRecycleBin($document, $user);
     }
 }

@@ -15,6 +15,8 @@ class Document extends Model
     protected $fillable = [
         'uploaded_by',
         'folder_id',
+        'trashed_folder_id',
+        'deleted_by',
         'document_title',
         'subject',
         'file_path',
@@ -45,6 +47,39 @@ class Document extends Model
     public function folder()
     {
         return $this->belongsTo(Folder::class, 'folder_id', 'folder_id');
+    }
+
+    public function trashedFolder()
+    {
+        return $this->belongsTo(Folder::class, 'trashed_folder_id', 'folder_id');
+    }
+
+    public function deletedBy()
+    {
+        return $this->belongsTo(User::class, 'deleted_by');
+    }
+
+    /**
+     * Human-readable original folder path stored when moved to Recycle Bin.
+     */
+    public function getRecycleBinFolderLabelAttribute(): string
+    {
+        if (!$this->trashed_folder_id) {
+            return 'Uncategorized';
+        }
+
+        $folder = $this->relationLoaded('trashedFolder')
+            ? $this->trashedFolder
+            : Folder::find($this->trashed_folder_id);
+
+        if (!$folder) {
+            return 'Uncategorized';
+        }
+
+        $names = array_map(fn (Folder $f) => $f->folder_name, $folder->getAncestors());
+        $names[] = $folder->folder_name;
+
+        return implode(' / ', $names);
     }
 
     public function comments()

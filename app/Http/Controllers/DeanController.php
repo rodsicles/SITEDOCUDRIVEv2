@@ -314,7 +314,7 @@ class DeanController extends Controller
     public function deleteDocument($id)
     {
         $this->documentService->deleteDocument($id, auth()->user());
-        return redirect()->back()->with('success', 'Document deleted successfully.');
+        return redirect()->back()->with('success', 'Document moved to Recycle Bin.');
     }
 
     public function uploadDocument(Request $request)

@@ -319,12 +319,12 @@
             @endif
 
             @if($canUpload)
-            <form action="{{ route($role . '.upload-document') }}" method="POST" enctype="multipart/form-data" id="folderUploadForm" class="hidden mb-4" style="border: 1px solid #e0e0e0; padding: 16px; background: #f9fafb;">
+            <form action="{{ route($role . '.upload-document') }}" method="POST" enctype="multipart/form-data" id="folderUploadForm" class="hidden mb-4 overflow-visible" style="border: 1px solid #e0e0e0; padding: 16px; background: #f9fafb;">
                 @csrf
                 <input type="hidden" name="folder_id" value="{{ $currentFolder->folder_id }}">
                 <div class="grid grid-cols-1 md:grid-cols-2 gap-4 mb-4">
                     @if($useCourseSelect)
-                    @include('partials.ite-course-select', ['inputId' => 'folderCourseSelect'])
+                    @include('partials.ite-subject-picker', ['pickerId' => 'folderCoursePicker'])
                     @else
                     <div class="form-group">
                         <label class="form-label">Document Title *</label>
@@ -564,9 +564,7 @@
         @endif
 
         @if($useCourseSelect)
-        const courseSelect = document.getElementById('folderCourseSelect');
-        if (!courseSelect || !courseSelect.value) {
-            alert('Please select an ITE course.');
+        if (typeof folderCoursePickerValidate === 'function' && !folderCoursePickerValidate()) {
             return;
         }
         @endif

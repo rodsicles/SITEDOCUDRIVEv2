@@ -2126,6 +2126,77 @@ body {
    END DOCUMENT ANALYTICS
    ============================================ */
 
+/* ITE subject / course searchable picker */
+.ite-subject-picker-field {
+    position: relative;
+}
+
+.ite-subject-search:focus {
+    border-color: #028a0f;
+    box-shadow: 0 0 0 2px rgba(2, 138, 15, 0.18);
+    outline: none;
+}
+
+.ite-subject-results {
+    position: absolute;
+    top: 100%;
+    left: 0;
+    right: 0;
+    z-index: 50;
+    margin-top: 0.25rem;
+    max-height: 14rem;
+    overflow-y: auto;
+    background: #fff;
+    border: 1px solid #e5e7eb;
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.08);
+}
+
+.dark .ite-subject-results {
+    background: #1f2937;
+    border-color: #4b5563;
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.35);
+}
+
+.ite-subject-option {
+    display: block;
+    width: 100%;
+    text-align: left;
+    padding: 0.5rem 0.75rem;
+    font-size: 0.875rem;
+    line-height: 1.35;
+    color: #374151;
+    background: #fff;
+    border: none;
+    border-bottom: 1px solid #f3f4f6;
+    cursor: pointer;
+    transition: background-color 0.15s ease, color 0.15s ease;
+}
+
+.ite-subject-option:last-child {
+    border-bottom: none;
+}
+
+.ite-subject-option:hover,
+.ite-subject-option:focus,
+.ite-subject-option.is-active {
+    background: #e8f5e9;
+    color: #028a0f;
+    outline: none;
+}
+
+.dark .ite-subject-option {
+    color: #e5e7eb;
+    background: #1f2937;
+    border-bottom-color: #374151;
+}
+
+.dark .ite-subject-option:hover,
+.dark .ite-subject-option:focus,
+.dark .ite-subject-option.is-active {
+    background: rgba(2, 138, 15, 0.28);
+    color: #bbf7d0;
+}
+
 .stats-grid-horizontal {
     @apply flex flex-wrap gap-6 mb-6;
 }

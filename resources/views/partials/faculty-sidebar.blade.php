@@ -9,6 +9,9 @@
 <a href="{{ route('faculty.activity-log') }}" class="menu-item {{ request()->routeIs('faculty.activity-log') ? 'active' : '' }}">
     <i class="fas fa-history"></i> Activity Log
 </a>
+<a href="{{ route('faculty.analytics') }}" class="menu-item {{ request()->routeIs('faculty.analytics') ? 'active' : '' }}">
+    <i class="fas fa-chart-pie"></i> Analytics
+</a>
 
 <div class="sidebar-section-label">Communication</div>
 <a href="{{ route('announcements.index') }}" class="menu-item {{ request()->routeIs('announcements.index', 'announcements.show') ? 'active' : '' }}">

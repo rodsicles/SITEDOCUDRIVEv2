@@ -10,6 +10,8 @@
 @endsection
 
 @section('content')
+    @include('partials.submission-analytics')
+
     <!-- Exam & Certification Trends -->
     @include('partials.exam-trends')
 

@@ -192,13 +192,6 @@ class DeanController extends Controller
         return view('dean.reports', compact('reports'));
     }
 
-    public function analytics()
-    {
-        $data = $this->dashboardService->getAnalyticsData();
-        $data['examTrends'] = $this->examRecordService->getTrends();
-        return view('dean.analytics', $data);
-    }
-
     public function tasks()
     {
         $tasks = Task::with(['assignedTo.employee', 'assignedBy.employee', 'attachments.uploader.employee'])

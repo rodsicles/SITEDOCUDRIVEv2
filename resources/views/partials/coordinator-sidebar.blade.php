@@ -19,6 +19,9 @@
 <a href="{{ route('coordinator.faculty') }}" class="menu-item {{ request()->routeIs('coordinator.faculty', 'coordinator.create-faculty', 'coordinator.edit-faculty') ? 'active' : '' }}">
     <i class="fas fa-users"></i> Faculty Members
 </a>
+<a href="{{ route('coordinator.analytics') }}" class="menu-item {{ request()->routeIs('coordinator.analytics') ? 'active' : '' }}">
+    <i class="fas fa-chart-pie"></i> Analytics
+</a>
 
 <div class="sidebar-section-label">Resources & Development</div>
 <a href="{{ route('coordinator.documents') }}" class="menu-item {{ request()->routeIs('coordinator.documents', 'coordinator.upload-document') ? 'active' : '' }}">

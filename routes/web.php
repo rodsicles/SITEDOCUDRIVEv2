@@ -17,6 +17,7 @@ use App\Http\Controllers\DocumentFilterController;
 use App\Http\Controllers\DocumentRecipientController;
 use App\Http\Controllers\TaskAttachmentController;
 use App\Http\Controllers\SchoolYearController;
+use App\Http\Controllers\AnalyticsController;
 
 // Authentication Routes
 Route::get('/', [AuthController::class, 'showLogin'])->name('login');
@@ -106,7 +107,7 @@ Route::middleware(['auth', 'no.back', 'role:Dean,Secretary'])->prefix('dean')->n
     Route::post('/accounts/{id}/reset-password', [DeanController::class, 'resetEmployeePassword'])->middleware('throttle:5,1')->name('reset-password');
 
     Route::get('/reports', [DeanController::class, 'reports'])->name('reports');
-    Route::get('/analytics', [DeanController::class, 'analytics'])->name('analytics');
+    Route::get('/analytics', [AnalyticsController::class, 'index'])->name('analytics');
     Route::get('/activity-log', [DeanController::class, 'activityLog'])->name('activity-log');
     Route::get('/audit-trail', [DeanController::class, 'auditTrail'])->name('audit-trail');
     Route::post('/insight/refresh', [DeanController::class, 'refreshInsight'])
@@ -168,6 +169,7 @@ Route::middleware(['auth', 'no.back', 'role:Dean,Secretary'])->prefix('dean')->n
 Route::middleware(['auth', 'no.back', 'role:Program Coordinator'])->prefix('coordinator')->name('coordinator.')->group(function () {
     Route::post('/documents/{id}/favorite', [CoordinatorController::class, 'toggleFavorite'])->middleware('throttle:60,1')->name('toggle-favorite');
     Route::get('/dashboard', [CoordinatorController::class, 'dashboard'])->name('dashboard');
+    Route::get('/analytics', [AnalyticsController::class, 'index'])->name('analytics');
     
     // Tasks (assigned to coordinator)
     Route::get('/tasks', [CoordinatorController::class, 'tasks'])->name('tasks');
@@ -217,6 +219,7 @@ Route::middleware(['auth', 'no.back', 'role:Program Coordinator'])->prefix('coor
 // Faculty Employee Routes
 Route::middleware(['auth', 'no.back', 'role:Faculty Employee'])->prefix('faculty')->name('faculty.')->group(function () {
     Route::get('/dashboard', [FacultyController::class, 'dashboard'])->name('dashboard');
+    Route::get('/analytics', [AnalyticsController::class, 'index'])->name('analytics');
     Route::get('/tasks', [FacultyController::class, 'tasks'])->name('tasks');
     Route::patch('/tasks/{id}/status', [FacultyController::class, 'updateTaskStatus'])->middleware('throttle:30,1')->name('update-task-status');
     Route::post('/tasks/{id}/attachments', [TaskAttachmentController::class, 'store'])->middleware('throttle:30,1')->name('tasks.attachments.store');

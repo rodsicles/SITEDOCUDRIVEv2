@@ -196,6 +196,21 @@ class FacultyDocumentTreeService
             return;
         }
 
+        if ($folder && $this->hierarchy->isEqUploadLeafFolder($folder)) {
+            $assessmentFolder = $folder->parent;
+            $subjectFolder = $assessmentFolder?->parent;
+            $subjectKey = $subjectFolder?->folder_name ?? $course;
+            $assessmentKey = $assessmentFolder?->folder_name ?? 'Assessment';
+            $typeKey = $folder->folder_name;
+            $branch[$semesterKey] ??= [];
+            $branch[$semesterKey][$subjectKey] ??= [];
+            $branch[$semesterKey][$subjectKey][$assessmentKey] ??= [];
+            $branch[$semesterKey][$subjectKey][$assessmentKey][$typeKey] ??= [];
+            $branch[$semesterKey][$subjectKey][$assessmentKey][$typeKey][] = $node;
+
+            return;
+        }
+
         $leafKey = $this->resolveLeafFolderLabel($folder, $submissionTypeSlug);
 
         $branch[$semesterKey] ??= [];

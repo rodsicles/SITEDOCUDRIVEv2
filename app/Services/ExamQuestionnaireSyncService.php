@@ -21,6 +21,10 @@ class ExamQuestionnaireSyncService
 
     public function submissionTypeFromFolder(Folder $folder): string
     {
+        if ($this->hierarchy->isEqUploadLeafFolder($folder)) {
+            return strtoupper(trim((string) $folder->folder_name)) === 'TOS' ? 'tos' : 'toq';
+        }
+
         if ($this->hierarchy->isCourseSubfolder($folder) && $folder->parent) {
             $folder = $folder->parent;
         }
@@ -37,6 +41,14 @@ class ExamQuestionnaireSyncService
 
     public function semesterFromFolder(Folder $folder): string
     {
+        $current = $folder;
+        while ($current) {
+            if ($this->hierarchy->isEqSemesterFolder($current) || $this->hierarchy->isTgSemesterFolder($current)) {
+                return str_contains($current->folder_name, '2nd') ? '2nd' : '1st';
+            }
+            $current = $current->parent;
+        }
+
         if ($this->hierarchy->isCourseSubfolder($folder) && $folder->parent) {
             $folder = $folder->parent;
         }
@@ -51,6 +63,19 @@ class ExamQuestionnaireSyncService
 
     public function academicYearFromFolder(Folder $folder): string
     {
+        $current = $folder;
+        while ($current) {
+            if ($this->hierarchy->isEqSemesterFolder($current) || $this->hierarchy->isTgSemesterFolder($current)) {
+                if (preg_match('/(\d{4})-(\d{4})/', $current->folder_name, $m)) {
+                    return $m[1] . '-' . $m[2];
+                }
+                if (preg_match('/(\d{4})-(\d{4})/', (string) $current->slug, $m)) {
+                    return $m[1] . '-' . $m[2];
+                }
+            }
+            $current = $current->parent;
+        }
+
         if ($this->hierarchy->isCourseSubfolder($folder) && $folder->parent) {
             $folder = $folder->parent;
         }
@@ -116,6 +141,19 @@ class ExamQuestionnaireSyncService
 
         $subfolder = $questionnaire->submission_type ?? 'toq';
 
+        if ($questionnaire->subject) {
+            $leaf = $this->hierarchy->resolveEqUploadFolder(
+                $startYear,
+                $semester,
+                $questionnaire->subject,
+                $questionnaire->exam_type ?? 'Prelim',
+                $subfolder,
+            );
+            if ($leaf) {
+                return $leaf;
+            }
+        }
+
         return $this->hierarchy->resolveExamQuestionnaireFolder(
             $startYear,
             $semester,
@@ -132,10 +170,6 @@ class ExamQuestionnaireSyncService
         $folder = $this->resolveTargetFolder($questionnaire);
         if (!$folder) {
             return null;
-        }
-
-        if ($questionnaire->subject) {
-            $folder = $this->hierarchy->ensureCourseFolder($folder, $questionnaire->subject);
         }
 
         $fileSize = 0;

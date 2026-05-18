@@ -20,6 +20,7 @@ use App\Http\Controllers\SchoolYearController;
 use App\Http\Controllers\AnalyticsController;
 use App\Http\Controllers\DeanCourseController;
 use App\Http\Controllers\TgSubjectFolderController;
+use App\Http\Controllers\EqSubjectFolderController;
 
 // Authentication Routes
 Route::get('/', [AuthController::class, 'showLogin'])->name('login');
@@ -47,6 +48,10 @@ Route::get('/search', [SearchController::class, 'search'])->middleware(['auth', 
 Route::post('/documents/open-tg-subject', [TgSubjectFolderController::class, 'store'])
     ->middleware(['auth', 'no.back', 'throttle:30,1'])
     ->name('documents.open-tg-subject');
+
+Route::post('/documents/open-eq-subject', [EqSubjectFolderController::class, 'store'])
+    ->middleware(['auth', 'no.back', 'throttle:30,1'])
+    ->name('documents.open-eq-subject');
 
 // Profile Management (All authenticated users)
 Route::middleware(['auth', 'no.back'])->prefix('profile')->name('profile.')->group(function () {

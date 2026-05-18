@@ -13,6 +13,13 @@ class AcademicHierarchyService
     public const TG_SUBFOLDERS = ['tg', 'lb'];
     public const EQ_SUBFOLDERS = ['tos', 'toq'];
 
+    /** @var array<string, string> slug => display name */
+    public const EQ_ASSESSMENT_FOLDERS = [
+        'prelims' => 'Prelims',
+        'midterms' => 'Midterms',
+        'finals' => 'Finals',
+    ];
+
     public function subjectCodeFromLabel(string $subjectLabel): string
     {
         if (preg_match('/^([A-Z]{2,4}\d{2,4})/i', trim($subjectLabel), $m)) {
@@ -47,14 +54,6 @@ class AcademicHierarchyService
         $semesters = SystemFolderSeeder::buildSchoolYearFolders($prefix, $startYear);
         foreach ($semesters as $semOrder => $semData) {
             $this->firstOrCreateSystemFolder($semData, $root->folder_id, 1, $semOrder, $schoolYearId);
-            if ($prefix !== 'tg') {
-                $semFolder = Folder::where('slug', $semData['slug'])->first();
-                if ($semFolder) {
-                    foreach ($semData['children'] ?? [] as $subOrder => $subData) {
-                        $this->firstOrCreateSystemFolder($subData, $semFolder->folder_id, 2, $subOrder, $schoolYearId);
-                    }
-                }
-            }
         }
     }
 
@@ -102,7 +101,7 @@ class AcademicHierarchyService
     }
 
     /**
-     * Approved exam questionnaires: Semester → TOS or TOQ.
+     * @deprecated Legacy semester-level TOS/TOQ; use resolveEqUploadFolder() for approved sync.
      */
     public function resolveExamQuestionnaireFolder(
         int $startYear,
@@ -275,8 +274,222 @@ class AcademicHierarchyService
         return $subjectFolder?->folder_name;
     }
 
+    public function isUnderEqCategory(?Folder $folder): bool
+    {
+        if (!$folder) {
+            return false;
+        }
+
+        $current = $folder;
+        while ($current) {
+            if ($current->slug === 'eq-category') {
+                return true;
+            }
+            $current = $current->parent;
+        }
+
+        return false;
+    }
+
+    /** Semester folder under Exam Questionnaires (e.g. eq-2nd-2025-2026). */
+    public function isEqSemesterFolder(?Folder $folder): bool
+    {
+        if (!$folder) {
+            return false;
+        }
+
+        return (bool) preg_match('/^eq-(1st|2nd)-\d{4}-\d{4}$/i', (string) $folder->slug);
+    }
+
+    /** Subject folder under an EQ semester (children: Prelims, Midterms, Finals). */
+    public function isEqSubjectFolder(?Folder $folder): bool
+    {
+        if (!$folder || !$folder->parent_id) {
+            return false;
+        }
+
+        $slug = strtolower((string) ($folder->slug ?? ''));
+
+        if (!str_contains($slug, '-subject-') && !str_contains($slug, '-course-')) {
+            return false;
+        }
+
+        $parent = $folder->relationLoaded('parent') ? $folder->parent : Folder::find($folder->parent_id);
+
+        return $parent && $this->isEqSemesterFolder($parent);
+    }
+
+    /** Prelims, Midterms, or Finals under a subject folder. */
+    public function isEqAssessmentFolder(?Folder $folder): bool
+    {
+        if (!$folder || !$folder->parent_id) {
+            return false;
+        }
+
+        $slug = strtolower((string) ($folder->slug ?? ''));
+        $isAssessment = false;
+        foreach (array_keys(self::EQ_ASSESSMENT_FOLDERS) as $key) {
+            if (str_ends_with($slug, '-' . $key)) {
+                $isAssessment = true;
+                break;
+            }
+        }
+
+        if (!$isAssessment) {
+            return false;
+        }
+
+        $parent = $folder->relationLoaded('parent') ? $folder->parent : Folder::find($folder->parent_id);
+
+        return $parent && $this->isEqSubjectFolder($parent);
+    }
+
+    /** Final upload path: TOS or TOQ under Prelims / Midterms / Finals. */
+    public function isEqUploadLeafFolder(?Folder $folder): bool
+    {
+        if (!$folder || !$folder->parent_id) {
+            return false;
+        }
+
+        $name = strtoupper(trim((string) $folder->folder_name));
+        if (!in_array($name, ['TOS', 'TOQ'], true)) {
+            return false;
+        }
+
+        $parent = $folder->relationLoaded('parent') ? $folder->parent : Folder::find($folder->parent_id);
+
+        return $parent && $this->isEqAssessmentFolder($parent);
+    }
+
     /**
-     * EQ: TOS / TOQ folders — upload picks a course; a child folder is created per course.
+     * Create subject folder + Prelims/Midterms/Finals, each with TOS and TOQ children.
+     */
+    public function ensureSubjectWithEqStructure(Folder $semesterFolder, string $subjectLabel): Folder
+    {
+        if (!$this->isEqSemesterFolder($semesterFolder)) {
+            return $semesterFolder;
+        }
+
+        $code = IteSubjects::codeFromLabel($subjectLabel) ?? 'course';
+        $baseSlug = ($semesterFolder->slug ?? 'eq-sem') . '-subject-' . strtolower($code);
+        $sortOrder = (int) Course::query()
+            ->where('code', strtoupper($code))
+            ->value('sort_order');
+
+        $subject = Folder::firstOrCreate(
+            ['slug' => $baseSlug],
+            [
+                'folder_name' => $subjectLabel,
+                'parent_id' => $semesterFolder->folder_id,
+                'user_id' => null,
+                'color' => '#028a0f',
+                'is_system' => true,
+                'level' => ($semesterFolder->level ?? 1) + 1,
+                'sort_order' => $sortOrder ?: 999,
+                'school_year_id' => $semesterFolder->school_year_id,
+            ]
+        );
+
+        $assessmentOrder = 0;
+        foreach (self::EQ_ASSESSMENT_FOLDERS as $assessSlug => $assessName) {
+            $assessFolder = Folder::firstOrCreate(
+                ['slug' => $baseSlug . '-' . $assessSlug],
+                [
+                    'folder_name' => $assessName,
+                    'parent_id' => $subject->folder_id,
+                    'user_id' => null,
+                    'color' => '#028a0f',
+                    'is_system' => true,
+                    'level' => ($subject->level ?? 2) + 1,
+                    'sort_order' => $assessmentOrder++,
+                    'school_year_id' => $semesterFolder->school_year_id,
+                ]
+            );
+
+            foreach (['tos' => 'TOS', 'toq' => 'TOQ'] as $typeSlug => $typeName) {
+                Folder::firstOrCreate(
+                    ['slug' => $baseSlug . '-' . $assessSlug . '-' . $typeSlug],
+                    [
+                        'folder_name' => $typeName,
+                        'parent_id' => $assessFolder->folder_id,
+                        'user_id' => null,
+                        'color' => '#028a0f',
+                        'is_system' => true,
+                        'level' => ($assessFolder->level ?? 3) + 1,
+                        'sort_order' => $typeSlug === 'tos' ? 0 : 1,
+                        'school_year_id' => $semesterFolder->school_year_id,
+                    ]
+                );
+            }
+        }
+
+        return $subject;
+    }
+
+    public function subjectLabelFromEqUploadFolder(Folder $folder): ?string
+    {
+        if (!$this->isEqUploadLeafFolder($folder)) {
+            return null;
+        }
+
+        $assessment = $folder->relationLoaded('parent') ? $folder->parent : Folder::find($folder->parent_id);
+        if (!$assessment) {
+            return null;
+        }
+
+        $subjectFolder = $assessment->relationLoaded('parent')
+            ? $assessment->parent
+            : Folder::find($assessment->parent_id);
+
+        return $subjectFolder?->folder_name;
+    }
+
+    public function examTypeFromEqUploadFolder(Folder $folder): string
+    {
+        if (!$this->isEqUploadLeafFolder($folder)) {
+            return 'Prelim';
+        }
+
+        $assessment = $folder->relationLoaded('parent') ? $folder->parent : Folder::find($folder->parent_id);
+        $name = strtolower((string) ($assessment?->folder_name ?? ''));
+
+        return match (true) {
+            str_contains($name, 'midterm') => 'Midterm',
+            str_contains($name, 'final') => 'Final',
+            default => 'Prelim',
+        };
+    }
+
+    public function resolveEqUploadFolder(
+        int $startYear,
+        string $semester,
+        string $subjectLabel,
+        string $examType,
+        string $submissionType,
+    ): ?Folder {
+        $sem = $semester === '2nd' ? '2nd' : '1st';
+        $endYear = $startYear + 1;
+        $semSlug = "eq-{$sem}-{$startYear}-{$endYear}";
+        $semesterFolder = Folder::where('slug', $semSlug)->where('is_system', true)->first();
+        if (!$semesterFolder) {
+            return null;
+        }
+
+        $subjectFolder = $this->ensureSubjectWithEqStructure($semesterFolder, $subjectLabel);
+        $assessSlug = $this->examTypeToAssessmentSlug($examType);
+        $typeSlug = in_array(strtolower($submissionType), self::EQ_SUBFOLDERS, true)
+            ? strtolower($submissionType)
+            : 'toq';
+
+        $code = IteSubjects::codeFromLabel($subjectLabel) ?? 'course';
+        $baseSlug = $semSlug . '-subject-' . strtolower($code);
+        $leafSlug = "{$baseSlug}-{$assessSlug}-{$typeSlug}";
+
+        return Folder::where('slug', $leafSlug)->where('is_system', true)->first();
+    }
+
+    /**
+     * Legacy EQ semester-level TOS/TOQ — disabled for new uploads under eq-category.
      */
     public function isSemesterTypeLeafFolder(?Folder $folder): bool
     {
@@ -284,7 +497,7 @@ class AcademicHierarchyService
             return false;
         }
 
-        if ($this->isUnderTgCategory($folder)) {
+        if ($this->isUnderTgCategory($folder) || $this->isUnderEqCategory($folder)) {
             return false;
         }
 

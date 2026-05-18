@@ -23,6 +23,7 @@ trait ValidatesDocumentUpload
             && $hierarchy->isSemesterTypeLeafFolder($folder);
         $isCourseFolder = $folder && $hierarchy->isCourseSubfolder($folder);
         $isTgUploadLeaf = $folder && $hierarchy->isTgUploadLeafFolder($folder);
+        $isEqUploadLeaf = $folder && $hierarchy->isEqUploadLeafFolder($folder);
         $useCourseSelect = $isTypeLeafFolder;
         $user = auth()->user();
 
@@ -40,7 +41,7 @@ trait ValidatesDocumentUpload
         if ($useCourseSelect) {
             $rules['subject'] = ['required', 'string', Rule::in(IteSubjects::labelsForUser($user))];
             $rules['document_title'] = 'required|string|max:13';
-        } elseif ($isTgUploadLeaf) {
+        } elseif ($isTgUploadLeaf || $isEqUploadLeaf) {
             $rules['document_title'] = 'required|string|max:13';
         } elseif ($isCourseFolder) {
             $rules['document_title'] = 'required|string|max:13';
@@ -56,7 +57,7 @@ trait ValidatesDocumentUpload
                 $rules['recipient_ids.*'] = 'integer|exists:users,id';
             }
 
-            if (!$useCourseSelect && !$isCourseFolder && !$isTgUploadLeaf && IteSubjects::shouldUseSubjectPicker($user, true)) {
+            if (!$useCourseSelect && !$isCourseFolder && !$isTgUploadLeaf && !$isEqUploadLeaf && IteSubjects::shouldUseSubjectPicker($user, true)) {
                 $rules['subject'] = ['required', 'string', Rule::in(IteSubjects::labelsForUser($user))];
             }
 
@@ -64,7 +65,9 @@ trait ValidatesDocumentUpload
                 $rules['documents.*'] = 'required|file|max:10240|mimes:pdf,doc,docx|mimetypes:application/pdf,application/msword,application/vnd.openxmlformats-officedocument.wordprocessingml.document';
             }
 
-            if ($category === 'Exam Questionnaires') {
+            if ($category === 'Exam Questionnaires' && $isEqUploadLeaf) {
+                $rules['documents.*'] = 'required|file|max:10240|mimes:pdf|mimetypes:application/pdf';
+            } elseif ($category === 'Exam Questionnaires') {
                 $rules['exam_type'] = 'required|in:Quiz,Prelim,Midterm,Pre-Final,Final';
                 $rules['documents.*'] = 'required|file|max:10240|mimes:pdf|mimetypes:application/pdf';
             }
@@ -81,6 +84,12 @@ trait ValidatesDocumentUpload
         if ($isTgUploadLeaf) {
             $validated['subject'] = $hierarchy->subjectLabelFromTgUploadFolder($folder)
                 ?? $folder->parent?->folder_name;
+        }
+
+        if ($isEqUploadLeaf) {
+            $validated['subject'] = $hierarchy->subjectLabelFromEqUploadFolder($folder)
+                ?? $folder->parent?->folder_name;
+            $validated['exam_type'] = $hierarchy->examTypeFromEqUploadFolder($folder);
         }
 
         return $validated;

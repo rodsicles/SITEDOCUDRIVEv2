@@ -96,6 +96,26 @@ class FolderService
             })->values();
         }
 
+        if ($hierarchy->isEqSemesterFolder($parent)) {
+            $folders = $folders->filter(function (Folder $folder) {
+                $slug = strtolower((string) $folder->slug);
+
+                return str_contains($slug, '-subject-') || str_contains($slug, '-course-');
+            })->values();
+        }
+
+        if ($hierarchy->isEqSubjectFolder($parent)) {
+            $folders = $folders->filter(function (Folder $folder) {
+                return in_array(trim((string) $folder->folder_name), array_values(AcademicHierarchyService::EQ_ASSESSMENT_FOLDERS), true);
+            })->values();
+        }
+
+        if ($hierarchy->isEqAssessmentFolder($parent)) {
+            $folders = $folders->filter(function (Folder $folder) {
+                return in_array(strtoupper(trim((string) $folder->folder_name)), ['TOS', 'TOQ'], true);
+            })->values();
+        }
+
         return $this->attachSubtreeDocumentCounts($folders, $viewer);
     }
 
@@ -199,8 +219,12 @@ class FolderService
             $hierarchy = app(AcademicHierarchyService::class);
             if ($hierarchy->isTgSemesterFolder($parent)
                 || $hierarchy->isTgSubjectFolder($parent)
-                || $hierarchy->isTgUploadLeafFolder($parent)) {
-                throw new \InvalidArgumentException('You cannot create folders here. Use TG or LB to upload files.');
+                || $hierarchy->isTgUploadLeafFolder($parent)
+                || $hierarchy->isEqSemesterFolder($parent)
+                || $hierarchy->isEqSubjectFolder($parent)
+                || $hierarchy->isEqAssessmentFolder($parent)
+                || $hierarchy->isEqUploadLeafFolder($parent)) {
+                throw new \InvalidArgumentException('You cannot create folders here. Use the provided folders to upload files.');
             }
 
             $data['parent_id'] = $parentId;

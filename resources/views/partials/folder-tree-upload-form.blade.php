@@ -12,6 +12,25 @@
                 <input type="text" name="document_title" class="form-control" placeholder="Enter file name" required maxlength="13" value="{{ old('document_title') }}">
                 <p class="text-xs text-gray-500 dark:text-gray-400 mt-1">A course folder will be created from your selection if it does not exist yet.</p>
             </div>
+        @elseif($useEqUploadLeaf ?? false)
+            @php $eqHierarchy = app(\App\Services\AcademicHierarchyService::class); @endphp
+            <div class="form-group md:col-span-2">
+                <label class="form-label">Subject</label>
+                <input type="text" class="form-control bg-gray-100 dark:bg-gray-800" value="{{ $eqHierarchy->subjectLabelFromEqUploadFolder($currentFolder) ?? '' }}" readonly>
+            </div>
+            <div class="form-group">
+                <label class="form-label">Assessment</label>
+                <input type="text" class="form-control bg-gray-100 dark:bg-gray-800" value="{{ $currentFolder->parent?->folder_name ?? '' }}" readonly>
+            </div>
+            <div class="form-group">
+                <label class="form-label">Type</label>
+                <input type="text" class="form-control bg-gray-100 dark:bg-gray-800" value="{{ $currentFolder->folder_name }}" readonly>
+            </div>
+            <div class="form-group">
+                <label class="form-label">File Name <span class="text-red-500">*</span></label>
+                <input type="text" name="document_title" class="form-control" placeholder="Enter file name" required maxlength="13" value="{{ old('document_title') }}">
+                <p class="text-xs text-gray-500 dark:text-gray-400 mt-1">PDF only. Faculty uploads stay pending until the Dean approves them.</p>
+            </div>
         @elseif($useTgUploadLeaf ?? false)
             <div class="form-group md:col-span-2">
                 <label class="form-label">Subject</label>
@@ -42,21 +61,21 @@
             <select name="document_type" id="folderDocType" class="form-control" required>
                 <option value="">Select Document Type</option>
                 <option value="pdf">PDF Document</option>
-                @if(!(($useCourseSelect ?? false) && $activeTab === 'exam-questionnaires'))
+                @if(!(($useCourseSelect ?? false) && $activeTab === 'exam-questionnaires') && !($useEqUploadLeaf ?? false))
                 <option value="word">Word Document</option>
                 @endif
-                @if(!($useTgUploadLeaf ?? false) && !($useCourseSelect ?? false))
+                @if(!($useTgUploadLeaf ?? false) && !($useEqUploadLeaf ?? false) && !($useCourseSelect ?? false))
                 <option value="image">Image File</option>
                 @endif
             </select>
         </div>
-        @if(($useItSubjectPicker ?? false) && !($useCourseSelect ?? false) && !($useCourseFolderUpload ?? false) && !($useTgUploadLeaf ?? false))
+        @if(($useItSubjectPicker ?? false) && !($useCourseSelect ?? false) && !($useCourseFolderUpload ?? false) && !($useTgUploadLeaf ?? false) && !($useEqUploadLeaf ?? false))
         @include('partials.ite-subject-picker', [
             'pickerId' => 'folderSubjectPicker',
             'subjects' => \App\Support\IteSubjects::labelsForUser(auth()->user()),
         ])
         @endif
-        @if($activeTab === 'exam-questionnaires')
+        @if($activeTab === 'exam-questionnaires' && !($useEqUploadLeaf ?? false))
         <div class="form-group">
             <label class="form-label">Exam Type <span class="text-red-500">*</span></label>
             <select name="exam_type" class="form-control" required>

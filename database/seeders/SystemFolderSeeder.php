@@ -92,15 +92,8 @@ class SystemFolderSeeder extends Seeder
         $endYear = $startYear + 1;
         $ay      = "AY {$startYear}-{$endYear}";
 
-        if ($prefix === 'tg') {
-            // Semester folders only; subject → TG/LB created on demand per course.
-            $subfolders = [];
-        } else {
-            $subfolders = [
-                ['name' => 'TOS (Table of Specification)', 'slug_suffix' => 'tos'],
-                ['name' => 'TOQ (Table of Question)',      'slug_suffix' => 'toq'],
-            ];
-        }
+        // Semester folders only; subject tree created on demand (TG/LB or Prelims/Midterms/Finals → TOS/TOQ).
+        $subfolders = [];
 
         return [
             [

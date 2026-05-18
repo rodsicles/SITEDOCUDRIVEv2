@@ -286,7 +286,8 @@ class DocumentService
         $uploader = User::findOrFail($userId);
         $hierarchy = app(AcademicHierarchyService::class);
 
-        if ($folder && $subject && $hierarchy->isSemesterTypeLeafFolder($folder) && !$hierarchy->isUnderTgCategory($folder)) {
+        if ($folder && $subject && $hierarchy->isSemesterTypeLeafFolder($folder)
+            && !$hierarchy->isUnderTgCategory($folder) && !$hierarchy->isUnderEqCategory($folder)) {
             $folder = $hierarchy->ensureCourseFolder($folder, $subject);
             $validated['folder_id'] = $folder->folder_id;
         }

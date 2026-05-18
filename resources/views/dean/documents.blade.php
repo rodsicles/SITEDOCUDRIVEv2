@@ -21,6 +21,9 @@
                 $hierarchy->isSemesterTypeLeafFolder($currentFolder)
                 || $hierarchy->isTgSemesterFolder($currentFolder)
                 || $hierarchy->isTgSubjectFolder($currentFolder)
+                || $hierarchy->isEqSemesterFolder($currentFolder)
+                || $hierarchy->isEqSubjectFolder($currentFolder)
+                || $hierarchy->isEqAssessmentFolder($currentFolder)
             );
     @endphp
 

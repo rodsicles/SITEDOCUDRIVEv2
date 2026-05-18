@@ -95,6 +95,20 @@
             && $currentFolder
             && $academicHierarchy->isTgUploadLeafFolder($currentFolder);
 
+        $isEqSemesterFolder = isset($currentFolder)
+            && $currentFolder
+            && $activeTab === 'exam-questionnaires'
+            && $academicHierarchy->isEqSemesterFolder($currentFolder);
+        $isEqSubjectFolder = isset($currentFolder)
+            && $currentFolder
+            && $academicHierarchy->isEqSubjectFolder($currentFolder);
+        $isEqAssessmentFolder = isset($currentFolder)
+            && $currentFolder
+            && $academicHierarchy->isEqAssessmentFolder($currentFolder);
+        $isEqUploadLeaf = isset($currentFolder)
+            && $currentFolder
+            && $academicHierarchy->isEqUploadLeafFolder($currentFolder);
+
         if (isset($currentFolder) && $currentFolder && $activeTab === 'teaching-guides') {
             if ($isTgUploadLeaf) {
                 $isLeafFolder = true;
@@ -105,9 +119,22 @@
             }
         }
 
-        $useCourseSelect = $isTypeLeafFolder && $shareableCategoryTab && $activeTab === 'exam-questionnaires';
-        $useCourseFolderUpload = $isCourseFolder && $shareableCategoryTab && $activeTab === 'exam-questionnaires';
+        if (isset($currentFolder) && $currentFolder && $activeTab === 'exam-questionnaires') {
+            if ($isEqUploadLeaf) {
+                $isLeafFolder = true;
+            } elseif ($isEqAssessmentFolder) {
+                $isLeafFolder = false;
+            } elseif ($isEqSubjectFolder) {
+                $isLeafFolder = false;
+            } elseif ($isEqSemesterFolder) {
+                $isLeafFolder = false;
+            }
+        }
+
+        $useCourseSelect = false;
+        $useCourseFolderUpload = false;
         $useTgUploadLeaf = $isTgUploadLeaf && $shareableCategoryTab;
+        $useEqUploadLeaf = $isEqUploadLeaf && $shareableCategoryTab;
     @endphp
 
     @if($isTgSemesterFolder)
@@ -164,8 +191,73 @@
                 @endforelse
             </div>
         </div>
+    @elseif($isEqSemesterFolder)
+        <div class="px-6 py-4">
+            <div class="text-sm text-gray-600 dark:text-gray-400 mb-4">
+                <i class="fas fa-graduation-cap mr-1"></i>
+                Select a subject to open its folder (Prelims, Midterms, Finals, and TOS/TOQ are created automatically).
+            </div>
+            @include('partials.eq-semester-subject-form')
+            <div class="folder-container-new flex gap-3 flex-wrap mt-4">
+                @forelse($displayFolders as $folder)
+                <div class="folder-card-new">
+                    <a href="{{ route($docsRoute, ['tab' => $tab, 'folder' => $folder->folder_id]) }}" class="folder-card-link-new">
+                        <div class="folder-icon-new" style="background-color: #028a0f; color: white;"><i class="fas fa-folder"></i></div>
+                        <div class="folder-info-new">
+                            <div class="folder-name-new">{{ $folder->folder_name }}</div>
+                            <div class="folder-count-new">{{ $folder->documents_count }} Files</div>
+                        </div>
+                    </a>
+                </div>
+                @empty
+                <p class="text-sm text-gray-500 dark:text-gray-400 w-full py-4 text-center">No subject folders yet. Choose a subject above to get started.</p>
+                @endforelse
+            </div>
+        </div>
+    @elseif($isEqSubjectFolder)
+        <div class="px-6 py-4">
+            <div class="text-sm text-gray-600 dark:text-gray-400 mb-4">
+                <i class="fas fa-book mr-1"></i> {{ $currentFolder->folder_name }} — open <strong>Prelims</strong>, <strong>Midterms</strong>, or <strong>Finals</strong>.
+            </div>
+            <div class="folder-container-new flex gap-3 flex-wrap">
+                @forelse($displayFolders as $folder)
+                <div class="folder-card-new">
+                    <a href="{{ route($docsRoute, ['tab' => $tab, 'folder' => $folder->folder_id]) }}" class="folder-card-link-new">
+                        <div class="folder-icon-new" style="background-color: #028a0f; color: white;"><i class="fas fa-folder"></i></div>
+                        <div class="folder-info-new">
+                            <div class="folder-name-new">{{ $folder->folder_name }}</div>
+                            <div class="folder-count-new">{{ $folder->documents_count }} Files</div>
+                        </div>
+                    </a>
+                </div>
+                @empty
+                <p class="text-sm text-gray-500 dark:text-gray-400 w-full py-4 text-center">Assessment folders are being prepared.</p>
+                @endforelse
+            </div>
+        </div>
+    @elseif($isEqAssessmentFolder)
+        <div class="px-6 py-4">
+            <div class="text-sm text-gray-600 dark:text-gray-400 mb-4">
+                <i class="fas fa-layer-group mr-1"></i> {{ $currentFolder->folder_name }} — open <strong>TOS</strong> or <strong>TOQ</strong> to upload files.
+            </div>
+            <div class="folder-container-new flex gap-3 flex-wrap">
+                @forelse($displayFolders as $folder)
+                <div class="folder-card-new">
+                    <a href="{{ route($docsRoute, ['tab' => $tab, 'folder' => $folder->folder_id]) }}" class="folder-card-link-new">
+                        <div class="folder-icon-new" style="background-color: #028a0f; color: white;"><i class="fas fa-folder"></i></div>
+                        <div class="folder-info-new">
+                            <div class="folder-name-new">{{ $folder->folder_name }}</div>
+                            <div class="folder-count-new">{{ $folder->documents_count }} Files</div>
+                        </div>
+                    </a>
+                </div>
+                @empty
+                <p class="text-sm text-gray-500 dark:text-gray-400 w-full py-4 text-center">TOS and TOQ folders are being prepared.</p>
+                @endforelse
+            </div>
+        </div>
     @elseif($isTypeLeafFolder)
-        {{-- TYPE LEAF (TG/LB/TOS/TOQ): course folders + upload with course picker --}}
+        {{-- Legacy type leaf: course folders + upload with course picker --}}
         <div class="px-6 py-4">
             <div class="flex items-center justify-between mb-4">
                 <div class="text-sm text-gray-600 dark:text-gray-400">
@@ -223,7 +315,7 @@
                         <i class="fas fa-plus-circle mr-1"></i> Record Passers
                     </button>
                     @endif
-                    @if(!($isTypeLeafFolder ?? false) && !($useCourseFolderUpload ?? false) && !($isTgUploadLeaf ?? false) && !($isTgSemesterFolder ?? false) && !($isTgSubjectFolder ?? false))
+                    @if(!($isTypeLeafFolder ?? false) && !($useCourseFolderUpload ?? false) && !($isTgUploadLeaf ?? false) && !($isTgSemesterFolder ?? false) && !($isTgSubjectFolder ?? false) && !($isEqUploadLeaf ?? false) && !($isEqSemesterFolder ?? false) && !($isEqSubjectFolder ?? false) && !($isEqAssessmentFolder ?? false))
                     <button type="button" id="btnCreateFolder" onclick="toggleCreateSubfolder()" class="btn btn-primary doc-action-btn" aria-pressed="false">
                         <i class="fas fa-folder-plus mr-1"></i> Create Folder
                     </button>
@@ -464,6 +556,39 @@
                         <li>
                             <strong>{{ $guide->title }}</strong>
                             <span class="text-xs text-gray-500">— uploaded {{ $guide->created_at->format('M d, Y') }}</span>
+                        </li>
+                        @endforeach
+                    </ul>
+                </div>
+                @endif
+            @endif
+
+            @if($isEqUploadLeaf ?? false)
+                @php
+                    $eqHierarchy = app(\App\Services\AcademicHierarchyService::class);
+                    $eqSubjectLabel = $eqHierarchy->subjectLabelFromEqUploadFolder($currentFolder);
+                    $eqExamType = $eqHierarchy->examTypeFromEqUploadFolder($currentFolder);
+                    $eqSubmissionType = strtoupper(trim((string) $currentFolder->folder_name)) === 'TOS' ? 'tos' : 'toq';
+                    $pendingEqQuery = \App\Models\ExamQuestionnaire::query()
+                        ->where('status', 'pending')
+                        ->where('subject', $eqSubjectLabel)
+                        ->where('exam_type', $eqExamType)
+                        ->where('submission_type', $eqSubmissionType);
+                    if ($role === 'faculty') {
+                        $pendingEqQuery->where('submitted_by', auth()->id());
+                    }
+                    $pendingEqItems = $pendingEqQuery->orderByDesc('created_at')->get();
+                @endphp
+                @if($pendingEqItems->isNotEmpty())
+                <div class="mb-4 p-4 border border-amber-200 dark:border-amber-800 bg-amber-50 dark:bg-amber-950/30">
+                    <h4 class="text-sm font-semibold text-amber-900 dark:text-amber-200 mb-2">
+                        <i class="fas fa-clock mr-1"></i> Pending Dean approval ({{ $pendingEqItems->count() }})
+                    </h4>
+                    <ul class="text-sm text-gray-700 dark:text-gray-300 space-y-1">
+                        @foreach($pendingEqItems as $eqItem)
+                        <li>
+                            <strong>{{ $eqItem->title }}</strong>
+                            <span class="text-xs text-gray-500">— uploaded {{ $eqItem->created_at->format('M d, Y') }}</span>
                         </li>
                         @endforeach
                     </ul>

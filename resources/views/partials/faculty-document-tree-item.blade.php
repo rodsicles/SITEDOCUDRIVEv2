@@ -18,8 +18,8 @@
             <a href="{{ route($viewRoute, $doc['id']) }}" target="_blank" class="btn btn-primary py-0.5 px-2 text-xs">
                 <i class="fas fa-eye"></i> View
             </a>
-        @elseif(!empty($doc['is_questionnaire']))
-            <span class="text-gray-400">Pending sync</span>
+        @elseif(!empty($doc['is_questionnaire']) || !empty($doc['is_pending_submission']))
+            <span class="text-gray-400 text-[10px]">Awaiting approval</span>
         @endif
     </div>
 </li>

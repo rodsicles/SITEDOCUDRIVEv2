@@ -7,6 +7,7 @@ use App\Models\ExamQuestionnaire;
 use App\Models\Folder;
 use App\Models\TeachingGuide;
 use App\Support\AcademicYear;
+use App\Support\IteSubjects;
 use Illuminate\Support\Collection;
 
 class FacultyDocumentTreeService
@@ -17,6 +18,7 @@ class FacultyDocumentTreeService
 
     /**
      * Build a nested tree for Dean/Coordinator faculty profile document display.
+     * TG/EQ mirror Documents folder layout: Semester → TG|LB|TOS|TOQ → ITE Course → files.
      *
      * @return array<string, mixed>
      */
@@ -27,8 +29,13 @@ class FacultyDocumentTreeService
             ->orderByDesc('created_at')
             ->get();
 
-        $teachingGuides = TeachingGuide::where('user_id', $userId)->get()->keyBy('document_id');
-        $examQuestionnaires = ExamQuestionnaire::where('submitted_by', $userId)->get()->keyBy('document_id');
+        $teachingGuides = TeachingGuide::with('folder.parent.parent')
+            ->where('user_id', $userId)
+            ->get()
+            ->keyBy('document_id');
+        $examQuestionnaires = ExamQuestionnaire::where('submitted_by', $userId)
+            ->get()
+            ->keyBy('document_id');
 
         $tree = [
             'Teaching Guides' => [],
@@ -43,20 +50,52 @@ class FacultyDocumentTreeService
             $node = $this->buildDocumentNode($document, $teachingGuides, $examQuestionnaires);
 
             if ($category === 'Teaching Guides' || $category === 'Exam Questionnaires') {
-                $this->insertHierarchical($tree[$category], $document, $node);
+                $this->insertShareableBranch(
+                    $tree[$category],
+                    $document,
+                    $node,
+                );
             } else {
                 $this->insertFlatCategory($tree[$category], $document, $node);
             }
         }
 
-        // Include exam questionnaires not yet mirrored to documents
+        foreach ($teachingGuides as $guide) {
+            if ($guide->document_id) {
+                continue;
+            }
+
+            $node = [
+                'id' => 'tg-' . $guide->id,
+                'title' => $this->courseLabel($guide->subject, $guide->title),
+                'type' => $guide->file_type,
+                'status' => $guide->status,
+                'created_at' => $guide->created_at,
+                'view_url' => null,
+                'download_url' => null,
+                'is_pending_submission' => true,
+            ];
+
+            $this->insertShareableBranch(
+                $tree['Teaching Guides'],
+                null,
+                $node,
+                $guide->folder,
+                $guide->semester,
+                $guide->academic_year,
+                null,
+                $guide->subject ?: $guide->title,
+            );
+        }
+
         foreach ($examQuestionnaires as $eq) {
             if ($eq->document_id) {
                 continue;
             }
+
             $node = [
                 'id' => 'eq-' . $eq->id,
-                'title' => $eq->title,
+                'title' => $this->courseLabel($eq->subject, $eq->title),
                 'type' => $eq->file_type,
                 'status' => $eq->status,
                 'created_at' => $eq->created_at,
@@ -64,19 +103,17 @@ class FacultyDocumentTreeService
                 'download_url' => null,
                 'is_questionnaire' => true,
             ];
-            $pseudo = new Document([
-                'subject' => $eq->subject,
-                'academic_year' => $eq->academic_year,
-                'semester' => $eq->semester,
-            ]);
-            $pseudo->setRelation('folder', null);
-            $this->insertHierarchical($tree['Exam Questionnaires'], $pseudo, $node, [
-                'academic_year' => $eq->academic_year,
-                'semester' => $eq->semester,
-                'subject' => $eq->subject,
-                'assessment' => $this->hierarchy->examTypeToAssessmentSlug($eq->exam_type),
-                'folder_type' => 'Submissions',
-            ]);
+
+            $this->insertShareableBranch(
+                $tree['Exam Questionnaires'],
+                null,
+                $node,
+                null,
+                $eq->semester,
+                $eq->academic_year,
+                $eq->submission_type,
+                $eq->subject,
+            );
         }
 
         return array_filter($tree, fn ($branch) => !empty($branch));
@@ -106,9 +143,15 @@ class FacultyDocumentTreeService
         Collection $teachingGuides,
         Collection $examQuestionnaires,
     ): array {
+        $eq = $examQuestionnaires->get($document->document_id);
+        $tg = $teachingGuides->get($document->document_id);
+
         return [
             'id' => $document->document_id,
-            'title' => $document->document_title,
+            'title' => $this->courseLabel(
+                $document->subject,
+                $document->document_title,
+            ),
             'subject' => $document->subject,
             'type' => $document->document_type,
             'created_at' => $document->created_at,
@@ -116,27 +159,83 @@ class FacultyDocumentTreeService
             'folder_path' => $this->folderBreadcrumb($document->folder),
             'view_url' => null,
             'download_url' => null,
-            'status' => $examQuestionnaires->get($document->document_id)?->status,
+            'status' => $eq?->status ?? $tg?->status,
         ];
     }
 
-    protected function insertHierarchical(array &$branch, Document $document, array $node, ?array $override = null): void
-    {
-        $meta = $override ?? $this->parseFolderMeta($document);
-        $ay = $meta['academic_year'] ?? AcademicYear::currentRange();
-        $sem = $meta['semester'] ?? '1st';
-        $subject = $meta['subject'] ?? ($document->subject ?: 'General');
-        $assessment = $meta['assessment'] ?? 'prelims';
-        $folderType = $meta['folder_type'] ?? 'Files';
-        $version = $meta['version'] ?? 'final';
+    /**
+     * Semester folder → TG|LB|TOS|TOQ → ITE course → files.
+     */
+    protected function insertShareableBranch(
+        array &$branch,
+        ?Document $document,
+        array $node,
+        ?Folder $folderOverride = null,
+        ?string $semester = null,
+        ?string $academicYear = null,
+        ?string $submissionTypeSlug = null,
+        ?string $courseLabel = null,
+    ): void {
+        $folder = $folderOverride ?? $document?->folder;
+        $course = $this->courseLabel(
+            $courseLabel ?? $document?->subject,
+            $document?->document_title ?? ($node['title'] ?? 'General'),
+        );
 
-        $branch[$ay] ??= [];
-        $branch[$ay][$sem] ??= [];
-        $branch[$ay][$sem][$subject] ??= [];
-        $branch[$ay][$sem][$subject][$assessment] ??= [];
-        $branch[$ay][$sem][$subject][$assessment][$folderType] ??= [];
-        $branch[$ay][$sem][$subject][$assessment][$folderType][$version] ??= [];
-        $branch[$ay][$sem][$subject][$assessment][$folderType][$version][] = $node;
+        $semesterKey = $this->resolveSemesterFolderLabel($folder, $semester, $academicYear);
+        $leafKey = $this->resolveLeafFolderLabel($folder, $submissionTypeSlug);
+
+        $branch[$semesterKey] ??= [];
+        $branch[$semesterKey][$leafKey] ??= [];
+        $branch[$semesterKey][$leafKey][$course] ??= [];
+        $branch[$semesterKey][$leafKey][$course][] = $node;
+    }
+
+    protected function courseLabel(?string $subject, ?string $fallback): string
+    {
+        if ($subject && trim($subject) !== '') {
+            if (IteSubjects::isValidLabel($subject)) {
+                return $subject;
+            }
+
+            return trim($subject);
+        }
+
+        return trim($fallback ?? '') ?: 'General';
+    }
+
+    protected function resolveSemesterFolderLabel(?Folder $leafFolder, ?string $semester, ?string $academicYear): string
+    {
+        if ($leafFolder) {
+            foreach (array_reverse($leafFolder->getAncestors()) as $ancestor) {
+                if (str_contains($ancestor->folder_name, 'Semester')) {
+                    return $ancestor->folder_name;
+                }
+            }
+        }
+
+        if ($academicYear && $semester) {
+            $semLabel = $semester === '2nd' ? '2nd' : '1st';
+
+            return "{$semLabel} Semester AY {$academicYear}";
+        }
+
+        return 'Uncategorized';
+    }
+
+    protected function resolveLeafFolderLabel(?Folder $folder, ?string $typeSlug): string
+    {
+        if ($folder) {
+            return $folder->folder_name;
+        }
+
+        return match (strtolower((string) $typeSlug)) {
+            'tos' => 'TOS (Table of Specification)',
+            'toq' => 'TOQ (Table of Question)',
+            'tg' => 'TG',
+            'lb' => 'LB',
+            default => 'Files',
+        };
     }
 
     protected function insertFlatCategory(array &$branch, Document $document, array $node): void
@@ -144,55 +243,6 @@ class FacultyDocumentTreeService
         $folderName = $document->folder?->folder_name ?? 'Uncategorized';
         $branch[$folderName] ??= [];
         $branch[$folderName][] = $node;
-    }
-
-    /** @return array<string, string|null> */
-    protected function parseFolderMeta(Document $document): array
-    {
-        $folder = $document->folder;
-        $ancestors = $folder ? array_merge($folder->getAncestors(), [$folder]) : [];
-        $slugTrail = implode(' ', array_map(fn ($f) => $f->slug ?? '', $ancestors));
-        $nameTrail = implode(' ', array_map(fn ($f) => $f->folder_name ?? '', $ancestors));
-
-        $academicYear = null;
-        if (preg_match('/(\d{4})-(\d{4})/', $slugTrail . ' ' . $nameTrail, $m)) {
-            $academicYear = $m[1] . '-' . $m[2];
-        }
-
-        $semester = str_contains($slugTrail, '-2nd-') || str_contains($nameTrail, '2nd Semester') ? '2nd' : '1st';
-
-        $assessment = 'prelims';
-        foreach (['finals', 'midterms', 'prelims'] as $period) {
-            if (str_contains($slugTrail, $period)) {
-                $assessment = $period;
-                break;
-            }
-        }
-
-        $guideType = 'Files';
-        foreach (config('academic.guide_types', []) as $slug => $label) {
-            if (str_contains($slugTrail, $slug)) {
-                $guideType = $label;
-                break;
-            }
-        }
-
-        $version = 'final';
-        foreach (config('academic.version_types', []) as $slug => $label) {
-            if (str_contains($slugTrail, $slug)) {
-                $version = $label;
-                break;
-            }
-        }
-
-        return [
-            'academic_year' => $academicYear ?? AcademicYear::currentRange(),
-            'semester' => $semester,
-            'subject' => $document->subject ?: ($folder?->folder_name ?? 'General'),
-            'assessment' => ucfirst($assessment),
-            'folder_type' => $guideType,
-            'version' => $version,
-        ];
     }
 
     protected function folderBreadcrumb(?Folder $folder): string

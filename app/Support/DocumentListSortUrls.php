@@ -67,12 +67,21 @@ class DocumentListSortUrls
         return route($routeName, self::filterParams($params));
     }
 
-    public static function resetHref(string $routeName, mixed $folderFilter, string $tab): string
+    public static function resetHref(string $routeName, mixed $folderFilter, string $tab, ?Request $request = null): string
     {
-        return route($routeName, self::filterParams([
+        $params = [
             'folder' => $folderFilter,
             'tab' => $tab,
-        ]));
+        ];
+
+        if ($request) {
+            $search = $request->input('search') ?? $request->input('name');
+            if ($search) {
+                $params['search'] = $search;
+            }
+        }
+
+        return route($routeName, self::filterParams($params));
     }
 
     private static function filterParams(array $params): array

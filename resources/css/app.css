@@ -2371,12 +2371,85 @@ body {
 }
 
 .card-header-documents-left {
-    @apply flex items-center gap-3 flex-wrap min-w-0;
+    @apply flex items-center gap-3 flex-wrap min-w-0 flex-1;
 }
 
-/* Documents list: Sort dropdown (compact, Image-2 style) */
+.doc-header-toolbar {
+    @apply flex items-center gap-2 flex-wrap min-w-0;
+}
+
+.doc-search-form {
+    position: relative;
+    display: flex;
+    align-items: center;
+    min-width: 11rem;
+    max-width: 16rem;
+    flex: 1 1 11rem;
+}
+
+.doc-search-icon {
+    position: absolute;
+    left: 0.65rem;
+    font-size: 0.75rem;
+    color: #9ca3af;
+    pointer-events: none;
+    z-index: 1;
+}
+
+.doc-search-input {
+    width: 100%;
+    padding: 0.35rem 1.75rem 0.35rem 2rem;
+    font-size: 0.8125rem;
+    color: #374151;
+    background: #f3f4f6;
+    border: 1px solid #d1d5db;
+    border-radius: 0.375rem;
+    outline: none;
+    transition: border-color 0.15s ease, box-shadow 0.15s ease;
+}
+
+.dark .doc-search-input {
+    color: #e5e7eb;
+    background: #2a2a2a;
+    border-color: #4b5563;
+}
+
+.doc-search-input::placeholder {
+    color: #9ca3af;
+}
+
+.doc-search-input:focus {
+    border-color: #028a0f;
+    box-shadow: 0 0 0 1px rgba(2, 138, 15, 0.35);
+}
+
+.dark .doc-search-input:focus {
+    border-color: #02b815;
+}
+
+.doc-search-clear {
+    position: absolute;
+    right: 0.45rem;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    width: 1.25rem;
+    height: 1.25rem;
+    font-size: 0.65rem;
+    color: #9ca3af;
+    text-decoration: none;
+    border-radius: 9999px;
+}
+
+.doc-search-clear:hover {
+    color: #dc2626;
+    background: rgba(220, 38, 38, 0.1);
+}
+
+/* Documents list: Sort dropdown (compact) */
 .doc-sort-wrap {
     position: relative;
+    flex-shrink: 0;
 }
 
 .doc-sort-trigger {
@@ -2429,12 +2502,13 @@ body {
     top: calc(100% + 0.35rem);
     left: 0;
     z-index: 60;
-    min-width: 11rem;
+    min-width: 10.5rem;
     padding: 0.35rem 0;
     background: #fff;
     border: 1px solid #e5e7eb;
     border-radius: 0.5rem;
-    box-shadow: 0 8px 24px rgba(0, 0, 0, 0.12);
+    box-shadow: 0 10px 28px rgba(0, 0, 0, 0.14);
+    overflow: visible;
 }
 
 .dark .doc-sort-menu {
@@ -2448,14 +2522,26 @@ body {
 }
 
 .doc-sort-item {
-    display: flex;
-    align-items: center;
-    gap: 0.5rem;
-    padding: 0.5rem 0.85rem;
+    position: relative;
+    display: block;
     font-size: 0.875rem;
     color: #374151;
     text-decoration: none;
-    cursor: default;
+}
+
+.doc-sort-item.is-active,
+.doc-sort-flyout-item.is-active,
+.doc-sort-item-row.is-active,
+.doc-sort-flyout-row.is-active {
+    color: #028a0f;
+    font-weight: 600;
+}
+
+.dark .doc-sort-item.is-active,
+.dark .doc-sort-flyout-item.is-active,
+.dark .doc-sort-item-row.is-active,
+.dark .doc-sort-flyout-row.is-active {
+    color: #34d399;
 }
 
 .dark .doc-sort-item {
@@ -2463,22 +2549,27 @@ body {
 }
 
 a.doc-sort-item {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+    padding: 0.5rem 0.85rem;
     cursor: pointer;
 }
 
 a.doc-sort-item:hover,
-.doc-sort-item.has-submenu:hover > .doc-sort-item-row {
+.doc-sort-item-row:hover,
+.doc-sort-flyout-row:hover {
     background: #f3f4f6;
-    color: #111827;
 }
 
 .dark a.doc-sort-item:hover,
-.dark .doc-sort-item.has-submenu:hover > .doc-sort-item-row {
+.dark .doc-sort-item-row:hover,
+.dark .doc-sort-flyout-row:hover {
     background: #2a2a2a;
-    color: #f9fafb;
 }
 
-.doc-sort-item-row {
+.doc-sort-item-row,
+.doc-sort-flyout-row {
     display: flex;
     align-items: center;
     gap: 0.5rem;
@@ -2486,6 +2577,11 @@ a.doc-sort-item:hover,
     padding: 0.5rem 0.85rem;
     font-size: 0.875rem;
     color: inherit;
+    background: transparent;
+    border: none;
+    text-align: left;
+    cursor: pointer;
+    font-family: inherit;
 }
 
 .doc-sort-dot {
@@ -2507,80 +2603,76 @@ a.doc-sort-item:hover,
     opacity: 0.55;
 }
 
-.doc-sort-item.has-submenu {
-    position: relative;
-    flex-direction: column;
-    align-items: stretch;
+.doc-sort-item.has-submenu,
+.doc-sort-flyout-item.has-submenu {
     padding: 0;
 }
 
-.doc-sort-submenu {
+.doc-sort-flyout {
     display: none;
     position: absolute;
-    left: 100%;
+    left: calc(100% + 0.25rem);
     top: 0;
+    z-index: 70;
     min-width: 10.5rem;
     padding: 0.35rem 0;
-    margin-left: 0.2rem;
     background: #fff;
     border: 1px solid #e5e7eb;
     border-radius: 0.5rem;
-    box-shadow: 0 8px 24px rgba(0, 0, 0, 0.12);
+    box-shadow: 0 10px 28px rgba(0, 0, 0, 0.14);
 }
 
-.dark .doc-sort-submenu {
+.dark .doc-sort-flyout {
     background: #1f1f1f;
     border-color: #404040;
-    box-shadow: 0 8px 24px rgba(0, 0, 0, 0.45);
+    box-shadow: 0 10px 28px rgba(0, 0, 0, 0.45);
 }
 
-.doc-sort-item.has-submenu.submenu-open .doc-sort-submenu,
-.doc-sort-item.has-submenu:focus-within .doc-sort-submenu {
+.doc-sort-flyout--nested {
+    z-index: 80;
+}
+
+.doc-sort-item.has-submenu.submenu-open > .doc-sort-flyout,
+.doc-sort-flyout-item.has-submenu.submenu-open > .doc-sort-flyout--nested {
     display: block;
 }
 
-.doc-sort-subitem {
+.doc-sort-flyout-item {
     display: block;
     padding: 0.45rem 0.85rem;
     font-size: 0.8125rem;
     color: #374151;
     text-decoration: none;
+    white-space: nowrap;
 }
 
-.dark .doc-sort-subitem {
+.dark .doc-sort-flyout-item {
     color: #e5e7eb;
 }
 
-.doc-sort-subitem:hover {
+.doc-sort-flyout-item:hover {
     background: #f3f4f6;
-    color: #028a0f;
 }
 
-.dark .doc-sort-subitem:hover {
+.dark .doc-sort-flyout-item:hover {
     background: #2a2a2a;
-    color: #34d399;
 }
 
-.doc-sort-subitem.is-active {
-    font-weight: 600;
-    color: #028a0f;
+.doc-sort-flyout-item.has-submenu {
+    position: relative;
 }
 
-.dark .doc-sort-subitem.is-active {
-    color: #34d399;
-}
-
-.doc-sort-submenu-divider {
+.doc-sort-flyout-divider {
     height: 1px;
     margin: 0.35rem 0;
     background: #e5e7eb;
 }
 
-.dark .doc-sort-submenu-divider {
+.dark .doc-sort-flyout-divider {
     background: #404040;
 }
 
-.doc-sort-submenu-label {
+.doc-sort-flyout-label {
     display: block;
     padding: 0.35rem 0.85rem 0.15rem;
     font-size: 0.65rem;

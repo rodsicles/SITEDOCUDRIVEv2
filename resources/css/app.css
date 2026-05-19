@@ -165,32 +165,29 @@ body {
     border-left-color: #02b815;
 }
 
-/* Sidebar Container - Ensure all items visible - NO HEIGHT LIMITS */
+/* Sidebar: fixed viewport height; nav scrolls only when items overflow */
 .sidebar {
     display: flex !important;
     flex-direction: column !important;
-    overflow-y: auto !important;
-    overflow-x: hidden !important;
     height: 100vh !important;
-    max-height: none !important;
+    max-height: 100vh !important;
+    overflow: hidden !important;
 }
 
-.sidebar > div:first-child {
+.sidebar > div:first-child,
+.sidebar-brand {
     flex-shrink: 0 !important;
-    min-height: auto;
-    max-height: none !important;
-    overflow: visible !important;
 }
 
 .sidebar nav {
     display: flex !important;
     flex-direction: column !important;
     gap: 0 !important;
-    flex: 1 !important;
+    flex: 1 1 auto !important;
+    min-height: 0 !important;
     width: 100% !important;
-    overflow: visible !important;
-    max-height: none !important;
-    height: auto !important;
+    overflow-y: auto !important;
+    overflow-x: hidden !important;
     padding: 0.75rem !important;
     padding-bottom: 2rem !important;
 }
@@ -1976,32 +1973,36 @@ body {
    AGGRESSIVE: OVERRIDE ALL HOVER & ANIMATION
    ============================================ */
 @layer utilities {
-    /* ====== SIDEBAR NAV - ALWAYS SHOW ALL ITEMS ====== */
-    .sidebar,
-    .sidebar nav,
-    .sidebar nav > * {
-        max-height: none !important;
-        height: auto !important;
-        min-height: auto !important;
-        overflow: visible !important;
+    /* ====== SIDEBAR NAV - scroll only when items do not fit (zoom, small viewport) ====== */
+    .sidebar {
+        display: flex !important;
+        flex-direction: column !important;
+        height: 100vh !important;
+        max-height: 100vh !important;
+        overflow: hidden !important;
+    }
+
+    .sidebar > div:first-child,
+    .sidebar-brand {
         flex-shrink: 0 !important;
     }
 
-    .sidebar {
-        min-height: 100vh !important;
-    }
-
     .sidebar nav {
-        flex: 0 0 auto !important;
+        flex: 1 1 auto !important;
+        min-height: 0 !important;
+        overflow-y: auto !important;
+        overflow-x: hidden !important;
     }
 
     .menu-item,
     .sidebar-section-label,
     [class*="menu"] {
-        max-height: none !important;
-        overflow: visible !important;
-        display: flex !important;
         flex-shrink: 0 !important;
+    }
+
+    .menu-item,
+    [class*="menu"] {
+        display: flex !important;
     }
 
     .sidebar-section-label {

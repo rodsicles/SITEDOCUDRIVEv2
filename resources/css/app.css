@@ -2093,14 +2093,12 @@ body {
         overflow-x: hidden !important;
     }
 
-    .menu-item,
-    .sidebar-section-label,
-    [class*="menu"] {
+    .sidebar .menu-item,
+    .sidebar-section-label {
         flex-shrink: 0 !important;
     }
 
-    .menu-item,
-    [class*="menu"] {
+    .sidebar .menu-item {
         display: flex !important;
     }
 
@@ -2550,11 +2548,16 @@ body {
 }
 
 .doc-menu-panel {
+    display: none !important;
     @apply absolute right-0 top-full mt-1 z-50 min-w-[11rem] p-2
         bg-white dark:bg-[#1f1f1f] border border-gray-200 dark:border-gray-600;
     box-shadow:
         0 4px 20px rgba(15, 23, 42, 0.08),
         0 1px 4px rgba(15, 23, 42, 0.06);
+}
+
+.doc-menu-panel.is-open {
+    display: block !important;
 }
 
 .dark .doc-menu-panel {

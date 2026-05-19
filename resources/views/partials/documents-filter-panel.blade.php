@@ -113,7 +113,7 @@
                         <span>Sort</span>
                         <i class="fas fa-chevron-down doc-toolbar-chevron" aria-hidden="true"></i>
                     </button>
-                    <div class="doc-menu-panel hidden" data-doc-menu-panel role="menu">
+                    <div class="doc-menu-panel" data-doc-menu-panel role="menu">
                         <p class="doc-menu-heading">Sort by</p>
                         @foreach($sortLabels as $value => $label)
                         <label class="doc-menu-option">
@@ -218,7 +218,7 @@
                         <span>Views</span>
                         <i class="fas fa-chevron-down doc-toolbar-chevron" aria-hidden="true"></i>
                     </button>
-                    <div class="doc-menu-panel hidden" data-doc-menu-panel role="menu">
+                    <div class="doc-menu-panel" data-doc-menu-panel role="menu">
                         @if($savedFilters->isNotEmpty())
                         <p class="doc-menu-heading">Saved views</p>
                         @foreach($savedFilters as $savedFilter)
@@ -322,13 +322,12 @@
     var saveNameHidden = saveForm && saveForm.querySelector('[data-doc-save-view-name]');
     var viewNameInput = toolbar.querySelector('input[name="view_name"]');
 
-    function closeAllMenus(except) {
+    function closeAllMenus(exceptPanel) {
         toolbar.querySelectorAll('[data-doc-menu-panel]').forEach(function (panel) {
-            if (except && panel === except) return;
-            panel.classList.add('hidden');
+            if (exceptPanel && panel === exceptPanel) return;
+            panel.classList.remove('is-open');
         });
         toolbar.querySelectorAll('[data-doc-menu-trigger]').forEach(function (btn) {
-            if (except && btn === except) return;
             btn.setAttribute('aria-expanded', 'false');
         });
     }
@@ -340,10 +339,10 @@
 
         trigger.addEventListener('click', function (e) {
             e.stopPropagation();
-            var willOpen = panel.classList.contains('hidden');
+            var willOpen = !panel.classList.contains('is-open');
             closeAllMenus();
             if (willOpen) {
-                panel.classList.remove('hidden');
+                panel.classList.add('is-open');
                 trigger.setAttribute('aria-expanded', 'true');
             }
         });

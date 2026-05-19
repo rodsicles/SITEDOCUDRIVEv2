@@ -145,7 +145,7 @@
                         <span>Filter</span>
                         <i class="fas fa-chevron-down doc-toolbar-chevron" aria-hidden="true"></i>
                     </button>
-                    <div class="doc-menu-panel doc-menu-panel--wide hidden" data-doc-menu-panel role="menu">
+                    <div class="doc-menu-panel doc-menu-panel--wide" data-doc-menu-panel role="menu">
                         <p class="doc-menu-heading">Refine results</p>
                         <div class="doc-menu-field">
                             <label class="doc-menu-label" for="docFilterType">Type</label>

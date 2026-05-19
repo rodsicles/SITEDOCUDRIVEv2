@@ -2,107 +2,25 @@
 
 namespace App\Http\Controllers;
 
+use App\Services\GlobalSearchService;
 use Illuminate\Http\Request;
-use App\Models\User;
-use App\Models\Employee;
-use App\Models\Task;
-use App\Models\Document;
 
 class SearchController extends Controller
 {
+    public function __construct(
+        protected GlobalSearchService $globalSearch
+    ) {}
+
     public function search(Request $request)
     {
         $query = trim((string) $request->get('q', ''));
 
-        // Require at least 3 characters to prevent expensive wildcard scans.
         if (mb_strlen($query) < 3) {
             return response()->json([]);
         }
 
-        $results = [];
-        $user = auth()->user();
-
-        // Search Employees (Dean and Coordinator only)
-        if ($user->isDean() || $user->isProgramCoordinator()) {
-            $employeeQuery = Employee::where(function ($q) use ($query) {
-                $q->where('full_name', 'LIKE', "%{$query}%")
-                  ->orWhere('employee_no', 'LIKE', "%{$query}%")
-                  ->orWhere('department', 'LIKE', "%{$query}%");
-            });
-
-            // Coordinators can only see employees in their own department
-            if ($user->isProgramCoordinator()) {
-                $coordDept = optional($user->employee)->department;
-                if ($coordDept) {
-                    $employeeQuery->where('department', $coordDept);
-                }
-            }
-
-            $employees = $employeeQuery->limit(5)->get();
-
-            foreach ($employees as $employee) {
-                $results[] = [
-                    'title' => $employee->full_name,
-                    'type' => 'Employee - ' . ($employee->department ?? 'N/A'),
-                    'url' => $user->isDean() ? route('dean.employees') : route('coordinator.faculty'),
-                ];
-            }
-        }
-
-        // Search Tasks
-        $tasksQuery = Task::where(function($q) use ($query) {
-            $q->where('task_title', 'LIKE', "%{$query}%")
-              ->orWhere('task_description', 'LIKE', "%{$query}%");
-        });
-
-        if ($user->isFaculty()) {
-            $tasksQuery->where('assigned_to', $user->id);
-        } elseif ($user->isProgramCoordinator()) {
-            $tasksQuery->where('assigned_by', $user->id);
-        }
-
-        $tasks = $tasksQuery->limit(5)->get();
-
-        foreach ($tasks as $task) {
-            $url = match(true) {
-                $user->isDean() => route('dean.dashboard'),
-                $user->isProgramCoordinator() => route('coordinator.tasks'),
-                $user->isFaculty() => route('faculty.tasks'),
-                default => '#',
-            };
-
-            $results[] = [
-                'title' => $task->task_title,
-                'type' => 'Task - ' . $task->status,
-                'url' => $url,
-            ];
-        }
-
-        // Search Documents (role-filtered)
-        $documents = Document::getFilteredDocuments($user)
-            ->latest()
-            ->where(function ($q) use ($query) {
-                $q->where('document_title', 'LIKE', "%{$query}%")
-                  ->orWhere('document_type', 'LIKE', "%{$query}%");
-            })
-            ->limit(5)
-            ->get();
-
-        foreach ($documents as $document) {
-            $url = match(true) {
-                $user->isDean() => route('dean.documents'),
-                $user->isProgramCoordinator() => route('coordinator.documents'),
-                $user->isFaculty() => route('faculty.documents'),
-                default => '#',
-            };
-
-            $results[] = [
-                'title' => $document->document_title,
-                'type' => 'Document - ' . ($document->document_type ?? 'General'),
-                'url' => $url,
-            ];
-        }
-
-        return response()->json($results);
+        return response()->json(
+            $this->globalSearch->search(auth()->user(), $query)
+        );
     }
 }

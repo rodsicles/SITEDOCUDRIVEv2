@@ -9,6 +9,8 @@ use App\Models\SchoolYear;
 
 class Folder extends Model
 {
+    public const CUSTOM_FOLDERS_SLUG = 'custom-folders';
+
     protected $primaryKey = 'folder_id';
 
     protected $fillable = [
@@ -86,6 +88,24 @@ class Folder extends Model
     public function scopeTopLevel($query)
     {
         return $query->whereNull('parent_id');
+    }
+
+    public function isCustomFoldersCategory(): bool
+    {
+        return $this->slug === self::CUSTOM_FOLDERS_SLUG;
+    }
+
+    public function isCustomSubfolder(): bool
+    {
+        if ($this->is_system) {
+            return false;
+        }
+
+        if (!$this->relationLoaded('parent')) {
+            $this->load('parent');
+        }
+
+        return (bool) $this->parent?->isCustomFoldersCategory();
     }
 
     /**

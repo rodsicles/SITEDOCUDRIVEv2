@@ -57,6 +57,11 @@ class SystemFolderSeeder extends Seeder
                 'slug' => 'eq-category',
                 'children' => $this->buildArchiveSchoolYears('eq'),
             ],
+            [
+                'name' => 'Custom Folders',
+                'slug' => Folder::CUSTOM_FOLDERS_SLUG,
+                'children' => [],
+            ],
         ];
 
         foreach ($tree as $sortOrder => $category) {

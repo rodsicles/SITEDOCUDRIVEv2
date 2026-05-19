@@ -20,15 +20,22 @@
         $useItSubjectPicker = \App\Support\IteSubjects::shouldUseSubjectPicker($documentViewer, $shareableCategoryTab);
         $academicHierarchy = app(\App\Services\AcademicHierarchyService::class);
         $useCourseSelect = false;
+        $customFoldersCategory = $folderTree->firstWhere('slug', \App\Models\Folder::CUSTOM_FOLDERS_SLUG);
+        $isCustomFoldersTab = $activeTab === 'custom-folders';
     @endphp
     <div class="category-tabs">
         @foreach($folderTree as $category)
             @php
                 $tabSlug = \Illuminate\Support\Str::slug($category->folder_name);
+                $tabIcon = match ($tabSlug) {
+                    'academics' => 'fa-book',
+                    'custom-folders' => 'fa-folder-plus',
+                    default => 'fa-certificate',
+                };
             @endphp
             <a href="{{ route($docsRoute, ['tab' => $tabSlug]) }}"
                class="category-tab {{ $activeTab === $tabSlug ? 'active' : '' }}">
-                <i class="fas {{ $tabSlug === 'academics' ? 'fa-book' : 'fa-certificate' }} mr-2"></i>
+                <i class="fas {{ $tabIcon }} mr-2"></i>
                 {{ $category->folder_name }}
             </a>
         @endforeach
@@ -135,6 +142,11 @@
         $useCourseFolderUpload = false;
         $useTgUploadLeaf = $isTgUploadLeaf && $shareableCategoryTab;
         $useEqUploadLeaf = $isEqUploadLeaf && $shareableCategoryTab;
+        $isCustomSubfolder = isset($currentFolder) && $currentFolder && $currentFolder->isCustomSubfolder();
+        if ($isCustomSubfolder) {
+            $isLeafFolder = true;
+            $displayFolders = collect();
+        }
     @endphp
 
     @if($isTgSemesterFolder)
@@ -315,7 +327,7 @@
                         <i class="fas fa-plus-circle mr-1"></i> Record Passers
                     </button>
                     @endif
-                    @if(!($isTypeLeafFolder ?? false) && !($useCourseFolderUpload ?? false) && !($isTgUploadLeaf ?? false) && !($isTgSemesterFolder ?? false) && !($isTgSubjectFolder ?? false) && !($isEqUploadLeaf ?? false) && !($isEqSemesterFolder ?? false) && !($isEqSubjectFolder ?? false) && !($isEqAssessmentFolder ?? false))
+                    @if(!($isCustomSubfolder ?? false) && !($isTypeLeafFolder ?? false) && !($useCourseFolderUpload ?? false) && !($isTgUploadLeaf ?? false) && !($isTgSemesterFolder ?? false) && !($isTgSubjectFolder ?? false) && !($isEqUploadLeaf ?? false) && !($isEqSemesterFolder ?? false) && !($isEqSubjectFolder ?? false) && !($isEqAssessmentFolder ?? false))
                     <button type="button" id="btnCreateFolder" onclick="toggleCreateSubfolder()" class="btn btn-primary doc-action-btn" aria-pressed="false">
                         <i class="fas fa-folder-plus mr-1"></i> Create Folder
                     </button>
@@ -602,6 +614,34 @@
         </div>
     @else
         {{-- FOLDER CARDS --}}
+        @if($isCustomFoldersTab && !isset($currentFolder) && $canUpload && $customFoldersCategory)
+        <div class="px-6 py-3 flex flex-col gap-3 border-b border-gray-200 dark:border-gray-700">
+            <div class="flex items-center justify-between gap-3 flex-wrap">
+                <p class="text-sm text-gray-600 dark:text-gray-400 m-0">
+                    <i class="fas fa-folder-plus mr-1"></i> Create a folder here, then open it to upload files. Nested folders are not allowed.
+                </p>
+                <button type="button" id="btnCreateCustomFolder" onclick="toggleCreateCustomFolder()" class="btn btn-primary doc-action-btn text-sm" aria-pressed="false">
+                    <i class="fas fa-folder-plus mr-1"></i> Create Folder
+                </button>
+            </div>
+            <form id="createCustomFolderForm" class="hidden" onsubmit="return false;">
+                @csrf
+                <input type="hidden" name="parent_id" value="{{ $customFoldersCategory->folder_id }}">
+                <div class="flex gap-3 items-end flex-wrap">
+                    <div class="form-group mb-0 flex-1 min-w-[12rem]">
+                        <label class="form-label">Folder Name *</label>
+                        <input type="text" name="folder_name" class="form-control" placeholder="Enter folder name" required maxlength="13">
+                    </div>
+                    <button type="button" onclick="submitCreateCustomFolder()" class="btn btn-primary" id="customFolderSubmitBtn">
+                        <i class="fas fa-plus"></i> Create
+                    </button>
+                    <button type="button" onclick="toggleCreateCustomFolder()" class="btn bg-gray-200 dark:bg-gray-700 text-gray-700 dark:text-gray-300 text-sm">
+                        Cancel
+                    </button>
+                </div>
+            </form>
+        </div>
+        @endif
         <div class="folder-container-new px-6 py-4 flex gap-3 flex-wrap">
             @forelse($displayFolders as $folder)
             <div class="folder-card-new {{ (isset($folderFilter) && $folderFilter == $folder->folder_id) ? 'folder-card-active' : '' }}">
@@ -944,6 +984,64 @@
             }
         } catch (error) {
             showToast('Error saving count. Please try again.', 'error');
+            btn.disabled = false;
+            btn.innerHTML = originalText;
+        }
+    }
+</script>
+@endpush
+@endif
+
+@if($isCustomFoldersTab && $canUpload)
+@push('scripts')
+<script>
+    function toggleCreateCustomFolder() {
+        const form = document.getElementById('createCustomFolderForm');
+        const btn = document.getElementById('btnCreateCustomFolder');
+        if (!form || !btn) return;
+        form.classList.toggle('hidden');
+        const isOpen = !form.classList.contains('hidden');
+        btn.classList.toggle('is-active', isOpen);
+        btn.setAttribute('aria-pressed', isOpen ? 'true' : 'false');
+    }
+
+    async function submitCreateCustomFolder() {
+        const form = document.getElementById('createCustomFolderForm');
+        const btn = document.getElementById('customFolderSubmitBtn');
+        if (!form || !btn) return;
+
+        const originalText = btn.innerHTML;
+        const folderName = form.querySelector('[name="folder_name"]').value.trim();
+        const parentId = form.querySelector('[name="parent_id"]').value;
+
+        if (!folderName) { alert('Please enter a folder name.'); return; }
+
+        btn.disabled = true;
+        btn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Creating...';
+
+        try {
+            const response = await fetch("{{ route($role . '.folders.store') }}", {
+                method: 'POST',
+                body: JSON.stringify({ folder_name: folderName, parent_id: parseInt(parentId) }),
+                headers: {
+                    'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]').content,
+                    'Accept': 'application/json',
+                    'Content-Type': 'application/json',
+                }
+            });
+
+            const data = await response.json();
+            if (response.ok && data.success) {
+                showToast(data.message || 'Folder created!', 'success');
+                setTimeout(() => window.location.reload(), 1000);
+            } else {
+                const errors = data.errors ? Object.values(data.errors).flat().join(', ') : (data.message || 'Failed to create folder.');
+                showToast(errors, 'error');
+                btn.disabled = false;
+                btn.innerHTML = originalText;
+            }
+        } catch (error) {
+            showToast('Error creating folder. Please try again.', 'error');
             btn.disabled = false;
             btn.innerHTML = originalText;
         }

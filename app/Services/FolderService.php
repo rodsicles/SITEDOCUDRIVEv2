@@ -40,7 +40,13 @@ class FolderService
             ->orderBy('sort_order')
             ->get();
 
-        return $tree->map(function (Folder $category) use ($activeSchoolYearId) {
+        return $tree->map(function (Folder $category) use ($activeSchoolYearId, $viewer) {
+            if ($category->isCustomFoldersCategory()) {
+                $category->setRelation('children', $this->getCustomFoldersForViewer($viewer));
+
+                return $category;
+            }
+
             if (!in_array($category->slug, ['tg-category', 'eq-category'], true)) {
                 return $category;
             }
@@ -59,10 +65,50 @@ class FolderService
     }
 
     /**
+     * User-created folders directly under the Custom Folders category (one level only).
+     */
+    public function getCustomFoldersForViewer(?User $viewer): Collection
+    {
+        $categoryId = Folder::query()
+            ->where('slug', Folder::CUSTOM_FOLDERS_SLUG)
+            ->value('folder_id');
+
+        if (!$categoryId) {
+            return collect();
+        }
+
+        $query = Folder::query()
+            ->where('parent_id', $categoryId)
+            ->where('is_system', false)
+            ->orderBy('folder_name');
+
+        if ($viewer?->isFaculty()) {
+            $query->where('user_id', $viewer->id);
+        } elseif ($viewer?->isProgramCoordinator()) {
+            $dept = optional($viewer->employee)->department;
+            if ($dept) {
+                $query->whereHas('user.employee', fn ($e) => $e->where('department', $dept));
+            } else {
+                $query->where('user_id', $viewer->id);
+            }
+        }
+
+        return $query->get();
+    }
+
+    /**
      * System subfolders for navigation, scoped to active school year when applicable.
      */
     public function getDisplayFolders(Folder $parent, ?User $viewer = null): Collection
     {
+        if ($parent->isCustomFoldersCategory()) {
+            return $this->attachSubtreeDocumentCounts($this->getCustomFoldersForViewer($viewer), $viewer);
+        }
+
+        if ($parent->isCustomSubfolder()) {
+            return collect();
+        }
+
         $documentCount = function ($query) use ($viewer) {
             $query->onlyApprovedShareable();
             if ($viewer) {
@@ -216,6 +262,29 @@ class FolderService
                     $query->where('user_id', $userId)->orWhere('is_system', true);
                 })
                 ->firstOrFail();
+
+            if ($parent->isCustomFoldersCategory()) {
+                $data['parent_id'] = $parentId;
+                $data['is_system'] = false;
+                $data['level'] = 1;
+                $data['sort_order'] = Folder::where('parent_id', $parentId)->max('sort_order') + 1;
+                $data['slug'] = 'custom-'.$userId.'-'.\Illuminate\Support\Str::slug($folderName).'-'.time();
+                $folder = Folder::create($data);
+
+                DashboardLog::create([
+                    'user_id' => $userId,
+                    'activity' => "Created custom folder: {$folderName}",
+                    'activity_type' => 'folder_created',
+                    'visibility' => 'own',
+                ]);
+
+                return $folder;
+            }
+
+            if ($parent->isCustomSubfolder()) {
+                throw new \InvalidArgumentException('You cannot create a folder inside a custom folder. Only one level is allowed.');
+            }
+
             $hierarchy = app(AcademicHierarchyService::class);
             if ($hierarchy->isTgSemesterFolder($parent)
                 || $hierarchy->isTgSubjectFolder($parent)

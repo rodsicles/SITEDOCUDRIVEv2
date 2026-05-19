@@ -2632,8 +2632,11 @@ a.doc-sort-item:hover,
     z-index: 80;
 }
 
-.doc-sort-item.has-submenu.submenu-open > .doc-sort-flyout,
-.doc-sort-flyout-item.has-submenu.submenu-open > .doc-sort-flyout--nested {
+.doc-sort-flyout.hidden {
+    display: none !important;
+}
+
+.doc-sort-item.has-submenu.submenu-open > .doc-sort-flyout:not(.hidden) {
     display: block;
 }
 

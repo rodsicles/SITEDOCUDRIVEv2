@@ -260,7 +260,7 @@
     <div id="searchModal" class="hidden fixed inset-0 bg-black/60 z-[9999] items-start justify-center pt-16">
         <div class="bg-white dark:bg-[#2a2a2a] w-[90%] max-w-2xl border border-gray-200 dark:border-gray-700">
             <div class="p-3 border-b border-gray-200 dark:border-gray-700">
-                <input type="text" id="globalSearchInput" placeholder="Search employees, tasks, documents..." autocomplete="off" maxlength="35" class="w-full p-2 border border-gray-300 dark:border-gray-600 text-xs focus:outline-none focus:border-[#028a0f] dark:focus:border-[#028a0f] bg-white dark:bg-[#1e1e1e] text-gray-800 dark:text-gray-200">
+                <input type="text" id="globalSearchInput" placeholder="Search files, announcements, users..." autocomplete="off" maxlength="80" class="w-full p-2 border border-gray-300 dark:border-gray-600 text-xs focus:outline-none focus:border-[#028a0f] dark:focus:border-[#028a0f] bg-white dark:bg-[#1e1e1e] text-gray-800 dark:text-gray-200">
             </div>
             <div id="searchResults" class="max-h-72 overflow-y-auto p-2">
                 <p class="text-center text-gray-600 dark:text-gray-400 p-3 text-xs">Type to search...</p>
@@ -426,11 +426,19 @@
                 title.textContent = result.title;
 
                 const type = document.createElement('div');
-                type.className = 'text-xs text-gray-600 dark:text-gray-400';
-                type.textContent = result.type;
+                type.className = 'text-[10px] uppercase tracking-wide text-[#028a0f] dark:text-[#34d399] font-semibold mb-0.5';
+                type.textContent = result.type || 'Result';
 
                 item.appendChild(title);
                 item.appendChild(type);
+
+                if (result.subtitle) {
+                    const subtitle = document.createElement('div');
+                    subtitle.className = 'text-xs text-gray-600 dark:text-gray-400';
+                    subtitle.textContent = result.subtitle;
+                    item.appendChild(subtitle);
+                }
+
                 searchResults.appendChild(item);
             });
         }

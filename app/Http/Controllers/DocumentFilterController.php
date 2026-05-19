@@ -19,11 +19,13 @@ class DocumentFilterController extends Controller
             'file_type' => 'nullable|in:pdf,word',
             'size_range' => 'nullable|in:small,medium,large',
             'sort' => 'nullable|in:size,date,title,author,category',
+            'sort_dir' => 'nullable|in:asc,desc',
             'title' => 'nullable|string|max:100',
             'tag' => 'nullable|string|max:100',
             'uploaded_by' => 'nullable|integer|exists:users,id',
             'date_from' => 'nullable|date',
             'date_to' => 'nullable|date|after_or_equal:date_from',
+            'academic_year' => 'nullable|string|max:10',
         ]);
 
         $filters = collect([
@@ -34,11 +36,13 @@ class DocumentFilterController extends Controller
             'file_type' => $validated['file_type'] ?? null,
             'size_range' => $validated['size_range'] ?? null,
             'sort' => $validated['sort'] ?? null,
+            'sort_dir' => $validated['sort_dir'] ?? null,
             'title' => $validated['title'] ?? null,
             'tag' => $validated['tag'] ?? null,
             'uploaded_by' => $validated['uploaded_by'] ?? null,
             'date_from' => $validated['date_from'] ?? null,
             'date_to' => $validated['date_to'] ?? null,
+            'academic_year' => $validated['academic_year'] ?? null,
         ])->filter(static fn ($value) => $value !== null && $value !== '')->all();
 
         DocumentFilter::updateOrCreate(

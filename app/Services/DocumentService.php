@@ -173,12 +173,14 @@ class DocumentService
         }
 
         $sort = $queryParams['sort'] ?? 'date';
+        $ascending = strtolower((string) ($queryParams['sort_dir'] ?? 'desc')) === 'asc';
+
         match ($sort) {
-            'size' => $query->orderByDesc('file_size'),
-            'title' => $query->orderBy('document_title'),
-            'author' => $query->orderBy('uploaded_by'),
-            'category' => $query->orderBy('category'),
-            default => $query->latest('created_at'),
+            'size' => $ascending ? $query->orderBy('file_size') : $query->orderByDesc('file_size'),
+            'title' => $ascending ? $query->orderBy('document_title') : $query->orderByDesc('document_title'),
+            'author' => $ascending ? $query->orderBy('uploaded_by') : $query->orderByDesc('uploaded_by'),
+            'category' => $ascending ? $query->orderBy('category') : $query->orderByDesc('category'),
+            default => $ascending ? $query->orderBy('created_at') : $query->orderByDesc('created_at'),
         };
 
         return $query->paginate($perPage)->withQueryString();

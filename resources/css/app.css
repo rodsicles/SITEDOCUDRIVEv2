@@ -782,6 +782,12 @@ body {
     outline: none;
 }
 
+.btn-sm {
+    padding: 0.35rem 0.75rem !important;
+    font-size: 0.8125rem !important;
+    gap: 0.3rem !important;
+}
+
 .btn-primary {
     background: #028a0f !important;
     color: #ffffff !important;
@@ -2464,66 +2470,209 @@ body {
     @apply flex-wrap gap-3;
 }
 
-.card-header-documents-left {
-    @apply flex items-center gap-3 flex-wrap min-w-0;
+.doc-toolbar-header {
+    @apply flex flex-wrap items-center justify-between gap-3;
 }
 
-.doc-filter-toggle {
-    @apply bg-gray-200 dark:bg-gray-700 text-gray-800 dark:text-gray-200 border border-gray-300 dark:border-gray-600;
-}
-
-.doc-filter-toggle.is-active {
-    @apply border-[#028a0f] dark:border-[#02b815];
-    box-shadow: 0 0 0 1px rgba(2, 138, 15, 0.35);
-}
-
-.doc-filter-active-dot {
-    @apply inline-block w-1.5 h-1.5 rounded-full bg-[#028a0f] ml-1;
-}
-
-.doc-filter-panel {
+.doc-toolbar {
     @apply px-4 pb-4 border-b border-gray-200 dark:border-gray-700 mb-4;
 }
 
-.doc-filter-primary {
-    display: grid;
-    grid-template-columns: 1fr;
-    gap: 0.75rem;
+.doc-toolbar-form {
+    @apply flex flex-col gap-3;
 }
 
-@media (min-width: 640px) {
-    .doc-filter-primary {
-        grid-template-columns: minmax(0, 1.4fr) minmax(0, 0.8fr) minmax(0, 1fr) auto;
-        align-items: end;
-    }
+.doc-toolbar-row {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    gap: 0.5rem;
 }
 
-.doc-filter-field {
-    @apply min-w-0 relative;
+.doc-toolbar-search {
+    @apply relative flex-1 min-w-[12rem];
 }
 
-.doc-filter-label {
+.doc-toolbar-search-icon {
+    @apply absolute left-3 top-1/2 -translate-y-1/2 text-gray-400 text-xs pointer-events-none;
+}
+
+.doc-toolbar-search .form-control {
+    @apply pl-9;
+}
+
+.doc-toolbar-actions {
+    @apply flex flex-wrap items-center gap-2;
+}
+
+.doc-toolbar-menu-btn {
+    background: #ffffff !important;
+    color: #374151 !important;
+    border: 1px solid #d1d5db !important;
+}
+
+.dark .doc-toolbar-menu-btn {
+    background: #2a2a2a !important;
+    color: #e5e7eb !important;
+    border-color: #4b5563 !important;
+}
+
+.doc-toolbar-menu-btn.is-active {
+    color: #028a0f !important;
+    border-color: #028a0f !important;
+    box-shadow: 0 0 0 1px rgba(2, 138, 15, 0.2);
+}
+
+.dark .doc-toolbar-menu-btn.is-active {
+    color: #86efac !important;
+    border-color: #02b815 !important;
+    box-shadow: 0 0 0 1px rgba(2, 184, 21, 0.25);
+}
+
+.doc-toolbar-chevron {
+    @apply text-[0.6rem] opacity-60;
+}
+
+.doc-toolbar-year {
+    @apply inline-flex items-center gap-1.5 text-gray-600 dark:text-gray-300;
+}
+
+.doc-toolbar-year .form-control {
+    min-width: 9.5rem;
+}
+
+.doc-toolbar-year i {
+    @apply text-[#028a0f] text-xs;
+}
+
+.doc-menu {
+    @apply relative;
+}
+
+.doc-menu-panel {
+    @apply absolute right-0 top-full mt-1 z-50 min-w-[11rem] p-2
+        bg-white dark:bg-[#1f1f1f] border border-gray-200 dark:border-gray-600;
+    box-shadow:
+        0 4px 20px rgba(15, 23, 42, 0.08),
+        0 1px 4px rgba(15, 23, 42, 0.06);
+}
+
+.dark .doc-menu-panel {
+    box-shadow:
+        0 8px 28px rgba(0, 0, 0, 0.45),
+        0 1px 4px rgba(0, 0, 0, 0.35);
+}
+
+.doc-menu-panel--wide {
+    min-width: 16rem;
+    max-width: 20rem;
+}
+
+.doc-menu-heading {
+    @apply text-[0.65rem] font-bold uppercase tracking-wide text-gray-500 dark:text-gray-400 px-2 py-1 mb-0;
+}
+
+.doc-menu-divider {
+    @apply border-t border-gray-200 dark:border-gray-600 my-2;
+}
+
+.doc-menu-option {
+    @apply flex items-center gap-2 px-2 py-1.5 text-sm text-gray-700 dark:text-gray-200 cursor-pointer;
+}
+
+.doc-menu-option:hover {
+    @apply bg-gray-100 dark:bg-[#2a2a2a];
+}
+
+.doc-menu-option input[type="radio"] {
+    @apply m-0 flex-shrink-0;
+}
+
+.doc-menu-option:has(input[type="radio"]:checked) {
+    @apply bg-gray-50 dark:bg-[#252525];
+}
+
+.doc-menu-option:has(input[type="radio"]:checked) span {
+    @apply font-semibold text-[#028a0f] dark:text-[#86efac];
+}
+
+.doc-menu-field {
+    @apply px-2 py-1.5;
+}
+
+.doc-menu-label {
     @apply text-xs font-semibold text-gray-600 dark:text-gray-300 block mb-1;
 }
 
-.doc-filter-more-btn {
-    @apply flex items-center justify-between cursor-pointer bg-white dark:bg-[#2a2a2a] text-left;
+.doc-menu-grid {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 0.25rem;
 }
 
-.doc-filter-more-menu {
-    @apply absolute left-0 right-0 top-full mt-1 z-40 p-3 bg-white dark:bg-[#1f1f1f] border border-gray-200 dark:border-gray-600 shadow-lg max-h-80 overflow-y-auto;
+.doc-menu-footer {
+    @apply flex flex-wrap gap-2 px-2 pt-2 mt-1 border-t border-gray-200 dark:border-gray-600;
 }
 
-.doc-filter-more-heading {
-    @apply text-[0.65rem] font-bold uppercase tracking-wide text-gray-500 dark:text-gray-400 mb-2;
+.doc-menu-view-row {
+    @apply flex items-center gap-1 px-1;
 }
 
-.doc-filter-more-option {
-    @apply flex items-center gap-2 text-sm text-gray-700 dark:text-gray-200 py-1 cursor-pointer;
+.doc-menu-view-link {
+    @apply flex-1 text-sm text-gray-700 dark:text-gray-200 no-underline px-2 py-1.5;
 }
 
-.doc-filter-actions {
-    @apply flex items-end gap-2 flex-wrap;
+.doc-menu-view-link:hover {
+    @apply bg-gray-100 dark:bg-[#2a2a2a] text-[#028a0f] dark:text-[#86efac];
+}
+
+.doc-menu-view-delete {
+    @apply m-0 p-0;
+}
+
+.doc-menu-view-delete-btn {
+    @apply bg-transparent border-0 text-red-600 dark:text-red-400 cursor-pointer px-2 py-1 text-xs;
+}
+
+.doc-menu-save-row {
+    @apply flex gap-2 px-2 py-1.5;
+}
+
+.doc-menu-save-row .form-control {
+    @apply flex-1 min-w-0;
+}
+
+.doc-toolbar-chips {
+    @apply flex flex-wrap items-center gap-2;
+}
+
+.doc-chip {
+    @apply inline-flex items-center gap-1.5 px-3 py-1 text-xs font-medium
+        bg-gray-100 dark:bg-[#2a2a2a] text-gray-700 dark:text-gray-200
+        border border-gray-200 dark:border-gray-600 no-underline;
+    border-radius: 999px !important;
+}
+
+.doc-chip:hover {
+    @apply border-[#028a0f] dark:border-[#02b815] text-[#028a0f] dark:text-[#86efac];
+    background: rgba(2, 138, 15, 0.06) !important;
+}
+
+.dark .doc-chip:hover {
+    background: rgba(134, 239, 172, 0.08) !important;
+}
+
+.doc-chip-remove {
+    @apply text-[0.6rem] opacity-60;
+}
+
+.doc-chip--clear {
+    @apply bg-transparent border-dashed text-gray-500 dark:text-gray-400;
+    border-radius: 999px !important;
+}
+
+.doc-chip--clear:hover {
+    @apply text-[#028a0f] dark:text-[#86efac];
 }
 
 /* Notifications toolbar */

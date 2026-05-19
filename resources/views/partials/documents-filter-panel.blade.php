@@ -1,8 +1,12 @@
 @php
     use App\Support\AcademicYear;
+    use App\Support\DocumentListSortUrls;
 
     $documentsRoute = $documentsRoute ?? 'faculty.documents';
     $showSchoolYearFilter = $showSchoolYearFilter ?? false;
+    $folderFilter = $folderFilter ?? null;
+    $tab = $tab ?? request('tab', 'accreditation');
+    $savedFilters = $savedFilters ?? collect();
 
     $currentSort = request('sort', 'date');
     $currentType = request('file_type', '');
@@ -19,48 +23,6 @@
         'category' => 'Categories',
     ];
 
-    $sortHref = function (string $sort) use ($documentsRoute, $folderFilter, $tab) {
-        $params = request()->except('page');
-        if ($sort === 'date') {
-            unset($params['sort']);
-        } else {
-            $params['sort'] = $sort;
-        }
-        $params['folder'] = $folderFilter;
-        $params['tab'] = $tab;
-
-        return route($documentsRoute, array_filter($params, fn ($v) => $v !== null && $v !== ''));
-    };
-
-    $typeHref = function (?string $type) use ($documentsRoute, $folderFilter, $tab) {
-        $params = request()->except('page', 'file_type');
-        if ($type) {
-            $params['file_type'] = $type;
-        }
-        $params['folder'] = $folderFilter;
-        $params['tab'] = $tab;
-
-        return route($documentsRoute, array_filter($params, fn ($v) => $v !== null && $v !== ''));
-    };
-
-    $yearHref = function (string $year) use ($documentsRoute, $folderFilter, $tab) {
-        $params = request()->except('page');
-        if ($year === '') {
-            unset($params['academic_year']);
-        } else {
-            $params['academic_year'] = $year;
-        }
-        $params['folder'] = $folderFilter;
-        $params['tab'] = $tab;
-
-        return route($documentsRoute, array_filter($params, fn ($v) => $v !== null && $v !== ''));
-    };
-
-    $resetHref = route($documentsRoute, array_filter([
-        'folder' => $folderFilter,
-        'tab' => $tab,
-    ], fn ($v) => $v !== null && $v !== ''));
-
     $sortButtonLabel = 'Sort';
     if ($currentType === 'pdf') {
         $sortButtonLabel = 'Sort · PDF';
@@ -69,6 +31,8 @@
     } elseif ($currentSort !== 'date' && isset($sortLabels[$currentSort])) {
         $sortButtonLabel = 'Sort · '.$sortLabels[$currentSort];
     }
+
+    $req = request();
 @endphp
 
 <div class="card-header card-header--documents">
@@ -88,11 +52,11 @@
             </button>
 
             <div class="doc-sort-menu hidden" id="docSortMenu" role="menu">
-                <a href="{{ $sortHref('title') }}" class="doc-sort-item {{ $currentSort === 'title' && !$currentType ? 'is-active' : '' }}" role="menuitem">
+                <a href="{{ DocumentListSortUrls::sortHref($documentsRoute, $req, $folderFilter, $tab, 'title') }}" class="doc-sort-item {{ $currentSort === 'title' && !$currentType ? 'is-active' : '' }}" role="menuitem">
                     @if($currentSort === 'title' && !$currentType)<span class="doc-sort-dot" aria-hidden="true"></span>@endif
                     <span>Name</span>
                 </a>
-                <a href="{{ $sortHref('date') }}" class="doc-sort-item {{ $currentSort === 'date' && !$currentType ? 'is-active' : '' }}" role="menuitem">
+                <a href="{{ DocumentListSortUrls::sortHref($documentsRoute, $req, $folderFilter, $tab, 'date') }}" class="doc-sort-item {{ $currentSort === 'date' && !$currentType ? 'is-active' : '' }}" role="menuitem">
                     @if($currentSort === 'date' && !$currentType)<span class="doc-sort-dot" aria-hidden="true"></span>@endif
                     <span>Date</span>
                 </a>
@@ -104,9 +68,9 @@
                         <i class="fas fa-chevron-right doc-sort-submenu-chevron" aria-hidden="true"></i>
                     </span>
                     <div class="doc-sort-submenu" role="menu">
-                        <a href="{{ $typeHref(null) }}" class="doc-sort-subitem {{ !$currentType ? 'is-active' : '' }}" role="menuitem">All types</a>
-                        <a href="{{ $typeHref('pdf') }}" class="doc-sort-subitem {{ $currentType === 'pdf' ? 'is-active' : '' }}" role="menuitem">PDF</a>
-                        <a href="{{ $typeHref('word') }}" class="doc-sort-subitem {{ $currentType === 'word' ? 'is-active' : '' }}" role="menuitem">Word</a>
+                        <a href="{{ DocumentListSortUrls::typeHref($documentsRoute, $req, $folderFilter, $tab, null) }}" class="doc-sort-subitem {{ !$currentType ? 'is-active' : '' }}" role="menuitem">All types</a>
+                        <a href="{{ DocumentListSortUrls::typeHref($documentsRoute, $req, $folderFilter, $tab, 'pdf') }}" class="doc-sort-subitem {{ $currentType === 'pdf' ? 'is-active' : '' }}" role="menuitem">PDF</a>
+                        <a href="{{ DocumentListSortUrls::typeHref($documentsRoute, $req, $folderFilter, $tab, 'word') }}" class="doc-sort-subitem {{ $currentType === 'word' ? 'is-active' : '' }}" role="menuitem">Word</a>
                     </div>
                 </div>
 
@@ -117,16 +81,16 @@
                         <i class="fas fa-chevron-right doc-sort-submenu-chevron" aria-hidden="true"></i>
                     </span>
                     <div class="doc-sort-submenu" role="menu">
-                        <a href="{{ $sortHref('size') }}" class="doc-sort-subitem {{ $currentSort === 'size' ? 'is-active' : '' }}" role="menuitem">Size</a>
-                        <a href="{{ $sortHref('author') }}" class="doc-sort-subitem {{ $currentSort === 'author' ? 'is-active' : '' }}" role="menuitem">Authors</a>
-                        <a href="{{ $sortHref('category') }}" class="doc-sort-subitem {{ $currentSort === 'category' ? 'is-active' : '' }}" role="menuitem">Categories</a>
-                        <a href="{{ $sortHref('title') }}" class="doc-sort-subitem {{ $currentSort === 'title' ? 'is-active' : '' }}" role="menuitem">Title</a>
+                        <a href="{{ DocumentListSortUrls::sortHref($documentsRoute, $req, $folderFilter, $tab, 'size') }}" class="doc-sort-subitem {{ $currentSort === 'size' ? 'is-active' : '' }}" role="menuitem">Size</a>
+                        <a href="{{ DocumentListSortUrls::sortHref($documentsRoute, $req, $folderFilter, $tab, 'author') }}" class="doc-sort-subitem {{ $currentSort === 'author' ? 'is-active' : '' }}" role="menuitem">Authors</a>
+                        <a href="{{ DocumentListSortUrls::sortHref($documentsRoute, $req, $folderFilter, $tab, 'category') }}" class="doc-sort-subitem {{ $currentSort === 'category' ? 'is-active' : '' }}" role="menuitem">Categories</a>
+                        <a href="{{ DocumentListSortUrls::sortHref($documentsRoute, $req, $folderFilter, $tab, 'title') }}" class="doc-sort-subitem {{ $currentSort === 'title' ? 'is-active' : '' }}" role="menuitem">Title</a>
                         @if($showSchoolYearFilter)
                         <div class="doc-sort-submenu-divider" role="separator"></div>
                         <span class="doc-sort-submenu-label">School year</span>
-                        <a href="{{ $yearHref('') }}" class="doc-sort-subitem {{ !request('academic_year') ? 'is-active' : '' }}" role="menuitem">All years</a>
+                        <a href="{{ DocumentListSortUrls::yearHref($documentsRoute, $req, $folderFilter, $tab, '') }}" class="doc-sort-subitem {{ !request('academic_year') ? 'is-active' : '' }}" role="menuitem">All years</a>
                         @foreach(AcademicYear::options() as $startYear => $label)
-                        <a href="{{ $yearHref((string) $startYear) }}" class="doc-sort-subitem {{ (string) request('academic_year') === (string) $startYear ? 'is-active' : '' }}" role="menuitem">{{ $label }}</a>
+                        <a href="{{ DocumentListSortUrls::yearHref($documentsRoute, $req, $folderFilter, $tab, (string) $startYear) }}" class="doc-sort-subitem {{ (string) request('academic_year') === (string) $startYear ? 'is-active' : '' }}" role="menuitem">{{ $label }}</a>
                         @endforeach
                         @endif
                     </div>
@@ -134,7 +98,7 @@
 
                 @if($hasActiveFilters)
                 <div class="doc-sort-menu-footer" role="none">
-                    <a href="{{ $resetHref }}" class="doc-sort-reset" role="menuitem">
+                    <a href="{{ DocumentListSortUrls::resetHref($documentsRoute, $folderFilter, $tab) }}" class="doc-sort-reset" role="menuitem">
                         <i class="fas fa-rotate-left" aria-hidden="true"></i> Reset sort &amp; type
                     </a>
                 </div>

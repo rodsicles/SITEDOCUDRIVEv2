@@ -207,55 +207,6 @@
                     </div>
                 </div>
 
-                {{-- Saved views --}}
-                <div class="doc-menu" data-doc-menu>
-                    <button type="button"
-                            class="btn btn-sm doc-toolbar-menu-btn {{ $savedFilters->isNotEmpty() ? 'is-active' : '' }}"
-                            data-doc-menu-trigger
-                            aria-haspopup="true"
-                            aria-expanded="false">
-                        <i class="fas fa-bookmark" aria-hidden="true"></i>
-                        <span>Views</span>
-                        <i class="fas fa-chevron-down doc-toolbar-chevron" aria-hidden="true"></i>
-                    </button>
-                    <div class="doc-menu-panel" data-doc-menu-panel role="menu">
-                        @if($savedFilters->isNotEmpty())
-                        <p class="doc-menu-heading">Saved views</p>
-                        @foreach($savedFilters as $savedFilter)
-                        <div class="doc-menu-view-row">
-                            <a href="{{ route($documentsRoute, array_filter(array_merge($savedFilter->toQueryParams(), ['folder' => $folderFilter, 'tab' => $tab, 'saved_filter' => $savedFilter->document_filter_id]))) }}"
-                               class="doc-menu-view-link"
-                               role="menuitem">
-                                {{ $savedFilter->name }}
-                            </a>
-                            <form action="{{ route('document-filters.destroy', $savedFilter->document_filter_id) }}" method="POST" class="doc-menu-view-delete">
-                                @csrf
-                                @method('DELETE')
-                                <button type="submit" class="doc-menu-view-delete-btn" title="Delete view" aria-label="Delete {{ $savedFilter->name }}">
-                                    <i class="fas fa-trash"></i>
-                                </button>
-                            </form>
-                        </div>
-                        @endforeach
-                        <div class="doc-menu-divider" role="separator"></div>
-                        @endif
-                        <p class="doc-menu-heading">Save current view</p>
-                        <div class="doc-menu-save-row">
-                            <input type="text"
-                                   name="view_name"
-                                   form="docSaveViewForm"
-                                   class="form-control text-sm"
-                                   placeholder="View name"
-                                   maxlength="50"
-                                   required
-                                   aria-label="View name">
-                            <button type="submit" form="docSaveViewForm" class="btn btn-sm btn-primary">
-                                Save
-                            </button>
-                        </div>
-                    </div>
-                </div>
-
                 @if($showSchoolYearFilter)
                 <label class="doc-toolbar-year">
                     <i class="fas fa-calendar-alt" aria-hidden="true"></i>
@@ -289,26 +240,6 @@
         </div>
         @endif
     </form>
-
-    <form action="{{ route('document-filters.store') }}" method="POST" id="docSaveViewForm" class="hidden">
-        @csrf
-        <input type="hidden" name="name" value="" data-doc-save-view-name>
-        <input type="hidden" name="folder" value="{{ $folderFilter }}">
-        <input type="hidden" name="tab" value="{{ $tab }}">
-        <input type="hidden" name="search" value="{{ $nameValue }}">
-        <input type="hidden" name="file_type" value="{{ request('file_type') }}">
-        <input type="hidden" name="uploaded_by" value="{{ request('uploaded_by') }}">
-        <input type="hidden" name="date_from" value="{{ request('date_from') }}">
-        <input type="hidden" name="date_to" value="{{ request('date_to') }}">
-        <input type="hidden" name="size_range" value="{{ request('size_range') }}">
-        <input type="hidden" name="sort" value="{{ $sortValue }}">
-        <input type="hidden" name="sort_dir" value="{{ $sortDirValue }}">
-        <input type="hidden" name="title" value="{{ request('title') }}">
-        <input type="hidden" name="category" value="{{ request('category', $categoryFilter ?? '') }}">
-        @if($showSchoolYearFilter)
-        <input type="hidden" name="academic_year" value="{{ request('academic_year') }}">
-        @endif
-    </form>
 </div>
 
 @push('scripts')
@@ -318,9 +249,6 @@
     if (!toolbar) return;
 
     var form = document.getElementById('docToolbarForm');
-    var saveForm = document.getElementById('docSaveViewForm');
-    var saveNameHidden = saveForm && saveForm.querySelector('[data-doc-save-view-name]');
-    var viewNameInput = toolbar.querySelector('input[name="view_name"]');
 
     function closeAllMenus(exceptPanel) {
         toolbar.querySelectorAll('[data-doc-menu-panel]').forEach(function (panel) {
@@ -361,18 +289,6 @@
             if (form) form.submit();
         });
     });
-
-    if (saveForm && viewNameInput && saveNameHidden) {
-        saveForm.addEventListener('submit', function (e) {
-            var name = (viewNameInput.value || '').trim();
-            if (!name) {
-                e.preventDefault();
-                viewNameInput.focus();
-                return;
-            }
-            saveNameHidden.value = name;
-        });
-    }
 })();
 </script>
 @endpush

@@ -198,8 +198,6 @@ class CoordinatorController extends Controller
         $favoriteDocuments = $this->documentService->getFavoriteDocuments(auth()->user());
         $categories = $this->documentService->getCategories();
         $uploaders = $this->documentService->getAvailableUploaders(auth()->user());
-        $savedFilters = auth()->user()->documentFilters()->latest()->get();
-
         $examRecords = collect();
         $isPrcFolder = false;
         $isCertFolder = false;
@@ -214,7 +212,7 @@ class CoordinatorController extends Controller
         return view('coordinator.documents', compact(
             'documents', 'recentDocuments', 'favoriteDocuments', 'categories',
             'categoryFilter', 'folderFilter', 'folderTree', 'uploadableFolders',
-            'currentFolder', 'breadcrumbs', 'tab', 'uploaders', 'savedFilters',
+            'currentFolder', 'breadcrumbs', 'tab', 'uploaders',
             'examRecords', 'isPrcFolder', 'isCertFolder'
         ));
     }

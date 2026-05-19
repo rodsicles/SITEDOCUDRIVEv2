@@ -266,8 +266,6 @@ class DeanController extends Controller
         );
         $categories = $this->documentService->getCategories();
         $uploaders = $this->documentService->getAvailableUploaders(auth()->user());
-        $savedFilters = auth()->user()->documentFilters()->latest()->get();
-
         $examRecords = collect();
         $isPrcFolder = false;
         $isCertFolder = false;
@@ -281,7 +279,7 @@ class DeanController extends Controller
 
         return view('dean.documents', compact(
             'documents', 'categories', 'categoryFilter', 'folderFilter',
-            'folderTree', 'currentFolder', 'breadcrumbs', 'tab', 'uploaders', 'savedFilters',
+            'folderTree', 'currentFolder', 'breadcrumbs', 'tab', 'uploaders',
             'examRecords', 'isPrcFolder', 'isCertFolder'
         ));
     }

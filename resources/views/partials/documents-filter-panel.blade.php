@@ -24,13 +24,47 @@
     }
 
     $req = request();
+    $currentSearch = request('search', request('name', ''));
+    $searchPreserve = array_filter([
+        'folder' => $folderFilter,
+        'tab' => $tab,
+        'sort' => request('sort'),
+        'file_type' => request('file_type'),
+    ], fn ($v) => $v !== null && $v !== '');
 @endphp
 
 <div class="card-header card-header--documents">
     <div class="card-header-documents-left">
         <h3 class="card-title mb-0">Available Documents</h3>
 
-        <div class="doc-sort-wrap" id="docSortWrap">
+        <div class="doc-header-toolbar">
+            <form action="{{ route($documentsRoute) }}" method="GET" class="doc-search-form" role="search">
+                @foreach($searchPreserve as $key => $value)
+                    <input type="hidden" name="{{ $key }}" value="{{ $value }}">
+                @endforeach
+                <label class="sr-only" for="docListSearchInput">Search documents</label>
+                <input type="search"
+                       id="docListSearchInput"
+                       name="search"
+                       value="{{ $currentSearch }}"
+                       class="doc-search-input"
+                       placeholder="Search..."
+                       autocomplete="off"
+                       maxlength="80">
+                <button type="submit" class="doc-search-submit" title="Search" aria-label="Search documents">
+                    <i class="fas fa-search" aria-hidden="true"></i>
+                </button>
+                @if($currentSearch !== '')
+                <a href="{{ route($documentsRoute, $searchPreserve) }}"
+                   class="doc-search-clear"
+                   aria-label="Clear search"
+                   title="Clear search">
+                    <i class="fas fa-times" aria-hidden="true"></i>
+                </a>
+                @endif
+            </form>
+
+            <div class="doc-sort-wrap" id="docSortWrap">
             <button type="button"
                     class="doc-sort-trigger {{ $hasActiveFilters ? 'is-active' : '' }}"
                     id="docSortBtn"
@@ -88,6 +122,7 @@
                 </div>
                 @endif
             </div>
+        </div>
         </div>
     </div>
 

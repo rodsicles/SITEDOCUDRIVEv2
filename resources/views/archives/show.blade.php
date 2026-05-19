@@ -17,12 +17,40 @@
 
     {{-- Documents --}}
     <div class="content-card">
-        <div class="card-header">
-            <h3 class="card-title"><i class="fas fa-folder mr-2"></i>Documents</h3>
+        <div class="card-header card-header--archive-docs">
+            <h3 class="card-title mb-0"><i class="fas fa-folder mr-2"></i>Documents</h3>
+            <form action="{{ route($role . '.archives.show', $schoolYear->id) }}" method="GET" class="archive-doc-search-form" role="search">
+                <label class="sr-only" for="archiveDocsSearch">Search archived documents</label>
+                <input type="search"
+                       id="archiveDocsSearch"
+                       name="q"
+                       value="{{ request('q', '') }}"
+                       class="archive-doc-search-input"
+                       placeholder="Search..."
+                       autocomplete="off"
+                       maxlength="80">
+                <button type="submit" class="archive-doc-search-submit" title="Search" aria-label="Search archived documents">
+                    <i class="fas fa-search" aria-hidden="true"></i>
+                </button>
+                @if(request('q'))
+                <a href="{{ route($role . '.archives.show', $schoolYear->id) }}"
+                   class="archive-doc-search-clear"
+                   aria-label="Clear search"
+                   title="Clear search">
+                    <i class="fas fa-times" aria-hidden="true"></i>
+                </a>
+                @endif
+            </form>
             <span class="badge badge-info">{{ $documents->total() }}</span>
         </div>
         @if($documents->isEmpty())
-            <div class="p-4 text-center text-gray-500 dark:text-gray-400">No documents in this archive.</div>
+            <div class="p-4 text-center text-gray-500 dark:text-gray-400">
+                @if(request('q'))
+                    No documents match your search.
+                @else
+                    No documents in this archive.
+                @endif
+            </div>
         @else
             <table class="data-table">
                 <thead>

@@ -1,3 +1,6 @@
+@php
+    $docTitleMax = \App\Support\DocumentNaming::TITLE_MAX_LENGTH;
+@endphp
 <form action="{{ route($role . '.upload-document') }}" method="POST" enctype="multipart/form-data" id="folderUploadForm" class="hidden mb-4 overflow-visible" style="border: 1px solid #e0e0e0; padding: 16px; background: #f9fafb;">
     @csrf
     <input type="hidden" name="folder_id" value="{{ $currentFolder->folder_id }}">
@@ -9,7 +12,7 @@
             ])
             <div class="form-group">
                 <label class="form-label">File Name <span class="text-red-500">*</span></label>
-                <input type="text" name="document_title" class="form-control" placeholder="Enter file name" required maxlength="13" value="{{ old('document_title') }}">
+                <input type="text" name="document_title" class="form-control" placeholder="Enter file name" required maxlength="{{ $docTitleMax }}" value="{{ old('document_title') }}">
                 <p class="text-xs text-gray-500 dark:text-gray-400 mt-1">A course folder will be created from your selection if it does not exist yet.</p>
             </div>
         @elseif($useEqUploadLeaf ?? false)
@@ -28,8 +31,8 @@
             </div>
             <div class="form-group">
                 <label class="form-label">File Name <span class="text-red-500">*</span></label>
-                <input type="text" name="document_title" class="form-control" placeholder="Enter file name" required maxlength="13" value="{{ old('document_title') }}">
-                <p class="text-xs text-gray-500 dark:text-gray-400 mt-1">PDF only. Faculty uploads stay pending until the Dean approves them.</p>
+                <input type="text" name="document_title" class="form-control" placeholder="Enter file name" required maxlength="{{ $docTitleMax }}" value="{{ old('document_title') }}">
+                <p class="text-xs text-gray-500 dark:text-gray-400 mt-1">Choose PDF or Word. Faculty uploads stay pending until the Dean approves them.</p>
             </div>
         @elseif($useTgUploadLeaf ?? false)
             <div class="form-group md:col-span-2">
@@ -38,8 +41,8 @@
             </div>
             <div class="form-group">
                 <label class="form-label">File Name <span class="text-red-500">*</span></label>
-                <input type="text" name="document_title" class="form-control" placeholder="Enter file name" required maxlength="13" value="{{ old('document_title') }}">
-                <p class="text-xs text-gray-500 dark:text-gray-400 mt-1">Files are stored in cloud storage. Faculty uploads stay pending until the Dean approves them.</p>
+                <input type="text" name="document_title" class="form-control" placeholder="Enter file name" required maxlength="{{ $docTitleMax }}" value="{{ old('document_title') }}">
+                <p class="text-xs text-gray-500 dark:text-gray-400 mt-1">Choose PDF or Word. Faculty uploads stay pending until the Dean approves them.</p>
             </div>
         @elseif($useCourseFolderUpload ?? false)
             <div class="form-group md:col-span-2">
@@ -48,25 +51,20 @@
             </div>
             <div class="form-group">
                 <label class="form-label">File Name <span class="text-red-500">*</span></label>
-                <input type="text" name="document_title" class="form-control" placeholder="Enter file name" required maxlength="13" value="{{ old('document_title') }}">
+                <input type="text" name="document_title" class="form-control" placeholder="Enter file name" required maxlength="{{ $docTitleMax }}" value="{{ old('document_title') }}">
             </div>
         @else
             <div class="form-group">
-                <label class="form-label">Document Title *</label>
-                <input type="text" name="document_title" class="form-control" placeholder="Enter document title" required maxlength="13">
+                <label class="form-label">File Name <span class="text-red-500">*</span></label>
+                <input type="text" name="document_title" class="form-control" placeholder="Enter file name" required maxlength="{{ $docTitleMax }}" value="{{ old('document_title') }}">
             </div>
         @endif
         <div class="form-group">
-            <label class="form-label">Document Type *</label>
+            <label class="form-label">Document Type <span class="text-red-500">*</span></label>
             <select name="document_type" id="folderDocType" class="form-control" required>
                 <option value="">Select Document Type</option>
-                <option value="pdf">PDF Document</option>
-                @if(!(($useCourseSelect ?? false) && $activeTab === 'exam-questionnaires') && !($useEqUploadLeaf ?? false))
-                <option value="word">Word Document</option>
-                @endif
-                @if(!($useTgUploadLeaf ?? false) && !($useEqUploadLeaf ?? false) && !($useCourseSelect ?? false))
-                <option value="image">Image File</option>
-                @endif
+                <option value="pdf" @selected(old('document_type') === 'pdf')>PDF</option>
+                <option value="word" @selected(old('document_type') === 'word')>Word</option>
             </select>
         </div>
         @if(($useItSubjectPicker ?? false) && !($useCourseSelect ?? false) && !($useCourseFolderUpload ?? false) && !($useTgUploadLeaf ?? false) && !($useEqUploadLeaf ?? false))

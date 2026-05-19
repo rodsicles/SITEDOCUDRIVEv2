@@ -88,10 +88,22 @@ class SchoolYearController extends Controller
             return redirect()->route('dean.archives.index');
         }
 
-        $documents = Document::where('school_year_id', $schoolYear->id)
-            ->with('uploader.employee', 'folder')
-            ->latest()
-            ->paginate(20);
+        $documentsQuery = Document::where('school_year_id', $schoolYear->id)
+            ->with('uploader.employee', 'folder');
+
+        $archiveSearch = trim((string) request('q', ''));
+        if ($archiveSearch !== '') {
+            $documentsQuery->where(function ($query) use ($archiveSearch) {
+                $query->where('document_title', 'like', '%'.$archiveSearch.'%')
+                    ->orWhere('category', 'like', '%'.$archiveSearch.'%')
+                    ->orWhereHas('uploader', function ($uploaderQuery) use ($archiveSearch) {
+                        $uploaderQuery->where('username', 'like', '%'.$archiveSearch.'%')
+                            ->orWhereHas('employee', fn ($employeeQuery) => $employeeQuery->where('full_name', 'like', '%'.$archiveSearch.'%'));
+                    });
+            });
+        }
+
+        $documents = $documentsQuery->latest()->paginate(20)->withQueryString();
 
         $teachingGuides = TeachingGuide::where('school_year_id', $schoolYear->id)
             ->with('uploader.employee')

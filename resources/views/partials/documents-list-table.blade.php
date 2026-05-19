@@ -121,8 +121,8 @@
                 <input type="hidden" id="renameDocumentId" name="document_id" value="">
                 <div class="form-group">
                     <label class="form-label" for="renameDocumentTitle">Document name *</label>
-                    <input type="text" id="renameDocumentTitle" name="document_title" class="form-input" required maxlength="13" pattern="[a-zA-Z0-9\s\-_\.]+" autocomplete="off">
-                    <small class="text-xs text-gray-500 dark:text-gray-400 mt-1 block">Max 13 characters. Updates for everyone immediately.</small>
+                    <input type="text" id="renameDocumentTitle" name="document_title" class="form-input" required maxlength="{{ \App\Support\DocumentNaming::TITLE_MAX_LENGTH }}" pattern="[a-zA-Z0-9\s\-_\.]+" autocomplete="off">
+                    <small class="text-xs text-gray-500 dark:text-gray-400 mt-1 block">Max {{ \App\Support\DocumentNaming::TITLE_MAX_LENGTH }} characters. Updates for everyone immediately.</small>
                 </div>
             </div>
             <div class="modal-footer">

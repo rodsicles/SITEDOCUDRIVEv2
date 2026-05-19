@@ -134,7 +134,7 @@ class TeachingGuideSyncService
             [
                 'uploaded_by' => $guide->user_id,
                 'folder_id' => $guide->folder_id,
-                'document_title' => mb_substr($guide->title, 0, 13),
+                'document_title' => mb_substr($guide->title, 0, \App\Support\DocumentNaming::TITLE_MAX_LENGTH),
                 'file_path' => $guide->file_path,
                 'file_size' => 0,
                 'document_type' => $guide->file_type,

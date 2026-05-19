@@ -182,7 +182,7 @@ class ExamQuestionnaireSyncService
             [
                 'uploaded_by' => $questionnaire->submitted_by,
                 'folder_id' => $folder->folder_id,
-                'document_title' => mb_substr($questionnaire->title, 0, 13),
+                'document_title' => mb_substr($questionnaire->title, 0, \App\Support\DocumentNaming::TITLE_MAX_LENGTH),
                 'subject' => $questionnaire->subject,
                 'file_path' => $questionnaire->file_path,
                 'file_size' => $fileSize,

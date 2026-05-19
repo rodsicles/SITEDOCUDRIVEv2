@@ -790,10 +790,6 @@
             fileInput.disabled = false;
             fileInput.setAttribute('accept', '.doc,.docx');
             fileHelp.innerHTML = '<i class="fas fa-file-word"></i> DOC, DOCX only (Max: 10MB)';
-        } else if (type === 'image') {
-            fileInput.disabled = false;
-            fileInput.setAttribute('accept', '.jpg,.jpeg,.png');
-            fileHelp.innerHTML = '<i class="fas fa-file-image"></i> JPG, PNG only (Max: 10MB)';
         }
     });
 
@@ -811,7 +807,6 @@
             const ext = files[i].name.toLowerCase().split('.').pop();
             if (docType === 'pdf' && ext !== 'pdf') { alert('File ' + files[i].name + ' is not a PDF.'); return; }
             if (docType === 'word' && !['doc','docx'].includes(ext)) { alert('File ' + files[i].name + ' is not a Word document.'); return; }
-            if (docType === 'image' && !['jpg','jpeg','png'].includes(ext)) { alert('File ' + files[i].name + ' is not an image.'); return; }
         }
 
         @if($useItSubjectPicker && !$useCourseSelect)

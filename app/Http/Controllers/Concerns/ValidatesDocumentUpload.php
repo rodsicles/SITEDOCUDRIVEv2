@@ -6,6 +6,7 @@ use App\Models\Document;
 use App\Models\Folder;
 use App\Services\AcademicHierarchyService;
 use App\Services\DocumentService;
+use App\Support\DocumentNaming;
 use App\Support\IteSubjects;
 use Illuminate\Http\Request;
 use Illuminate\Validation\Rule;
@@ -27,26 +28,28 @@ trait ValidatesDocumentUpload
         $useCourseSelect = $isTypeLeafFolder;
         $user = auth()->user();
 
+        $titleMax = DocumentNaming::TITLE_MAX_LENGTH;
+
         $rules = [
-            'document_type' => 'required|in:pdf,image,word',
+            'document_type' => 'required|in:pdf,word',
             'documents' => 'required|array|max:3',
             'documents.*' => match ($request->input('document_type')) {
                 'pdf' => 'required|file|max:10240|mimes:pdf|mimetypes:application/pdf',
                 'word' => 'required|file|max:10240|mimes:doc,docx',
-                default => 'required|file|max:10240|mimes:jpg,jpeg,png|mimetypes:image/jpeg,image/png',
+                default => 'required|file|max:10240|mimes:doc,docx',
             },
             'folder_id' => 'required|exists:folders,folder_id',
         ];
 
         if ($useCourseSelect) {
             $rules['subject'] = ['required', 'string', Rule::in(IteSubjects::labelsForUser($user))];
-            $rules['document_title'] = 'required|string|max:13';
+            $rules['document_title'] = 'required|string|max:'.$titleMax;
         } elseif ($isTgUploadLeaf || $isEqUploadLeaf) {
-            $rules['document_title'] = 'required|string|max:13';
+            $rules['document_title'] = 'required|string|max:'.$titleMax;
         } elseif ($isCourseFolder) {
-            $rules['document_title'] = 'required|string|max:13';
+            $rules['document_title'] = 'required|string|max:'.$titleMax;
         } else {
-            $rules['document_title'] = 'required|string|max:13';
+            $rules['document_title'] = 'required|string|max:'.$titleMax;
         }
 
         $isShareable = in_array($category, Document::SHAREABLE_CATEGORIES, true);
@@ -66,10 +69,10 @@ trait ValidatesDocumentUpload
             }
 
             if ($category === 'Exam Questionnaires' && $isEqUploadLeaf) {
-                $rules['documents.*'] = 'required|file|max:10240|mimes:pdf|mimetypes:application/pdf';
+                $rules['documents.*'] = 'required|file|max:10240|mimes:pdf,doc,docx|mimetypes:application/pdf,application/msword,application/vnd.openxmlformats-officedocument.wordprocessingml.document';
             } elseif ($category === 'Exam Questionnaires') {
                 $rules['exam_type'] = 'required|in:Quiz,Prelim,Midterm,Pre-Final,Final';
-                $rules['documents.*'] = 'required|file|max:10240|mimes:pdf|mimetypes:application/pdf';
+                $rules['documents.*'] = 'required|file|max:10240|mimes:pdf,doc,docx|mimetypes:application/pdf,application/msword,application/vnd.openxmlformats-officedocument.wordprocessingml.document';
             }
         } else {
             $rules['tags'] = 'nullable|string|max:15';

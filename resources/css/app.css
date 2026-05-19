@@ -2555,8 +2555,8 @@ body {
 }
 
 .doc-menu-panel--wide {
-    min-width: 16rem;
-    max-width: 20rem;
+    min-width: 17rem;
+    max-width: 22rem;
 }
 
 .doc-menu-heading {
@@ -2595,10 +2595,18 @@ body {
     @apply text-xs font-semibold text-gray-600 dark:text-gray-300 block mb-1;
 }
 
-.doc-menu-grid {
-    display: grid;
-    grid-template-columns: 1fr 1fr;
-    gap: 0.25rem;
+.doc-menu-date-range {
+    display: flex;
+    flex-direction: column;
+    gap: 0.5rem;
+    padding: 0 0.5rem 0.25rem;
+}
+
+.doc-menu-date-input {
+    width: 100%;
+    max-width: 100%;
+    min-width: 0;
+    box-sizing: border-box;
 }
 
 .doc-menu-footer {

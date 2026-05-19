@@ -261,6 +261,6 @@ class Document extends Model
             $query->where('category', $categoryFilter);
         }
 
-        return $query->latest();
+        return $query;
     }
 }

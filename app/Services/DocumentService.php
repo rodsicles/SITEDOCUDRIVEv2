@@ -66,7 +66,8 @@ class DocumentService
     public function getFilteredDocuments(User $user, ?string $categoryFilter, ?string $folderFilter, array $queryParams = [], int $perPage = 15): LengthAwarePaginator
     {
         $query = Document::getFilteredDocuments($user, $categoryFilter)
-            ->onlyApprovedShareable();
+            ->onlyApprovedShareable()
+            ->reorder();
 
         if ($folderFilter !== null) {
             if ($folderFilter === 'uncategorized') {

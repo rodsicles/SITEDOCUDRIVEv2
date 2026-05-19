@@ -80,6 +80,7 @@ class SearchController extends Controller
 
         // Search Documents (role-filtered)
         $documents = Document::getFilteredDocuments($user)
+            ->latest()
             ->where(function ($q) use ($query) {
                 $q->where('document_title', 'LIKE', "%{$query}%")
                   ->orWhere('document_type', 'LIKE', "%{$query}%");

@@ -44,12 +44,6 @@
     if (request()->filled('category')) {
         $chips[] = ['label' => 'Category: ' . request('category'), 'except' => ['category']];
     }
-    if ($uid = request('uploaded_by')) {
-        $uploaderName = $uploaders->firstWhere('id', (int) $uid)?->employee?->full_name
-            ?? $uploaders->firstWhere('id', (int) $uid)?->username
-            ?? 'Author';
-        $chips[] = ['label' => 'Author: ' . $uploaderName, 'except' => ['uploaded_by']];
-    }
     if (request('date_from') || request('date_to')) {
         $range = trim((request('date_from') ?: '…') . ' – ' . (request('date_to') ?: '…'));
         $chips[] = ['label' => 'Date: ' . $range, 'except' => ['date_from', 'date_to']];
@@ -126,7 +120,7 @@
                 {{-- Filter --}}
                 <div class="doc-menu" data-doc-menu>
                     <button type="button"
-                            class="btn btn-sm doc-toolbar-menu-btn {{ collect(request()->only(['file_type', 'category', 'uploaded_by', 'date_from', 'date_to', 'size_range', 'title']))->filter()->isNotEmpty() ? 'is-active' : '' }}"
+                            class="btn btn-sm doc-toolbar-menu-btn {{ collect(request()->only(['file_type', 'category', 'date_from', 'date_to', 'size_range', 'title']))->filter()->isNotEmpty() ? 'is-active' : '' }}"
                             data-doc-menu-trigger
                             aria-haspopup="true"
                             aria-expanded="false">
@@ -157,26 +151,15 @@
                                 @endforeach
                             </select>
                         </div>
-                        <div class="doc-menu-grid">
+                        <div class="doc-menu-date-range">
                             <div class="doc-menu-field">
                                 <label class="doc-menu-label" for="docFilterDateFrom">From</label>
-                                <input type="date" id="docFilterDateFrom" name="date_from" value="{{ request('date_from') }}" class="form-control text-sm">
+                                <input type="date" id="docFilterDateFrom" name="date_from" value="{{ request('date_from') }}" class="form-control text-sm doc-menu-date-input">
                             </div>
                             <div class="doc-menu-field">
                                 <label class="doc-menu-label" for="docFilterDateTo">To</label>
-                                <input type="date" id="docFilterDateTo" name="date_to" value="{{ request('date_to') }}" class="form-control text-sm">
+                                <input type="date" id="docFilterDateTo" name="date_to" value="{{ request('date_to') }}" class="form-control text-sm doc-menu-date-input">
                             </div>
-                        </div>
-                        <div class="doc-menu-field">
-                            <label class="doc-menu-label" for="docFilterAuthor">Author</label>
-                            <select id="docFilterAuthor" name="uploaded_by" class="form-control text-sm">
-                                <option value="">All authors</option>
-                                @foreach($uploaders as $uploader)
-                                <option value="{{ $uploader->id }}" @selected((string) request('uploaded_by') === (string) $uploader->id)>
-                                    {{ $uploader->employee->full_name ?? $uploader->username }}
-                                </option>
-                                @endforeach
-                            </select>
                         </div>
                         <div class="doc-menu-field">
                             <label class="doc-menu-label" for="docFilterCategory">Category</label>

@@ -577,6 +577,16 @@
         const sidebar = document.querySelector('.sidebar');
         const sidebarOverlay = document.getElementById('sidebarOverlay');
 
+        // Sidebar scrollbar: fade in/out when pointer enters/leaves panel
+        if (sidebar) {
+            sidebar.addEventListener('mouseenter', () => {
+                sidebar.classList.add('sidebar-scrollbar-visible');
+            });
+            sidebar.addEventListener('mouseleave', () => {
+                sidebar.classList.remove('sidebar-scrollbar-visible');
+            });
+        }
+
         function openSidebar() {
             sidebar.classList.add('active');
             sidebarOverlay.classList.remove('hidden');

@@ -190,81 +190,99 @@ body {
     overflow-x: hidden !important;
     padding: 0.75rem !important;
     padding-bottom: 2rem !important;
-    scrollbar-gutter: stable;
     scrollbar-width: thin;
-    scrollbar-color: rgba(144, 238, 144, 0.42) rgba(8, 53, 16, 0.55);
+    scrollbar-color: transparent #0d4f15;
 }
 
-/* Sidebar nav — themed scrollbar (Firefox + Chromium) */
+/* Sidebar nav — hover-only scrollbar, track matches panel, fade in/out */
 .sidebar nav::-webkit-scrollbar {
-    width: 7px;
+    width: 6px;
 }
 
 .sidebar nav::-webkit-scrollbar-track {
-    background: rgba(8, 53, 16, 0.45);
-    border-left: 1px solid rgba(255, 255, 255, 0.06);
+    background: #0d4f15;
+    border: none;
 }
 
 .sidebar nav::-webkit-scrollbar-thumb {
-    background: linear-gradient(
-        180deg,
-        rgba(144, 238, 144, 0.72) 0%,
-        rgba(2, 184, 21, 0.58) 100%
-    );
+    background-color: rgba(144, 238, 144, 0);
     border-radius: 999px !important;
-    border: 2px solid rgba(8, 53, 16, 0.35);
-    background-clip: padding-box;
     min-height: 2.5rem;
+    transition: background-color 0.35s ease !important;
 }
 
-.sidebar nav::-webkit-scrollbar-thumb:hover {
-    background: linear-gradient(
-        180deg,
-        rgba(187, 247, 187, 0.88) 0%,
-        rgba(2, 216, 26, 0.75) 100%
-    );
-    border-color: rgba(8, 53, 16, 0.2);
+.sidebar:hover nav::-webkit-scrollbar-thumb,
+.sidebar.sidebar-scrollbar-visible nav::-webkit-scrollbar-thumb {
+    background-color: rgba(144, 238, 144, 0.52);
 }
 
-.sidebar nav::-webkit-scrollbar-thumb:active {
-    background: linear-gradient(
-        180deg,
-        rgba(255, 255, 255, 0.55) 0%,
-        rgba(2, 184, 21, 0.85) 100%
-    );
+.sidebar:hover nav::-webkit-scrollbar-thumb:hover,
+.sidebar.sidebar-scrollbar-visible nav::-webkit-scrollbar-thumb:hover {
+    background-color: rgba(187, 247, 187, 0.78);
+}
+
+.sidebar:hover nav::-webkit-scrollbar-thumb:active,
+.sidebar.sidebar-scrollbar-visible nav::-webkit-scrollbar-thumb:active {
+    background-color: rgba(2, 216, 26, 0.85);
 }
 
 .sidebar nav::-webkit-scrollbar-button,
+.sidebar nav::-webkit-scrollbar-button:single-button,
+.sidebar nav::-webkit-scrollbar-button:vertical:start,
+.sidebar nav::-webkit-scrollbar-button:vertical:end,
 .sidebar nav::-webkit-scrollbar-corner {
-    display: none;
-    width: 0;
-    height: 0;
+    display: none !important;
+    width: 0 !important;
+    height: 0 !important;
+    -webkit-appearance: none;
+    appearance: none;
+}
+
+.sidebar:hover nav,
+.sidebar.sidebar-scrollbar-visible nav {
+    scrollbar-color: rgba(144, 238, 144, 0.52) #0d4f15;
 }
 
 .dark .sidebar nav {
-    scrollbar-color: rgba(134, 239, 172, 0.45) rgba(6, 42, 13, 0.65);
+    scrollbar-color: transparent #0a3d11;
 }
 
 .dark .sidebar nav::-webkit-scrollbar-track {
-    background: rgba(6, 42, 13, 0.55);
-    border-left-color: rgba(255, 255, 255, 0.05);
+    background: #0a3d11;
 }
 
-.dark .sidebar nav::-webkit-scrollbar-thumb {
-    background: linear-gradient(
-        180deg,
-        rgba(134, 239, 172, 0.65) 0%,
-        rgba(2, 138, 15, 0.55) 100%
-    );
-    border-color: rgba(6, 42, 13, 0.4);
+.dark .sidebar:hover nav,
+.dark .sidebar.sidebar-scrollbar-visible nav {
+    scrollbar-color: rgba(134, 239, 172, 0.5) #0a3d11;
 }
 
-.dark .sidebar nav::-webkit-scrollbar-thumb:hover {
-    background: linear-gradient(
-        180deg,
-        rgba(187, 247, 208, 0.82) 0%,
-        rgba(2, 184, 21, 0.7) 100%
-    );
+.dark .sidebar:hover nav::-webkit-scrollbar-thumb,
+.dark .sidebar.sidebar-scrollbar-visible nav::-webkit-scrollbar-thumb {
+    background-color: rgba(134, 239, 172, 0.48);
+}
+
+.dark .sidebar:hover nav::-webkit-scrollbar-thumb:hover,
+.dark .sidebar.sidebar-scrollbar-visible nav::-webkit-scrollbar-thumb:hover {
+    background-color: rgba(187, 247, 208, 0.75);
+}
+
+/* Touch devices: keep thumb subtly visible (no hover) */
+@media (hover: none) {
+    .sidebar nav {
+        scrollbar-color: rgba(144, 238, 144, 0.35) #0d4f15;
+    }
+
+    .sidebar nav::-webkit-scrollbar-thumb {
+        background-color: rgba(144, 238, 144, 0.35);
+    }
+
+    .dark .sidebar nav {
+        scrollbar-color: rgba(134, 239, 172, 0.32) #0a3d11;
+    }
+
+    .dark .sidebar nav::-webkit-scrollbar-thumb {
+        background-color: rgba(134, 239, 172, 0.32);
+    }
 }
 
 /* Sidebar green background override */

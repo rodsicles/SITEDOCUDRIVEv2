@@ -93,11 +93,9 @@
         </table>
     </div>
 
-    @if($activities->hasPages())
-    <div class="mt-4 px-2">
-        {{ $activities->links() }}
+    <div class="mt-4 px-2 pb-4">
+        {{ $activities->links('partials.pagination') }}
     </div>
-    @endif
 </div>
 
 @endsection

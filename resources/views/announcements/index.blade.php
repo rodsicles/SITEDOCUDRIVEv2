@@ -211,9 +211,9 @@
         </div>
         @endforelse
 
-        @if($announcements->hasPages())
-        <div class="mt-4">{{ $announcements->links() }}</div>
-        @endif
+        <div class="mt-4 px-2 pb-2">
+            {{ $announcements->links('partials.pagination') }}
+        </div>
     </div>
 
     <script>

@@ -116,6 +116,6 @@ class DashboardLog extends Model
             });
         }
 
-        return $query->latest('log_date')->paginate($perPage);
+        return $query->latest('log_date')->paginate($perPage)->withQueryString();
     }
 }

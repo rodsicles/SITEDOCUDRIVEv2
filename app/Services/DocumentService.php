@@ -85,13 +85,41 @@ class DocumentService
             }
         }
 
-        // Search by document title or tags
-        $search = $queryParams['search'] ?? null;
-        if ($search) {
-            $query->where(function ($q) use ($search) {
-                $q->where('document_title', 'like', "%{$search}%")
-                  ->orWhere('tags', 'like', "%{$search}%");
+        $name = $queryParams['name'] ?? $queryParams['search'] ?? null;
+        if ($name) {
+            $query->where(function ($q) use ($name) {
+                $q->where('document_title', 'like', "%{$name}%")
+                    ->orWhere('tags', 'like', "%{$name}%");
             });
+        }
+
+        $title = $queryParams['title'] ?? null;
+        if ($title) {
+            $query->where('document_title', 'like', "%{$title}%");
+        }
+
+        $fileType = $queryParams['file_type'] ?? null;
+        if ($fileType === 'pdf') {
+            $query->where(function ($q) {
+                $q->where('file_path', 'like', '%.pdf')
+                    ->orWhere('document_type', 'like', '%pdf%');
+            });
+        } elseif ($fileType === 'word') {
+            $query->where(function ($q) {
+                $q->where(function ($inner) {
+                    $inner->where('file_path', 'like', '%.doc')
+                        ->orWhere('file_path', 'like', '%.docx');
+                })->orWhere('document_type', 'like', '%doc%');
+            });
+        }
+
+        $sizeRange = $queryParams['size_range'] ?? null;
+        if ($sizeRange === 'small') {
+            $query->where('file_size', '<', 1048576);
+        } elseif ($sizeRange === 'medium') {
+            $query->whereBetween('file_size', [1048576, 5242880]);
+        } elseif ($sizeRange === 'large') {
+            $query->where('file_size', '>', 5242880);
         }
 
         $tag = $queryParams['tag'] ?? null;
@@ -144,7 +172,16 @@ class DocumentService
             });
         }
 
-        return $query->paginate($perPage)->appends($queryParams);
+        $sort = $queryParams['sort'] ?? 'date';
+        match ($sort) {
+            'size' => $query->orderByDesc('file_size'),
+            'title' => $query->orderBy('document_title'),
+            'author' => $query->orderBy('uploaded_by'),
+            'category' => $query->orderBy('category'),
+            default => $query->latest('created_at'),
+        };
+
+        return $query->paginate($perPage)->withQueryString();
     }
 
     /**

@@ -7,6 +7,7 @@ use App\Console\Commands\EnsureAcademicYearFolders;
 use App\Console\Commands\PurgeOldTrashedDocuments;
 use App\Console\Commands\VerifyUploadStorageCommand;
 use App\Services\DashboardService;
+use Illuminate\Pagination\Paginator;
 use Illuminate\Support\Facades\Schema;
 use Illuminate\Support\Facades\View;
 use Illuminate\Support\ServiceProvider;
@@ -26,6 +27,9 @@ class AppServiceProvider extends ServiceProvider
      */
     public function boot(): void
     {
+        Paginator::defaultView('partials.pagination');
+        Paginator::defaultSimpleView('partials.pagination');
+
         Schema::defaultStringLength(191);
 
         $uploadDisk = config('filesystems.upload_disk');

@@ -1,4 +1,4 @@
-﻿@extends('layouts.dashboard')
+@extends('layouts.dashboard')
 
 @section('title', 'Documents - Dean')
 
@@ -29,104 +29,10 @@
 
     @if(!$hideDocumentsList)
     <div class="content-card">
-        <div class="card-header">
-            <h3 class="card-title">Available Documents</h3>
-            <div class="flex items-center gap-2">
-                <span class="badge badge-info">{{ $documents->total() }} Files</span>
-                <button type="button" class="btn btn-sm bg-gray-200 dark:bg-gray-700 text-gray-700 dark:text-gray-300" onclick="toggleDocFilters()">
-                    <i class="fas fa-filter"></i> Filters
-                </button>
-            </div>
-        </div>
-
-        <div id="docFiltersPanel" class="documents-filter space-y-4" style="display:none;">
-            <form action="{{ route('dean.documents') }}" method="GET" class="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-4 gap-3">
-                <input type="hidden" name="folder" value="{{ $folderFilter }}">
-                <input type="hidden" name="tab" value="{{ $tab }}">
-                <div class="xl:col-span-2">
-                    @include('partials.school-year-filter', ['selected' => request('academic_year', '')])
-                </div>
-                <div>
-                    <label class="text-xs font-semibold text-gray-600 dark:text-gray-300 block mb-1">Category</label>
-                    <select name="category" class="form-control text-sm">
-                        <option value="">All Categories</option>
-                        @foreach($categories as $cat)
-                            <option value="{{ $cat }}" {{ $categoryFilter === $cat ? 'selected' : '' }}>{{ $cat }}</option>
-                        @endforeach
-                    </select>
-                </div>
-                <div>
-                    <label class="text-xs font-semibold text-gray-600 dark:text-gray-300 block mb-1">Search</label>
-                    <input type="text" name="search" value="{{ request('search') }}" class="form-control text-sm" placeholder="Title or keyword">
-                </div>
-                <div>
-                    <label class="text-xs font-semibold text-gray-600 dark:text-gray-300 block mb-1">Uploader</label>
-                    <select name="uploaded_by" class="form-control text-sm">
-                        <option value="">All Uploaders</option>
-                        @foreach($uploaders as $uploader)
-                            <option value="{{ $uploader->id }}" {{ (string) request('uploaded_by') === (string) $uploader->id ? 'selected' : '' }}>
-                                {{ $uploader->employee->full_name ?? $uploader->username }}
-                            </option>
-                        @endforeach
-                    </select>
-                </div>
-                <div>
-                    <label class="text-xs font-semibold text-gray-600 dark:text-gray-300 block mb-1">Uploaded From</label>
-                    <input type="date" name="date_from" value="{{ request('date_from') }}" class="form-control text-sm">
-                </div>
-                <div>
-                    <label class="text-xs font-semibold text-gray-600 dark:text-gray-300 block mb-1">Uploaded To</label>
-                    <input type="date" name="date_to" value="{{ request('date_to') }}" class="form-control text-sm">
-                </div>
-                <div class="flex items-end gap-2 md:col-span-2">
-                    <button type="submit" class="btn btn-primary text-sm">
-                        <i class="fas fa-filter"></i> Apply Filters
-                    </button>
-                    <a href="{{ route('dean.documents', array_filter(['folder' => $folderFilter, 'tab' => $tab])) }}" class="btn bg-gray-200 dark:bg-gray-700 text-gray-700 dark:text-gray-300 text-sm">
-                        <i class="fas fa-rotate-left"></i> Reset
-                    </a>
-                </div>
-            </form>
-
-            <div class="flex flex-col gap-3 border-t border-gray-200 dark:border-gray-700 pt-4">
-                <form action="{{ route('document-filters.store') }}" method="POST" class="flex flex-wrap items-end gap-2">
-                    @csrf
-                    <input type="hidden" name="category" value="{{ $categoryFilter }}">
-                    <input type="hidden" name="folder" value="{{ $folderFilter }}">
-                    <input type="hidden" name="tab" value="{{ $tab }}">
-                    <input type="hidden" name="search" value="{{ request('search') }}">
-                    <input type="hidden" name="uploaded_by" value="{{ request('uploaded_by') }}">
-                    <input type="hidden" name="date_from" value="{{ request('date_from') }}">
-                    <input type="hidden" name="date_to" value="{{ request('date_to') }}">
-                    <div>
-                        <label class="text-xs font-semibold text-gray-600 dark:text-gray-300 block mb-1">Save Current Filters</label>
-                        <input type="text" name="name" class="form-control text-sm" placeholder="Filter name" maxlength="50" required>
-                    </div>
-                    <button type="submit" class="btn btn-primary text-sm">
-                        <i class="fas fa-bookmark"></i> Save Filter
-                    </button>
-                </form>
-
-                @if($savedFilters->isNotEmpty())
-                <div class="flex flex-wrap gap-2">
-                    @foreach($savedFilters as $savedFilter)
-                    <div class="flex items-center gap-2 border border-gray-200 dark:border-gray-700 px-3 py-2 bg-gray-50 dark:bg-[#1e1e1e]">
-                        <a href="{{ route('dean.documents', array_merge($savedFilter->toQueryParams(), ['saved_filter' => $savedFilter->document_filter_id])) }}" class="text-sm font-medium text-gray-700 dark:text-gray-200 no-underline">
-                            {{ $savedFilter->name }}
-                        </a>
-                        <form action="{{ route('document-filters.destroy', $savedFilter->document_filter_id) }}" method="POST">
-                            @csrf
-                            @method('DELETE')
-                            <button type="submit" class="text-xs text-red-600 dark:text-red-400 bg-transparent border-0 cursor-pointer">
-                                <i class="fas fa-trash"></i>
-                            </button>
-                        </form>
-                    </div>
-                    @endforeach
-                </div>
-                @endif
-            </div>
-        </div>
+        @include('partials.documents-filter-panel', [
+            'documentsRoute' => 'dean.documents',
+            'showSchoolYearFilter' => true,
+        ])
         <table class="data-table">
             <thead>
                 <tr>
@@ -223,14 +129,6 @@
 
 @push('scripts')
 <script>
-function toggleDocFilters() {
-    var panel = document.getElementById('docFiltersPanel');
-    if (panel.style.display === 'none') {
-        panel.style.display = 'block';
-    } else {
-        panel.style.display = 'none';
-    }
-}
 function confirmDelete(id) {
     Swal.fire({
         title: 'Move to Recycle Bin?',

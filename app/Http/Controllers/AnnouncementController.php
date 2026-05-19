@@ -26,7 +26,8 @@ class AnnouncementController extends Controller
             ->active()
             ->visibleTo($user)
             ->ordered()
-            ->paginate(10);
+            ->paginate(8)
+            ->withQueryString();
 
         $rolePrefix = $this->getRolePrefix();
         $sidebar = $this->getSidebarData();

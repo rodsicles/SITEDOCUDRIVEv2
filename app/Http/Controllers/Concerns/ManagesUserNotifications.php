@@ -4,14 +4,37 @@ namespace App\Http\Controllers\Concerns;
 
 use App\Models\Notification;
 use App\Services\NotificationService;
+use Illuminate\Http\Request;
 
 trait ManagesUserNotifications
 {
-    public function notifications()
+    public function notifications(Request $request)
     {
-        $notifications = Notification::where('user_id', auth()->id())
-            ->latest()
-            ->paginate(20);
+        $query = Notification::where('user_id', auth()->id());
+
+        $search = trim((string) $request->query('q', ''));
+        if ($search !== '') {
+            $query->where('message', 'like', '%'.$search.'%');
+        }
+
+        $status = $request->query('status');
+        if ($status === 'read') {
+            $query->where('is_read', true);
+        } elseif ($status === 'unread') {
+            $query->where('is_read', false);
+        }
+
+        $tone = $request->query('tone');
+        if ($tone === 'neutral') {
+            $query->where(function ($q) {
+                $q->whereNull('tone')
+                    ->orWhereNotIn('tone', [Notification::TONE_SUCCESS, Notification::TONE_DANGER]);
+            });
+        } elseif (in_array($tone, [Notification::TONE_SUCCESS, Notification::TONE_DANGER], true)) {
+            $query->where('tone', $tone);
+        }
+
+        $notifications = $query->latest()->paginate(20)->withQueryString();
 
         return view($this->notificationsView(), compact('notifications'));
     }

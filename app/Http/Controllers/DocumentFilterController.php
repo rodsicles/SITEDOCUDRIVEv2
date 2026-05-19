@@ -25,7 +25,6 @@ class DocumentFilterController extends Controller
             'uploaded_by' => 'nullable|integer|exists:users,id',
             'date_from' => 'nullable|date',
             'date_to' => 'nullable|date|after_or_equal:date_from',
-            'academic_year' => 'nullable|string|max:10',
         ]);
 
         $filters = collect([
@@ -42,7 +41,6 @@ class DocumentFilterController extends Controller
             'uploaded_by' => $validated['uploaded_by'] ?? null,
             'date_from' => $validated['date_from'] ?? null,
             'date_to' => $validated['date_to'] ?? null,
-            'academic_year' => $validated['academic_year'] ?? null,
         ])->filter(static fn ($value) => $value !== null && $value !== '')->all();
 
         DocumentFilter::updateOrCreate(

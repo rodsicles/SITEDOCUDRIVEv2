@@ -31,7 +31,6 @@
     <div class="content-card">
         @include('partials.documents-filter-panel', [
             'documentsRoute' => 'coordinator.documents',
-            'showSchoolYearFilter' => false,
         ])
         <table class="data-table">
             <thead>

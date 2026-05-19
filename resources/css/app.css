@@ -2531,18 +2531,6 @@ body {
     @apply text-[0.6rem] opacity-60;
 }
 
-.doc-toolbar-year {
-    @apply inline-flex items-center gap-1.5 text-gray-600 dark:text-gray-300;
-}
-
-.doc-toolbar-year .form-control {
-    min-width: 9.5rem;
-}
-
-.doc-toolbar-year i {
-    @apply text-[#028a0f] text-xs;
-}
-
 .doc-menu {
     @apply relative;
 }

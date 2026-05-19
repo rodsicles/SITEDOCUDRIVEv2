@@ -1,13 +1,9 @@
 {{--
     Reusable documents toolbar (Faculty / Dean / Coordinator).
     @param string $documentsRoute Route name for GET filter form
-    @param bool $showSchoolYearFilter Show academic year selector
 --}}
 @php
-    use App\Support\AcademicYear;
-
     $documentsRoute = $documentsRoute ?? 'faculty.documents';
-    $showSchoolYearFilter = $showSchoolYearFilter ?? false;
     $nameValue = request('name', request('search'));
     $sortValue = request('sort', 'date');
     $sortDirValue = request('sort_dir', 'desc') === 'asc' ? 'asc' : 'desc';
@@ -60,13 +56,6 @@
     }
     if ($sr = request('size_range')) {
         $chips[] = ['label' => $sizeLabels[$sr] ?? $sr, 'except' => ['size_range']];
-    }
-    if ($showSchoolYearFilter && request()->filled('academic_year')) {
-        $yearKey = (string) request('academic_year');
-        $chips[] = [
-            'label' => AcademicYear::options()[$yearKey] ?? ('AY ' . $yearKey),
-            'except' => ['academic_year'],
-        ];
     }
     if ($sortValue !== 'date' || $sortDirValue !== 'desc') {
         $order = $sortDirValue === 'asc' ? 'Ascending' : 'Descending';
@@ -206,21 +195,6 @@
                         </div>
                     </div>
                 </div>
-
-                @if($showSchoolYearFilter)
-                <label class="doc-toolbar-year">
-                    <i class="fas fa-calendar-alt" aria-hidden="true"></i>
-                    <select name="academic_year" class="form-control text-sm" data-doc-auto-submit aria-label="School year">
-                        <option value="">All years</option>
-                        @foreach(AcademicYear::options() as $startYear => $label)
-                            @php $isArchive = AcademicYear::isArchived((int) $startYear); @endphp
-                            <option value="{{ $startYear }}" @selected((string) request('academic_year') === (string) $startYear)>
-                                {{ $label }}{{ $isArchive ? ' (Archive)' : '' }}
-                            </option>
-                        @endforeach
-                    </select>
-                </label>
-                @endif
 
                 <button type="submit" class="btn btn-sm btn-primary" title="Search" aria-label="Search documents">
                     <i class="fas fa-search" aria-hidden="true"></i>

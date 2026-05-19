@@ -152,7 +152,7 @@ class ExamQuestionnaireController extends Controller
         $user = auth()->user();
         $questionnaire = ExamQuestionnaire::visibleTo($user)->findOrFail($id);
 
-        UploadStorage::assertResolvedPath($questionnaire->file_path, 'exam-questionnaires');
+        UploadStorage::assertPathAllowed($questionnaire->file_path);
 
         if (!UploadStorage::exists($questionnaire->file_path)) {
             return back()->with('error', 'This file is no longer available. It was uploaded to a previous storage provider and no longer exists in the current storage.');
@@ -170,7 +170,7 @@ class ExamQuestionnaireController extends Controller
         $user = auth()->user();
         $questionnaire = ExamQuestionnaire::visibleTo($user)->findOrFail($id);
 
-        UploadStorage::assertResolvedPath($questionnaire->file_path, 'exam-questionnaires');
+        UploadStorage::assertPathAllowed($questionnaire->file_path);
 
         if (!UploadStorage::exists($questionnaire->file_path)) {
             return back()->with('error', 'This file is no longer available. It was uploaded to a previous storage provider and no longer exists in the current storage.');

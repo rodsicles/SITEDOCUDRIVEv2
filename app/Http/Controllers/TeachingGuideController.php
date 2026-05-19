@@ -223,8 +223,7 @@ class TeachingGuideController extends Controller
         $user = auth()->user();
         $guide = TeachingGuide::visibleTo($user)->findOrFail($id);
 
-        $storageDir = str_starts_with($guide->file_path, 'documents/') ? 'documents' : 'teaching-guides';
-        UploadStorage::assertResolvedPath($guide->file_path, $storageDir);
+        UploadStorage::assertPathAllowed($guide->file_path);
 
         if (!UploadStorage::exists($guide->file_path)) {
             return back()->with('error', 'This file is no longer available. It was uploaded to a previous storage provider and no longer exists in the current storage.');

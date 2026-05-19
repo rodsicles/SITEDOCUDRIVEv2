@@ -72,8 +72,34 @@ class UploadStorage
         }
     }
 
+    /**
+     * Normalize a stored object key for comparisons (S3/R2 and local).
+     */
+    public static function normalizeStoragePath(string $path): string
+    {
+        return str_replace('\\', '/', ltrim($path, '/'));
+    }
+
+    /**
+     * Resolve the top-level upload directory for a stored relative path.
+     */
+    public static function uploadDirectoryForPath(string $path): string
+    {
+        $path = static::normalizeStoragePath($path);
+        static::assertSafeRelativePath($path);
+
+        foreach (['teaching-guides', 'exam-questionnaires', 'task-attachments', 'documents'] as $directory) {
+            if (str_starts_with($path, $directory . '/')) {
+                return $directory;
+            }
+        }
+
+        return 'documents';
+    }
+
     public static function assertPathInDirectory(string $path, string $directory): void
     {
+        $path = static::normalizeStoragePath($path);
         static::assertSafeRelativePath($path);
         $prefix = rtrim($directory, '/') . '/';
         if (!str_starts_with($path, $prefix)) {
@@ -81,25 +107,30 @@ class UploadStorage
         }
     }
 
+    public static function assertPathAllowed(string $path): void
+    {
+        static::assertResolvedPath($path, static::uploadDirectoryForPath($path));
+    }
+
     /**
      * Path traversal check: realpath on local disk, prefix check on cloud disks.
      */
     public static function assertResolvedPath(string $path, string $directory): void
     {
-        static::assertSafeRelativePath($path);
+        static::assertPathInDirectory($path, $directory);
 
-        if (static::isLocal()) {
-            $allowedDir = static::disk()->path($directory);
-            $realAllowed = realpath($allowedDir);
-            $realFile = realpath(static::disk()->path($path));
-            if (!$realAllowed || !$realFile || !str_starts_with($realFile, $realAllowed)) {
-                abort(403, 'Unauthorized file access');
-            }
-
+        if (!static::isLocal()) {
             return;
         }
 
-        static::assertPathInDirectory($path, $directory);
+        $allowedDir = static::disk()->path($directory);
+        $fullPath = static::disk()->path($path);
+        $realAllowed = realpath($allowedDir);
+        $realFile = realpath($fullPath);
+
+        if ($realAllowed && $realFile && !str_starts_with($realFile, $realAllowed)) {
+            abort(403, 'Unauthorized file access');
+        }
     }
 
     public static function exists(string $path): bool

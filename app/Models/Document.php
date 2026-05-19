@@ -141,7 +141,7 @@ class Document extends Model
             return true;
         }
 
-        if ($this->uploaded_by === $user->id) {
+        if ((int) $this->uploaded_by === (int) $user->id) {
             return true;
         }
 
@@ -150,12 +150,9 @@ class Document extends Model
         }
 
         if ($user->isProgramCoordinator()) {
-            if ($this->recipients()->where('users.id', $user->id)->exists()) {
-                return true;
-            }
+            $uploader = $this->relationLoaded('uploader') ? $this->uploader : $this->uploader()->with('employee')->first();
 
-            $uploader = $this->uploader;
-            if ($uploader && $uploader->isFaculty()) {
+            if ($uploader && ($uploader->isFaculty() || (int) $uploader->role_id === 3)) {
                 $coordinatorDept = optional($user->employee)->department;
                 $uploaderDept = optional($uploader->employee)->department;
 
@@ -169,7 +166,10 @@ class Document extends Model
             return true;
         }
 
-        return false;
+        return static::query()
+            ->whereKey($this->getKey())
+            ->visibleTo($user)
+            ->exists();
     }
 
     /**

@@ -203,8 +203,7 @@ class DocumentService
             abort(403, 'Unauthorized access');
         }
 
-        $storageDir = str_starts_with($document->file_path, 'teaching-guides/') ? 'teaching-guides' : 'documents';
-        UploadStorage::assertResolvedPath($document->file_path, $storageDir);
+        UploadStorage::assertPathAllowed($document->file_path);
 
         if (!UploadStorage::exists($document->file_path)) {
             throw new \RuntimeException('This file is no longer available. It was uploaded to a previous storage provider and no longer exists in the current storage.');
@@ -236,6 +235,8 @@ class DocumentService
             }
         }
 
+        UploadStorage::assertPathAllowed($serveFilePath);
+
         return UploadStorage::inlineResponse($serveFilePath, basename($serveFilePath), $mimeType);
     }
 
@@ -250,8 +251,7 @@ class DocumentService
             abort(403, 'Unauthorized access');
         }
 
-        $storageDir = str_starts_with($document->file_path, 'teaching-guides/') ? 'teaching-guides' : 'documents';
-        UploadStorage::assertResolvedPath($document->file_path, $storageDir);
+        UploadStorage::assertPathAllowed($document->file_path);
 
         if (!UploadStorage::exists($document->file_path)) {
             throw new \RuntimeException('This file is no longer available. It was uploaded to a previous storage provider and no longer exists in the current storage.');
@@ -265,6 +265,8 @@ class DocumentService
                 $downloadPath = $pdfPath;
             }
         }
+
+        UploadStorage::assertPathAllowed($downloadPath);
 
         DashboardLog::create([
             'user_id' => $user->id,

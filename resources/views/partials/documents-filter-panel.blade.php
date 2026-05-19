@@ -30,7 +30,14 @@
         'tab' => $tab,
         'sort' => request('sort'),
         'file_type' => request('file_type'),
+        'category' => request('category'),
     ], fn ($v) => $v !== null && $v !== '');
+
+    $documentsListSearchRoute = $documentsListSearchRoute ?? (
+        str_ends_with($documentsRoute, '.documents')
+            ? substr($documentsRoute, 0, -strlen('.documents')).'.documents.list-search'
+            : $documentsRoute.'.list-search'
+    );
 @endphp
 
 <div class="card-header card-header--documents">
@@ -38,31 +45,37 @@
         <h3 class="card-title mb-0">Available Documents</h3>
 
         <div class="doc-header-toolbar">
-            <form action="{{ route($documentsRoute) }}" method="GET" class="doc-search-form" role="search">
-                @foreach($searchPreserve as $key => $value)
-                    <input type="hidden" name="{{ $key }}" value="{{ $value }}">
-                @endforeach
-                <label class="sr-only" for="docListSearchInput">Search documents</label>
-                <input type="search"
-                       id="docListSearchInput"
-                       name="search"
-                       value="{{ $currentSearch }}"
-                       class="doc-search-input"
-                       placeholder="Search..."
-                       autocomplete="off"
-                       maxlength="80">
-                <button type="submit" class="doc-search-submit" title="Search" aria-label="Search documents">
-                    <i class="fas fa-search" aria-hidden="true"></i>
-                </button>
-                @if($currentSearch !== '')
-                <a href="{{ route($documentsRoute, $searchPreserve) }}"
-                   class="doc-search-clear"
-                   aria-label="Clear search"
-                   title="Clear search">
-                    <i class="fas fa-times" aria-hidden="true"></i>
-                </a>
-                @endif
-            </form>
+            <div class="doc-search-wrap" id="docListSearchWrap">
+                <form action="{{ route($documentsRoute) }}" method="GET" class="doc-search-form" id="docListSearchForm" role="search">
+                    @foreach($searchPreserve as $key => $value)
+                        <input type="hidden" name="{{ $key }}" value="{{ $value }}">
+                    @endforeach
+                    <label class="sr-only" for="docListSearchInput">Search documents</label>
+                    <input type="search"
+                           id="docListSearchInput"
+                           name="search"
+                           value="{{ $currentSearch }}"
+                           class="doc-search-input"
+                           placeholder="Search..."
+                           autocomplete="off"
+                           maxlength="80"
+                           aria-autocomplete="list"
+                           aria-controls="docListSearchSuggest"
+                           aria-expanded="false">
+                    <button type="submit" class="doc-search-submit" title="Search" aria-label="Search documents">
+                        <i class="fas fa-search" aria-hidden="true"></i>
+                    </button>
+                    @if($currentSearch !== '')
+                    <a href="{{ route($documentsRoute, $searchPreserve) }}"
+                       class="doc-search-clear"
+                       aria-label="Clear search"
+                       title="Clear search">
+                        <i class="fas fa-times" aria-hidden="true"></i>
+                    </a>
+                    @endif
+                </form>
+                <div id="docListSearchSuggest" class="doc-search-suggest" role="listbox" hidden></div>
+            </div>
 
             <div class="doc-sort-wrap" id="docSortWrap">
             <button type="button"
@@ -190,6 +203,122 @@
     document.addEventListener('click', function (e) {
         if (!wrap.contains(e.target)) {
             closeMenu();
+        }
+    });
+})();
+
+(function () {
+    var searchWrap = document.getElementById('docListSearchWrap');
+    var searchInput = document.getElementById('docListSearchInput');
+    var searchForm = document.getElementById('docListSearchForm');
+    var suggestBox = document.getElementById('docListSearchSuggest');
+    if (!searchWrap || !searchInput || !searchForm || !suggestBox) return;
+
+    var searchUrl = @json(route($documentsListSearchRoute));
+    var debounceTimer = null;
+    var activeIndex = -1;
+
+    function hideSuggest() {
+        suggestBox.hidden = true;
+        suggestBox.innerHTML = '';
+        searchInput.setAttribute('aria-expanded', 'false');
+        activeIndex = -1;
+    }
+
+    function applySuggestion(title) {
+        searchInput.value = title;
+        hideSuggest();
+        searchForm.requestSubmit();
+    }
+
+    function renderSuggestions(items) {
+        suggestBox.innerHTML = '';
+        if (!items.length) {
+            hideSuggest();
+            return;
+        }
+        items.forEach(function (item, index) {
+            var btn = document.createElement('button');
+            btn.type = 'button';
+            btn.className = 'doc-search-suggest-item';
+            btn.setAttribute('role', 'option');
+            btn.textContent = item.title;
+            btn.addEventListener('click', function () {
+                applySuggestion(item.title);
+            });
+            btn.addEventListener('mouseenter', function () {
+                activeIndex = index;
+                highlightActive();
+            });
+            suggestBox.appendChild(btn);
+        });
+        suggestBox.hidden = false;
+        searchInput.setAttribute('aria-expanded', 'true');
+        activeIndex = -1;
+    }
+
+    function highlightActive() {
+        var buttons = suggestBox.querySelectorAll('.doc-search-suggest-item');
+        buttons.forEach(function (btn, i) {
+            btn.classList.toggle('is-active', i === activeIndex);
+        });
+    }
+
+    async function fetchSuggestions() {
+        var q = searchInput.value.trim();
+        if (q.length < 3) {
+            hideSuggest();
+            return;
+        }
+        var url = new URL(searchUrl, window.location.origin);
+        url.searchParams.set('q', q);
+        var params = new URLSearchParams(new FormData(searchForm));
+        params.forEach(function (value, key) {
+            if (key !== 'search') {
+                url.searchParams.set(key, value);
+            }
+        });
+        try {
+            var res = await fetch(url, {
+                headers: { 'Accept': 'application/json', 'X-Requested-With': 'XMLHttpRequest' },
+            });
+            if (!res.ok) {
+                hideSuggest();
+                return;
+            }
+            var data = await res.json();
+            renderSuggestions(data.results || []);
+        } catch (e) {
+            hideSuggest();
+        }
+    }
+
+    searchInput.addEventListener('input', function () {
+        clearTimeout(debounceTimer);
+        debounceTimer = setTimeout(fetchSuggestions, 280);
+    });
+
+    searchInput.addEventListener('keydown', function (e) {
+        var buttons = suggestBox.querySelectorAll('.doc-search-suggest-item');
+        if (e.key === 'ArrowDown' && !suggestBox.hidden && buttons.length) {
+            e.preventDefault();
+            activeIndex = Math.min(activeIndex + 1, buttons.length - 1);
+            highlightActive();
+        } else if (e.key === 'ArrowUp' && !suggestBox.hidden && buttons.length) {
+            e.preventDefault();
+            activeIndex = Math.max(activeIndex - 1, 0);
+            highlightActive();
+        } else if (e.key === 'Enter' && activeIndex >= 0 && buttons[activeIndex]) {
+            e.preventDefault();
+            applySuggestion(buttons[activeIndex].textContent);
+        } else if (e.key === 'Escape') {
+            hideSuggest();
+        }
+    });
+
+    document.addEventListener('click', function (e) {
+        if (!searchWrap.contains(e.target)) {
+            hideSuggest();
         }
     });
 })();

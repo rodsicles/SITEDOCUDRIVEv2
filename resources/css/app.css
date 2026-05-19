@@ -2382,9 +2382,7 @@ body {
     display: flex;
     align-items: center;
     gap: 0.35rem;
-    min-width: 11rem;
-    max-width: 18rem;
-    flex: 1 1 11rem;
+    width: 100%;
 }
 
 .doc-search-input {
@@ -2607,25 +2605,222 @@ body {
     display: inline-flex;
     align-items: center;
     justify-content: center;
-    width: 1.25rem;
-    padding: 0;
-    border: none;
-    background: transparent;
-    color: #d1d5db;
+    gap: 0.3rem;
+    min-height: 1.75rem;
+    padding: 0.2rem 0.5rem;
+    border: 1px solid #028a0f;
+    border-radius: 0.375rem;
+    background: #ecfdf3;
+    color: #028a0f;
+    font-size: 0.6875rem;
+    font-weight: 600;
+    line-height: 1;
     cursor: pointer;
     flex-shrink: 0;
+    transition: background-color 0.15s ease, color 0.15s ease, border-color 0.15s ease;
 }
 
 .dark .doc-rename-handle {
-    color: #9ca3af;
+    background: rgba(2, 184, 21, 0.15);
+    border-color: #02b815;
+    color: #4ade80;
 }
 
 .doc-rename-handle:hover {
-    color: #028a0f;
+    background: #028a0f;
+    border-color: #028a0f;
+    color: #fff;
 }
 
 .dark .doc-rename-handle:hover {
-    color: #34d399;
+    background: #02b815;
+    border-color: #02b815;
+    color: #fff;
+}
+
+.doc-rename-label {
+    white-space: nowrap;
+}
+
+@media (max-width: 768px) {
+    .doc-rename-label {
+        display: none;
+    }
+
+    .doc-rename-handle {
+        padding: 0.25rem 0.4rem;
+    }
+}
+
+.doc-rename-modal-card {
+    max-width: 28rem;
+}
+
+.doc-rename-input-box {
+    padding: 0.5rem 0.65rem;
+    background: #f9fafb;
+    border: 2px solid #028a0f;
+    border-radius: 0.5rem;
+    box-shadow: inset 0 1px 2px rgba(0, 0, 0, 0.04);
+}
+
+.dark .doc-rename-input-box {
+    background: #1f1f1f;
+    border-color: #02b815;
+}
+
+.doc-rename-input {
+    width: 100%;
+    border: 1px solid #d1d5db;
+    background: #fff;
+    font-weight: 600;
+}
+
+.dark .doc-rename-input {
+    background: #2a2a2a;
+    border-color: #4b5563;
+    color: #f3f4f6;
+}
+
+.doc-rename-input:focus {
+    border-color: #028a0f;
+    box-shadow: 0 0 0 2px rgba(2, 138, 15, 0.25);
+    outline: none;
+}
+
+.doc-rename-save-btn {
+    min-width: 6.5rem;
+    font-weight: 600;
+    box-shadow: 0 2px 8px rgba(2, 138, 15, 0.35);
+}
+
+.doc-rename-footer {
+    gap: 0.5rem;
+}
+
+.doc-search-wrap {
+    position: relative;
+    flex: 1 1 11rem;
+    min-width: 11rem;
+    max-width: 18rem;
+}
+
+.doc-search-suggest {
+    position: absolute;
+    top: calc(100% + 0.25rem);
+    left: 0;
+    right: 0;
+    z-index: 120;
+    max-height: 12rem;
+    overflow-y: auto;
+    background: #fff;
+    border: 1px solid #d1d5db;
+    border-radius: 0.375rem;
+    box-shadow: 0 8px 20px rgba(0, 0, 0, 0.12);
+}
+
+.dark .doc-search-suggest {
+    background: #2a2a2a;
+    border-color: #4b5563;
+    box-shadow: 0 8px 20px rgba(0, 0, 0, 0.4);
+}
+
+.doc-search-suggest-item {
+    display: block;
+    width: 100%;
+    padding: 0.45rem 0.65rem;
+    font-size: 0.8125rem;
+    text-align: left;
+    color: #374151;
+    background: transparent;
+    border: none;
+    border-bottom: 1px solid #f3f4f6;
+    cursor: pointer;
+}
+
+.dark .doc-search-suggest-item {
+    color: #e5e7eb;
+    border-bottom-color: #3f3f3f;
+}
+
+.doc-search-suggest-item:hover,
+.doc-search-suggest-item.is-active {
+    background: #ecfdf3;
+    color: #028a0f;
+}
+
+.dark .doc-search-suggest-item:hover,
+.dark .doc-search-suggest-item.is-active {
+    background: rgba(2, 184, 21, 0.15);
+    color: #4ade80;
+}
+
+.profile-edit-page {
+    display: flex;
+    flex-direction: column;
+    gap: 0.75rem;
+}
+
+.profile-edit-card .card-header,
+.profile-edit-card-header {
+    padding: 0.65rem 1rem;
+}
+
+.profile-edit-form {
+    padding: 0 1rem 0.85rem;
+}
+
+.profile-edit-grid {
+    display: grid;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: 0.65rem 1rem;
+}
+
+.profile-edit-grid--password {
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+}
+
+.profile-edit-page .form-group {
+    margin-bottom: 0;
+}
+
+.profile-edit-page .form-label {
+    margin-bottom: 0.25rem;
+    font-size: 0.8125rem;
+}
+
+.profile-edit-page .form-control {
+    padding: 0.4rem 0.55rem;
+    font-size: 0.875rem;
+}
+
+.profile-edit-note {
+    display: block;
+    margin-top: 0.2rem;
+    font-size: 0.75rem;
+    color: #6b7280;
+}
+
+.dark .profile-edit-note {
+    color: #9ca3af;
+}
+
+.profile-edit-btn {
+    margin-top: 0.65rem;
+    padding: 0.4rem 0.85rem;
+    font-size: 0.875rem;
+}
+
+@media (max-width: 900px) {
+    .profile-edit-grid--password {
+        grid-template-columns: 1fr;
+    }
+}
+
+@media (max-width: 640px) {
+    .profile-edit-grid {
+        grid-template-columns: 1fr;
+    }
 }
 
 .doc-title-text {

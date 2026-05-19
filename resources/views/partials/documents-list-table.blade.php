@@ -44,7 +44,8 @@
                             title="Rename document"
                             aria-label="Rename {{ $document->document_title }}"
                             onclick="openRenameDocumentModal({{ $document->document_id }}, @js($document->document_title))">
-                        <i class="fas fa-grip-vertical" aria-hidden="true"></i>
+                        <i class="fas fa-pen" aria-hidden="true"></i>
+                        <span class="doc-rename-label">Rename</span>
                     </button>
                     @endif
                     <strong class="doc-title-text" id="doc-title-text-{{ $document->document_id }}">{{ $document->document_title }}</strong>
@@ -110,8 +111,8 @@
     {{ $documents->links() }}
 </div>
 
-<div id="renameDocumentModal" class="modal-overlay" onclick="if(event.target===this)closeRenameDocumentModal()">
-    <div class="modal-card">
+<div id="renameDocumentModal" class="modal-overlay doc-rename-modal" onclick="if(event.target===this)closeRenameDocumentModal()">
+    <div class="modal-card doc-rename-modal-card">
         <div class="modal-header">
             <h3 class="modal-title"><i class="fas fa-pen mr-2"></i> Rename Document</h3>
             <button type="button" class="modal-close" onclick="closeRenameDocumentModal()" aria-label="Close">&times;</button>
@@ -119,15 +120,27 @@
         <form id="renameDocumentForm" onsubmit="submitRenameDocument(event)">
             <div class="modal-body">
                 <input type="hidden" id="renameDocumentId" name="document_id" value="">
-                <div class="form-group">
+                <div class="form-group doc-rename-field">
                     <label class="form-label" for="renameDocumentTitle">Document name *</label>
-                    <input type="text" id="renameDocumentTitle" name="document_title" class="form-input" required maxlength="{{ \App\Support\DocumentNaming::TITLE_MAX_LENGTH }}" pattern="[a-zA-Z0-9\s\-_\.]+" autocomplete="off">
-                    <small class="text-xs text-gray-500 dark:text-gray-400 mt-1 block">Max {{ \App\Support\DocumentNaming::TITLE_MAX_LENGTH }} characters. Updates for everyone immediately.</small>
+                    <div class="doc-rename-input-box">
+                        <input type="text"
+                               id="renameDocumentTitle"
+                               name="document_title"
+                               class="form-input doc-rename-input"
+                               required
+                               maxlength="{{ \App\Support\DocumentNaming::TITLE_MAX_LENGTH }}"
+                               pattern="[a-zA-Z0-9\s\-_\.]+"
+                               autocomplete="off"
+                               oninput="updateRenameCharCount()">
+                    </div>
+                    <small class="doc-rename-hint text-xs text-gray-500 dark:text-gray-400 mt-1 block">
+                        <span id="renameDocumentCharCount">0</span>/{{ \App\Support\DocumentNaming::TITLE_MAX_LENGTH }} characters. Updates for everyone immediately.
+                    </small>
                 </div>
             </div>
-            <div class="modal-footer">
+            <div class="modal-footer doc-rename-footer">
                 <button type="button" onclick="closeRenameDocumentModal()" class="btn btn-secondary">Cancel</button>
-                <button type="submit" class="btn btn-primary" id="renameDocumentSubmitBtn">
+                <button type="submit" class="btn btn-primary doc-rename-save-btn" id="renameDocumentSubmitBtn">
                     <i class="fas fa-check mr-1"></i> Save
                 </button>
             </div>
@@ -140,10 +153,18 @@
 <script>
     window.documentsRenameRouteSample = @json(route($routePrefix . '.rename-document', ['id' => 1]));
 
+    function updateRenameCharCount() {
+        const input = document.getElementById('renameDocumentTitle');
+        const counter = document.getElementById('renameDocumentCharCount');
+        if (!input || !counter) return;
+        counter.textContent = String(input.value.length);
+    }
+
     function openRenameDocumentModal(documentId, currentTitle) {
         document.getElementById('renameDocumentId').value = documentId;
         const input = document.getElementById('renameDocumentTitle');
         input.value = currentTitle || '';
+        updateRenameCharCount();
         document.getElementById('renameDocumentModal').classList.add('active');
         setTimeout(function () { input.focus(); input.select(); }, 50);
     }

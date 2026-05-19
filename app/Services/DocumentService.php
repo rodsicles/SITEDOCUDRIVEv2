@@ -13,6 +13,7 @@ use App\Services\TeachingGuideSyncService;
 use App\Models\SchoolYear;
 use App\Support\AcademicYear;
 use App\Support\UploadStorage;
+use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Support\Collection;
 use Illuminate\Pagination\LengthAwarePaginator;
 
@@ -65,6 +66,61 @@ class DocumentService
      */
     public function getFilteredDocuments(User $user, ?string $categoryFilter, ?string $folderFilter, array $queryParams = [], int $perPage = 15): LengthAwarePaginator
     {
+        $query = $this->buildDocumentListQuery($user, $categoryFilter, $folderFilter, $queryParams);
+
+        $sort = $queryParams['sort'] ?? 'date';
+        match ($sort) {
+            'size' => $query->orderByDesc('file_size'),
+            'title' => $query->orderBy('document_title'),
+            'author' => $query->orderBy('uploaded_by'),
+            'category' => $query->orderBy('category'),
+            default => $query->latest('created_at'),
+        };
+
+        return $query->paginate($perPage)->withQueryString();
+    }
+
+    /**
+     * Title suggestions for the documents list search (min 3 characters).
+     *
+     * @return list<string>
+     */
+    public function suggestDocumentTitles(
+        User $user,
+        ?string $categoryFilter,
+        ?string $folderFilter,
+        array $queryParams,
+        string $term,
+        int $limit = 8,
+    ): array {
+        $term = trim($term);
+        if (mb_strlen($term) < 3) {
+            return [];
+        }
+
+        $params = $queryParams;
+        unset($params['search'], $params['name'], $params['page']);
+
+        $query = $this->buildDocumentListQuery($user, $categoryFilter, $folderFilter, $params, applyTextSearch: false);
+
+        return $query
+            ->where('document_title', 'like', '%'.$term.'%')
+            ->orderBy('document_title')
+            ->limit($limit * 3)
+            ->pluck('document_title')
+            ->unique()
+            ->take($limit)
+            ->values()
+            ->all();
+    }
+
+    protected function buildDocumentListQuery(
+        User $user,
+        ?string $categoryFilter,
+        ?string $folderFilter,
+        array $queryParams,
+        bool $applyTextSearch = true,
+    ): Builder {
         $query = Document::getFilteredDocuments($user, $categoryFilter)
             ->onlyApprovedShareable();
 
@@ -72,11 +128,9 @@ class DocumentService
             if ($folderFilter === 'uncategorized') {
                 $query->whereNull('folder_id');
             } else {
-                // Include documents in child folders
                 $folderIds = [(int) $folderFilter];
                 $childIds = Folder::where('parent_id', $folderFilter)->pluck('folder_id')->toArray();
                 $folderIds = array_merge($folderIds, $childIds);
-                // Also include grandchildren
                 if (!empty($childIds)) {
                     $grandchildIds = Folder::whereIn('parent_id', $childIds)->pluck('folder_id')->toArray();
                     $folderIds = array_merge($folderIds, $grandchildIds);
@@ -85,17 +139,19 @@ class DocumentService
             }
         }
 
-        $name = $queryParams['name'] ?? $queryParams['search'] ?? null;
-        if ($name) {
-            $query->where(function ($q) use ($name) {
-                $q->where('document_title', 'like', "%{$name}%")
-                    ->orWhere('tags', 'like', "%{$name}%");
-            });
-        }
+        if ($applyTextSearch) {
+            $name = $queryParams['name'] ?? $queryParams['search'] ?? null;
+            if ($name) {
+                $query->where(function ($q) use ($name) {
+                    $q->where('document_title', 'like', "%{$name}%")
+                        ->orWhere('tags', 'like', "%{$name}%");
+                });
+            }
 
-        $title = $queryParams['title'] ?? null;
-        if ($title) {
-            $query->where('document_title', 'like', "%{$title}%");
+            $title = $queryParams['title'] ?? null;
+            if ($title) {
+                $query->where('document_title', 'like', "%{$title}%");
+            }
         }
 
         $fileType = $queryParams['file_type'] ?? null;
@@ -168,20 +224,11 @@ class DocumentService
             $activeId = SchoolYear::activeId();
             $query->where(function ($q) use ($activeId) {
                 $q->where('school_year_id', $activeId)
-                  ->orWhereNull('school_year_id');
+                    ->orWhereNull('school_year_id');
             });
         }
 
-        $sort = $queryParams['sort'] ?? 'date';
-        match ($sort) {
-            'size' => $query->orderByDesc('file_size'),
-            'title' => $query->orderBy('document_title'),
-            'author' => $query->orderBy('uploaded_by'),
-            'category' => $query->orderBy('category'),
-            default => $query->latest('created_at'),
-        };
-
-        return $query->paginate($perPage)->withQueryString();
+        return $query;
     }
 
     /**

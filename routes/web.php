@@ -15,6 +15,7 @@ use App\Http\Controllers\TeachingGuideController;
 use App\Http\Controllers\ExamQuestionnaireController;
 use App\Http\Controllers\DocumentFilterController;
 use App\Http\Controllers\DocumentRecipientController;
+use App\Http\Controllers\DocumentListSearchController;
 use App\Http\Controllers\TaskAttachmentController;
 use App\Http\Controllers\SchoolYearController;
 use App\Http\Controllers\AnalyticsController;
@@ -140,6 +141,7 @@ Route::middleware(['auth', 'no.back', 'role:Dean,Secretary'])->prefix('dean')->n
     // NOTE: Dean attachment-upload UI was removed; this route is intentionally not exposed.
 
     Route::get('/documents', [DeanController::class, 'documents'])->name('documents');
+    Route::get('/documents/list-search', [DocumentListSearchController::class, 'suggest'])->name('documents.list-search');
     Route::get('/documents/recipient-search', [DocumentRecipientController::class, 'search'])->name('documents.recipient-search');
     Route::post('/documents', [DeanController::class, 'uploadDocument'])->middleware('throttle:6,60')->name('upload-document');
     Route::post('/exam-records', [DeanController::class, 'storeExamRecord'])->middleware('throttle:10,60')->name('store-exam-record');
@@ -212,6 +214,7 @@ Route::middleware(['auth', 'no.back', 'role:Program Coordinator'])->prefix('coor
     
     // Documents - Rate Limited: 6 uploads per hour
     Route::get('/documents', [CoordinatorController::class, 'documents'])->name('documents');
+    Route::get('/documents/list-search', [DocumentListSearchController::class, 'suggest'])->name('documents.list-search');
     Route::get('/documents/recipient-search', [DocumentRecipientController::class, 'search'])->name('documents.recipient-search');
     Route::post('/documents', [CoordinatorController::class, 'uploadDocument'])->middleware('throttle:6,60')->name('upload-document');
     Route::post('/exam-records', [CoordinatorController::class, 'storeExamRecord'])->middleware('throttle:10,60')->name('store-exam-record');
@@ -269,6 +272,7 @@ Route::middleware(['auth', 'no.back', 'role:Faculty Employee'])->prefix('faculty
     
     // Documents - Rate Limited: 6 uploads per hour
     Route::get('/documents', [FacultyController::class, 'documents'])->name('documents');
+    Route::get('/documents/list-search', [DocumentListSearchController::class, 'suggest'])->name('documents.list-search');
     Route::post('/documents', [FacultyController::class, 'uploadDocument'])->middleware('throttle:6,60')->name('upload-document');
     Route::post('/exam-records', [FacultyController::class, 'storeExamRecord'])->middleware('throttle:10,60')->name('store-exam-record');
     Route::get('/documents/{id}/view', [FacultyController::class, 'viewDocument'])->name('view-document');

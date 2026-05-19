@@ -747,6 +747,57 @@ body {
     box-shadow: none !important;
 }
 
+/* Document table actions: modern View (white) + Download (blue) */
+.btn-action-view {
+    background: #ffffff !important;
+    color: #111827 !important;
+    border: 1px solid #d1d5db !important;
+    box-shadow: 0 1px 2px rgba(0, 0, 0, 0.05);
+}
+
+.dark .btn-action-view {
+    background: #f3f4f6 !important;
+    color: #111827 !important;
+    border-color: #9ca3af !important;
+    box-shadow: 0 1px 2px rgba(0, 0, 0, 0.2);
+}
+
+.btn-action-view:hover:not(:disabled) {
+    background: #f9fafb !important;
+    color: #030712 !important;
+    border-color: #9ca3af !important;
+}
+
+.dark .btn-action-view:hover:not(:disabled) {
+    background: #ffffff !important;
+    color: #111827 !important;
+    border-color: #d1d5db !important;
+}
+
+.btn-action-download {
+    background: #2563eb !important;
+    color: #ffffff !important;
+    border: 1px solid #1d4ed8 !important;
+}
+
+.dark .btn-action-download {
+    background: #3b82f6 !important;
+    color: #ffffff !important;
+    border-color: #2563eb !important;
+}
+
+.btn-action-download:hover:not(:disabled) {
+    background: #1d4ed8 !important;
+    color: #ffffff !important;
+    border-color: #1e40af !important;
+}
+
+.dark .btn-action-download:hover:not(:disabled) {
+    background: #2563eb !important;
+    color: #ffffff !important;
+    border-color: #1d4ed8 !important;
+}
+
 /* Document toolbar: panel open = pressed look */
 .doc-action-btn.is-active.btn-primary {
     background: #025509 !important;
@@ -2197,42 +2248,43 @@ body {
     color: #bbf7d0;
 }
 
-/* Semester subject picker + Open folder button (aligned with search input) */
+/* Semester subject picker + inline Open folder button */
 .semester-subject-open-form {
-    display: grid;
-    grid-template-columns: minmax(0, 1fr) auto;
-    column-gap: 1rem;
-    row-gap: 0.35rem;
-    align-items: end;
+    display: block;
 }
 
-.semester-subject-open-form > .ite-subject-picker {
-    display: contents;
+.ite-subject-picker-field--inline-action .ite-subject-search {
+    padding-right: 10.5rem;
 }
 
-.semester-subject-open-form > .ite-subject-picker > .form-label,
-.semester-subject-open-form > .ite-subject-picker > p.text-xs {
-    grid-column: 1 / -1;
-}
-
-.semester-subject-open-form > .ite-subject-picker > .ite-subject-picker-field {
-    grid-column: 1;
-    min-width: 0;
-}
-
-.semester-subject-open-form > .subject-open-folder-btn {
-    grid-column: 2;
-    align-self: end;
-    margin-bottom: 0;
-}
-
-@media (max-width: 639px) {
-    .semester-subject-open-form {
-        grid-template-columns: 1fr;
+@media (min-width: 640px) {
+    .ite-subject-picker-field--inline-action .ite-subject-search {
+        padding-right: 12.5rem;
     }
+}
 
-    .semester-subject-open-form > .subject-open-folder-btn {
-        grid-column: 1;
+.ite-subject-inline-btn {
+    position: absolute;
+    right: 0.25rem;
+    top: 50%;
+    transform: translateY(-50%);
+    z-index: 5;
+    height: calc(100% - 0.5rem);
+    min-height: 2rem;
+    padding: 0 0.65rem;
+    font-size: 0.75rem;
+    line-height: 1.2;
+    white-space: nowrap;
+    border-radius: 0.25rem;
+}
+
+.ite-subject-inline-btn .ite-subject-inline-btn-label {
+    display: none;
+}
+
+@media (min-width: 640px) {
+    .ite-subject-inline-btn .ite-subject-inline-btn-label {
+        display: inline;
     }
 }
 

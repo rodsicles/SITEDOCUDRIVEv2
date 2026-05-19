@@ -1,4 +1,4 @@
-@extends('layouts.dashboard')
+﻿@extends('layouts.dashboard')
 
 @section('title', 'Documents - Faculty')
 
@@ -173,12 +173,12 @@
                     <td>{{ $document->created_at->format('M d, Y') }}</td>
                     <td>
                         <div class="doc-action-btns">
-                            <a href="{{ route('faculty.view-document', $document->document_id) }}" target="_blank" class="btn btn-primary text-xs">
+                            <a href="{{ route('faculty.view-document', $document->document_id) }}" target="_blank" class="btn btn-action-view text-xs">
                                 <i class="fas fa-eye"></i> View
                             </a>
                             @if($document->document_type === 'word')
                             <div class="doc-download-wrap" style="position:relative;display:inline-block;">
-                                <button type="button" class="btn btn-success text-xs" onclick="toggleDownloadMenu({{ $document->document_id }})">
+                                <button type="button" class="btn btn-action-download text-xs" onclick="toggleDownloadMenu({{ $document->document_id }})">
                                     <i class="fas fa-download"></i> Download <i class="fas fa-caret-down"></i>
                                 </button>
                                 <div id="dl-menu-{{ $document->document_id }}" class="doc-dl-menu" style="display:none;position:absolute;top:100%;left:0;z-index:99;background:#fff;border:1px solid #ccc;min-width:130px;">
@@ -187,7 +187,7 @@
                                 </div>
                             </div>
                             @else
-                            <a href="{{ route('faculty.download-document', $document->document_id) }}" class="btn btn-success text-xs">
+                            <a href="{{ route('faculty.download-document', $document->document_id) }}" class="btn btn-action-download text-xs">
                                 <i class="fas fa-download"></i> Download
                             </a>
                             @endif

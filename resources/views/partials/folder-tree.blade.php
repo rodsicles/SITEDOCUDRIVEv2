@@ -619,11 +619,6 @@
                         </div>
                     </div>
                 </a>
-                <div class="folder-actions-new">
-                    <a href="{{ route($docsRoute, ['tab' => $tab, 'folder' => $folder->folder_id]) }}" class="folder-action-btn" title="Search in {{ $folder->folder_name }}">
-                        <i class="fas fa-search"></i>
-                    </a>
-                </div>
             </div>
             @empty
             <div class="empty-state p-8 text-center w-full">

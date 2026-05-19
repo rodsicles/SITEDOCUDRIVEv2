@@ -1,4 +1,4 @@
-@extends('layouts.dashboard')
+﻿@extends('layouts.dashboard')
 
 @section('title', 'Pending Teaching Guides')
 @section('page-title', 'Pending Teaching Guides')
@@ -68,8 +68,8 @@
                     </td>
                     <td><strong>{{ $guide->title }}</strong></td>
                     <td><span class="doc-category-badge">{{ $guide->subject }}</span></td>
-                    <td class="text-xs">{{ $guide->semester ?? '—' }}</td>
-                    <td class="text-xs text-gray-600 dark:text-gray-400">{{ $guide->folder?->folder_name ?? '—' }}</td>
+                    <td class="text-xs">{{ $guide->semester ?? 'â€”' }}</td>
+                    <td class="text-xs text-gray-600 dark:text-gray-400">{{ $guide->folder?->folder_name ?? 'â€”' }}</td>
                     <td>{{ $guide->uploader->employee->full_name ?? $guide->uploader->username }}</td>
                     <td>
                         @if($guide->isPending())
@@ -86,7 +86,7 @@
                     <td>{{ $guide->created_at->format('M d, Y') }}</td>
                     <td>
                         <div class="doc-action-btns">
-                            <a href="{{ route('dean.teaching-guides.download', $guide->id) }}" class="btn btn-success text-xs">
+                            <a href="{{ route('dean.teaching-guides.download', $guide->id) }}" class="btn btn-action-download text-xs">
                                 <i class="fas fa-download"></i> Download
                             </a>
                             @if($guide->isPending())

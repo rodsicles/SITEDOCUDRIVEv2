@@ -1,8 +1,8 @@
-@extends('layouts.dashboard')
+﻿@extends('layouts.dashboard')
 
 @section('title', 'Teaching Guides')
 @section('page-title', 'Teaching Guides')
-@section('page-subtitle', 'Upload and manage teaching guides for faculty — organized by school year, semester, and subject')
+@section('page-subtitle', 'Upload and manage teaching guides for faculty â€” organized by school year, semester, and subject')
 
 @section('sidebar')
     @include('partials.coordinator-sidebar')
@@ -12,7 +12,7 @@
     <div class="content-card mb-5">
         <div class="card-header">
             <h3 class="card-title">Upload Teaching Guide</h3>
-            <span class="text-xs text-gray-500 dark:text-gray-400">I.T. subjects only — folders are created automatically.</span>
+            <span class="text-xs text-gray-500 dark:text-gray-400">I.T. subjects only â€” folders are created automatically.</span>
         </div>
         <form action="{{ route('coordinator.teaching-guides.store') }}" method="POST" enctype="multipart/form-data" data-request-guard>
             @csrf
@@ -94,14 +94,14 @@
                     </td>
                     <td><strong>{{ $guide->title }}</strong></td>
                     <td><span class="doc-category-badge">{{ $guide->subject }}</span></td>
-                    <td class="text-xs">{{ $guide->academic_year ? 'AY '.$guide->academic_year : '—' }}</td>
-                    <td class="text-xs">{{ $guide->semester ?? '—' }}</td>
-                    <td class="text-xs text-gray-600 dark:text-gray-400">{{ $guide->folder?->folder_name ?? '—' }}</td>
+                    <td class="text-xs">{{ $guide->academic_year ? 'AY '.$guide->academic_year : 'â€”' }}</td>
+                    <td class="text-xs">{{ $guide->semester ?? 'â€”' }}</td>
+                    <td class="text-xs text-gray-600 dark:text-gray-400">{{ $guide->folder?->folder_name ?? 'â€”' }}</td>
                     <td>{{ $guide->uploader->employee->full_name ?? $guide->uploader->username }}</td>
                     <td>{{ $guide->created_at->format('M d, Y') }}</td>
                     <td>
                         <div class="doc-action-btns">
-                            <a href="{{ route('coordinator.teaching-guides.download', $guide->id) }}" class="btn btn-success text-xs">
+                            <a href="{{ route('coordinator.teaching-guides.download', $guide->id) }}" class="btn btn-action-download text-xs">
                                 <i class="fas fa-download"></i> Download
                             </a>
                             <form action="{{ route('coordinator.teaching-guides.destroy', $guide->id) }}" method="POST" onsubmit="return confirm('Delete this guide?')" data-request-guard>

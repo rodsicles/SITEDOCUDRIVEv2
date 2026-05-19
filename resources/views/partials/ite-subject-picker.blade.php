@@ -5,12 +5,13 @@
     $required = $required ?? true;
     $label = $label ?? 'Subject (ITE Course)';
     $compact = $compact ?? false;
+    $inlineSubmit = $inlineSubmit ?? false;
 @endphp
 <div class="form-group {{ $compact ? '' : 'md:col-span-2' }} ite-subject-picker" id="{{ $pickerId }}">
     <label class="form-label" for="{{ $pickerId }}Search">{{ $label }} @if($required)<span class="text-red-500">*</span>@endif</label>
     <p class="text-xs text-gray-500 dark:text-gray-400 mb-2">Information Technology courses only. Search by code or title.</p>
     <input type="hidden" name="subject" id="{{ $pickerId }}Value" value="{{ old('subject') }}" @if($required) required @endif>
-    <div class="ite-subject-picker-field relative">
+    <div class="ite-subject-picker-field relative {{ $inlineSubmit ? 'ite-subject-picker-field--inline-action' : '' }}">
         <input
             type="text"
             id="{{ $pickerId }}Search"
@@ -22,6 +23,12 @@
             aria-controls="{{ $pickerId }}Results"
             aria-expanded="false"
         >
+        @if($inlineSubmit)
+        <button type="submit" class="btn btn-primary ite-subject-inline-btn">
+            <i class="fas fa-folder-open" aria-hidden="true"></i>
+            <span class="ite-subject-inline-btn-label">Open subject folder</span>
+        </button>
+        @endif
         <div
             id="{{ $pickerId }}Results"
             class="ite-subject-results hidden"

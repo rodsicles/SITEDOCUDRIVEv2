@@ -157,10 +157,10 @@
                     <td>{{ $q->created_at->format('M d, Y') }}</td>
                     <td>
                         <div class="doc-action-btns">
-                            <a href="{{ route('faculty.exam-questionnaires.view', $q->id) }}" target="_blank" class="btn btn-primary text-xs">
+                            <a href="{{ route('faculty.exam-questionnaires.view', $q->id) }}" target="_blank" class="btn btn-action-view text-xs">
                                 <i class="fas fa-eye"></i> View
                             </a>
-                            <a href="{{ route('faculty.exam-questionnaires.download', $q->id) }}" class="btn btn-success text-xs">
+                            <a href="{{ route('faculty.exam-questionnaires.download', $q->id) }}" class="btn btn-action-download text-xs">
                                 <i class="fas fa-download"></i> Download
                             </a>
                             @if($q->isPending())

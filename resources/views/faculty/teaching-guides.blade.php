@@ -1,4 +1,4 @@
-@extends('layouts.dashboard')
+﻿@extends('layouts.dashboard')
 
 @section('title', 'Teaching Guides - Faculty')
 @section('page-title', 'Teaching Guides')
@@ -68,11 +68,11 @@
                     </td>
                     <td><strong>{{ $guide->title }}</strong></td>
                     <td><span class="doc-category-badge">{{ $guide->subject }}</span></td>
-                    <td class="text-xs text-gray-600 dark:text-gray-400">{{ $guide->folder?->folder_name ?? '—' }}</td>
+                    <td class="text-xs text-gray-600 dark:text-gray-400">{{ $guide->folder?->folder_name ?? 'â€”' }}</td>
                     <td>{{ $guide->created_at->format('M d, Y') }}</td>
                     <td>
-                        <a href="{{ route('faculty.teaching-guides.download', $guide->id) }}" class="btn btn-success text-xs">
-                            <i class="fas fa-download"></i> Download
+                        <a href="{{ route('faculty.teaching-guides.download', $guide->id) }}" class="btn btn-action-download text-xs">
+                                <i class="fas fa-download"></i> Download
                         </a>
                     </td>
                 </tr>

@@ -168,7 +168,7 @@
         <!-- Main Content -->
         <main class="ml-64 flex-1 p-8 w-[calc(100%-16rem)] main-content">
             <!-- Top Bar -->
-            <div class="bg-white dark:bg-[#2a2a2a] p-4 px-6 border border-gray-200 dark:border-gray-700 mb-4 flex justify-between items-center top-bar">
+            <div class="bg-white dark:bg-[#2a2a2a] p-4 px-6 border border-gray-200 dark:border-gray-700 mb-4 flex justify-between items-center top-bar sticky top-0 z-[300] shadow-sm">
                 <div class="flex items-center gap-3 min-w-0">
                     <!-- Mobile Hamburger Menu -->
                     <button id="mobileMenuToggle" class="hidden max-md:block text-xl text-gray-800 dark:text-gray-200 bg-transparent border-none cursor-pointer flex-shrink-0 p-1">

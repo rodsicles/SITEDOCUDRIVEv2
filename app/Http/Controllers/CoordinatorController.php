@@ -438,6 +438,21 @@ class CoordinatorController extends Controller
         return redirect()->back()->with('success', 'Document moved to Recycle Bin.');
     }
 
+    public function renameDocument(\App\Http\Requests\RenameDocumentRequest $request, $id)
+    {
+        $document = $this->documentService->renameDocument(
+            (int) $id,
+            auth()->user(),
+            $request->validated('document_title')
+        );
+
+        return response()->json([
+            'success' => true,
+            'message' => 'Document renamed successfully.',
+            'document_title' => $document->document_title,
+        ]);
+    }
+
     public function toggleFavorite($id)
     {
         $result = $this->documentService->toggleFavorite($id, auth()->id());

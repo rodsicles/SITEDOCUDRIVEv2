@@ -1008,7 +1008,7 @@
     async function submitCreateCustomFolder() {
         const form = document.getElementById('createCustomFolderForm');
         const btn = document.getElementById('customFolderSubmitBtn');
-        if (!form || !btn) return;
+        if (!form || !btn || btn.disabled) return;
 
         const originalText = btn.innerHTML;
         const folderName = form.querySelector('[name="folder_name"]').value.trim();
@@ -1029,6 +1029,13 @@
                     'Content-Type': 'application/json',
                 }
             });
+
+            if (response.status === 429) {
+                showToast('Please wait a few seconds before creating another folder.', 'error');
+                btn.disabled = false;
+                btn.innerHTML = originalText;
+                return;
+            }
 
             const data = await response.json();
             if (response.ok && data.success) {

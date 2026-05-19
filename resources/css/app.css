@@ -2511,14 +2511,51 @@ body {
     overflow: visible;
 }
 
+.doc-sort-menu[hidden],
+.doc-sort-flyout[hidden] {
+    display: none !important;
+}
+
 .dark .doc-sort-menu {
     background: #1f1f1f;
     border-color: #404040;
     box-shadow: 0 8px 24px rgba(0, 0, 0, 0.45);
 }
 
-.doc-sort-menu.hidden {
-    display: none;
+.doc-title-cell {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+    min-width: 0;
+}
+
+.doc-rename-handle {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    width: 1.25rem;
+    padding: 0;
+    border: none;
+    background: transparent;
+    color: #d1d5db;
+    cursor: pointer;
+    flex-shrink: 0;
+}
+
+.dark .doc-rename-handle {
+    color: #9ca3af;
+}
+
+.doc-rename-handle:hover {
+    color: #028a0f;
+}
+
+.dark .doc-rename-handle:hover {
+    color: #34d399;
+}
+
+.doc-title-text {
+    min-width: 0;
 }
 
 .doc-sort-item {
@@ -2632,11 +2669,7 @@ a.doc-sort-item:hover,
     z-index: 80;
 }
 
-.doc-sort-flyout.hidden {
-    display: none !important;
-}
-
-.doc-sort-item.has-submenu.submenu-open > .doc-sort-flyout:not(.hidden) {
+.doc-sort-item.has-submenu.submenu-open > .doc-sort-flyout:not([hidden]) {
     display: block;
 }
 

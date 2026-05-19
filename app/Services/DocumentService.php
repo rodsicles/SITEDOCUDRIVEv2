@@ -66,8 +66,7 @@ class DocumentService
     public function getFilteredDocuments(User $user, ?string $categoryFilter, ?string $folderFilter, array $queryParams = [], int $perPage = 15): LengthAwarePaginator
     {
         $query = Document::getFilteredDocuments($user, $categoryFilter)
-            ->onlyApprovedShareable()
-            ->reorder();
+            ->onlyApprovedShareable();
 
         if ($folderFilter !== null) {
             if ($folderFilter === 'uncategorized') {
@@ -174,14 +173,12 @@ class DocumentService
         }
 
         $sort = $queryParams['sort'] ?? 'date';
-        $ascending = strtolower((string) ($queryParams['sort_dir'] ?? 'desc')) === 'asc';
-
         match ($sort) {
-            'size' => $ascending ? $query->orderBy('file_size') : $query->orderByDesc('file_size'),
-            'title' => $ascending ? $query->orderBy('document_title') : $query->orderByDesc('document_title'),
-            'author' => $ascending ? $query->orderBy('uploaded_by') : $query->orderByDesc('uploaded_by'),
-            'category' => $ascending ? $query->orderBy('category') : $query->orderByDesc('category'),
-            default => $ascending ? $query->orderBy('created_at') : $query->orderByDesc('created_at'),
+            'size' => $query->orderByDesc('file_size'),
+            'title' => $query->orderBy('document_title'),
+            'author' => $query->orderBy('uploaded_by'),
+            'category' => $query->orderBy('category'),
+            default => $query->latest('created_at'),
         };
 
         return $query->paginate($perPage)->withQueryString();
@@ -525,6 +522,57 @@ class DocumentService
     /**
      * Move a document to the Recycle Bin (soft delete).
      */
+    public function userCanRenameDocument(Document $document, User $user): bool
+    {
+        if ($user->isDean() || $user->isSecretary()) {
+            return true;
+        }
+
+        if ((int) $document->uploaded_by === (int) $user->id) {
+            return true;
+        }
+
+        if ($user->isProgramCoordinator()) {
+            return Document::query()
+                ->where('document_id', $document->document_id)
+                ->visibleTo($user)
+                ->exists();
+        }
+
+        return false;
+    }
+
+    public function renameDocument(int $documentId, User $user, string $title): Document
+    {
+        $document = Document::with(['teachingGuide', 'examQuestionnaire'])->findOrFail($documentId);
+
+        if (!$this->userCanRenameDocument($document, $user)) {
+            abort(403, 'You are not allowed to rename this document.');
+        }
+
+        $oldTitle = $document->document_title;
+        $title = trim($title);
+
+        $document->update(['document_title' => $title]);
+
+        if ($document->teachingGuide) {
+            $document->teachingGuide->update(['title' => $title]);
+        }
+
+        if ($document->examQuestionnaire) {
+            $document->examQuestionnaire->update(['title' => $title]);
+        }
+
+        DashboardLog::create([
+            'user_id' => $user->id,
+            'activity' => "Renamed document from \"{$oldTitle}\" to \"{$title}\"",
+            'activity_type' => 'document_renamed',
+            'visibility' => $user->isDeanOrSecretary() ? 'dean' : 'own',
+        ]);
+
+        return $document->fresh();
+    }
+
     public function deleteDocument(int $documentId, User $user): void
     {
         $document = Document::findOrFail($documentId);

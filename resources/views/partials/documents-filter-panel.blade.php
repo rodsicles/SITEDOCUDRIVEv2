@@ -42,7 +42,7 @@
                 <i class="fas fa-chevron-down doc-sort-chevron" aria-hidden="true"></i>
             </button>
 
-            <div class="doc-sort-menu hidden" id="docSortMenu" role="menu" aria-label="Sort options">
+            <div class="doc-sort-menu" id="docSortMenu" role="menu" aria-label="Sort options" hidden>
                 <a href="{{ DocumentListSortUrls::sortHref($documentsRoute, $req, $folderFilter, $tab, 'title') }}"
                    class="doc-sort-item {{ $currentSort === 'title' && !$currentType ? 'is-active' : '' }}"
                    role="menuitem">
@@ -67,7 +67,7 @@
                         <span>Type</span>
                         <i class="fas fa-chevron-right doc-sort-submenu-chevron" aria-hidden="true"></i>
                     </button>
-                    <div class="doc-sort-flyout hidden" id="docSortTypeFlyout" role="menu">
+                    <div class="doc-sort-flyout" id="docSortTypeFlyout" role="menu" hidden>
                         <a href="{{ DocumentListSortUrls::typeHref($documentsRoute, $req, $folderFilter, $tab, null) }}"
                            class="doc-sort-flyout-item {{ !$currentType ? 'is-active' : '' }}"
                            role="menuitem">All types</a>
@@ -115,21 +115,23 @@
 
     function closeTypeFlyout() {
         if (!typeFlyout || !typeBtn) return;
-        typeFlyout.classList.add('hidden');
+        typeFlyout.hidden = true;
         typeBtn.setAttribute('aria-expanded', 'false');
         typeBtn.closest('.has-submenu')?.classList.remove('submenu-open');
     }
 
     function closeMenu() {
-        menu.classList.add('hidden');
+        menu.hidden = true;
         btn.setAttribute('aria-expanded', 'false');
         closeTypeFlyout();
     }
 
+    closeMenu();
+
     btn.addEventListener('click', function (e) {
         e.stopPropagation();
-        if (menu.classList.contains('hidden')) {
-            menu.classList.remove('hidden');
+        if (menu.hidden) {
+            menu.hidden = false;
             btn.setAttribute('aria-expanded', 'true');
         } else {
             closeMenu();
@@ -140,12 +142,12 @@
         typeBtn.addEventListener('click', function (e) {
             e.preventDefault();
             e.stopPropagation();
-            var opening = typeFlyout.classList.contains('hidden');
-            closeTypeFlyout();
-            if (opening) {
-                typeFlyout.classList.remove('hidden');
+            if (typeFlyout.hidden) {
+                typeFlyout.hidden = false;
                 typeBtn.setAttribute('aria-expanded', 'true');
                 typeBtn.closest('.has-submenu')?.classList.add('submenu-open');
+            } else {
+                closeTypeFlyout();
             }
         });
     }

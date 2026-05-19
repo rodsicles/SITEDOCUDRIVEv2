@@ -1,4 +1,7 @@
 {{-- Folder Management Modals --}}
+@php
+    $folders = $folders ?? collect();
+@endphp
 
 {{-- Create Folder Modal --}}
 <div id="createFolderModal" class="modal-overlay" onclick="if(event.target===this)closeCreateFolderModal()">

@@ -190,6 +190,81 @@ body {
     overflow-x: hidden !important;
     padding: 0.75rem !important;
     padding-bottom: 2rem !important;
+    scrollbar-gutter: stable;
+    scrollbar-width: thin;
+    scrollbar-color: rgba(144, 238, 144, 0.42) rgba(8, 53, 16, 0.55);
+}
+
+/* Sidebar nav — themed scrollbar (Firefox + Chromium) */
+.sidebar nav::-webkit-scrollbar {
+    width: 7px;
+}
+
+.sidebar nav::-webkit-scrollbar-track {
+    background: rgba(8, 53, 16, 0.45);
+    border-left: 1px solid rgba(255, 255, 255, 0.06);
+}
+
+.sidebar nav::-webkit-scrollbar-thumb {
+    background: linear-gradient(
+        180deg,
+        rgba(144, 238, 144, 0.72) 0%,
+        rgba(2, 184, 21, 0.58) 100%
+    );
+    border-radius: 999px !important;
+    border: 2px solid rgba(8, 53, 16, 0.35);
+    background-clip: padding-box;
+    min-height: 2.5rem;
+}
+
+.sidebar nav::-webkit-scrollbar-thumb:hover {
+    background: linear-gradient(
+        180deg,
+        rgba(187, 247, 187, 0.88) 0%,
+        rgba(2, 216, 26, 0.75) 100%
+    );
+    border-color: rgba(8, 53, 16, 0.2);
+}
+
+.sidebar nav::-webkit-scrollbar-thumb:active {
+    background: linear-gradient(
+        180deg,
+        rgba(255, 255, 255, 0.55) 0%,
+        rgba(2, 184, 21, 0.85) 100%
+    );
+}
+
+.sidebar nav::-webkit-scrollbar-button,
+.sidebar nav::-webkit-scrollbar-corner {
+    display: none;
+    width: 0;
+    height: 0;
+}
+
+.dark .sidebar nav {
+    scrollbar-color: rgba(134, 239, 172, 0.45) rgba(6, 42, 13, 0.65);
+}
+
+.dark .sidebar nav::-webkit-scrollbar-track {
+    background: rgba(6, 42, 13, 0.55);
+    border-left-color: rgba(255, 255, 255, 0.05);
+}
+
+.dark .sidebar nav::-webkit-scrollbar-thumb {
+    background: linear-gradient(
+        180deg,
+        rgba(134, 239, 172, 0.65) 0%,
+        rgba(2, 138, 15, 0.55) 100%
+    );
+    border-color: rgba(6, 42, 13, 0.4);
+}
+
+.dark .sidebar nav::-webkit-scrollbar-thumb:hover {
+    background: linear-gradient(
+        180deg,
+        rgba(187, 247, 208, 0.82) 0%,
+        rgba(2, 184, 21, 0.7) 100%
+    );
 }
 
 /* Sidebar green background override */

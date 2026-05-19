@@ -587,6 +587,52 @@
             });
         }
 
+        // Persist sidebar nav scroll across full page navigations (sessionStorage only; not auth)
+        (function () {
+            const sidebarNav = document.querySelector('.sidebar nav');
+            if (!sidebarNav) return;
+
+            const scrollStorageKey = @json('emp-dashboard-sidebar-scroll:' . \Illuminate\Support\Str::slug(auth()->user()->role->role_name ?? 'user'));
+
+            function saveSidebarScroll() {
+                try {
+                    sessionStorage.setItem(scrollStorageKey, String(sidebarNav.scrollTop));
+                } catch (e) { /* quota / private mode */ }
+            }
+
+            function restoreSidebarScroll() {
+                try {
+                    const saved = sessionStorage.getItem(scrollStorageKey);
+                    if (saved === null) return;
+                    const top = parseInt(saved, 10);
+                    if (!Number.isFinite(top) || top < 0) return;
+                    sidebarNav.scrollTop = top;
+                } catch (e) { /* ignore */ }
+            }
+
+            restoreSidebarScroll();
+            requestAnimationFrame(() => {
+                restoreSidebarScroll();
+                requestAnimationFrame(restoreSidebarScroll);
+            });
+
+            let scrollSaveTimer;
+            sidebarNav.addEventListener('scroll', () => {
+                clearTimeout(scrollSaveTimer);
+                scrollSaveTimer = setTimeout(saveSidebarScroll, 80);
+            }, { passive: true });
+
+            window.addEventListener('pagehide', saveSidebarScroll);
+
+            sidebarNav.querySelectorAll('a[href]').forEach((link) => {
+                link.addEventListener('click', saveSidebarScroll);
+            });
+
+            window.addEventListener('pageshow', (event) => {
+                if (event.persisted) restoreSidebarScroll();
+            });
+        })();
+
         function openSidebar() {
             sidebar.classList.add('active');
             sidebarOverlay.classList.remove('hidden');

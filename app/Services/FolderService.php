@@ -11,6 +11,9 @@ use Illuminate\Support\Collection;
 
 class FolderService
 {
+    public function __construct(
+        protected RecycleBinService $recycleBinService,
+    ) {}
     /**
      * Get the system folder tree: top-level categories with children eager-loaded.
      */
@@ -315,6 +318,11 @@ class FolderService
         return $folder;
     }
 
+    public function userOwnsCustomFolder(Folder $folder, User $user): bool
+    {
+        return $folder->isCustomSubfolder() && (int) $folder->user_id === (int) $user->id;
+    }
+
     /**
      * Update a folder's name and/or color. Verifies ownership.
      */
@@ -324,6 +332,10 @@ class FolderService
             ->where('user_id', $userId)
             ->where('is_system', false)
             ->firstOrFail();
+
+        if (!$folder->isCustomSubfolder()) {
+            abort(403, 'Only custom folders you created can be renamed here.');
+        }
 
         $folder->update(array_filter([
             'folder_name' => $folderName,
@@ -341,7 +353,7 @@ class FolderService
     }
 
     /**
-     * Delete a folder. Moves its documents to Uncategorized. Verifies ownership.
+     * Delete a custom folder and move its documents to the Recycle Bin.
      */
     public function deleteFolder(int $folderId, int $userId): void
     {
@@ -350,24 +362,23 @@ class FolderService
             ->where('is_system', false)
             ->firstOrFail();
 
+        if (!$folder->isCustomSubfolder()) {
+            abort(403, 'Only custom folders you created can be deleted here.');
+        }
+
         $folderName = $folder->folder_name;
+        $actor = User::findOrFail($userId);
 
-        // Move all documents in this folder (and descendant folders) to uncategorized
-        $descendantIds = $folder->getDescendantIds();
-        $allFolderIds = array_merge([$folderId], $descendantIds);
-
-        Document::whereIn('folder_id', $allFolderIds)->update(['folder_id' => null]);
-
-        // Delete descendant folders first, then the folder itself
-        if (!empty($descendantIds)) {
-            Folder::whereIn('folder_id', $descendantIds)->delete();
+        $documents = Document::where('folder_id', $folderId)->get();
+        foreach ($documents as $document) {
+            $this->recycleBinService->moveToRecycleBin($document, $actor);
         }
 
         $folder->delete();
 
         DashboardLog::create([
             'user_id' => $userId,
-            'activity' => "Deleted folder: {$folderName}",
+            'activity' => "Deleted custom folder \"{$folderName}\" and moved {$documents->count()} file(s) to Recycle Bin",
             'activity_type' => 'folder_deleted',
             'visibility' => 'own',
         ]);

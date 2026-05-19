@@ -316,7 +316,19 @@
                     <i class="fas fa-folder-open mr-1"></i> {{ $documents->total() }} document(s) in this folder
                 </div>
                 @if($canUpload)
-                <div class="flex gap-2">
+                <div class="flex gap-2 flex-wrap justify-end">
+                    @if(($isCustomSubfolder ?? false) && isset($currentFolder) && (int) $currentFolder->user_id === (int) auth()->id())
+                    <button type="button"
+                            class="btn btn-sm bg-gray-200 dark:bg-gray-700 text-gray-700 dark:text-gray-300"
+                            onclick="openRenameFolderModal({{ $currentFolder->folder_id }}, @js($currentFolder->folder_name), @js($currentFolder->color ?? '#028a0f'))">
+                        <i class="fas fa-pen mr-1"></i> Rename Folder
+                    </button>
+                    <button type="button"
+                            class="btn btn-sm btn-danger"
+                            onclick="deleteFolder({{ $currentFolder->folder_id }}, @js($currentFolder->folder_name))">
+                        <i class="fas fa-trash mr-1"></i> Delete Folder
+                    </button>
+                    @endif
                     @if(isset($isPrcFolder) && $isPrcFolder)
                     <button type="button" id="btnPrcForm" onclick="togglePrcForm()" class="btn btn-primary doc-action-btn" aria-pressed="false">
                         <i class="fas fa-clipboard-list mr-1"></i> Record Exam Results
@@ -644,7 +656,12 @@
         @endif
         <div class="folder-container-new px-6 py-4 flex gap-3 flex-wrap">
             @forelse($displayFolders as $folder)
-            <div class="folder-card-new {{ (isset($folderFilter) && $folderFilter == $folder->folder_id) ? 'folder-card-active' : '' }}">
+            @php
+                $ownsCustomFolder = $isCustomFoldersTab
+                    && !isset($currentFolder)
+                    && (int) $folder->user_id === (int) auth()->id();
+            @endphp
+            <div class="folder-card-new {{ $ownsCustomFolder ? 'folder-card-new--with-actions' : '' }} {{ (isset($folderFilter) && $folderFilter == $folder->folder_id) ? 'folder-card-active' : '' }}">
                 <a href="{{ route($docsRoute, ['tab' => $tab, 'folder' => $folder->folder_id]) }}" class="folder-card-link-new">
                     <div class="folder-icon-new" style="background-color: #028a0f; color: white;">
                         <i class="fas fa-folder"></i>
@@ -659,6 +676,24 @@
                         </div>
                     </div>
                 </a>
+                @if($ownsCustomFolder)
+                <div class="folder-actions-new">
+                    <button type="button"
+                            class="folder-action-btn custom-folder-action-btn"
+                            title="Rename folder"
+                            aria-label="Rename {{ $folder->folder_name }}"
+                            onclick="event.preventDefault(); event.stopPropagation(); openRenameFolderModal({{ $folder->folder_id }}, @js($folder->folder_name), @js($folder->color ?? '#028a0f'))">
+                        <i class="fas fa-pen" aria-hidden="true"></i>
+                    </button>
+                    <button type="button"
+                            class="folder-action-btn custom-folder-action-btn custom-folder-action-btn--danger"
+                            title="Delete folder"
+                            aria-label="Delete {{ $folder->folder_name }}"
+                            onclick="event.preventDefault(); event.stopPropagation(); deleteFolder({{ $folder->folder_id }}, @js($folder->folder_name))">
+                        <i class="fas fa-trash" aria-hidden="true"></i>
+                    </button>
+                </div>
+                @endif
             </div>
             @empty
             <div class="empty-state p-8 text-center w-full">
@@ -1050,4 +1085,8 @@
     }
 </script>
 @endpush
+@endif
+
+@if($canUpload)
+@include('partials.folder-modals')
 @endif

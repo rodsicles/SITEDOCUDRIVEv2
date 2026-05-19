@@ -27,9 +27,15 @@
 
             <div class="profile-edit-grid">
                 <div class="form-group">
-                    <label class="form-label">Full Name</label>
-                    <input type="text" name="full_name" class="form-control"
-                           value="{{ old('full_name', $employee->full_name) }}" required>
+                    <label class="form-label">Full Name @if(!$canEditFullName)<span class="text-xs text-gray-500">(Read-only)</span>@endif</label>
+                    <input type="text"
+                           name="full_name"
+                           class="form-control {{ !$canEditFullName ? 'bg-gray-100 dark:bg-gray-800' : '' }}"
+                           value="{{ old('full_name', $employee->full_name) }}"
+                           @if($canEditFullName) required @else readonly disabled @endif>
+                    @if(!$canEditFullName)
+                    <small class="profile-edit-note">Only the Dean or Program Coordinator can change your name. Contact them if it needs updating.</small>
+                    @endif
                 </div>
 
                 <div class="form-group">

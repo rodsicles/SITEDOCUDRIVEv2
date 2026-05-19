@@ -13,31 +13,43 @@ class ProfileController extends Controller
     {
         $user = auth()->user();
         $employee = $user->employee;
+        $canEditFullName = $user->isDean() || $user->isProgramCoordinator();
 
-        return view('profile.edit', compact('user', 'employee'));
+        return view('profile.edit', compact('user', 'employee', 'canEditFullName'));
     }
 
     public function update(Request $request)
     {
         $user = auth()->user();
         $employee = $user->employee;
+        $canEditFullName = $user->isDean() || $user->isProgramCoordinator();
 
-        $validated = $request->validate([
-            'full_name' => 'required|string|max:45',
-            'email' => 'required|email|max:45|unique:users,email,' . $user->id,
-            'employee_no' => 'nullable|string|max:15|regex:/^[0-9]*$/|unique:employees,employee_no,' . $employee->employee_id . ',employee_id',
+        $rules = [
+            'email' => 'required|email|max:45|unique:users,email,'.$user->id,
+            'employee_no' => 'nullable|string|max:15|regex:/^[0-9]*$/|unique:employees,employee_no,'.$employee->employee_id.',employee_id',
             'department' => 'nullable|in:Engineering,Information Technology',
-        ]);
+        ];
+
+        if ($canEditFullName) {
+            $rules['full_name'] = 'required|string|max:45';
+        }
+
+        $validated = $request->validate($rules);
 
         $user->update([
             'email' => $validated['email'],
         ]);
 
-        $employee->update([
-            'full_name' => $validated['full_name'],
-            'employee_no' => $validated['employee_no'],
-            'department' => $validated['department'],
-        ]);
+        $employeeData = [
+            'employee_no' => $validated['employee_no'] ?? null,
+            'department' => $validated['department'] ?? null,
+        ];
+
+        if ($canEditFullName) {
+            $employeeData['full_name'] = $validated['full_name'];
+        }
+
+        $employee->update($employeeData);
 
         DashboardLog::create([
             'user_id' => auth()->id(),

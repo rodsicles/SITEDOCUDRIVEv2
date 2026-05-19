@@ -324,7 +324,7 @@ async function handleRenameFolder(event) {
 }
 
 async function deleteFolder(folderId, folderName) {
-    if (!confirm(`Are you sure you want to delete the folder "${folderName}"?\n\nAll documents in this folder will be moved to Uncategorized.`)) {
+    if (!confirm(`Delete the folder "${folderName}"?\n\nAll files inside will be moved to the Recycle Bin.`)) {
         return;
     }
     

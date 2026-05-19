@@ -19,7 +19,7 @@ class UpdateFolderRequest extends FormRequest
             ->where('is_system', false)
             ->first();
 
-        return $folder !== null;
+        return $folder !== null && $folder->isCustomSubfolder();
     }
 
     public function rules(): array

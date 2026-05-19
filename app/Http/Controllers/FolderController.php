@@ -66,7 +66,7 @@ class FolderController extends Controller
 
             return response()->json([
                 'success' => true,
-                'message' => 'Folder deleted successfully. Documents moved to Uncategorized.',
+                'message' => 'Folder deleted. Files inside were moved to the Recycle Bin.',
             ]);
         } catch (HttpException $e) {
             return response()->json(['success' => false, 'message' => $e->getMessage()], $e->getStatusCode());

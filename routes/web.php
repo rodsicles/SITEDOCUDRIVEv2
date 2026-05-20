@@ -171,6 +171,7 @@ Route::middleware(['auth', 'no.back', 'role:Dean,Secretary'])->prefix('dean')->n
     // Teaching Guides (Dean + Secretary can upload, approve, reject, delete)
     Route::get('/teaching-guides', [TeachingGuideController::class, 'index'])->name('teaching-guides.index');
     Route::post('/teaching-guides', [TeachingGuideController::class, 'store'])->middleware('throttle:6,60')->name('teaching-guides.store');
+    Route::get('/teaching-guides/{id}/view', [TeachingGuideController::class, 'view'])->name('teaching-guides.view');
     Route::get('/teaching-guides/{id}/download', [TeachingGuideController::class, 'download'])->name('teaching-guides.download');
     Route::post('/teaching-guides/{id}/approve', [TeachingGuideController::class, 'approve'])->middleware('throttle:30,1')->name('teaching-guides.approve');
     Route::post('/teaching-guides/{id}/reject', [TeachingGuideController::class, 'reject'])->middleware('throttle:30,1')->name('teaching-guides.reject');
@@ -236,6 +237,7 @@ Route::middleware(['auth', 'no.back', 'role:Program Coordinator'])->prefix('coor
     // Teaching Guides (Coordinator can also upload)
     Route::get('/teaching-guides', [TeachingGuideController::class, 'index'])->name('teaching-guides.index');
     Route::post('/teaching-guides', [TeachingGuideController::class, 'store'])->middleware('throttle:6,60')->name('teaching-guides.store');
+    Route::get('/teaching-guides/{id}/view', [TeachingGuideController::class, 'view'])->name('teaching-guides.view');
     Route::get('/teaching-guides/{id}/download', [TeachingGuideController::class, 'download'])->name('teaching-guides.download');
     Route::delete('/teaching-guides/{id}', [TeachingGuideController::class, 'destroy'])->name('teaching-guides.destroy');
 
@@ -286,8 +288,9 @@ Route::middleware(['auth', 'no.back', 'role:Faculty Employee'])->prefix('faculty
 
     Route::get('/profile', [FacultyController::class, 'profile'])->name('profile');
 
-    // Teaching Guides (Faculty: read-only, download only)
+    // Teaching Guides (Faculty: view approved + own pending/rejected)
     Route::get('/teaching-guides', [TeachingGuideController::class, 'index'])->name('teaching-guides.index');
+    Route::get('/teaching-guides/{id}/view', [TeachingGuideController::class, 'view'])->name('teaching-guides.view');
     Route::get('/teaching-guides/{id}/download', [TeachingGuideController::class, 'download'])->name('teaching-guides.download');
 
     // Exam Questionnaires (Faculty: submit and view own only)

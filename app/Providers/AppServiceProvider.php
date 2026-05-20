@@ -6,6 +6,9 @@ use App\Console\Commands\CreateSchoolYearFolders;
 use App\Console\Commands\EnsureAcademicYearFolders;
 use App\Console\Commands\PurgeOldTrashedDocuments;
 use App\Console\Commands\VerifyUploadStorageCommand;
+use App\Models\ExamQuestionnaire;
+use App\Models\SchoolYear;
+use App\Models\TeachingGuide;
 use App\Services\DashboardService;
 use Illuminate\Pagination\Paginator;
 use Illuminate\Support\Facades\Schema;
@@ -56,6 +59,32 @@ class AppServiceProvider extends ServiceProvider
                 'unreadNotifications',
                 app(DashboardService::class)->getUnreadNotificationCount($user->id),
             );
+        });
+
+        View::composer('partials.faculty-sidebar', function ($view) {
+            $user = auth()->user();
+            if (!$user?->isFaculty()) {
+                return;
+            }
+
+            $activeId = SchoolYear::activeId();
+            $pendingTeachingGuidesCount = TeachingGuide::query()
+                ->where('user_id', $user->id)
+                ->where('status', 'pending')
+                ->where(function ($q) use ($activeId) {
+                    $q->where('school_year_id', $activeId)->orWhereNull('school_year_id');
+                })
+                ->count();
+
+            $pendingExamQuestionnairesCount = ExamQuestionnaire::query()
+                ->where('submitted_by', $user->id)
+                ->where('status', 'pending')
+                ->where(function ($q) use ($activeId) {
+                    $q->where('school_year_id', $activeId)->orWhereNull('school_year_id');
+                })
+                ->count();
+
+            $view->with(compact('pendingTeachingGuidesCount', 'pendingExamQuestionnairesCount'));
         });
     }
 }

@@ -3,6 +3,7 @@
 namespace App\Models;
 
 use App\Models\Concerns\ScopesSubmissionVisibility;
+use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Database\Eloquent\Model;
 
 class TeachingGuide extends Model
@@ -69,6 +70,16 @@ class TeachingGuide extends Model
     public function isRejected(): bool
     {
         return $this->status === 'rejected';
+    }
+
+    public function scopeApproved(Builder $query): Builder
+    {
+        return $query->where('status', 'approved');
+    }
+
+    public function scopeOwnedBy(Builder $query, int $userId): Builder
+    {
+        return $query->where('user_id', $userId);
     }
 
     protected function submissionOwnerColumn(): string

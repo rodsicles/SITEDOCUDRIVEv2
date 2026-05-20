@@ -16,6 +16,7 @@ use Illuminate\Validation\Rule;
 
 class TeachingGuideController extends Controller
 {
+    use \App\Http\Controllers\Concerns\AppliesListSort;
     use \App\Http\Controllers\Concerns\HandlesUploadExceptions;
 
     public function __construct(
@@ -28,45 +29,46 @@ class TeachingGuideController extends Controller
     {
         $user = auth()->user();
         $search = $request->query('search');
+        $sort = $this->normalizeListSort($request->query('sort'));
         $semesterFilter = $request->query('semester');
         $academicYearStart = AcademicYear::startYearFromQuery($request->query('academic_year'));
-
-        $query = TeachingGuide::with('uploader.employee', 'folder')
-            ->forUser($user)
-            ->latest();
-
-        if ($search) {
-            $query->where(function ($q) use ($search) {
-                $q->where('title', 'like', "%{$search}%")
-                  ->orWhere('subject', 'like', "%{$search}%");
-            });
-        }
-
-        if ($semesterFilter) {
-            $query->where('semester', $semesterFilter);
-        }
-
-        if ($academicYearStart) {
-            $range = AcademicYear::rangeString($academicYearStart);
-            $query->where('academic_year', $range);
-        } else {
-            $activeId = SchoolYear::activeId();
-            $query->where(function ($q) use ($activeId) {
-                $q->where('school_year_id', $activeId)
-                  ->orWhereNull('school_year_id');
-            });
-        }
-
-        $guides = $query->paginate(15)->appends($request->query());
         $archiveYears = array_filter(
             AcademicYear::availableStartYears(),
             fn ($y) => AcademicYear::isArchived($y)
         );
-
         $role = $this->getViewRole($user);
 
+        if ($user->isFaculty()) {
+            $pendingGuides = $this->facultyOwnedGuidesQuery($user, $request, 'pending')
+                ->with('folder')
+                ->orderByDesc('created_at')
+                ->get();
+
+            $rejectedGuides = $this->facultyOwnedGuidesQuery($user, $request, 'rejected')
+                ->with('folder')
+                ->orderByDesc('created_at')
+                ->get();
+
+            $guidesQuery = TeachingGuide::with('uploader.employee', 'folder')
+                ->forUser($user)
+                ->approved();
+            $this->applyTeachingGuideListFilters($guidesQuery, $request);
+            $this->applyListSort($guidesQuery, $sort);
+            $guides = $guidesQuery->paginate(15)->appends($request->query());
+
+            return view('faculty.teaching-guides', compact(
+                'guides', 'search', 'sort', 'semesterFilter', 'academicYearStart',
+                'archiveYears', 'pendingGuides', 'rejectedGuides'
+            ));
+        }
+
+        $query = TeachingGuide::with('uploader.employee', 'folder')->forUser($user);
+        $this->applyTeachingGuideListFilters($query, $request);
+        $this->applyListSort($query, $sort);
+        $guides = $query->paginate(15)->appends($request->query());
+
         return view("{$role}.teaching-guides", compact(
-            'guides', 'search', 'semesterFilter', 'academicYearStart', 'archiveYears'
+            'guides', 'search', 'sort', 'semesterFilter', 'academicYearStart', 'archiveYears'
         ));
     }
 
@@ -218,10 +220,44 @@ class TeachingGuideController extends Controller
         return back()->with('success', 'Teaching guide rejected.');
     }
 
+    public function view($id)
+    {
+        $user = auth()->user();
+        $guide = TeachingGuide::visibleTo($user)->findOrFail($id);
+
+        if ($user->isFaculty()) {
+            $isOwner = (int) $guide->user_id === (int) $user->id;
+            if (!$guide->isApproved() && !$isOwner) {
+                abort(403);
+            }
+        }
+
+        $storageDir = str_starts_with($guide->file_path, 'documents/') ? 'documents' : 'teaching-guides';
+        UploadStorage::assertResolvedPath($guide->file_path, $storageDir);
+
+        if (!UploadStorage::exists($guide->file_path)) {
+            return back()->with('error', 'This file is no longer available. It was uploaded to a previous storage provider and no longer exists in the current storage.');
+        }
+
+        $extension = $guide->file_type === 'pdf' ? 'pdf' : 'docx';
+        $mime = $guide->file_type === 'pdf'
+            ? 'application/pdf'
+            : 'application/vnd.openxmlformats-officedocument.wordprocessingml.document';
+
+        return UploadStorage::inlineResponse($guide->file_path, $guide->title . '.' . $extension, $mime);
+    }
+
     public function download($id)
     {
         $user = auth()->user();
         $guide = TeachingGuide::visibleTo($user)->findOrFail($id);
+
+        if ($user->isFaculty()) {
+            $isOwner = (int) $guide->user_id === (int) $user->id;
+            if (!$guide->isApproved() && !$isOwner) {
+                abort(403);
+            }
+        }
 
         UploadStorage::assertPathAllowed($guide->file_path);
 
@@ -257,5 +293,44 @@ class TeachingGuideController extends Controller
         }
 
         return 'faculty';
+    }
+
+    private function facultyOwnedGuidesQuery($user, Request $request, string $status)
+    {
+        $query = TeachingGuide::query()
+            ->ownedBy((int) $user->id)
+            ->where('status', $status);
+
+        $this->applyTeachingGuideListFilters($query, $request);
+
+        return $query;
+    }
+
+    private function applyTeachingGuideListFilters($query, Request $request): void
+    {
+        $search = $request->query('search');
+        $semesterFilter = $request->query('semester');
+        $academicYearStart = AcademicYear::startYearFromQuery($request->query('academic_year'));
+
+        if ($search) {
+            $query->where(function ($q) use ($search) {
+                $q->where('title', 'like', "%{$search}%")
+                    ->orWhere('subject', 'like', "%{$search}%");
+            });
+        }
+
+        if ($semesterFilter) {
+            $query->where('semester', $semesterFilter);
+        }
+
+        if ($academicYearStart) {
+            $query->where('academic_year', AcademicYear::rangeString($academicYearStart));
+        } else {
+            $activeId = SchoolYear::activeId();
+            $query->where(function ($q) use ($activeId) {
+                $q->where('school_year_id', $activeId)
+                    ->orWhereNull('school_year_id');
+            });
+        }
     }
 }

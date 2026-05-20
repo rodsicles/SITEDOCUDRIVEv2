@@ -15,6 +15,7 @@ use Illuminate\Validation\Rule;
 
 class ExamQuestionnaireController extends Controller
 {
+    use \App\Http\Controllers\Concerns\AppliesListSort;
     use \App\Http\Controllers\Concerns\HandlesUploadExceptions;
 
     public function __construct(
@@ -26,14 +27,14 @@ class ExamQuestionnaireController extends Controller
     {
         $user = auth()->user();
         $search = $request->query('search');
+        $sort = $this->normalizeListSort($request->query('sort'));
         $statusFilter = $request->query('status');
         $examTypeFilter = $request->query('exam_type');
         $semesterFilter = $request->query('semester');
         $academicYearStart = AcademicYear::startYearFromQuery($request->query('academic_year'));
 
         $query = ExamQuestionnaire::with('submitter.employee', 'reviewer.employee')
-            ->visibleTo($user)
-            ->latest();
+            ->visibleTo($user);
 
         if ($search) {
             $query->where(function ($q) use ($search) {
@@ -64,7 +65,31 @@ class ExamQuestionnaireController extends Controller
             });
         }
 
+        $this->applyListSort($query, $sort);
         $questionnaires = $query->paginate(15)->appends($request->query());
+
+        $pendingSubmissions = collect();
+        if ($user->isFaculty()) {
+            $pendingQuery = ExamQuestionnaire::query()
+                ->where('submitted_by', $user->id)
+                ->where('status', 'pending');
+            if ($search) {
+                $pendingQuery->where(function ($q) use ($search) {
+                    $q->where('title', 'like', "%{$search}%")
+                        ->orWhere('subject', 'like', "%{$search}%");
+                });
+            }
+            if ($academicYearStart) {
+                $pendingQuery->where('academic_year', AcademicYear::rangeString($academicYearStart));
+            } else {
+                $activeIdForPending = SchoolYear::activeId();
+                $pendingQuery->where(function ($q) use ($activeIdForPending) {
+                    $q->where('school_year_id', $activeIdForPending)
+                        ->orWhereNull('school_year_id');
+                });
+            }
+            $pendingSubmissions = $pendingQuery->orderByDesc('created_at')->get();
+        }
 
         $activeId = $activeId ?? SchoolYear::activeId();
         $pendingScope = fn ($q) => $q->where('status', 'pending')
@@ -84,8 +109,8 @@ class ExamQuestionnaireController extends Controller
         $role = $this->getViewRole($user);
 
         return view("{$role}.exam-questionnaires", compact(
-            'questionnaires', 'search', 'statusFilter', 'examTypeFilter',
-            'semesterFilter', 'academicYearStart', 'archiveYears', 'pendingCount'
+            'questionnaires', 'search', 'sort', 'statusFilter', 'examTypeFilter',
+            'semesterFilter', 'academicYearStart', 'archiveYears', 'pendingCount', 'pendingSubmissions'
         ));
     }
 

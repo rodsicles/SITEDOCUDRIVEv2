@@ -16,6 +16,7 @@
         $ayStart = AcademicYear::currentStartYear();
         $currentSem = AcademicYear::currentSemester() === '2nd' ? '2nd Semester' : '1st Semester';
         $currentAY = AcademicYear::label($ayStart);
+        $eqIndexRoute = route('faculty.exam-questionnaires.index');
     @endphp
 
     <div class="content-card mb-4" style="border-left: 3px solid #028a0f;">
@@ -25,7 +26,7 @@
                 <div class="font-semibold text-gray-700 dark:text-gray-200">
                     Your submission will be tagged: <span style="color:#028a0f;">{{ $currentSem }} &bull; {{ $currentAY }}</span>
                 </div>
-                <div class="text-xs text-gray-500 dark:text-gray-400">Semester and academic year are set automatically based on today's date.</div>
+                <div class="text-xs text-gray-500 dark:text-gray-400">Upload from here or Documents &rarr; Exam Questionnaires. Submissions stay pending until the Dean approves them.</div>
             </div>
         </div>
     </div>
@@ -77,34 +78,36 @@
 
     {{-- My Submissions --}}
     <div class="content-card">
-        <div class="card-header">
-            <h3 class="card-title">My Submissions</h3>
-            <span class="badge badge-info">{{ $questionnaires->total() }} Total</span>
+        <div class="card-header resource-list-header">
+            <div class="resource-list-header__main">
+                <h3 class="card-title mb-0">My Submissions</h3>
+                <label class="resource-list-header__status">
+                    <span class="sr-only">Status</span>
+                    <select onchange="window.location.href=this.value" class="form-control text-sm">
+                        <option value="{{ $eqIndexRoute }}">All status</option>
+                        @foreach(['pending','approved','rejected'] as $s)
+                            <option value="{{ route('faculty.exam-questionnaires.index', ['status' => $s]) }}"
+                                {{ ($statusFilter ?? '') === $s ? 'selected' : '' }}>{{ ucfirst($s) }}</option>
+                        @endforeach
+                    </select>
+                </label>
+                @include('partials.resource-list-toolbar', [
+                    'action' => $eqIndexRoute,
+                    'search' => $search ?? '',
+                    'sort' => $sort ?? 'date_desc',
+                    'searchPlaceholder' => 'Search subject...',
+                    'hiddenFields' => array_filter(['status' => $statusFilter ?? null]),
+                ])
+            </div>
+            <span class="badge badge-info resource-list-header__count">{{ $questionnaires->total() }} Total</span>
         </div>
 
-        <div class="documents-filter flex items-center gap-4 flex-wrap">
-            <div class="flex items-center gap-2">
-                <label class="text-sm font-medium whitespace-nowrap text-gray-700 dark:text-gray-300">Status:</label>
-                <select onchange="window.location.href=this.value" class="form-control text-sm">
-                    <option value="{{ route('faculty.exam-questionnaires.index') }}">All</option>
-                    @foreach(['pending','approved','rejected'] as $s)
-                        <option value="{{ route('faculty.exam-questionnaires.index', ['status' => $s]) }}"
-                            {{ $statusFilter === $s ? 'selected' : '' }}>{{ ucfirst($s) }}</option>
-                    @endforeach
-                </select>
-            </div>
-            <form action="{{ route('faculty.exam-questionnaires.index') }}" method="GET" class="flex items-center gap-2 ml-auto">
-                @if($statusFilter)<input type="hidden" name="status" value="{{ $statusFilter }}">@endif
-                <input type="text" name="search" value="{{ $search }}" class="form-control text-sm"
-                       placeholder="Search subject..." style="min-width:200px">
-                <button type="submit" class="btn btn-primary text-sm"><i class="fas fa-search"></i></button>
-                @if($search)
-                    <a href="{{ route('faculty.exam-questionnaires.index') }}"
-                       class="btn bg-gray-200 dark:bg-gray-700 text-gray-700 dark:text-gray-300 text-sm">
-                        <i class="fas fa-times"></i>
-                    </a>
-                @endif
-            </form>
+        <div class="px-4 pb-2">
+            @include('partials.pending-dean-approval', [
+                'items' => $pendingSubmissions ?? collect(),
+                'viewRoute' => 'faculty.exam-questionnaires.view',
+                'downloadRoute' => 'faculty.exam-questionnaires.download',
+            ])
         </div>
 
         <table class="data-table">
@@ -185,3 +188,4 @@
         <div class="mt-5">{{ $questionnaires->links() }}</div>
     </div>
 @endsection
+

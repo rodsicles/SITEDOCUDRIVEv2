@@ -570,21 +570,23 @@
                         ->orderByDesc('created_at')
                         ->get();
                 @endphp
-                @if($pendingTgGuides->isNotEmpty())
-                <div class="mb-4 p-4 border border-amber-200 dark:border-amber-800 bg-amber-50 dark:bg-amber-950/30">
-                    <h4 class="text-sm font-semibold text-amber-900 dark:text-amber-200 mb-2">
-                        <i class="fas fa-clock mr-1"></i> Pending Dean approval ({{ $pendingTgGuides->count() }})
-                    </h4>
-                    <ul class="text-sm text-gray-700 dark:text-gray-300 space-y-1">
-                        @foreach($pendingTgGuides as $guide)
-                        <li>
-                            <strong>{{ $guide->title }}</strong>
-                            <span class="text-xs text-gray-500">— uploaded {{ $guide->created_at->format('M d, Y') }}</span>
-                        </li>
-                        @endforeach
-                    </ul>
-                </div>
-                @endif
+                @php
+                    $tgViewRoute = match ($role) {
+                        'faculty' => 'faculty.teaching-guides.view',
+                        'coordinator' => 'coordinator.teaching-guides.view',
+                        default => 'dean.teaching-guides.view',
+                    };
+                    $tgDownloadRoute = match ($role) {
+                        'faculty' => 'faculty.teaching-guides.download',
+                        'coordinator' => 'coordinator.teaching-guides.download',
+                        default => 'dean.teaching-guides.download',
+                    };
+                @endphp
+                @include('partials.pending-dean-approval', [
+                    'items' => $pendingTgGuides,
+                    'viewRoute' => $tgViewRoute,
+                    'downloadRoute' => $tgDownloadRoute,
+                ])
             @endif
 
             @if($isEqUploadLeaf ?? false)
@@ -603,21 +605,23 @@
                     }
                     $pendingEqItems = $pendingEqQuery->orderByDesc('created_at')->get();
                 @endphp
-                @if($pendingEqItems->isNotEmpty())
-                <div class="mb-4 p-4 border border-amber-200 dark:border-amber-800 bg-amber-50 dark:bg-amber-950/30">
-                    <h4 class="text-sm font-semibold text-amber-900 dark:text-amber-200 mb-2">
-                        <i class="fas fa-clock mr-1"></i> Pending Dean approval ({{ $pendingEqItems->count() }})
-                    </h4>
-                    <ul class="text-sm text-gray-700 dark:text-gray-300 space-y-1">
-                        @foreach($pendingEqItems as $eqItem)
-                        <li>
-                            <strong>{{ $eqItem->title }}</strong>
-                            <span class="text-xs text-gray-500">— uploaded {{ $eqItem->created_at->format('M d, Y') }}</span>
-                        </li>
-                        @endforeach
-                    </ul>
-                </div>
-                @endif
+                @php
+                    $eqViewRoute = match ($role) {
+                        'faculty' => 'faculty.exam-questionnaires.view',
+                        'coordinator' => 'coordinator.exam-questionnaires.view',
+                        default => 'dean.exam-questionnaires.view',
+                    };
+                    $eqDownloadRoute = match ($role) {
+                        'faculty' => 'faculty.exam-questionnaires.download',
+                        'coordinator' => 'coordinator.exam-questionnaires.download',
+                        default => 'dean.exam-questionnaires.download',
+                    };
+                @endphp
+                @include('partials.pending-dean-approval', [
+                    'items' => $pendingEqItems,
+                    'viewRoute' => $eqViewRoute,
+                    'downloadRoute' => $eqDownloadRoute,
+                ])
             @endif
 
             @if($canUpload)

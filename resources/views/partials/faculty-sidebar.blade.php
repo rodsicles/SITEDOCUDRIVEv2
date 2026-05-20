@@ -33,9 +33,15 @@
 </a>
 <a href="{{ route('faculty.teaching-guides.index') }}" class="menu-item {{ request()->routeIs('faculty.teaching-guides.*') ? 'active' : '' }}">
     <i class="fas fa-book-open"></i> Teaching Guides
+    @if(!empty($pendingTeachingGuidesCount) && $pendingTeachingGuidesCount > 0)
+    <span class="badge ml-auto" style="background:#b45309;color:#fff;" title="Pending Dean approval">{{ $pendingTeachingGuidesCount }}</span>
+    @endif
 </a>
 <a href="{{ route('faculty.exam-questionnaires.index') }}" class="menu-item {{ request()->routeIs('faculty.exam-questionnaires.*') ? 'active' : '' }}">
     <i class="fas fa-file-alt"></i> Exam Questionnaires
+    @if(!empty($pendingExamQuestionnairesCount) && $pendingExamQuestionnairesCount > 0)
+    <span class="badge ml-auto" style="background:#b45309;color:#fff;" title="Pending Dean approval">{{ $pendingExamQuestionnairesCount }}</span>
+    @endif
 </a>
 <a href="{{ route('faculty.archives.list') }}" class="menu-item {{ request()->routeIs('faculty.archives.*') ? 'active' : '' }}">
     <i class="fas fa-box-archive"></i> Archives

@@ -3102,16 +3102,12 @@ a.doc-sort-item:hover,
 }
 
 /* Notifications toolbar */
-.notifications-toolbar-row {
-    @apply flex flex-col sm:flex-row sm:items-center sm:justify-between gap-2;
-}
-
 .notifications-toolbar {
-    @apply flex flex-wrap gap-2 items-center flex-1 min-w-0;
+    @apply flex flex-wrap gap-2 items-center;
 }
 
 .notifications-mark-all-form {
-    @apply flex-shrink-0;
+    @apply inline-block m-0;
 }
 
 .notifications-toolbar-search {

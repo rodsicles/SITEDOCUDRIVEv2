@@ -36,7 +36,11 @@ trait ManagesUserNotifications
 
         $notifications = $query->latest()->paginate(20)->withQueryString();
 
-        return view($this->notificationsView(), compact('notifications'));
+        $unreadNotifications = Notification::where('user_id', auth()->id())
+            ->where('is_read', false)
+            ->count();
+
+        return view($this->notificationsView(), compact('notifications', 'unreadNotifications'));
     }
 
     public function unreadNotificationCount()

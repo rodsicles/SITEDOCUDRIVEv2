@@ -64,13 +64,32 @@ class TeachingGuideController extends Controller
             ));
         }
 
-        $query = TeachingGuide::with('uploader.employee', 'folder')->forUser($user);
+        $statusFilter = $request->query('status');
+
+        $query = TeachingGuide::with('uploader.employee', 'reviewer.employee', 'folder')->forUser($user);
         $this->applyTeachingGuideListFilters($query, $request);
+
+        if ($statusFilter) {
+            $query->where('status', $statusFilter);
+        }
+
         $this->applyListSort($query, $sort);
         $guides = $query->paginate(15)->appends($request->query());
 
+        $activeId = SchoolYear::activeId();
+        $pendingScope = fn ($q) => $q->where('status', 'pending')
+            ->where(function ($q2) use ($activeId) {
+                $q2->where('school_year_id', $activeId)->orWhereNull('school_year_id');
+            });
+        $pendingCount = match (true) {
+            $user->isDean(), $user->isSecretary() => TeachingGuide::where($pendingScope)->count(),
+            $user->isProgramCoordinator() => TeachingGuide::visibleTo($user)->where($pendingScope)->count(),
+            default => 0,
+        };
+
         return view("{$role}.teaching-guides", compact(
-            'guides', 'search', 'sort', 'semesterFilter', 'academicYearStart', 'archiveYears'
+            'guides', 'search', 'sort', 'statusFilter', 'semesterFilter', 'academicYearStart',
+            'archiveYears', 'pendingCount',
         ));
     }
 

@@ -1,6 +1,6 @@
 ﻿@extends('layouts.dashboard')
 
-@section('title', 'Pending Teaching Guides')
+@section('title', 'Pending Teaching Guides - Dean')
 @section('page-title', 'Pending Teaching Guides')
 @section('page-subtitle', 'Review and approve faculty teaching guide submissions')
 
@@ -13,31 +13,44 @@
 @endsection
 
 @section('content')
+
     <div class="content-card">
         <div class="card-header">
             <h3 class="card-title">Teaching Guide Submissions</h3>
-            <span class="badge badge-info">{{ $guides->total() }} Files</span>
+            <span class="badge badge-info">{{ $guides->total() }} Submissions</span>
+            @if(($pendingCount ?? 0) > 0)
+                <span class="badge" style="background:#b45309;color:#fff;">{{ $pendingCount }} Pending Review</span>
+            @endif
         </div>
 
-        <div class="documents-filter flex items-center gap-4 flex-wrap p-4">
-            <form action="{{ route('dean.teaching-guides.index') }}" method="GET" class="flex items-center gap-3 flex-wrap w-full">
-                @include('partials.school-year-filter', ['selected' => $academicYearStart ?? ''])
-                <select name="semester" class="form-control text-sm" style="min-width:140px">
-                    <option value="">All Semesters</option>
-                    <option value="1st" {{ ($semesterFilter ?? '') === '1st' ? 'selected' : '' }}>1st Semester</option>
-                    <option value="2nd" {{ ($semesterFilter ?? '') === '2nd' ? 'selected' : '' }}>2nd Semester</option>
+        <div class="px-4 pb-4 flex items-center gap-4 flex-wrap">
+            <div class="flex items-center gap-2">
+                <label class="text-sm font-medium whitespace-nowrap text-gray-700 dark:text-gray-300">Status:</label>
+                <select onchange="window.location.href=this.value" class="form-control text-sm">
+                    <option value="{{ route('dean.teaching-guides.index') }}">All</option>
+                    @foreach(['pending','approved','rejected'] as $s)
+                        <option value="{{ route('dean.teaching-guides.index', ['status' => $s]) }}" {{ ($statusFilter ?? '') === $s ? 'selected' : '' }}>{{ ucfirst($s) }}</option>
+                    @endforeach
                 </select>
-                <input type="text" name="search" value="{{ $search }}" class="form-control text-sm" placeholder="Search title or subject..." style="min-width:220px">
-                <button type="submit" class="btn btn-primary text-sm"><i class="fas fa-search"></i> Filter</button>
-                @if($search || $semesterFilter || ($academicYearStart ?? ''))
-                    <a href="{{ route('dean.teaching-guides.index') }}" class="btn bg-gray-200 dark:bg-gray-700 text-gray-700 dark:text-gray-300 text-sm"><i class="fas fa-times"></i> Clear</a>
+            </div>
+            <div class="flex items-center gap-2">
+                <label class="text-sm font-medium whitespace-nowrap text-gray-700 dark:text-gray-300">Semester:</label>
+                <select onchange="window.location.href=this.value" class="form-control text-sm">
+                    <option value="{{ route('dean.teaching-guides.index', array_filter(['status' => $statusFilter ?? null])) }}">All</option>
+                    @foreach(['1st','2nd'] as $sem)
+                        <option value="{{ route('dean.teaching-guides.index', array_filter(['status' => $statusFilter ?? null, 'semester' => $sem])) }}" {{ ($semesterFilter ?? '') === $sem ? 'selected' : '' }}>{{ $sem }} Semester</option>
+                    @endforeach
+                </select>
+            </div>
+            <form action="{{ route('dean.teaching-guides.index') }}" method="GET" class="flex items-center gap-2 ml-auto">
+                @if($statusFilter ?? false)<input type="hidden" name="status" value="{{ $statusFilter }}">@endif
+                @if($semesterFilter ?? false)<input type="hidden" name="semester" value="{{ $semesterFilter }}">@endif
+                <input type="text" name="search" value="{{ $search }}" class="form-control text-sm" placeholder="Search title, subject, or faculty..." style="min-width:220px">
+                <button type="submit" class="btn btn-primary text-sm"><i class="fas fa-search"></i></button>
+                @if($search)
+                    <a href="{{ route('dean.teaching-guides.index') }}" class="btn bg-gray-200 dark:bg-gray-700 text-gray-700 dark:text-gray-300 text-sm"><i class="fas fa-times"></i></a>
                 @endif
             </form>
-            @if(!empty($archiveYears))
-            <p class="text-xs text-gray-500 w-full mb-0">
-                <i class="fas fa-archive mr-1"></i> Archive history: {{ collect($archiveYears)->map(fn($y) => 'AY '.$y.'-'.($y+1))->implode(', ') }}
-            </p>
-            @endif
         </div>
 
         <table class="data-table">
@@ -46,11 +59,11 @@
                     <th class="w-10"></th>
                     <th>Title</th>
                     <th>Subject</th>
+                    <th>Faculty</th>
+                    <th>Type</th>
                     <th>Semester</th>
-                    <th>Folder</th>
-                    <th>Uploaded By</th>
                     <th>Approval</th>
-                    <th>Date</th>
+                    <th>Submitted</th>
                     <th>Actions</th>
                 </tr>
             </thead>
@@ -68,16 +81,25 @@
                     </td>
                     <td><strong>{{ $guide->title }}</strong></td>
                     <td><span class="doc-category-badge">{{ $guide->subject }}</span></td>
-                    <td class="text-xs">{{ $guide->semester ?? 'â€”' }}</td>
-                    <td class="text-xs text-gray-600 dark:text-gray-400">{{ $guide->folder?->folder_name ?? 'â€”' }}</td>
                     <td>{{ $guide->uploader->employee->full_name ?? $guide->uploader->username }}</td>
+                    <td><span class="doc-category-badge">TG</span></td>
+                    <td>{{ $guide->semester ?? '—' }}</td>
                     <td>
                         @if($guide->isPending())
-                            <span class="badge" style="background:#b45309;color:#fff;"><i class="fas fa-clock"></i> Not Approved</span>
+                            <span class="badge" style="background:#b45309;color:#fff;" title="Awaiting Dean approval">
+                                <i class="fas fa-clock"></i> Not Approved
+                            </span>
                         @elseif($guide->isApproved())
-                            <span class="badge badge-success"><i class="fas fa-check"></i> Approved</span>
+                            <span class="badge badge-success">
+                                <i class="fas fa-check"></i> Approved
+                            </span>
+                            @if($guide->reviewer)
+                                <div class="text-xs text-gray-500 mt-1">by {{ $guide->reviewer->employee->full_name ?? $guide->reviewer->username }}</div>
+                            @endif
                         @else
-                            <span class="badge badge-danger"><i class="fas fa-times"></i> Rejected</span>
+                            <span class="badge badge-danger">
+                                <i class="fas fa-times"></i> Rejected
+                            </span>
                             @if($guide->remarks)
                                 <div class="text-xs text-gray-500 mt-1">{{ $guide->remarks }}</div>
                             @endif
@@ -86,11 +108,14 @@
                     <td>{{ $guide->created_at->format('M d, Y') }}</td>
                     <td>
                         <div class="doc-action-btns">
+                            <a href="{{ route('dean.teaching-guides.view', $guide->id) }}" target="_blank" class="btn btn-action-view text-xs">
+                                <i class="fas fa-eye"></i> View
+                            </a>
                             <a href="{{ route('dean.teaching-guides.download', $guide->id) }}" class="btn btn-action-download text-xs">
                                 <i class="fas fa-download"></i> Download
                             </a>
                             @if($guide->isPending())
-                                <form action="{{ route('dean.teaching-guides.approve', $guide->id) }}" method="POST" data-request-guard>
+                                <form action="{{ route('dean.teaching-guides.approve', $guide->id) }}" method="POST">
                                     @csrf
                                     <button type="submit" class="btn btn-primary text-xs"><i class="fas fa-check"></i> Approve</button>
                                 </form>
@@ -98,16 +123,12 @@
                                     <i class="fas fa-times"></i> Reject
                                 </button>
                             @endif
-                            <form action="{{ route('dean.teaching-guides.destroy', $guide->id) }}" method="POST" onsubmit="return confirm('Delete this guide?')" data-request-guard>
-                                @csrf @method('DELETE')
-                                <button type="submit" class="btn btn-danger text-xs"><i class="fas fa-trash"></i></button>
-                            </form>
                         </div>
                     </td>
                 </tr>
                 @empty
                 <tr>
-                    <td colspan="9" class="text-center text-gray-500 dark:text-gray-400 py-8">No teaching guides uploaded yet.</td>
+                    <td colspan="9" class="text-center text-gray-500 dark:text-gray-400 py-8">No submissions found.</td>
                 </tr>
                 @endforelse
             </tbody>
@@ -120,13 +141,13 @@
         <div class="content-card" style="width:100%;max-width:480px;margin:auto;">
             <div class="card-header">
                 <h3 class="card-title">Reject Teaching Guide</h3>
-                <button onclick="closeTgRejectModal()" class="btn btn-sm bg-gray-200 dark:bg-gray-700"><i class="fas fa-times"></i></button>
+                <button type="button" onclick="closeTgRejectModal()" class="btn btn-sm bg-gray-200 dark:bg-gray-700"><i class="fas fa-times"></i></button>
             </div>
             <form id="tgRejectForm" method="POST">
                 @csrf
                 <div class="p-4">
                     <label class="form-label">Reason for Rejection <span class="text-red-500">*</span></label>
-                    <textarea name="remarks" class="form-control" rows="3" maxlength="500" required placeholder="Provide feedback..."></textarea>
+                    <textarea name="remarks" class="form-control" rows="3" maxlength="500" required placeholder="Provide feedback for the faculty..."></textarea>
                 </div>
                 <div class="px-4 pb-4 flex gap-2">
                     <button type="submit" class="btn btn-danger"><i class="fas fa-times"></i> Reject</button>
@@ -138,7 +159,7 @@
 
     <script>
         function openTgRejectModal(id) {
-            document.getElementById('tgRejectForm').action = '{{ url("/dean/teaching-guides") }}/' + id + '/reject';
+            document.getElementById('tgRejectForm').action = '{{ url('/dean/teaching-guides') }}/' + id + '/reject';
             document.getElementById('tgRejectModal').style.display = 'flex';
         }
         function closeTgRejectModal() {

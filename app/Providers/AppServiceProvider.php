@@ -50,7 +50,7 @@ class AppServiceProvider extends ServiceProvider
         }
 
         View::composer(
-            ['layouts.dashboard', 'partials.dean-sidebar', 'partials.secretary-sidebar'],
+            ['layouts.dashboard', 'partials.dean-sidebar', 'partials.secretary-sidebar', 'partials.notifications-list'],
             function ($view) {
                 $user = auth()->user();
                 if (!$user || (!$user->isFaculty() && !$user->isProgramCoordinator() && !$user->isDeanOrSecretary())) {

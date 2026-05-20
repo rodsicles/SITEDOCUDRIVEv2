@@ -72,7 +72,17 @@
                     </td>
                     <td>
                         <strong>{{ $q->subject }}</strong>
-                        <div class="text-xs text-gray-500 dark:text-gray-400 mt-1">{{ $q->title }}</div>
+                        <div class="doc-title-cell mt-1">
+                            <button type="button"
+                                    class="doc-rename-handle"
+                                    title="Rename file"
+                                    aria-label="Rename {{ $q->title }}"
+                                    onclick="openRenameSubmissionModal({{ $q->id }}, @js($q->title))">
+                                <i class="fas fa-pen" aria-hidden="true"></i>
+                                <span class="doc-rename-label">Rename</span>
+                            </button>
+                            <span class="doc-title-text text-sm text-gray-600 dark:text-gray-400" id="eq-title-sub-{{ $q->id }}">{{ $q->title }}</span>
+                        </div>
                     </td>
                     <td><span class="doc-category-badge">{{ strtoupper($q->submission_type ?? 'toq') }}</span></td>
                     <td><span class="doc-category-badge">{{ $q->exam_type }}</span></td>
@@ -87,6 +97,12 @@
                             <a href="{{ route('faculty.exam-questionnaires.download', $q->id) }}" class="btn btn-action-download text-xs">
                                 <i class="fas fa-download"></i> Download
                             </a>
+                            <form id="delete-eq-{{ $q->id }}" action="{{ route('faculty.exam-questionnaires.destroy', $q->id) }}" method="POST" class="d-inline">
+                                @csrf @method('DELETE')
+                            </form>
+                            <button type="button" onclick="confirmSubmissionDelete('eq', {{ $q->id }})" class="btn btn-danger text-xs">
+                                <i class="fas fa-trash"></i> Delete
+                            </button>
                         </div>
                     </td>
                 </tr>
@@ -137,4 +153,33 @@
         </table>
     </div>
     @endif
+
+    @include('partials.rename-submission-modal', [
+        'renameRouteSample' => route('faculty.exam-questionnaires.rename', ['id' => 1]),
+        'titleIdPrefix' => 'eq-title-sub-',
+    ])
 @endsection
+
+@push('scripts')
+<script>
+function confirmSubmissionDelete(kind, id) {
+    const label = kind === 'tg' ? 'teaching guide' : 'exam questionnaire';
+    Swal.fire({
+        title: 'Delete ' + label + '?',
+        text: 'This removes the file from your list. If it was shared in Documents, it will move to Recycle Bin.',
+        icon: 'warning',
+        showCancelButton: true,
+        confirmButtonText: 'Yes, delete it',
+        cancelButtonText: 'Cancel',
+        confirmButtonColor: '#dc2626',
+        cancelButtonColor: '#6b7280',
+        customClass: { popup: 'swal-flat' }
+    }).then((result) => {
+        if (result.isConfirmed) {
+            const form = document.getElementById('delete-' + kind + '-' + id);
+            if (form) form.submit();
+        }
+    });
+}
+</script>
+@endpush

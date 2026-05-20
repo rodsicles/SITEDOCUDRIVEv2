@@ -3102,12 +3102,20 @@ a.doc-sort-item:hover,
 }
 
 /* Notifications toolbar */
+.notifications-toolbar-row {
+    @apply flex flex-col sm:flex-row sm:items-center sm:justify-between gap-2;
+}
+
 .notifications-toolbar {
-    @apply flex flex-wrap gap-2 items-center px-4;
+    @apply flex flex-wrap gap-2 items-center flex-1 min-w-0;
+}
+
+.notifications-mark-all-form {
+    @apply flex-shrink-0;
 }
 
 .notifications-toolbar-search {
-    @apply relative flex-1 min-w-[12rem];
+    @apply relative w-full sm:w-44 md:w-52 flex-none min-w-0;
 }
 
 .notifications-toolbar-icon {
@@ -3119,7 +3127,7 @@ a.doc-sort-item:hover,
 }
 
 .notifications-toolbar-select {
-    @apply max-w-[11rem];
+    @apply w-auto max-w-[9.5rem] flex-none;
 }
 
 /* Pagination */

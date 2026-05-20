@@ -62,5 +62,14 @@ trait ManagesUserNotifications
         return redirect()->back();
     }
 
+    public function markAllNotificationsRead()
+    {
+        $count = app(NotificationService::class)->markAllAsRead(auth()->id());
+
+        return redirect()->back()->with('success', $count > 0
+            ? "{$count} notification(s) marked as read."
+            : 'No unread notifications.');
+    }
+
     abstract protected function notificationsView(): string;
 }

@@ -1,5 +1,10 @@
 @php
-    $routePrefix = $routePrefix ?? (auth()->user()->isFaculty() ? 'faculty' : 'coordinator');
+    $routePrefix = $routePrefix ?? match (true) {
+        auth()->user()->isFaculty() => 'faculty',
+        auth()->user()->isDeanOrSecretary() => 'dean',
+        default => 'coordinator',
+    };
+    $hasUnread = ($unreadNotifications ?? 0) > 0;
 @endphp
 
 <div class="content-card">
@@ -8,29 +13,39 @@
         <span class="badge badge-info self-start sm:ml-auto">{{ $notifications->total() }} Total</span>
     </div>
 
-    <form action="{{ route($routePrefix . '.notifications') }}" method="GET" class="notifications-toolbar mb-4">
-        <div class="notifications-toolbar-search">
-            <i class="fas fa-search notifications-toolbar-icon" aria-hidden="true"></i>
-            <input type="search" name="q" value="{{ request('q') }}" class="form-control text-sm" placeholder="Search notifications...">
-        </div>
-        <select name="status" class="form-control text-sm notifications-toolbar-select" aria-label="Status">
-            <option value="">All status</option>
-            <option value="unread" @selected(request('status') === 'unread')>Unread</option>
-            <option value="read" @selected(request('status') === 'read')>Read</option>
-        </select>
-        <select name="tone" class="form-control text-sm notifications-toolbar-select" aria-label="Type">
-            <option value="">All types</option>
-            <option value="success" @selected(request('tone') === 'success')>Approvals / success</option>
-            <option value="danger" @selected(request('tone') === 'danger')>Rejections / alerts</option>
-            <option value="neutral" @selected(request('tone') === 'neutral')>General</option>
-        </select>
-        <button type="submit" class="btn btn-primary text-sm">
-            <i class="fas fa-filter"></i> Apply
-        </button>
-        @if(request()->hasAny(['q', 'status', 'tone']))
-        <a href="{{ route($routePrefix . '.notifications') }}" class="btn bg-gray-200 dark:bg-gray-700 text-gray-700 dark:text-gray-300 text-sm">Reset</a>
+    <div class="notifications-toolbar-row px-4 mb-3">
+        <form action="{{ route($routePrefix . '.notifications') }}" method="GET" class="notifications-toolbar">
+            <div class="notifications-toolbar-search">
+                <i class="fas fa-search notifications-toolbar-icon" aria-hidden="true"></i>
+                <input type="search" name="q" value="{{ request('q') }}" class="form-control text-sm" placeholder="Search...">
+            </div>
+            <select name="status" class="form-control text-sm notifications-toolbar-select" aria-label="Status">
+                <option value="">All status</option>
+                <option value="unread" @selected(request('status') === 'unread')>Unread</option>
+                <option value="read" @selected(request('status') === 'read')>Read</option>
+            </select>
+            <select name="tone" class="form-control text-sm notifications-toolbar-select" aria-label="Type">
+                <option value="">All types</option>
+                <option value="success" @selected(request('tone') === 'success')>Approvals</option>
+                <option value="danger" @selected(request('tone') === 'danger')>Alerts</option>
+                <option value="neutral" @selected(request('tone') === 'neutral')>General</option>
+            </select>
+            <button type="submit" class="btn btn-primary text-sm">
+                <i class="fas fa-filter"></i> Apply
+            </button>
+            @if(request()->hasAny(['q', 'status', 'tone']))
+            <a href="{{ route($routePrefix . '.notifications') }}" class="btn bg-gray-200 dark:bg-gray-700 text-gray-700 dark:text-gray-300 text-sm">Reset</a>
+            @endif
+        </form>
+        @if($hasUnread)
+        <form action="{{ route($routePrefix . '.notifications.mark-all-read') }}" method="POST" class="notifications-mark-all-form" data-request-guard>
+            @csrf
+            <button type="submit" class="btn btn-secondary text-sm whitespace-nowrap">
+                <i class="fas fa-check-double"></i> Mark all as read
+            </button>
+        </form>
         @endif
-    </form>
+    </div>
 
     <p class="text-xs text-gray-500 dark:text-gray-400 mb-3 hidden md:block">Tip: click an unread row to mark it as read</p>
 

@@ -5,7 +5,9 @@ namespace App\Http\Controllers;
 use App\Models\Folder;
 use App\Models\SchoolYear;
 use App\Models\TeachingGuide;
+use App\Models\Document;
 use App\Services\AcademicHierarchyService;
+use App\Services\DocumentService;
 use App\Services\NotificationService;
 use App\Services\TeachingGuideSyncService;
 use App\Support\AcademicYear;
@@ -276,16 +278,51 @@ class TeachingGuideController extends Controller
         return UploadStorage::downloadResponse($guide->file_path, basename($guide->file_path));
     }
 
+    public function rename(\App\Http\Requests\RenameDocumentRequest $request, $id)
+    {
+        $user = auth()->user();
+        $guide = TeachingGuide::visibleTo($user)->findOrFail($id);
+
+        if ($user->isFaculty() && (int) $guide->user_id !== (int) $user->id) {
+            abort(403, 'You can only rename your own teaching guides.');
+        }
+
+        $title = $request->validated('document_title');
+
+        if ($guide->document_id) {
+            $document = app(DocumentService::class)->renameDocument((int) $guide->document_id, $user, $title);
+            $title = $document->document_title;
+        } else {
+            $guide->update(['title' => $title]);
+        }
+
+        return response()->json([
+            'success' => true,
+            'message' => 'Teaching guide renamed successfully.',
+            'document_title' => $title,
+        ]);
+    }
+
     public function destroy($id)
     {
         $user = auth()->user();
+        $guide = TeachingGuide::visibleTo($user)->findOrFail($id);
 
-        if ($user->isFaculty()) {
-            abort(403);
+        if ($user->isFaculty() && (int) $guide->user_id !== (int) $user->id) {
+            abort(403, 'You can only delete your own teaching guides.');
         }
 
-        $guide = TeachingGuide::visibleTo($user)->findOrFail($id);
-        UploadStorage::delete($guide->file_path);
+        if ($guide->document_id) {
+            $document = Document::find($guide->document_id);
+            if ($document && ($user->isDeanOrSecretary() || (int) $document->uploaded_by === (int) $user->id)) {
+                app(DocumentService::class)->deleteDocument((int) $guide->document_id, $user);
+            }
+        }
+
+        if ($guide->file_path && UploadStorage::exists($guide->file_path)) {
+            UploadStorage::delete($guide->file_path);
+        }
+
         $guide->delete();
 
         return back()->with('success', 'Teaching guide deleted.');

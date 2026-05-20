@@ -73,7 +73,19 @@
                             @endif
                         </div>
                     </td>
-                    <td><strong>{{ $guide->title }}</strong></td>
+                    <td>
+                        <div class="doc-title-cell">
+                            <button type="button"
+                                    class="doc-rename-handle"
+                                    title="Rename teaching guide"
+                                    aria-label="Rename {{ $guide->title }}"
+                                    onclick="openRenameSubmissionModal({{ $guide->id }}, @js($guide->title))">
+                                <i class="fas fa-pen" aria-hidden="true"></i>
+                                <span class="doc-rename-label">Rename</span>
+                            </button>
+                            <strong class="doc-title-text" id="tg-title-{{ $guide->id }}">{{ $guide->title }}</strong>
+                        </div>
+                    </td>
                     <td><span class="doc-category-badge">{{ $guide->subject }}</span></td>
                     <td class="text-xs text-gray-600 dark:text-gray-400">{{ $guide->folder?->folder_name ?? '—' }}</td>
                     <td>{{ $guide->created_at->format('M d, Y') }}</td>
@@ -85,6 +97,12 @@
                             <a href="{{ route('faculty.teaching-guides.download', $guide->id) }}" class="btn btn-action-download text-xs">
                                 <i class="fas fa-download"></i> Download
                             </a>
+                            <form id="delete-tg-{{ $guide->id }}" action="{{ route('faculty.teaching-guides.destroy', $guide->id) }}" method="POST" class="d-inline">
+                                @csrf @method('DELETE')
+                            </form>
+                            <button type="button" onclick="confirmSubmissionDelete('tg', {{ $guide->id }})" class="btn btn-danger text-xs">
+                                <i class="fas fa-trash"></i> Delete
+                            </button>
                         </div>
                     </td>
                 </tr>
@@ -135,4 +153,35 @@
         </table>
     </div>
     @endif
+
+    @include('partials.rename-submission-modal', [
+        'renameRouteSample' => route('faculty.teaching-guides.rename', ['id' => 1]),
+        'titleIdPrefix' => 'tg-title-',
+    ])
 @endsection
+
+@push('scripts')
+<script>
+function confirmSubmissionDelete(kind, id) {
+    const label = kind === 'tg' ? 'teaching guide' : 'exam questionnaire';
+    Swal.fire({
+        title: 'Delete ' + label + '?',
+        text: kind === 'tg'
+            ? 'This removes the guide from your list. If it was shared in Documents, it will move to Recycle Bin.'
+            : 'This removes the questionnaire from your list. If it was shared in Documents, it will move to Recycle Bin.',
+        icon: 'warning',
+        showCancelButton: true,
+        confirmButtonText: 'Yes, delete it',
+        cancelButtonText: 'Cancel',
+        confirmButtonColor: '#dc2626',
+        cancelButtonColor: '#6b7280',
+        customClass: { popup: 'swal-flat' }
+    }).then((result) => {
+        if (result.isConfirmed) {
+            const form = document.getElementById('delete-' + kind + '-' + id);
+            if (form) form.submit();
+        }
+    });
+}
+</script>
+@endpush

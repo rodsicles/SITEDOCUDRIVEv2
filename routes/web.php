@@ -134,6 +134,7 @@ Route::middleware(['auth', 'no.back', 'role:Dean,Secretary'])->prefix('dean')->n
     Route::get('/notifications/unread-count', [DeanController::class, 'unreadNotificationCount'])->name('notifications.unread-count');
     Route::post('/notifications/{id}/read-json', [DeanController::class, 'markNotificationReadJson'])->middleware('throttle:120,1')->name('notifications.read-json');
     Route::post('/notifications/{id}/read', [DeanController::class, 'markNotificationRead'])->middleware('throttle:120,1')->name('mark-notification-read');
+    Route::post('/notifications/mark-all-read', [DeanController::class, 'markAllNotificationsRead'])->middleware('throttle:30,1')->name('notifications.mark-all-read');
 
     Route::post('/insight/refresh', [DeanController::class, 'refreshInsight'])
         ->middleware('throttle:6,1')
@@ -212,6 +213,7 @@ Route::middleware(['auth', 'no.back', 'role:Program Coordinator'])->prefix('coor
     Route::get('/notifications/unread-count', [CoordinatorController::class, 'unreadNotificationCount'])->name('notifications.unread-count');
     Route::post('/notifications/{id}/read-json', [CoordinatorController::class, 'markNotificationReadJson'])->middleware('throttle:120,1')->name('notifications.read-json');
     Route::post('/notifications/{id}/read', [CoordinatorController::class, 'markNotificationRead'])->middleware('throttle:120,1')->name('mark-notification-read');
+    Route::post('/notifications/mark-all-read', [CoordinatorController::class, 'markAllNotificationsRead'])->middleware('throttle:30,1')->name('notifications.mark-all-read');
     
     // Faculty Management
     Route::get('/faculty', [CoordinatorController::class, 'faculty'])->name('faculty');
@@ -277,6 +279,7 @@ Route::middleware(['auth', 'no.back', 'role:Faculty Employee'])->prefix('faculty
     Route::get('/folders/list', [FolderController::class, 'getUserFolders'])->name('folders.list');
     Route::post('/documents/{document}/move', [FolderController::class, 'moveDocument'])->name('documents.move');
     Route::post('/notifications/{id}/read', [FacultyController::class, 'markNotificationRead'])->middleware('throttle:120,1')->name('mark-notification-read');
+    Route::post('/notifications/mark-all-read', [FacultyController::class, 'markAllNotificationsRead'])->middleware('throttle:30,1')->name('notifications.mark-all-read');
     
     // Documents - Rate Limited: 6 uploads per hour
     Route::get('/documents', [FacultyController::class, 'documents'])->name('documents');
@@ -298,11 +301,14 @@ Route::middleware(['auth', 'no.back', 'role:Faculty Employee'])->prefix('faculty
     Route::get('/teaching-guides', [TeachingGuideController::class, 'index'])->name('teaching-guides.index');
     Route::get('/teaching-guides/{id}/view', [TeachingGuideController::class, 'view'])->name('teaching-guides.view');
     Route::get('/teaching-guides/{id}/download', [TeachingGuideController::class, 'download'])->name('teaching-guides.download');
+    Route::patch('/teaching-guides/{id}/rename', [TeachingGuideController::class, 'rename'])->middleware('throttle:60,1')->name('teaching-guides.rename');
+    Route::delete('/teaching-guides/{id}', [TeachingGuideController::class, 'destroy'])->name('teaching-guides.destroy');
 
     // Exam Questionnaires (Faculty: upload via Documents; view approved + track pending)
     Route::get('/exam-questionnaires', [ExamQuestionnaireController::class, 'index'])->name('exam-questionnaires.index');
     Route::get('/exam-questionnaires/{id}/view', [ExamQuestionnaireController::class, 'view'])->name('exam-questionnaires.view');
     Route::get('/exam-questionnaires/{id}/download', [ExamQuestionnaireController::class, 'download'])->name('exam-questionnaires.download');
+    Route::patch('/exam-questionnaires/{id}/rename', [ExamQuestionnaireController::class, 'rename'])->middleware('throttle:60,1')->name('exam-questionnaires.rename');
     Route::delete('/exam-questionnaires/{id}', [ExamQuestionnaireController::class, 'destroy'])->name('exam-questionnaires.destroy');
     Route::get('/activity-log', [FacultyController::class, 'activityLog'])->name('activity-log');
 

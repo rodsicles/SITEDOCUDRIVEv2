@@ -6,6 +6,8 @@ use App\Models\ExamQuestionnaire;
 use App\Models\SchoolYear;
 use App\Services\AcademicHierarchyService;
 use App\Services\ExamQuestionnaireSyncService;
+use App\Models\Document;
+use App\Services\DocumentService;
 use App\Services\NotificationService;
 use App\Support\AcademicYear;
 use App\Support\IteSubjects;
@@ -264,16 +266,51 @@ class ExamQuestionnaireController extends Controller
         return back()->with('success', 'Questionnaire rejected.');
     }
 
+    public function rename(\App\Http\Requests\RenameDocumentRequest $request, $id)
+    {
+        $user = auth()->user();
+        $questionnaire = ExamQuestionnaire::visibleTo($user)->findOrFail($id);
+
+        if ($user->isFaculty() && (int) $questionnaire->submitted_by !== (int) $user->id) {
+            abort(403, 'You can only rename your own exam questionnaires.');
+        }
+
+        $title = $request->validated('document_title');
+
+        if ($questionnaire->document_id) {
+            $document = app(DocumentService::class)->renameDocument((int) $questionnaire->document_id, $user, $title);
+            $title = $document->document_title;
+        } else {
+            $questionnaire->update(['title' => $title]);
+        }
+
+        return response()->json([
+            'success' => true,
+            'message' => 'Exam questionnaire renamed successfully.',
+            'document_title' => $title,
+        ]);
+    }
+
     public function destroy($id)
     {
         $user = auth()->user();
         $questionnaire = ExamQuestionnaire::visibleTo($user)->findOrFail($id);
 
-        if ($user->isFaculty() && !$questionnaire->isPending()) {
-            abort(403);
+        if ($user->isFaculty() && (int) $questionnaire->submitted_by !== (int) $user->id) {
+            abort(403, 'You can only delete your own exam questionnaires.');
         }
 
-        UploadStorage::delete($questionnaire->file_path);
+        if ($questionnaire->document_id) {
+            $document = Document::find($questionnaire->document_id);
+            if ($document && ($user->isDeanOrSecretary() || (int) $document->uploaded_by === (int) $user->id)) {
+                app(DocumentService::class)->deleteDocument((int) $questionnaire->document_id, $user);
+            }
+        }
+
+        if ($questionnaire->file_path && UploadStorage::exists($questionnaire->file_path)) {
+            UploadStorage::delete($questionnaire->file_path);
+        }
+
         $questionnaire->delete();
 
         return back()->with('success', 'Questionnaire deleted.');

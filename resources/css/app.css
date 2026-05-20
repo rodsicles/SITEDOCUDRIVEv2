@@ -920,11 +920,13 @@ body {
     display: inline-block;
 }
 
-.course-menu-toggle {
+.course-catalog-actions-btn {
     display: inline-flex;
     align-items: center;
     justify-content: center;
-    padding: 0.5rem;
+    width: 2rem;
+    height: 2rem;
+    padding: 0;
     border: none;
     background: transparent;
     border-radius: 0.375rem;
@@ -933,43 +935,51 @@ body {
     transition: background-color 0.15s ease;
 }
 
-.course-menu-toggle:hover {
+.course-catalog-actions-btn:hover,
+.course-catalog-actions-btn[aria-expanded="true"] {
     background: #e5e7eb;
 }
 
-.dark .course-menu-toggle {
+.dark .course-catalog-actions-btn {
     color: #d1d5db;
 }
 
-.dark .course-menu-toggle:hover {
+.dark .course-catalog-actions-btn:hover,
+.dark .course-catalog-actions-btn[aria-expanded="true"] {
     background: #374151;
 }
 
-.course-menu-dropdown {
-    display: none;
+/* Popover: never use class names containing "menu" — global sidebar rules targeted [class*="menu"] */
+.course-catalog-popover {
+    display: none !important;
+    visibility: hidden !important;
+    pointer-events: none !important;
     position: absolute;
     right: 0;
     top: calc(100% + 4px);
     min-width: 9.5rem;
     z-index: 200;
     padding: 0.25rem 0;
+    margin: 0;
+    list-style: none;
     background: #fff;
     border: 1px solid #e5e7eb;
     border-radius: 0.5rem;
     box-shadow: 0 10px 25px rgba(0, 0, 0, 0.12);
 }
 
-.dark .course-menu-dropdown {
+.dark .course-catalog-popover {
     background: #2a2a2a;
     border-color: #4b5563;
 }
 
-.course-menu-dropdown.is-open {
-    display: block;
+.course-catalog-popover.is-open {
+    display: block !important;
+    visibility: visible !important;
+    pointer-events: auto !important;
 }
 
-.course-menu-dropdown button,
-.course-menu-dropdown form button {
+.course-catalog-popover .course-catalog-popover-item {
     display: flex;
     align-items: center;
     gap: 0.5rem;
@@ -981,29 +991,32 @@ body {
     text-align: left;
     cursor: pointer;
     color: #374151;
+    box-sizing: border-box;
 }
 
-.dark .course-menu-dropdown button,
-.dark .course-menu-dropdown form button {
+.dark .course-catalog-popover .course-catalog-popover-item {
     color: #e5e7eb;
 }
 
-.course-menu-dropdown button:hover,
-.course-menu-dropdown form button:hover {
+.course-catalog-popover .course-catalog-popover-item:hover {
     background: #f3f4f6;
 }
 
-.dark .course-menu-dropdown button:hover,
-.dark .course-menu-dropdown form button:hover {
+.dark .course-catalog-popover .course-catalog-popover-item:hover {
     background: #374151;
 }
 
-.course-menu-dropdown .course-menu-remove {
+.course-catalog-popover .course-catalog-action-remove {
     color: #dc2626;
 }
 
-.course-menu-dropdown .course-menu-restore {
+.course-catalog-popover .course-catalog-action-restore {
     color: #16a34a;
+}
+
+.course-catalog-popover form {
+    margin: 0;
+    padding: 0;
 }
 
 #renameModal {
@@ -2181,16 +2194,15 @@ body {
         flex: 0 0 auto !important;
     }
 
-    .menu-item,
-    .sidebar-section-label,
-    [class*="menu"] {
+    .sidebar .menu-item,
+    .sidebar .sidebar-section-label {
         max-height: none !important;
         overflow: visible !important;
         display: flex !important;
         flex-shrink: 0 !important;
     }
 
-    .sidebar-section-label {
+    .sidebar .sidebar-section-label {
         display: block !important;
     }
 

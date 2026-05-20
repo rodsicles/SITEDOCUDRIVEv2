@@ -116,32 +116,42 @@
                     </td>
                     <td class="text-right course-action-cell">
                         <div class="course-action-wrap">
-                            <button type="button" class="course-menu-toggle" data-course-id="{{ $course->id }}" aria-label="Course actions" aria-expanded="false" aria-haspopup="true">
-                                <i class="fas fa-ellipsis-v"></i>
+                            <button type="button"
+                                    class="course-catalog-actions-btn"
+                                    data-course-id="{{ $course->id }}"
+                                    aria-label="Actions for {{ $course->code }}"
+                                    aria-expanded="false"
+                                    aria-haspopup="true"
+                                    aria-controls="course-popover-{{ $course->id }}">
+                                <i class="fas fa-ellipsis-v" aria-hidden="true"></i>
                             </button>
-                            <div class="course-menu-dropdown" data-menu-id="{{ $course->id }}" role="menu">
+                            <div id="course-popover-{{ $course->id }}"
+                                 class="course-catalog-popover"
+                                 data-popover-id="{{ $course->id }}"
+                                 role="menu"
+                                 hidden>
                                 <button type="button"
-                                        class="course-rename-btn"
+                                        class="course-catalog-popover-item course-catalog-rename-btn"
                                         data-id="{{ $course->id }}"
                                         data-code="{{ $course->code }}"
                                         data-title="{{ $course->title }}"
                                         role="menuitem">
-                                    <i class="fas fa-pen text-xs"></i> Rename
+                                    <i class="fas fa-pen text-xs" aria-hidden="true"></i> Rename
                                 </button>
                                 @if($course->is_active)
                                 <form action="{{ route('dean.courses.destroy', $course) }}" method="POST"
                                       onsubmit="return confirm('Remove this course from faculty upload choices?');">
                                     @csrf
                                     @method('DELETE')
-                                    <button type="submit" class="course-menu-remove" role="menuitem">
-                                        <i class="fas fa-trash text-xs"></i> Remove
+                                    <button type="submit" class="course-catalog-popover-item course-catalog-action-remove" role="menuitem">
+                                        <i class="fas fa-trash text-xs" aria-hidden="true"></i> Remove
                                     </button>
                                 </form>
                                 @else
                                 <form action="{{ route('dean.courses.restore', $course) }}" method="POST">
                                     @csrf
-                                    <button type="submit" class="course-menu-restore" role="menuitem">
-                                        <i class="fas fa-undo text-xs"></i> Restore
+                                    <button type="submit" class="course-catalog-popover-item course-catalog-action-restore" role="menuitem">
+                                        <i class="fas fa-undo text-xs" aria-hidden="true"></i> Restore
                                     </button>
                                 </form>
                                 @endif
@@ -203,52 +213,60 @@
     document.addEventListener('DOMContentLoaded', function () {
         var renameModal = document.getElementById('renameModal');
 
-        function closeAllMenus() {
-            document.querySelectorAll('.course-menu-dropdown').forEach(function (m) {
-                m.classList.remove('is-open');
-            });
-            document.querySelectorAll('.course-menu-toggle').forEach(function (btn) {
-                btn.setAttribute('aria-expanded', 'false');
+        function closePopover(popover, toggleBtn) {
+            if (!popover) return;
+            popover.classList.remove('is-open');
+            popover.setAttribute('hidden', '');
+            if (toggleBtn) toggleBtn.setAttribute('aria-expanded', 'false');
+        }
+
+        function closeAllPopovers() {
+            document.querySelectorAll('.course-catalog-popover').forEach(function (popover) {
+                var id = popover.dataset.popoverId;
+                var btn = document.querySelector('.course-catalog-actions-btn[data-course-id="' + id + '"]');
+                closePopover(popover, btn);
             });
         }
 
-        function openMenu(menu, toggleBtn) {
-            closeAllMenus();
-            menu.classList.add('is-open');
+        function openPopover(popover, toggleBtn) {
+            closeAllPopovers();
+            popover.classList.add('is-open');
+            popover.removeAttribute('hidden');
             toggleBtn.setAttribute('aria-expanded', 'true');
         }
 
-        document.querySelectorAll('.course-menu-toggle').forEach(function (btn) {
+        document.querySelectorAll('.course-catalog-actions-btn').forEach(function (btn) {
             btn.addEventListener('click', function (e) {
+                e.preventDefault();
                 e.stopPropagation();
                 var id = btn.dataset.courseId;
-                var menu = document.querySelector('.course-menu-dropdown[data-menu-id="' + id + '"]');
-                if (!menu) return;
-                if (menu.classList.contains('is-open')) {
-                    closeAllMenus();
+                var popover = document.getElementById('course-popover-' + id);
+                if (!popover) return;
+                if (popover.classList.contains('is-open')) {
+                    closePopover(popover, btn);
                 } else {
-                    openMenu(menu, btn);
+                    openPopover(popover, btn);
                 }
             });
         });
 
         document.addEventListener('click', function (e) {
             if (!e.target.closest('.course-action-wrap')) {
-                closeAllMenus();
+                closeAllPopovers();
             }
         });
 
         document.addEventListener('keydown', function (e) {
             if (e.key === 'Escape') {
-                closeAllMenus();
+                closeAllPopovers();
                 if (renameModal) renameModal.classList.remove('is-open');
             }
         });
 
-        document.querySelectorAll('.course-rename-btn').forEach(function (btn) {
+        document.querySelectorAll('.course-catalog-rename-btn').forEach(function (btn) {
             btn.addEventListener('click', function (e) {
                 e.stopPropagation();
-                closeAllMenus();
+                closeAllPopovers();
                 document.getElementById('renameCode').value = btn.dataset.code;
                 document.getElementById('renameTitle').value = btn.dataset.title;
                 document.getElementById('renameForm').action = '/dean/courses/' + btn.dataset.id;

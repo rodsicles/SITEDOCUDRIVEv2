@@ -7,6 +7,7 @@
         default => 'coordinator',
     };
     $unreadCount = (int) ($unreadNotifications ?? app(DashboardService::class)->getUnreadNotificationCount(auth()->id()));
+    $showActionColumn = $unreadCount > 0 && $notifications->contains(fn ($n) => ! $n->is_read);
 @endphp
 
 <div class="content-card">
@@ -52,15 +53,19 @@
         @endif
     </form>
 
-    <p class="text-xs text-gray-500 dark:text-gray-400 mb-3 px-4 hidden md:block">Tip: click an unread row to mark it as read</p>
+    @if($showActionColumn)
+    <p class="text-xs text-gray-500 dark:text-gray-400 mb-3 px-4 hidden md:block notifications-table-tip">Tip: click an unread row to mark it as read</p>
+    @endif
 
-    <table class="data-table" id="notifications-table">
+    <table class="data-table notifications-table {{ $showActionColumn ? '' : 'notifications-table--no-actions' }}" id="notifications-table">
         <thead>
             <tr>
                 <th>Message</th>
                 <th>Date & Time</th>
                 <th>Status</th>
-                <th>Action</th>
+                @if($showActionColumn)
+                <th class="notifications-table__action-col">Action</th>
+                @endif
             </tr>
         </thead>
         <tbody>
@@ -98,7 +103,8 @@
                         <span class="badge badge-warning">Unread</span>
                     @endif
                 </td>
-                <td>
+                @if($showActionColumn)
+                <td class="notifications-table__action-col">
                     @if(!$notification->is_read)
                     <form action="{{ route($routePrefix . '.mark-notification-read', $notification->notification_id) }}" method="POST" onclick="event.stopPropagation();">
                         @csrf
@@ -108,10 +114,11 @@
                     </form>
                     @endif
                 </td>
+                @endif
             </tr>
             @empty
             <tr>
-                <td colspan="4" class="text-center text-gray-500 dark:text-gray-400">
+                <td colspan="{{ $showActionColumn ? 4 : 3 }}" class="text-center text-gray-500 dark:text-gray-400">
                     No notifications match your filters.
                 </td>
             </tr>
@@ -123,3 +130,72 @@
         {{ $notifications->links('partials.pagination') }}
     </div>
 </div>
+
+@once
+@push('scripts')
+<script>
+(function() {
+    const csrf = document.querySelector('meta[name="csrf-token"]')?.getAttribute('content');
+
+    function syncNotificationActionColumn() {
+        const table = document.getElementById('notifications-table');
+        if (!table) return;
+        const hasUnread = table.querySelector('.notification-row[data-mark-url]');
+        if (!hasUnread) {
+            table.classList.add('notifications-table--no-actions');
+            table.querySelectorAll('.notifications-table__action-col').forEach(function(el) {
+                el.remove();
+            });
+            const tip = document.querySelector('.notifications-table-tip');
+            if (tip) tip.remove();
+        }
+    }
+
+    document.querySelectorAll('.notification-row[data-mark-url]').forEach(function(row) {
+        row.addEventListener('click', function(e) {
+            if (e.target.closest('form, button, a')) return;
+            const url = row.getAttribute('data-mark-url');
+            if (!url || row.dataset.busy === '1') return;
+            row.dataset.busy = '1';
+            fetch(url, {
+                method: 'POST',
+                headers: {
+                    'X-CSRF-TOKEN': csrf,
+                    'Accept': 'application/json',
+                    'X-Requested-With': 'XMLHttpRequest'
+                }
+            })
+            .then(function(res) { return res.ok ? res.json() : Promise.reject(); })
+            .then(function() {
+                row.classList.remove('bg-[#028a0f]/5', 'dark:bg-[#028a0f]/10', 'cursor-pointer', 'notification-row--success', 'notification-row--danger');
+                row.removeAttribute('data-mark-url');
+                row.removeAttribute('data-tone');
+                row.removeAttribute('title');
+                const msgCell = row.querySelector('td:first-child');
+                if (msgCell) {
+                    msgCell.classList.remove('font-semibold');
+                    const dot = msgCell.querySelector('.notification-dot, span.inline-block.w-2.h-2');
+                    if (dot) dot.remove();
+                }
+                const statusBadge = row.querySelector('td .badge');
+                if (statusBadge) {
+                    statusBadge.classList.remove('badge-warning');
+                    statusBadge.classList.add('badge-success');
+                    statusBadge.textContent = 'Read';
+                }
+                const actionCell = row.querySelector('.notifications-table__action-col');
+                if (actionCell) actionCell.remove();
+                syncNotificationActionColumn();
+                if (typeof window.refreshNotificationBadge === 'function') {
+                    window.refreshNotificationBadge();
+                }
+            })
+            .catch(function() { row.dataset.busy = ''; });
+        });
+    });
+
+    syncNotificationActionColumn();
+})();
+</script>
+@endpush
+@endonce

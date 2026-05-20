@@ -122,6 +122,7 @@ Route::middleware(['auth', 'no.back', 'role:Dean,Secretary'])->prefix('dean')->n
 
     Route::get('/courses', [DeanCourseController::class, 'index'])->name('courses');
     Route::post('/courses', [DeanCourseController::class, 'store'])->name('courses.store');
+    Route::patch('/courses/{course}', [DeanCourseController::class, 'update'])->name('courses.update');
     Route::delete('/courses/{course}', [DeanCourseController::class, 'destroy'])->name('courses.destroy');
     Route::post('/courses/{course}/restore', [DeanCourseController::class, 'restore'])->name('courses.restore');
 

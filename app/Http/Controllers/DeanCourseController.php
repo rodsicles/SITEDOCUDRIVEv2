@@ -47,6 +47,29 @@ class DeanCourseController extends Controller
         return back()->with('success', 'Course added. Faculty and coordinators in that department can now select it when uploading.');
     }
 
+    public function update(Request $request, Course $course)
+    {
+        $validated = $request->validate([
+            'code' => ['required', 'string', 'max:20', 'regex:/^[A-Za-z]{2,4}\d{2,4}$/'],
+            'title' => 'required|string|max:150',
+        ]);
+
+        $newCode = strtoupper(trim($validated['code']));
+
+        $duplicate = Course::where('code', $newCode)
+            ->where('department', $course->department)
+            ->where('id', '!=', $course->id)
+            ->exists();
+
+        if ($duplicate) {
+            return back()->with('error', "Course code {$newCode} already exists in {$course->department}.");
+        }
+
+        $this->courseService->rename($course, $newCode, trim($validated['title']), auth()->id());
+
+        return back()->with('success', 'Course updated successfully.');
+    }
+
     public function destroy(Course $course)
     {
         $this->courseService->deactivate($course, auth()->id());

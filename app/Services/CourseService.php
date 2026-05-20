@@ -13,7 +13,9 @@ class CourseService
     {
         $query = Course::query()->ordered();
 
-        if ($departmentFilter && $departmentFilter !== 'all') {
+        if ($departmentFilter === 'inactive') {
+            $query->where('is_active', false);
+        } elseif ($departmentFilter && $departmentFilter !== 'all') {
             $map = [
                 'it' => Course::DEPT_IT,
                 'engineering' => Course::DEPT_ENGINEERING,
@@ -56,6 +58,19 @@ class CourseService
         ]);
 
         return $course;
+    }
+
+    public function rename(Course $course, string $newCode, string $newTitle, int $deanUserId): void
+    {
+        $oldLabel = $course->label();
+        $course->update(['code' => $newCode, 'title' => $newTitle]);
+
+        DashboardLog::create([
+            'user_id' => $deanUserId,
+            'activity' => "Renamed course {$oldLabel} → {$course->label()}",
+            'activity_type' => 'course_renamed',
+            'visibility' => 'dean',
+        ]);
     }
 
     public function deactivate(Course $course, int $deanUserId): void

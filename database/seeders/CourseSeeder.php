@@ -9,12 +9,19 @@ class CourseSeeder extends Seeder
 {
     public function run(): void
     {
+        $this->seedDepartment(Course::DEPT_IT, 'ite_subjects');
+        $this->seedDepartment(Course::DEPT_ENGINEERING, 'engineering_subjects');
+    }
+
+    private function seedDepartment(string $department, string $configKey): void
+    {
         $sort = 0;
-        foreach (config('ite_subjects', []) as $code => $title) {
+
+        foreach (config($configKey, []) as $code => $title) {
             Course::updateOrCreate(
                 [
-                    'code' => strtoupper($code),
-                    'department' => Course::DEPT_IT,
+                    'code' => $code,
+                    'department' => $department,
                 ],
                 [
                     'title' => $title,

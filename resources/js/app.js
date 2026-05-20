@@ -38,8 +38,8 @@ document.addEventListener('DOMContentLoaded', function() {
         }
     });
 
-    // Form submit guard (skip forms with dedicated data-request-guard handling)
-    const forms = document.querySelectorAll('form:not([data-request-guard])');
+    // Form submit guard (skip forms with custom AJAX submit or data-request-guard)
+    const forms = document.querySelectorAll('form:not([data-request-guard]):not([data-custom-submit])');
     forms.forEach(form => {
         form.addEventListener('submit', function () {
             if (window.requestGuard && !window.requestGuard.canProceed(form.action || 'form')) {

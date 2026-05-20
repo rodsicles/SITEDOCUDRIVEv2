@@ -1,22 +1,28 @@
-{{-- Searchable ITE course subject picker (Information Technology) --}}
+{{-- Searchable department course subject picker (ITE / Engineering) --}}
 @php
     $pickerId = $pickerId ?? 'iteSubjectPicker';
-    $subjects = $subjects ?? \App\Support\IteSubjects::labelsForUser(auth()->user());
+    $pickerUser = auth()->user();
+    $pickerMeta = \App\Support\IteSubjects::pickerMetaForUser($pickerUser);
+    $subjects = $subjects ?? \App\Support\IteSubjects::labelsForUser($pickerUser);
     $required = $required ?? true;
-    $label = $label ?? 'Subject (ITE Course)';
+    $label = $label ?? $pickerMeta['label'];
+    $hint = $hint ?? $pickerMeta['hint'];
+    $placeholder = $placeholder ?? $pickerMeta['placeholder'];
+    $validateMessage = $validateMessage ?? $pickerMeta['validateMessage'];
+    $ariaLabel = $ariaLabel ?? $pickerMeta['ariaLabel'];
     $compact = $compact ?? false;
     $inlineSubmit = $inlineSubmit ?? false;
 @endphp
 <div class="form-group {{ $compact ? '' : 'md:col-span-2' }} ite-subject-picker" id="{{ $pickerId }}">
     <label class="form-label" for="{{ $pickerId }}Search">{{ $label }} @if($required)<span class="text-red-500">*</span>@endif</label>
-    <p class="text-xs text-gray-500 dark:text-gray-400 mb-2">Information Technology courses only. Search by code or title.</p>
+    <p class="text-xs text-gray-500 dark:text-gray-400 mb-2">{{ $hint }}</p>
     <input type="hidden" name="subject" id="{{ $pickerId }}Value" value="{{ old('subject') }}" @if($required) required @endif>
     <div class="ite-subject-picker-field relative {{ $inlineSubmit ? 'ite-subject-picker-field--inline-action' : '' }}">
         <input
             type="text"
             id="{{ $pickerId }}Search"
             class="form-control ite-subject-search"
-            placeholder="Search e.g. ITE108, Web Systems..."
+            placeholder="{{ $placeholder }}"
             autocomplete="off"
             value="{{ old('subject') }}"
             aria-autocomplete="list"
@@ -33,7 +39,7 @@
             id="{{ $pickerId }}Results"
             class="ite-subject-results hidden"
             role="listbox"
-            aria-label="ITE courses"
+            aria-label="{{ $ariaLabel }}"
         ></div>
     </div>
     @error('subject')<span class="text-red-500 text-xs block mt-1">{{ $message }}</span>@enderror
@@ -45,6 +51,7 @@
 (function() {
     const pickerId = @json($pickerId);
     const subjects = @json($subjects);
+    const validateMessage = @json($validateMessage);
     const root = document.getElementById(pickerId);
     const searchInput = document.getElementById(pickerId + 'Search');
     const hiddenInput = document.getElementById(pickerId + 'Value');
@@ -139,7 +146,11 @@
 
     window[pickerId + 'Validate'] = function() {
         if (!hiddenInput.value || !subjects.includes(hiddenInput.value)) {
-            alert('Please select a valid ITE subject from the list.');
+            if (typeof showToast === 'function') {
+                showToast(validateMessage, 'error');
+            } else {
+                alert(validateMessage);
+            }
             searchInput.focus();
             return false;
         }

@@ -556,18 +556,45 @@
                         wrapper.style.color = '#475569';
                     })
                 );
+                const fileMatchesAccept = (file, acceptAttr) => {
+                    if (!acceptAttr) return true;
+                    const ext = (file.name || '').toLowerCase().split('.').pop();
+                    const tokens = acceptAttr.split(',').map(t => t.trim().toLowerCase()).filter(Boolean);
+                    return tokens.some(token => {
+                        if (token.startsWith('.')) return ext === token.slice(1);
+                        if (token.includes('/')) {
+                            if (token.endsWith('/*')) {
+                                const prefix = token.slice(0, token.indexOf('/'));
+                                return (file.type || '').toLowerCase().startsWith(prefix + '/');
+                            }
+                            return (file.type || '').toLowerCase() === token;
+                        }
+                        return false;
+                    });
+                };
+
                 wrapper.addEventListener('drop', e => {
                     if (!e.dataTransfer || !e.dataTransfer.files || !e.dataTransfer.files.length) return;
-                    // Use DataTransfer to assign dropped files to the input.
                     try {
                         const dt = new DataTransfer();
                         const acceptMultiple = input.multiple;
-                        const files = acceptMultiple ? Array.from(e.dataTransfer.files) : [e.dataTransfer.files[0]];
-                        files.forEach(f => dt.items.add(f));
+                        const acceptAttr = input.getAttribute('accept') || '';
+                        let dropped = acceptMultiple ? Array.from(e.dataTransfer.files) : [e.dataTransfer.files[0]];
+                        const rejected = [];
+                        dropped = dropped.filter(f => {
+                            if (fileMatchesAccept(f, acceptAttr)) return true;
+                            rejected.push(f.name);
+                            return false;
+                        });
+                        if (rejected.length && typeof showToast === 'function') {
+                            const hint = acceptAttr.includes('pdf') ? 'PDF only' : (acceptAttr.includes('doc') ? 'Word only' : 'this type');
+                            showToast(rejected.join(', ') + ' cannot be added. ' + hint + '.', 'error');
+                        }
+                        if (!dropped.length) return;
+                        dropped.forEach(f => dt.items.add(f));
                         input.files = dt.files;
                         input.dispatchEvent(new Event('change', { bubbles: true }));
                     } catch (err) {
-                        // Older browsers: fall back to triggering click so user picks again.
                         console.warn('Drop assignment unsupported, fallback to click:', err);
                     }
                 });

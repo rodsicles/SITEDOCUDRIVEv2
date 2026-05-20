@@ -1,7 +1,7 @@
 @php
     $docTitleMax = \App\Support\DocumentNaming::TITLE_MAX_LENGTH;
 @endphp
-<form action="{{ route($role . '.upload-document') }}" method="POST" enctype="multipart/form-data" id="folderUploadForm" class="hidden mb-4 overflow-visible" style="border: 1px solid #e0e0e0; padding: 16px; background: #f9fafb;">
+<form action="{{ route($role . '.upload-document') }}" method="POST" enctype="multipart/form-data" id="folderUploadForm" data-custom-submit class="hidden mb-4 overflow-visible" style="border: 1px solid #e0e0e0; padding: 16px; background: #f9fafb;">
     @csrf
     <input type="hidden" name="folder_id" value="{{ $currentFolder->folder_id }}">
     <div class="grid grid-cols-1 md:grid-cols-2 gap-4 mb-4">
@@ -93,6 +93,7 @@
             <small id="folderFileHelp" class="text-xs text-gray-500 dark:text-gray-400 mt-1">
                 <i class="fas fa-lock"></i> Select Document Type first
             </small>
+            <p id="folderFileError" class="text-xs text-red-600 dark:text-red-400 mt-1 hidden" role="alert"></p>
         </div>
     </div>
     <div class="flex gap-2">

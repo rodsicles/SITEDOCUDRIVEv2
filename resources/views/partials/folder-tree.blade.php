@@ -811,6 +811,106 @@
         }
     }
 
+    function folderFileExtension(name) {
+        const parts = (name || '').toLowerCase().split('.');
+        return parts.length > 1 ? parts.pop() : '';
+    }
+
+    function folderFileMatchesType(file, docType) {
+        const ext = folderFileExtension(file.name);
+        if (docType === 'pdf') return ext === 'pdf';
+        if (docType === 'word') return ext === 'doc' || ext === 'docx';
+        return false;
+    }
+
+    function folderUploadSubmitBtn() {
+        const form = document.getElementById('folderUploadForm');
+        return form ? form.querySelector('button[type="submit"]') : null;
+    }
+
+    function resetFolderUploadSubmitBtn() {
+        const btn = folderUploadSubmitBtn();
+        if (!btn) return;
+        btn.disabled = false;
+        btn.innerHTML = btn.dataset.originalHtml || '<i class="fas fa-upload"></i> Upload';
+    }
+
+    function setFolderFileError(message) {
+        const errEl = document.getElementById('folderFileError');
+        if (!errEl) return;
+        if (message) {
+            errEl.textContent = message;
+            errEl.classList.remove('hidden');
+        } else {
+            errEl.textContent = '';
+            errEl.classList.add('hidden');
+        }
+    }
+
+    function folderUploadFail(message) {
+        if (typeof showToast === 'function') showToast(message, 'error');
+        setFolderFileError(message);
+        resetFolderUploadSubmitBtn();
+    }
+
+    function applyFolderFileInputFiles(fileInput, fileList) {
+        const dt = new DataTransfer();
+        Array.from(fileList).slice(0, 3).forEach(f => dt.items.add(f));
+        fileInput.files = dt.files;
+        fileInput.dispatchEvent(new Event('change', { bubbles: true }));
+    }
+
+    function validateFolderSelectedFiles(showMessage) {
+        const docType = document.getElementById('folderDocType')?.value;
+        const fileInput = document.getElementById('folderFileInput');
+        if (!fileInput) return { ok: false, message: 'File input not found.' };
+
+        if (!docType) {
+            fileInput.value = '';
+            setFolderFileError('');
+            return { ok: false, message: 'Please select a Document Type first.' };
+        }
+
+        const files = Array.from(fileInput.files || []);
+        if (files.length === 0) {
+            setFolderFileError('');
+            return { ok: false, message: 'Please choose at least one file.' };
+        }
+
+        const valid = [];
+        const rejected = [];
+        files.forEach(f => {
+            if (folderFileMatchesType(f, docType)) valid.push(f);
+            else rejected.push(f.name);
+        });
+
+        if (rejected.length) {
+            applyFolderFileInputFiles(fileInput, valid);
+            const typeLabel = docType === 'pdf' ? 'PDF (.pdf)' : 'Word (.doc, .docx)';
+            const msg = valid.length
+                ? 'Removed ' + rejected.join(', ') + '. Only ' + typeLabel + ' files are allowed.'
+                : rejected[0] + ' is not allowed. Choose ' + typeLabel + ' only.';
+            if (showMessage) {
+                setFolderFileError(msg);
+                if (typeof showToast === 'function') showToast(msg, 'error');
+            }
+            return { ok: valid.length > 0, message: msg, files: valid };
+        }
+
+        if (valid.length > 3) {
+            applyFolderFileInputFiles(fileInput, valid.slice(0, 3));
+            const msg = 'Maximum 3 files per upload.';
+            if (showMessage) {
+                setFolderFileError(msg);
+                if (typeof showToast === 'function') showToast(msg, 'error');
+            }
+            return { ok: true, message: msg, files: valid.slice(0, 3) };
+        }
+
+        setFolderFileError('');
+        return { ok: true, message: '', files: valid };
+    }
+
     document.getElementById('folderDocType')?.addEventListener('change', function() {
         const fileInput = document.getElementById('folderFileInput');
         const fileHelp = document.getElementById('folderFileHelp');
@@ -821,53 +921,63 @@
             fileInput.value = '';
             fileInput.removeAttribute('accept');
             fileHelp.innerHTML = '<i class="fas fa-lock"></i> Select Document Type first';
+            setFolderFileError('');
         } else if (type === 'pdf') {
             fileInput.disabled = false;
-            fileInput.setAttribute('accept', '.pdf');
+            fileInput.setAttribute('accept', '.pdf,application/pdf');
             fileHelp.innerHTML = '<i class="fas fa-file-pdf"></i> PDF files only (Max: 10MB)';
+            validateFolderSelectedFiles(true);
         } else if (type === 'word') {
             fileInput.disabled = false;
-            fileInput.setAttribute('accept', '.doc,.docx');
+            fileInput.setAttribute('accept', '.doc,.docx,application/msword,application/vnd.openxmlformats-officedocument.wordprocessingml.document');
             fileHelp.innerHTML = '<i class="fas fa-file-word"></i> DOC, DOCX only (Max: 10MB)';
+            validateFolderSelectedFiles(true);
         }
+        resetFolderUploadSubmitBtn();
+    });
+
+    document.getElementById('folderFileInput')?.addEventListener('change', function() {
+        validateFolderSelectedFiles(true);
+        resetFolderUploadSubmitBtn();
     });
 
     document.getElementById('folderUploadForm')?.addEventListener('submit', async function(e) {
         e.preventDefault();
-        const docType = document.getElementById('folderDocType').value;
-        const fileInput = document.getElementById('folderFileInput');
+        e.stopPropagation();
 
-        if (!docType) { alert('Please select a Document Type first!'); return; }
-        if (fileInput.files.length === 0) { alert('Please select at least one file!'); return; }
-        if (fileInput.files.length > 3) { alert('Maximum 3 files per upload.'); return; }
+        const submitBtn = this.querySelector('button[type="submit"]');
+        if (submitBtn && !submitBtn.dataset.originalHtml) {
+            submitBtn.dataset.originalHtml = submitBtn.innerHTML;
+        }
 
-        const files = fileInput.files;
-        for (let i = 0; i < files.length; i++) {
-            const ext = files[i].name.toLowerCase().split('.').pop();
-            if (docType === 'pdf' && ext !== 'pdf') { alert('File ' + files[i].name + ' is not a PDF.'); return; }
-            if (docType === 'word' && !['doc','docx'].includes(ext)) { alert('File ' + files[i].name + ' is not a Word document.'); return; }
+        const check = validateFolderSelectedFiles(true);
+        if (!check.ok) {
+            folderUploadFail(check.message || 'Please fix the selected files.');
+            return;
         }
 
         @if($useItSubjectPicker && !$useCourseSelect)
         if (typeof folderSubjectPickerValidate === 'function' && !folderSubjectPickerValidate()) {
+            resetFolderUploadSubmitBtn();
             return;
         }
         @endif
 
         @if($useCourseSelect)
         if (typeof folderCoursePickerValidate === 'function' && !folderCoursePickerValidate()) {
+            resetFolderUploadSubmitBtn();
             return;
         }
         @endif
 
         @if($shareableUploadTab)
         if (typeof folderRecipientPickerValidate === 'function' && !folderRecipientPickerValidate()) {
+            resetFolderUploadSubmitBtn();
             return;
         }
         @endif
 
-        const submitBtn = this.querySelector('button[type="submit"]');
-        const originalText = submitBtn.innerHTML;
+        const originalText = submitBtn.dataset.originalHtml || submitBtn.innerHTML;
         submitBtn.disabled = true;
         submitBtn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Uploading...';
 

@@ -49,17 +49,20 @@ class AppServiceProvider extends ServiceProvider
             ]);
         }
 
-        View::composer('layouts.dashboard', function ($view) {
-            $user = auth()->user();
-            if (!$user || (!$user->isFaculty() && !$user->isProgramCoordinator())) {
-                return;
-            }
+        View::composer(
+            ['layouts.dashboard', 'partials.dean-sidebar', 'partials.secretary-sidebar'],
+            function ($view) {
+                $user = auth()->user();
+                if (!$user || (!$user->isFaculty() && !$user->isProgramCoordinator() && !$user->isDeanOrSecretary())) {
+                    return;
+                }
 
-            $view->with(
-                'unreadNotifications',
-                app(DashboardService::class)->getUnreadNotificationCount($user->id),
-            );
-        });
+                $view->with(
+                    'unreadNotifications',
+                    app(DashboardService::class)->getUnreadNotificationCount($user->id),
+                );
+            },
+        );
 
         View::composer('partials.faculty-sidebar', function ($view) {
             $user = auth()->user();

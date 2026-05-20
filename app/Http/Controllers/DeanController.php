@@ -23,6 +23,7 @@ use Illuminate\Support\Facades\Hash;
 class DeanController extends Controller
 {
     use \App\Http\Controllers\Concerns\HandlesUploadExceptions;
+    use \App\Http\Controllers\Concerns\ManagesUserNotifications;
     use \App\Http\Controllers\Concerns\ValidatesDocumentUpload;
 
     public function __construct(
@@ -516,5 +517,10 @@ class DeanController extends Controller
             \Log::error('Password reset error: ' . $e->getMessage());
             return back()->withErrors(['error' => 'Failed to reset password.']);
         }
+    }
+
+    protected function notificationsView(): string
+    {
+        return 'dean.notifications';
     }
 }

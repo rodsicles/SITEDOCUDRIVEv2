@@ -11,6 +11,12 @@
 </a>
 
 <div class="sidebar-section-label">Communication</div>
+<a href="{{ route('dean.notifications') }}" class="menu-item {{ request()->routeIs('dean.notifications') ? 'active' : '' }}">
+    <i class="fas fa-bell"></i> Notifications
+    @if(isset($unreadNotifications) && $unreadNotifications > 0)
+    <span class="badge badge-danger ml-auto">{{ $unreadNotifications }}</span>
+    @endif
+</a>
 <a href="{{ route('announcements.index') }}" class="menu-item {{ request()->routeIs('announcements.index', 'announcements.show') ? 'active' : '' }}">
     <i class="fas fa-bullhorn"></i> Announcements
 </a>

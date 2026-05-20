@@ -1,105 +1,44 @@
-@extends('layouts.dashboard')
+﻿@extends('layouts.dashboard')
 
 @section('title', 'Exam Questionnaires - Faculty')
 @section('page-title', 'Exam Questionnaires')
-@section('page-subtitle', 'Submit your exam questionnaires for review')
+@section('page-subtitle', 'View approved questionnaires and track your submissions')
 
 @section('sidebar')
     @include('partials.faculty-sidebar')
 @endsection
 
 @section('content')
-
-    {{-- Current Semester Info Banner --}}
     @php
-        use App\Support\AcademicYear;
-        $ayStart = AcademicYear::currentStartYear();
-        $currentSem = AcademicYear::currentSemester() === '2nd' ? '2nd Semester' : '1st Semester';
-        $currentAY = AcademicYear::label($ayStart);
+        $month = now()->month;
+        $year  = now()->year;
+        $currentSem = $month >= 8 ? '1st Semester' : '2nd Semester';
+        $ayStart = $month >= 8 ? $year : $year - 1;
+        $currentAY = "AY {$ayStart}-" . ($ayStart + 1);
         $eqIndexRoute = route('faculty.exam-questionnaires.index');
     @endphp
-
     <div class="content-card mb-4" style="border-left: 3px solid #028a0f;">
         <div class="p-4 flex items-center gap-3">
-            <div class="stat-icon-horizontal"><i class="fas fa-calendar-check"></i></div>
+            <div class="stat-icon-horizontal"><i class="fas fa-info-circle"></i></div>
             <div>
-                <div class="font-semibold text-gray-700 dark:text-gray-200">
-                    Your submission will be tagged: <span style="color:#028a0f;">{{ $currentSem }} &bull; {{ $currentAY }}</span>
-                </div>
-                <div class="text-xs text-gray-500 dark:text-gray-400">Upload from here or Documents &rarr; Exam Questionnaires. Submissions stay pending until the Dean approves them.</div>
+                <div class="font-semibold text-gray-700 dark:text-gray-200">Current: {{ $currentSem }} {{ $currentAY }}</div>
+                <div class="text-xs text-gray-500 dark:text-gray-400">Upload exam questionnaires from Documents &rarr; Exam Questionnaires. Files stay pending until the Dean approves them.</div>
             </div>
         </div>
     </div>
 
-    {{-- Submit Form --}}
-    <div class="content-card mb-5">
-        <div class="card-header">
-            <h3 class="card-title">Submit Exam Questionnaire</h3>
-        </div>
-        <form action="{{ route('faculty.exam-questionnaires.store') }}" method="POST" enctype="multipart/form-data" data-request-guard>
-            @csrf
-            <div class="grid grid-cols-2 gap-4 p-4">
-                @include('partials.ite-subject-picker', ['pickerId' => 'eqSubjectPicker'])
-                <input type="hidden" name="academic_year_start" value="{{ $ayStart }}">
-                <input type="hidden" name="semester" value="{{ \App\Support\AcademicYear::currentSemester() }}">
-                <div class="form-group">
-                    <label class="form-label">Document Type <span class="text-red-500">*</span></label>
-                    <select name="submission_type" class="form-control" required>
-                        <option value="">-- Select Type --</option>
-                        <option value="tos" {{ old('submission_type') === 'tos' ? 'selected' : '' }}>TOS (Table of Specification)</option>
-                        <option value="toq" {{ old('submission_type', 'toq') === 'toq' ? 'selected' : '' }}>TOQ (Table of Question)</option>
-                    </select>
-                    @error('submission_type')<span class="text-red-500 text-xs">{{ $message }}</span>@enderror
-                </div>
-                <div class="form-group">
-                    <label class="form-label">Exam Type <span class="text-red-500">*</span></label>
-                    <select name="exam_type" class="form-control" required>
-                        <option value="">-- Select Exam Type --</option>
-                        @foreach(['Quiz','Prelim','Midterm','Pre-Final','Final'] as $type)
-                            <option value="{{ $type }}" {{ old('exam_type') === $type ? 'selected' : '' }}>{{ $type }}</option>
-                        @endforeach
-                    </select>
-                    @error('exam_type')<span class="text-red-500 text-xs">{{ $message }}</span>@enderror
-                </div>
-                <div class="form-group col-span-2">
-                    <label class="form-label">File (PDF only, max 10MB) <span class="text-red-500">*</span></label>
-                    <input type="file" name="file" class="form-control" accept=".pdf" required data-dropzone="1">
-                    @error('file')<span class="text-red-500 text-xs">{{ $message }}</span>@enderror
-                </div>
-            </div>
-            <div class="px-4 pb-4">
-                <button type="submit" class="btn btn-primary"
-                        onclick="return typeof eqSubjectPickerValidate !== 'function' || eqSubjectPickerValidate();">
-                    <i class="fas fa-paper-plane"></i> Submit for Review
-                </button>
-            </div>
-        </form>
-    </div>
-
-    {{-- My Submissions --}}
     <div class="content-card">
         <div class="card-header resource-list-header">
             <div class="resource-list-header__main">
-                <h3 class="card-title mb-0">My Submissions</h3>
-                <label class="resource-list-header__status">
-                    <span class="sr-only">Status</span>
-                    <select onchange="window.location.href=this.value" class="form-control text-sm">
-                        <option value="{{ $eqIndexRoute }}">All status</option>
-                        @foreach(['pending','approved','rejected'] as $s)
-                            <option value="{{ route('faculty.exam-questionnaires.index', ['status' => $s]) }}"
-                                {{ ($statusFilter ?? '') === $s ? 'selected' : '' }}>{{ ucfirst($s) }}</option>
-                        @endforeach
-                    </select>
-                </label>
+                <h3 class="card-title mb-0">Available Exam Questionnaires</h3>
                 @include('partials.resource-list-toolbar', [
                     'action' => $eqIndexRoute,
                     'search' => $search ?? '',
                     'sort' => $sort ?? 'date_desc',
-                    'searchPlaceholder' => 'Search subject...',
-                    'hiddenFields' => array_filter(['status' => $statusFilter ?? null]),
+                    'searchPlaceholder' => 'Search subject or exam type...',
                 ])
             </div>
-            <span class="badge badge-info resource-list-header__count">{{ $questionnaires->total() }} Total</span>
+            <span class="badge badge-info resource-list-header__count">{{ $questionnaires->total() }} Files</span>
         </div>
 
         <div class="px-4 pb-2">
@@ -119,9 +58,7 @@
                     <th>Exam Type</th>
                     <th>Semester</th>
                     <th>Academic Year</th>
-                    <th>Status</th>
-                    <th>Remarks</th>
-                    <th>Submitted</th>
+                    <th>Date Submitted</th>
                     <th>Actions</th>
                 </tr>
             </thead>
@@ -130,11 +67,7 @@
                 <tr>
                     <td>
                         <div class="w-9 h-9 flex items-center justify-center bg-gray-100 dark:bg-gray-700 text-lg">
-                            @if($q->file_type === 'pdf')
-                                <i class="fas fa-file-pdf text-red-700"></i>
-                            @else
-                                <i class="fas fa-file-word text-blue-700"></i>
-                            @endif
+                            <i class="fas fa-file-pdf text-red-700"></i>
                         </div>
                     </td>
                     <td>
@@ -145,18 +78,6 @@
                     <td><span class="doc-category-badge">{{ $q->exam_type }}</span></td>
                     <td>{{ $q->semester }}</td>
                     <td>{{ $q->academic_year }}</td>
-                    <td>
-                        @if($q->isPending())
-                            <span class="badge" style="background:#b45309;color:#fff;">Pending</span>
-                        @elseif($q->isApproved())
-                            <span class="badge badge-success">Approved</span>
-                        @else
-                            <span class="badge badge-danger">Rejected</span>
-                        @endif
-                    </td>
-                    <td class="text-xs text-gray-500 dark:text-gray-400" style="max-width:150px;">
-                        {{ $q->remarks ?? '—' }}
-                    </td>
                     <td>{{ $q->created_at->format('M d, Y') }}</td>
                     <td>
                         <div class="doc-action-btns">
@@ -166,26 +87,54 @@
                             <a href="{{ route('faculty.exam-questionnaires.download', $q->id) }}" class="btn btn-action-download text-xs">
                                 <i class="fas fa-download"></i> Download
                             </a>
-                            @if($q->isPending())
-                            <form action="{{ route('faculty.exam-questionnaires.destroy', $q->id) }}" method="POST"
-                                  onsubmit="return confirm('Delete this submission?')">
-                                @csrf @method('DELETE')
-                                <button type="submit" class="btn btn-danger text-xs"><i class="fas fa-trash"></i></button>
-                            </form>
-                            @endif
                         </div>
                     </td>
                 </tr>
                 @empty
                 <tr>
-                    <td colspan="10" class="text-center text-gray-500 dark:text-gray-400 py-8">
-                        No submissions yet. Use the form above to submit your first questionnaire.
-                    </td>
+                    <td colspan="8" class="text-center text-gray-500 dark:text-gray-400 py-8">No approved exam questionnaires available yet.</td>
                 </tr>
                 @endforelse
             </tbody>
         </table>
         <div class="mt-5">{{ $questionnaires->links() }}</div>
     </div>
-@endsection
 
+    @if(isset($rejectedSubmissions) && $rejectedSubmissions->isNotEmpty())
+    <div class="content-card mt-5">
+        <div class="card-header">
+            <h3 class="card-title">Rejected Submissions</h3>
+            <span class="badge badge-danger">{{ $rejectedSubmissions->count() }}</span>
+        </div>
+        <table class="data-table">
+            <thead>
+                <tr>
+                    <th>Subject</th>
+                    <th>Type</th>
+                    <th>Exam Type</th>
+                    <th>Remarks</th>
+                    <th>Submitted</th>
+                    <th>Actions</th>
+                </tr>
+            </thead>
+            <tbody>
+                @foreach($rejectedSubmissions as $q)
+                <tr>
+                    <td><strong>{{ $q->subject }}</strong></td>
+                    <td><span class="doc-category-badge">{{ strtoupper($q->submission_type ?? 'toq') }}</span></td>
+                    <td><span class="doc-category-badge">{{ $q->exam_type }}</span></td>
+                    <td class="text-xs text-gray-500">{{ $q->remarks ?? '—' }}</td>
+                    <td>{{ $q->created_at->format('M d, Y') }}</td>
+                    <td>
+                        <div class="doc-action-btns">
+                            <a href="{{ route('faculty.exam-questionnaires.view', $q->id) }}" target="_blank" class="btn btn-action-view text-xs"><i class="fas fa-eye"></i> View</a>
+                            <a href="{{ route('faculty.exam-questionnaires.download', $q->id) }}" class="btn btn-action-download text-xs"><i class="fas fa-download"></i> Download</a>
+                        </div>
+                    </td>
+                </tr>
+                @endforeach
+            </tbody>
+        </table>
+    </div>
+    @endif
+@endsection

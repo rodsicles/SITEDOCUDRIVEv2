@@ -180,8 +180,16 @@
                     </div>
                 </div>
                 <div class="flex items-center gap-3 max-md:gap-2 flex-shrink-0">
-                    @if(auth()->user()->isFaculty() || auth()->user()->isProgramCoordinator())
-                    <a href="{{ auth()->user()->isFaculty() ? route('faculty.notifications') : route('coordinator.notifications') }}" class="relative text-lg max-md:text-base text-gray-600 dark:text-gray-400" id="notification-bell-link">
+                    @php
+                        $notificationsPageUrl = match (true) {
+                            auth()->user()->isFaculty() => route('faculty.notifications'),
+                            auth()->user()->isProgramCoordinator() => route('coordinator.notifications'),
+                            auth()->user()->isDeanOrSecretary() => route('dean.notifications'),
+                            default => null,
+                        };
+                    @endphp
+                    @if($notificationsPageUrl)
+                    <a href="{{ $notificationsPageUrl }}" class="relative text-lg max-md:text-base text-gray-600 dark:text-gray-400" id="notification-bell-link">
                         <i class="fas fa-bell"></i>
                         <span id="notification-badge" class="absolute -top-2 -right-2 bg-[#028a0f] text-white w-4 h-4 text-xs flex items-center justify-center font-bold {{ (isset($unreadNotifications) && $unreadNotifications > 0) ? '' : 'hidden' }}">{{ $unreadNotifications ?? 0 }}</span>
                     </a>
@@ -688,11 +696,19 @@
     @stack('scripts')
 
     @auth
-        @if(auth()->user()->isFaculty() || auth()->user()->isProgramCoordinator())
+        @if(auth()->user()->isFaculty() || auth()->user()->isProgramCoordinator() || auth()->user()->isDeanOrSecretary())
         <script>
-            // Notification badge live polling (every 30s) for the faculty top-bar bell.
+            // Notification badge live polling (every 30s) for the top-bar bell.
             (function() {
-                const url = "{{ auth()->user()->isFaculty() ? route('faculty.notifications.unread-count') : route('coordinator.notifications.unread-count') }}";
+                @php
+                    $notificationsUnreadUrl = match (true) {
+                        auth()->user()->isFaculty() => route('faculty.notifications.unread-count'),
+                        auth()->user()->isProgramCoordinator() => route('coordinator.notifications.unread-count'),
+                        auth()->user()->isDeanOrSecretary() => route('dean.notifications.unread-count'),
+                        default => '',
+                    };
+                @endphp
+                const url = @json($notificationsUnreadUrl);
                 const badge = document.getElementById('notification-badge');
                 if (!badge) return;
 

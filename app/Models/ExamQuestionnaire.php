@@ -3,6 +3,7 @@
 namespace App\Models;
 
 use App\Models\Concerns\ScopesSubmissionVisibility;
+use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Database\Eloquent\Model;
 
 class ExamQuestionnaire extends Model
@@ -58,6 +59,16 @@ class ExamQuestionnaire extends Model
     public function isRejected(): bool
     {
         return $this->status === 'rejected';
+    }
+
+    public function scopeApproved(Builder $query): Builder
+    {
+        return $query->where('status', 'approved');
+    }
+
+    public function scopeOwnedBy(Builder $query, int $userId): Builder
+    {
+        return $query->where('submitted_by', $userId);
     }
 
     protected function submissionOwnerColumn(): string

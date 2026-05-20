@@ -32,66 +32,54 @@ class ExamQuestionnaireController extends Controller
         $examTypeFilter = $request->query('exam_type');
         $semesterFilter = $request->query('semester');
         $academicYearStart = AcademicYear::startYearFromQuery($request->query('academic_year'));
+        $archiveYears = array_filter(
+            AcademicYear::availableStartYears(),
+            fn ($y) => AcademicYear::isArchived($y)
+        );
+        $role = $this->getViewRole($user);
+
+        if ($user->isFaculty()) {
+            $pendingSubmissions = $this->facultyOwnedQuestionnairesQuery($user, $request, 'pending')
+                ->orderByDesc('created_at')
+                ->get();
+
+            $rejectedSubmissions = $this->facultyOwnedQuestionnairesQuery($user, $request, 'rejected')
+                ->orderByDesc('created_at')
+                ->get();
+
+            $questionnairesQuery = ExamQuestionnaire::with('submitter.employee', 'reviewer.employee')
+                ->visibleTo($user)
+                ->approved();
+            $this->applyExamQuestionnaireListFilters($questionnairesQuery, $request);
+            $this->applyListSort($questionnairesQuery, $sort);
+            $questionnaires = $questionnairesQuery->paginate(15)->appends($request->query());
+
+            $activeId = SchoolYear::activeId();
+            $pendingCount = 0;
+
+            return view('faculty.exam-questionnaires', compact(
+                'questionnaires', 'search', 'sort', 'examTypeFilter', 'semesterFilter',
+                'academicYearStart', 'archiveYears', 'pendingCount', 'pendingSubmissions',
+                'rejectedSubmissions'
+            ));
+        }
 
         $query = ExamQuestionnaire::with('submitter.employee', 'reviewer.employee')
             ->visibleTo($user);
 
-        if ($search) {
-            $query->where(function ($q) use ($search) {
-                $q->where('title', 'like', "%{$search}%")
-                  ->orWhere('subject', 'like', "%{$search}%");
-            });
-        }
+        $this->applyExamQuestionnaireListFilters($query, $request);
 
         if ($statusFilter) {
             $query->where('status', $statusFilter);
-        }
-
-        if ($examTypeFilter) {
-            $query->where('exam_type', $examTypeFilter);
-        }
-
-        if ($semesterFilter) {
-            $query->where('semester', $semesterFilter);
-        }
-
-        if ($academicYearStart) {
-            $query->where('academic_year', AcademicYear::rangeString($academicYearStart));
-        } else {
-            $activeId = SchoolYear::activeId();
-            $query->where(function ($q) use ($activeId) {
-                $q->where('school_year_id', $activeId)
-                  ->orWhereNull('school_year_id');
-            });
         }
 
         $this->applyListSort($query, $sort);
         $questionnaires = $query->paginate(15)->appends($request->query());
 
         $pendingSubmissions = collect();
-        if ($user->isFaculty()) {
-            $pendingQuery = ExamQuestionnaire::query()
-                ->where('submitted_by', $user->id)
-                ->where('status', 'pending');
-            if ($search) {
-                $pendingQuery->where(function ($q) use ($search) {
-                    $q->where('title', 'like', "%{$search}%")
-                        ->orWhere('subject', 'like', "%{$search}%");
-                });
-            }
-            if ($academicYearStart) {
-                $pendingQuery->where('academic_year', AcademicYear::rangeString($academicYearStart));
-            } else {
-                $activeIdForPending = SchoolYear::activeId();
-                $pendingQuery->where(function ($q) use ($activeIdForPending) {
-                    $q->where('school_year_id', $activeIdForPending)
-                        ->orWhereNull('school_year_id');
-                });
-            }
-            $pendingSubmissions = $pendingQuery->orderByDesc('created_at')->get();
-        }
+        $rejectedSubmissions = collect();
 
-        $activeId = $activeId ?? SchoolYear::activeId();
+        $activeId = SchoolYear::activeId();
         $pendingScope = fn ($q) => $q->where('status', 'pending')
             ->where(function ($q2) use ($activeId) {
                 $q2->where('school_year_id', $activeId)->orWhereNull('school_year_id');
@@ -101,21 +89,19 @@ class ExamQuestionnaireController extends Controller
             $user->isProgramCoordinator() => ExamQuestionnaire::visibleTo($user)->where($pendingScope)->count(),
             default => 0,
         };
-        $archiveYears = array_filter(
-            AcademicYear::availableStartYears(),
-            fn ($y) => AcademicYear::isArchived($y)
-        );
-
-        $role = $this->getViewRole($user);
-
         return view("{$role}.exam-questionnaires", compact(
             'questionnaires', 'search', 'sort', 'statusFilter', 'examTypeFilter',
-            'semesterFilter', 'academicYearStart', 'archiveYears', 'pendingCount', 'pendingSubmissions'
+            'semesterFilter', 'academicYearStart', 'archiveYears', 'pendingCount',
+            'pendingSubmissions', 'rejectedSubmissions'
         ));
     }
 
     public function store(Request $request)
     {
+        if (auth()->user()->isFaculty()) {
+            abort(403, 'Upload exam questionnaires from Documents → Exam Questionnaires.');
+        }
+
         $validated = $request->validate([
             'subject' => ['required', 'string', Rule::in(IteSubjects::labels())],
             'exam_type' => 'required|in:Quiz,Prelim,Midterm,Pre-Final,Final',
@@ -165,8 +151,12 @@ class ExamQuestionnaireController extends Controller
             return $this->uploadFailedResponse($request, $e);
         }
 
-        app(\App\Services\NotificationService::class)->notifySupervisors(
-            'Exam questionnaire pending approval: ' . $title . '.'
+        app(\App\Services\NotificationService::class)->notifyDeanOnFileUpload(
+            auth()->user(),
+            1,
+            $title,
+            'Exam Questionnaires',
+            true,
         );
 
         return back()->with('success', 'Exam questionnaire submitted for Dean approval.');
@@ -299,5 +289,49 @@ class ExamQuestionnaireController extends Controller
         }
 
         return 'faculty';
+    }
+
+    private function facultyOwnedQuestionnairesQuery($user, Request $request, string $status)
+    {
+        $query = ExamQuestionnaire::query()
+            ->ownedBy((int) $user->id)
+            ->where('status', $status);
+
+        $this->applyExamQuestionnaireListFilters($query, $request);
+
+        return $query;
+    }
+
+    private function applyExamQuestionnaireListFilters($query, Request $request): void
+    {
+        $search = $request->query('search');
+        $examTypeFilter = $request->query('exam_type');
+        $semesterFilter = $request->query('semester');
+        $academicYearStart = AcademicYear::startYearFromQuery($request->query('academic_year'));
+
+        if ($search) {
+            $query->where(function ($q) use ($search) {
+                $q->where('title', 'like', "%{$search}%")
+                    ->orWhere('subject', 'like', "%{$search}%");
+            });
+        }
+
+        if ($examTypeFilter) {
+            $query->where('exam_type', $examTypeFilter);
+        }
+
+        if ($semesterFilter) {
+            $query->where('semester', $semesterFilter);
+        }
+
+        if ($academicYearStart) {
+            $query->where('academic_year', AcademicYear::rangeString($academicYearStart));
+        } else {
+            $activeId = SchoolYear::activeId();
+            $query->where(function ($q) use ($activeId) {
+                $q->where('school_year_id', $activeId)
+                    ->orWhereNull('school_year_id');
+            });
+        }
     }
 }

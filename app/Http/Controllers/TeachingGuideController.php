@@ -157,6 +157,14 @@ class TeachingGuideController extends Controller
             );
         }
 
+        $this->notificationService->notifyDeanOnFileUpload(
+            $user,
+            $uploadedCount,
+            (string) $validated['title'],
+            'Teaching Guides',
+            true,
+        );
+
         $msg = $uploadedCount === 1
             ? 'Teaching guide submitted for Dean approval.'
             : "{$uploadedCount} teaching guides submitted for Dean approval.";

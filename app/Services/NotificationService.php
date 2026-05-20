@@ -44,12 +44,83 @@ class NotificationService
     }
 
     /**
-     * Notify all supervisors (Dean + Coordinator).
+     * Active users with Dean or Secretary role (by role name — not hard-coded IDs).
+     *
+     * @return list<int>
      */
-    public function notifySupervisors(string $message): void
+    public function deanAndSecretaryIds(?int $exceptUserId = null): array
     {
-        $supervisorIds = User::whereIn('role_id', [1, 2])->pluck('id')->toArray();
-        $this->notifyMany($supervisorIds, $message);
+        $query = User::query()
+            ->where('status', 'Active')
+            ->whereHas('role', fn ($q) => $q->whereIn('role_name', ['Dean', 'Secretary']));
+
+        if ($exceptUserId) {
+            $query->where('id', '!=', $exceptUserId);
+        }
+
+        return $query->pluck('id')->map(fn ($id) => (int) $id)->all();
+    }
+
+    /**
+     * Dean, Secretary, and Program Coordinators (for approval workflows).
+     *
+     * @return list<int>
+     */
+    public function supervisorIds(?int $exceptUserId = null): array
+    {
+        $query = User::query()
+            ->where('status', 'Active')
+            ->whereHas('role', fn ($q) => $q->whereIn('role_name', ['Dean', 'Secretary', 'Program Coordinator']));
+
+        if ($exceptUserId) {
+            $query->where('id', '!=', $exceptUserId);
+        }
+
+        return $query->pluck('id')->map(fn ($id) => (int) $id)->all();
+    }
+
+    public function notifyDeanAndSecretary(string $message, ?string $tone = null, ?int $exceptUserId = null): void
+    {
+        $this->notifyMany($this->deanAndSecretaryIds($exceptUserId), $message, $tone);
+    }
+
+    /**
+     * Notify all supervisors (Dean + Secretary + Program Coordinator).
+     */
+    public function notifySupervisors(string $message, ?string $tone = null, ?int $exceptUserId = null): void
+    {
+        $this->notifyMany($this->supervisorIds($exceptUserId), $message, $tone);
+    }
+
+    /**
+     * Notify Dean/Secretary when someone uploads file(s). Skips self-uploads by Dean/Secretary.
+     */
+    public function notifyDeanOnFileUpload(
+        User $uploader,
+        int $fileCount,
+        string $title,
+        string $category,
+        bool $pendingApproval = false,
+    ): void {
+        if ($uploader->isDeanOrSecretary() || $fileCount < 1) {
+            return;
+        }
+
+        $uploader->loadMissing('employee');
+        $name = $uploader->employee?->full_name ?? $uploader->username ?? 'A user';
+        $countLabel = $fileCount === 1 ? '1 file' : "{$fileCount} files";
+        $titleLabel = trim($title) !== '' ? "\"{$title}\"" : 'a file';
+        $categoryLabel = trim($category) !== '' ? " ({$category})" : '';
+
+        if ($pendingApproval) {
+            $message = "{$name} submitted {$countLabel} for your approval: {$titleLabel}{$categoryLabel}. Review under Pending Teaching Guides or Exam Questionnaires.";
+            $this->notifySupervisors($message, Notification::TONE_DANGER, $uploader->id);
+
+            return;
+        }
+
+        $message = "{$name} uploaded {$countLabel}: {$titleLabel}{$categoryLabel}. Check Documents.";
+        $this->notifyDeanAndSecretary($message, null, $uploader->id);
     }
 
     /**

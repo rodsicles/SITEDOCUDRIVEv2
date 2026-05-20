@@ -416,9 +416,6 @@ class DocumentService
                     $this->examQuestionnaireSync->syncToDocument($questionnaire->fresh());
                 } else {
                     $submittedForApproval = true;
-                    $this->notificationService->notifySupervisors(
-                        "Exam questionnaire pending approval: \"{$submissionTitle}\" in {$folder->folder_name}."
-                    );
                 }
 
                 $uploadedCount++;
@@ -451,9 +448,6 @@ class DocumentService
                     $this->teachingGuideSync->syncDocumentFromGuide($guide, $uploader, $recipientIds);
                 } else {
                     $submittedForApproval = true;
-                    $this->notificationService->notifySupervisors(
-                        "Teaching guide pending approval: \"{$guideTitle}\" in {$folder->folder_name}."
-                    );
                 }
 
                 $uploadedCount++;
@@ -503,6 +497,16 @@ class DocumentService
             'activity_type' => 'document_upload',
             'visibility' => 'own',
         ]);
+
+        if ($uploadedCount > 0) {
+            $this->notificationService->notifyDeanOnFileUpload(
+                $uploader,
+                $uploadedCount,
+                (string) ($validated['document_title'] ?? 'Untitled'),
+                (string) ($category ?? 'Documents'),
+                $submittedForApproval,
+            );
+        }
 
         return [
             'count' => $uploadedCount,

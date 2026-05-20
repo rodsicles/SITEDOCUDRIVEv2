@@ -129,6 +129,12 @@ Route::middleware(['auth', 'no.back', 'role:Dean,Secretary'])->prefix('dean')->n
     Route::get('/analytics', [AnalyticsController::class, 'index'])->name('analytics');
     Route::get('/activity-log', [DeanController::class, 'activityLog'])->name('activity-log');
     Route::get('/audit-trail', [DeanController::class, 'auditTrail'])->name('audit-trail');
+
+    Route::get('/notifications', [DeanController::class, 'notifications'])->name('notifications');
+    Route::get('/notifications/unread-count', [DeanController::class, 'unreadNotificationCount'])->name('notifications.unread-count');
+    Route::post('/notifications/{id}/read-json', [DeanController::class, 'markNotificationReadJson'])->middleware('throttle:120,1')->name('notifications.read-json');
+    Route::post('/notifications/{id}/read', [DeanController::class, 'markNotificationRead'])->middleware('throttle:120,1')->name('mark-notification-read');
+
     Route::post('/insight/refresh', [DeanController::class, 'refreshInsight'])
         ->middleware('throttle:6,1')
         ->name('insight.refresh');
@@ -293,9 +299,8 @@ Route::middleware(['auth', 'no.back', 'role:Faculty Employee'])->prefix('faculty
     Route::get('/teaching-guides/{id}/view', [TeachingGuideController::class, 'view'])->name('teaching-guides.view');
     Route::get('/teaching-guides/{id}/download', [TeachingGuideController::class, 'download'])->name('teaching-guides.download');
 
-    // Exam Questionnaires (Faculty: submit and view own only)
+    // Exam Questionnaires (Faculty: upload via Documents; view approved + track pending)
     Route::get('/exam-questionnaires', [ExamQuestionnaireController::class, 'index'])->name('exam-questionnaires.index');
-    Route::post('/exam-questionnaires', [ExamQuestionnaireController::class, 'store'])->middleware('throttle:6,60')->name('exam-questionnaires.store');
     Route::get('/exam-questionnaires/{id}/view', [ExamQuestionnaireController::class, 'view'])->name('exam-questionnaires.view');
     Route::get('/exam-questionnaires/{id}/download', [ExamQuestionnaireController::class, 'download'])->name('exam-questionnaires.download');
     Route::delete('/exam-questionnaires/{id}', [ExamQuestionnaireController::class, 'destroy'])->name('exam-questionnaires.destroy');

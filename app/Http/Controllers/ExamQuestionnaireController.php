@@ -11,6 +11,7 @@ use App\Services\DocumentService;
 use App\Services\NotificationService;
 use App\Support\AcademicYear;
 use App\Support\IteSubjects;
+use App\Support\SubmissionLocation;
 use App\Support\UploadStorage;
 use Illuminate\Http\Request;
 use Illuminate\Validation\Rule;
@@ -19,6 +20,7 @@ class ExamQuestionnaireController extends Controller
 {
     use \App\Http\Controllers\Concerns\AppliesListSort;
     use \App\Http\Controllers\Concerns\HandlesUploadExceptions;
+    use \App\Http\Controllers\Concerns\LogsSubmissionActivity;
 
     public function __construct(
         protected AcademicHierarchyService $hierarchy,
@@ -42,15 +44,17 @@ class ExamQuestionnaireController extends Controller
 
         if ($user->isFaculty()) {
             $pendingSubmissions = $this->facultyOwnedQuestionnairesQuery($user, $request, 'pending')
+                ->with('document.folder.parent')
                 ->orderByDesc('created_at')
                 ->get();
 
             $rejectedSubmissions = $this->facultyOwnedQuestionnairesQuery($user, $request, 'rejected')
+                ->with('document.folder')
                 ->orderByDesc('created_at')
                 ->get();
 
-            $questionnairesQuery = ExamQuestionnaire::with('submitter.employee', 'reviewer.employee')
-                ->visibleTo($user)
+            $questionnairesQuery = ExamQuestionnaire::with('submitter.employee', 'reviewer.employee', 'document.folder')
+                ->ownedBy((int) $user->id)
                 ->approved();
             $this->applyExamQuestionnaireListFilters($questionnairesQuery, $request);
             $this->applyListSort($questionnairesQuery, $sort);
@@ -164,10 +168,10 @@ class ExamQuestionnaireController extends Controller
         return back()->with('success', 'Exam questionnaire submitted for Dean approval.');
     }
 
-    public function view($id)
+    public function view(Request $request, $id)
     {
         $user = auth()->user();
-        $questionnaire = ExamQuestionnaire::visibleTo($user)->findOrFail($id);
+        $questionnaire = ExamQuestionnaire::with('document.folder.parent.parent')->visibleTo($user)->findOrFail($id);
 
         UploadStorage::assertPathAllowed($questionnaire->file_path);
 
@@ -175,11 +179,26 @@ class ExamQuestionnaireController extends Controller
             return back()->with('error', 'This file is no longer available. It was uploaded to a previous storage provider and no longer exists in the current storage.');
         }
 
-        return UploadStorage::inlineResponse(
-            $questionnaire->file_path,
-            $questionnaire->title . '.pdf',
-            'application/pdf'
-        );
+        if ($request->boolean('stream')) {
+            $this->logSubmissionActivity($user, 'Viewed exam questionnaire: '.$questionnaire->title, 'exam_questionnaire_viewed');
+
+            return UploadStorage::inlineResponse(
+                $questionnaire->file_path,
+                $questionnaire->title.'.pdf',
+                'application/pdf'
+            );
+        }
+
+        $routePrefix = $this->submissionRoutePrefix($user);
+
+        return view('submissions.file-preview', [
+            'title' => $questionnaire->title,
+            'folderPath' => SubmissionLocation::examQuestionnairePath($questionnaire),
+            'documentsUrl' => SubmissionLocation::examQuestionnaireDocumentsUrl($user, $questionnaire),
+            'streamUrl' => route($routePrefix.'.exam-questionnaires.view', ['id' => $id, 'stream' => 1]),
+            'downloadUrl' => route($routePrefix.'.exam-questionnaires.download', $id),
+            'backUrl' => route($routePrefix.'.exam-questionnaires.index'),
+        ]);
     }
 
     public function download($id)
@@ -193,7 +212,9 @@ class ExamQuestionnaireController extends Controller
             return back()->with('error', 'This file is no longer available. It was uploaded to a previous storage provider and no longer exists in the current storage.');
         }
 
-        return UploadStorage::downloadResponse($questionnaire->file_path, $questionnaire->title . '.pdf');
+        $this->logSubmissionActivity($user, 'Downloaded exam questionnaire: '.$questionnaire->title, 'exam_questionnaire_downloaded');
+
+        return UploadStorage::downloadResponse($questionnaire->file_path, $questionnaire->title.'.pdf');
     }
 
     public function approve(Request $request, $id)
@@ -271,8 +292,13 @@ class ExamQuestionnaireController extends Controller
         $user = auth()->user();
         $questionnaire = ExamQuestionnaire::visibleTo($user)->findOrFail($id);
 
-        if ($user->isFaculty() && (int) $questionnaire->submitted_by !== (int) $user->id) {
-            abort(403, 'You can only rename your own exam questionnaires.');
+        if ($user->isFaculty()) {
+            if ((int) $questionnaire->submitted_by !== (int) $user->id) {
+                abort(403, 'You can only rename your own exam questionnaires.');
+            }
+            if (!$questionnaire->isPending()) {
+                abort(403, 'Only pending submissions can be renamed.');
+            }
         }
 
         $title = $request->validated('document_title');
@@ -296,8 +322,10 @@ class ExamQuestionnaireController extends Controller
         $user = auth()->user();
         $questionnaire = ExamQuestionnaire::visibleTo($user)->findOrFail($id);
 
-        if ($user->isFaculty() && (int) $questionnaire->submitted_by !== (int) $user->id) {
-            abort(403, 'You can only delete your own exam questionnaires.');
+        if ($user->isFaculty()) {
+            if ((int) $questionnaire->submitted_by !== (int) $user->id || !$questionnaire->isRejected()) {
+                abort(403, 'You can only delete rejected exam questionnaires.');
+            }
         }
 
         if ($questionnaire->document_id) {
@@ -326,6 +354,11 @@ class ExamQuestionnaireController extends Controller
         }
 
         return 'faculty';
+    }
+
+    private function submissionRoutePrefix($user): string
+    {
+        return $this->getViewRole($user) === 'dean' ? 'dean' : $this->getViewRole($user);
     }
 
     private function facultyOwnedQuestionnairesQuery($user, Request $request, string $status)

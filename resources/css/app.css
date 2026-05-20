@@ -5566,3 +5566,105 @@ a.doc-sort-item:hover,
     .login-portal-secure span { display: none; }
     .login-portal-card { max-width: 100%; }
 }
+
+/* Faculty resource lists + file preview */
+.resource-list-header {
+    flex-wrap: wrap;
+    gap: 0.75rem;
+}
+.resource-list-header__main {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    gap: 0.75rem 1rem;
+    flex: 1;
+    min-width: 0;
+}
+.resource-list-table-wrap {
+    overflow-x: auto;
+    -webkit-overflow-scrolling: touch;
+}
+.resource-list-table-wrap .data-table {
+    min-width: 720px;
+}
+.submission-preview-frame__iframe {
+    width: 100%;
+    min-height: 70vh;
+    border: 0;
+    display: block;
+}
+.submission-overview-chart {
+    display: flex;
+    align-items: flex-end;
+    gap: 0.75rem;
+    min-height: 160px;
+    padding: 0.5rem 0 0;
+}
+.submission-overview-chart__bar-col {
+    flex: 1;
+    min-width: 48px;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 0.25rem;
+}
+.submission-overview-chart__bar {
+    width: 100%;
+    max-width: 40px;
+    background: linear-gradient(180deg, #4caf50, #028a0f);
+    border-radius: 4px 4px 0 0;
+    min-height: 8px;
+}
+.submission-overview-chart__label {
+    font-size: 0.65rem;
+    color: #6b7280;
+    text-align: center;
+    line-height: 1.2;
+}
+.submission-overview-chart__value {
+    font-size: 0.75rem;
+    font-weight: 600;
+    color: #111827;
+}
+.dark .submission-overview-chart__value { color: #f3f4f6; }
+.dark .submission-overview-chart__label { color: #9ca3af; }
+
+.dean-pending-review-grid {
+    display: grid;
+    grid-template-columns: repeat(1, minmax(0, 1fr));
+    gap: 1rem;
+}
+@media (min-width: 768px) {
+    .dean-pending-review-grid {
+        grid-template-columns: repeat(2, minmax(0, 1fr));
+    }
+}
+.dean-pending-review-card {
+    border-left: 4px solid #028a0f;
+    color: inherit;
+}
+.dean-pending-review-card--eq {
+    border-left-color: #2563eb;
+}
+.dean-pending-review-card__icon {
+    width: 2.75rem;
+    height: 2.75rem;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    border-radius: 0.5rem;
+    background: rgba(2, 138, 15, 0.12);
+    color: #028a0f;
+    font-size: 1.25rem;
+    flex-shrink: 0;
+}
+.dean-pending-review-card--eq .dean-pending-review-card__icon {
+    background: rgba(37, 99, 235, 0.12);
+    color: #2563eb;
+}
+.pending-dean-approval-card .card-header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 0.75rem;
+}

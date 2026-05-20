@@ -55,6 +55,14 @@ class DeanController extends Controller
             ->take(5)
             ->get();
 
+        $activeId = \App\Models\SchoolYear::activeId();
+        $pendingScope = fn ($q) => $q->where('status', 'pending')
+            ->where(function ($q2) use ($activeId) {
+                $q2->where('school_year_id', $activeId)->orWhereNull('school_year_id');
+            });
+        $pendingTeachingGuidesCount = \App\Models\TeachingGuide::query()->where($pendingScope)->count();
+        $pendingExamQuestionnairesCount = \App\Models\ExamQuestionnaire::query()->where($pendingScope)->count();
+
         return view('dean.dashboard', array_merge($stats, $docAnalyticsData, compact(
             'monthlyUsage',
             'monthNames',
@@ -64,7 +72,9 @@ class DeanController extends Controller
             'announcements',
             'examTrends',
             'recentTasks',
-            'insight'
+            'insight',
+            'pendingTeachingGuidesCount',
+            'pendingExamQuestionnairesCount',
         )));
     }
 

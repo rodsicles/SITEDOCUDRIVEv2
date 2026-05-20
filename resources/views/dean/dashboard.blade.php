@@ -43,6 +43,8 @@
         </div>
     </div>
 
+    @include('partials.dean-pending-review-cards')
+
     <!-- Document Analytics -->
     <div class="content-card">
         <div class="card-header">

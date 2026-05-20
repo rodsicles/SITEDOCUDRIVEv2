@@ -12,6 +12,7 @@ use App\Services\NotificationService;
 use App\Services\TeachingGuideSyncService;
 use App\Support\AcademicYear;
 use App\Support\IteSubjects;
+use App\Support\SubmissionLocation;
 use App\Support\UploadStorage;
 use Illuminate\Http\Request;
 use Illuminate\Validation\Rule;
@@ -20,6 +21,7 @@ class TeachingGuideController extends Controller
 {
     use \App\Http\Controllers\Concerns\AppliesListSort;
     use \App\Http\Controllers\Concerns\HandlesUploadExceptions;
+    use \App\Http\Controllers\Concerns\LogsSubmissionActivity;
 
     public function __construct(
         protected NotificationService $notificationService,
@@ -42,16 +44,16 @@ class TeachingGuideController extends Controller
 
         if ($user->isFaculty()) {
             $pendingGuides = $this->facultyOwnedGuidesQuery($user, $request, 'pending')
-                ->with('folder')
+                ->with(['folder.parent', 'document.folder'])
                 ->orderByDesc('created_at')
                 ->get();
 
             $rejectedGuides = $this->facultyOwnedGuidesQuery($user, $request, 'rejected')
-                ->with('folder')
+                ->with(['folder.parent', 'document.folder'])
                 ->orderByDesc('created_at')
                 ->get();
 
-            $guidesQuery = TeachingGuide::with('uploader.employee', 'folder')
+            $guidesQuery = TeachingGuide::with('uploader.employee', 'folder.parent', 'document.folder')
                 ->forUser($user)
                 ->approved();
             $this->applyTeachingGuideListFilters($guidesQuery, $request);
@@ -249,10 +251,10 @@ class TeachingGuideController extends Controller
         return back()->with('success', 'Teaching guide rejected.');
     }
 
-    public function view($id)
+    public function view(Request $request, $id)
     {
         $user = auth()->user();
-        $guide = TeachingGuide::visibleTo($user)->findOrFail($id);
+        $guide = TeachingGuide::with('folder.parent.parent')->visibleTo($user)->findOrFail($id);
 
         if ($user->isFaculty()) {
             $isOwner = (int) $guide->user_id === (int) $user->id;
@@ -273,7 +275,22 @@ class TeachingGuideController extends Controller
             ? 'application/pdf'
             : 'application/vnd.openxmlformats-officedocument.wordprocessingml.document';
 
-        return UploadStorage::inlineResponse($guide->file_path, $guide->title . '.' . $extension, $mime);
+        if ($request->boolean('stream')) {
+            $this->logSubmissionActivity($user, 'Viewed teaching guide: '.$guide->title, 'teaching_guide_viewed');
+
+            return UploadStorage::inlineResponse($guide->file_path, $guide->title.'.'.$extension, $mime);
+        }
+
+        $routePrefix = $this->submissionRoutePrefix($user);
+
+        return view('submissions.file-preview', [
+            'title' => $guide->title,
+            'folderPath' => SubmissionLocation::folderBreadcrumb($guide->folder),
+            'documentsUrl' => SubmissionLocation::documentsUrl($user, $guide->folder),
+            'streamUrl' => route($routePrefix.'.teaching-guides.view', ['id' => $id, 'stream' => 1]),
+            'downloadUrl' => route($routePrefix.'.teaching-guides.download', $id),
+            'backUrl' => route($routePrefix.'.teaching-guides.index'),
+        ]);
     }
 
     public function download($id)
@@ -294,6 +311,8 @@ class TeachingGuideController extends Controller
             return back()->with('error', 'This file is no longer available. It was uploaded to a previous storage provider and no longer exists in the current storage.');
         }
 
+        $this->logSubmissionActivity($user, 'Downloaded teaching guide: '.$guide->title, 'teaching_guide_downloaded');
+
         return UploadStorage::downloadResponse($guide->file_path, basename($guide->file_path));
     }
 
@@ -302,8 +321,13 @@ class TeachingGuideController extends Controller
         $user = auth()->user();
         $guide = TeachingGuide::visibleTo($user)->findOrFail($id);
 
-        if ($user->isFaculty() && (int) $guide->user_id !== (int) $user->id) {
-            abort(403, 'You can only rename your own teaching guides.');
+        if ($user->isFaculty()) {
+            if ((int) $guide->user_id !== (int) $user->id) {
+                abort(403, 'You can only rename your own teaching guides.');
+            }
+            if (!$guide->isPending()) {
+                abort(403, 'Only pending submissions can be renamed.');
+            }
         }
 
         $title = $request->validated('document_title');
@@ -327,8 +351,10 @@ class TeachingGuideController extends Controller
         $user = auth()->user();
         $guide = TeachingGuide::visibleTo($user)->findOrFail($id);
 
-        if ($user->isFaculty() && (int) $guide->user_id !== (int) $user->id) {
-            abort(403, 'You can only delete your own teaching guides.');
+        if ($user->isFaculty()) {
+            if ((int) $guide->user_id !== (int) $user->id || !$guide->isRejected()) {
+                abort(403, 'You can only delete rejected teaching guides.');
+            }
         }
 
         if ($guide->document_id) {
@@ -357,6 +383,11 @@ class TeachingGuideController extends Controller
         }
 
         return 'faculty';
+    }
+
+    private function submissionRoutePrefix($user): string
+    {
+        return $this->getViewRole($user) === 'dean' ? 'dean' : $this->getViewRole($user);
     }
 
     private function facultyOwnedGuidesQuery($user, Request $request, string $status)

@@ -20,7 +20,7 @@
 @endphp
 <div class="content-card mb-6">
     <div class="card-header">
-        <h3 class="card-title"><i class="fas fa-chart-line mr-2"></i>Trends</h3>
+        <h3 class="card-title"><i class="fas fa-chart-line mr-2"></i>Passers and Results and Certifications</h3>
         <span class="badge badge-success">Exam & Certification</span>
     </div>
 

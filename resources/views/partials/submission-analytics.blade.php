@@ -15,6 +15,16 @@
     </div>
 
     <form method="GET" action="{{ route($routeName) }}" class="p-4 border-b border-gray-200 dark:border-gray-700">
+        @if(auth()->user()->isFaculty())
+        <div class="max-w-xs">
+            <label class="block text-xs font-semibold uppercase tracking-wide text-gray-500 dark:text-gray-400 mb-1">School Year</label>
+            <select name="school_year" class="form-select w-full" onchange="this.form.submit()">
+                @foreach($schoolYearOptions ?? [] as $value => $label)
+                    <option value="{{ $value }}" @selected((string) ($filters['school_year'] ?? '') === (string) $value)>{{ $label }}</option>
+                @endforeach
+            </select>
+        </div>
+        @else
         <div class="grid grid-cols-1 md:grid-cols-4 gap-4 items-end">
             <div>
                 <label class="block text-xs font-semibold uppercase tracking-wide text-gray-500 dark:text-gray-400 mb-1">School Year</label>
@@ -54,6 +64,7 @@
                 <a href="{{ route($routeName) }}" class="btn btn-secondary">Reset</a>
             </div>
         </div>
+        @endif
     </form>
 
     <div class="p-4 grid grid-cols-1 xl:grid-cols-2 gap-6">
@@ -142,4 +153,21 @@
             @endif
         </div>
     </div>
+
+    @if(auth()->user()->isFaculty() && $monthlyTrend->isNotEmpty())
+    <div class="p-4 pt-0 border-t border-gray-200 dark:border-gray-700">
+        <h4 class="font-semibold text-gray-800 dark:text-gray-200 mb-3">
+            <i class="fas fa-chart-line mr-1 text-[#028a0f]"></i> Submission overview
+        </h4>
+        <div class="submission-overview-chart" role="img" aria-label="Monthly submission bar chart">
+            @foreach($monthlyTrend as $point)
+            <div class="submission-overview-chart__bar-col">
+                <div class="submission-overview-chart__bar" style="height: {{ max(8, ($point['count'] / $maxMonthly) * 100) }}%;" title="{{ $point['label'] }}: {{ $point['count'] }}"></div>
+                <span class="submission-overview-chart__label">{{ $point['label'] }}</span>
+                <span class="submission-overview-chart__value">{{ $point['count'] }}</span>
+            </div>
+            @endforeach
+        </div>
+    </div>
+    @endif
 </div>

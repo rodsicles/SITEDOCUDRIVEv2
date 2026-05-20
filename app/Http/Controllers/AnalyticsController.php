@@ -19,11 +19,15 @@ class AnalyticsController extends Controller
     {
         $user = auth()->user();
 
-        $submissionData = $this->submissionAnalytics->getAnalytics($user, [
-            'school_year' => $request->query('school_year'),
-            'semester' => $request->query('semester'),
-            'department' => $request->query('department'),
-        ]);
+        $filterInput = $user->isFaculty()
+            ? ['school_year' => $request->query('school_year')]
+            : [
+                'school_year' => $request->query('school_year'),
+                'semester' => $request->query('semester'),
+                'department' => $request->query('department'),
+            ];
+
+        $submissionData = $this->submissionAnalytics->getAnalytics($user, $filterInput);
 
         $data = array_merge($submissionData, [
             'analyticsRoute' => $this->routeNameFor($user),

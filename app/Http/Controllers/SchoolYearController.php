@@ -83,6 +83,7 @@ class SchoolYearController extends Controller
     public function show($id)
     {
         $schoolYear = SchoolYear::findOrFail($id);
+        $user = auth()->user();
 
         if (!$schoolYear->isArchived()) {
             return redirect()->route('dean.archives.index');
@@ -90,6 +91,10 @@ class SchoolYearController extends Controller
 
         $documentsQuery = Document::where('school_year_id', $schoolYear->id)
             ->with('uploader.employee', 'folder');
+
+        if ($user->isFaculty()) {
+            $documentsQuery->where('uploaded_by', $user->id);
+        }
 
         $archiveSearch = trim((string) request('q', ''));
         if ($archiveSearch !== '') {
@@ -105,15 +110,23 @@ class SchoolYearController extends Controller
 
         $documents = $documentsQuery->latest()->paginate(20)->withQueryString();
 
-        $teachingGuides = TeachingGuide::where('school_year_id', $schoolYear->id)
-            ->with('uploader.employee')
-            ->latest()
-            ->paginate(20);
+        $teachingGuidesQuery = TeachingGuide::where('school_year_id', $schoolYear->id)
+            ->with('uploader.employee');
 
-        $examQuestionnaires = ExamQuestionnaire::where('school_year_id', $schoolYear->id)
-            ->with('submitter.employee')
-            ->latest()
-            ->paginate(20);
+        if ($user->isFaculty()) {
+            $teachingGuidesQuery->where('user_id', $user->id);
+        }
+
+        $teachingGuides = $teachingGuidesQuery->latest()->paginate(20);
+
+        $examQuestionnairesQuery = ExamQuestionnaire::where('school_year_id', $schoolYear->id)
+            ->with('submitter.employee');
+
+        if ($user->isFaculty()) {
+            $examQuestionnairesQuery->where('submitted_by', $user->id);
+        }
+
+        $examQuestionnaires = $examQuestionnairesQuery->latest()->paginate(20);
 
         $role = $this->getViewRole();
 

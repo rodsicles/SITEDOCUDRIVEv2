@@ -61,7 +61,7 @@ class SubmissionAnalyticsService
             $schoolYear = $active?->start_year ?? AcademicYear::currentStartYear();
         }
 
-        $semester = $filters['semester'] ?? null;
+        $semester = $viewer->isFaculty() ? null : ($filters['semester'] ?? null);
         if ($semester && !in_array($semester, ['1st', '2nd'], true)) {
             $semester = null;
         }

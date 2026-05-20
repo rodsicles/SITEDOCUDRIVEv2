@@ -1,9 +1,9 @@
 @extends('layouts.dashboard')
 
-@section('title', 'Analytics - Faculty')
+@section('title', 'Performance Analytics - Faculty')
 
-@section('page-title', 'Data Analytics')
-@section('page-subtitle', 'Your submission activity and trends')
+@section('page-title', 'Performance Analytics')
+@section('page-subtitle', 'Your submission activity for the selected school year')
 
 @section('sidebar')
     @include('partials.faculty-sidebar')

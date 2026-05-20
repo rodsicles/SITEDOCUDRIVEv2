@@ -10,7 +10,7 @@
     <i class="fas fa-history"></i> Activity Log
 </a>
 <a href="{{ route('faculty.analytics') }}" class="menu-item {{ request()->routeIs('faculty.analytics') ? 'active' : '' }}">
-    <i class="fas fa-chart-pie"></i> Analytics
+    <i class="fas fa-chart-pie"></i> Performance Analytics
 </a>
 
 <div class="sidebar-section-label">Communication</div>

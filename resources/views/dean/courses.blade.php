@@ -90,6 +90,7 @@
             @endforeach
         </div>
 
+        <div class="course-catalog-table-wrap">
         <table class="data-table">
             <thead>
                 <tr>
@@ -113,19 +114,18 @@
                             <span class="badge badge-warning">Removed</span>
                         @endif
                     </td>
-                    <td class="text-right">
-                        <div class="relative inline-block">
-                            <button class="course-menu-toggle p-2 rounded-md hover:bg-gray-200 dark:hover:bg-gray-700 transition-colors text-gray-600 dark:text-gray-300"
-                                    data-course-id="{{ $course->id }}">
+                    <td class="text-right course-action-cell">
+                        <div class="course-action-wrap">
+                            <button type="button" class="course-menu-toggle" data-course-id="{{ $course->id }}" aria-label="Course actions" aria-expanded="false" aria-haspopup="true">
                                 <i class="fas fa-ellipsis-v"></i>
                             </button>
-                            <div class="course-menu hidden absolute right-0 mt-1 w-40 bg-white dark:bg-[#2a2a2a] border border-gray-200 dark:border-gray-700 rounded-lg shadow-lg z-50 py-1"
-                                 data-menu-id="{{ $course->id }}">
+                            <div class="course-menu-dropdown" data-menu-id="{{ $course->id }}" role="menu">
                                 <button type="button"
-                                        class="course-rename-btn w-full text-left px-4 py-2 text-sm text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-700 flex items-center gap-2"
+                                        class="course-rename-btn"
                                         data-id="{{ $course->id }}"
                                         data-code="{{ $course->code }}"
-                                        data-title="{{ $course->title }}">
+                                        data-title="{{ $course->title }}"
+                                        role="menuitem">
                                     <i class="fas fa-pen text-xs"></i> Rename
                                 </button>
                                 @if($course->is_active)
@@ -133,14 +133,14 @@
                                       onsubmit="return confirm('Remove this course from faculty upload choices?');">
                                     @csrf
                                     @method('DELETE')
-                                    <button type="submit" class="w-full text-left px-4 py-2 text-sm text-red-600 dark:text-red-400 hover:bg-gray-100 dark:hover:bg-gray-700 flex items-center gap-2">
+                                    <button type="submit" class="course-menu-remove" role="menuitem">
                                         <i class="fas fa-trash text-xs"></i> Remove
                                     </button>
                                 </form>
                                 @else
                                 <form action="{{ route('dean.courses.restore', $course) }}" method="POST">
                                     @csrf
-                                    <button type="submit" class="w-full text-left px-4 py-2 text-sm text-green-600 dark:text-green-400 hover:bg-gray-100 dark:hover:bg-gray-700 flex items-center gap-2">
+                                    <button type="submit" class="course-menu-restore" role="menuitem">
                                         <i class="fas fa-undo text-xs"></i> Restore
                                     </button>
                                 </form>
@@ -162,10 +162,11 @@
                 @endforelse
             </tbody>
         </table>
+        </div>
     </div>
 
     {{-- Rename Modal --}}
-    <div id="renameModal" class="hidden fixed inset-0 bg-black bg-opacity-50 z-50 flex items-center justify-center p-4">
+    <div id="renameModal" class="fixed inset-0 bg-black bg-opacity-50 z-50 p-4">
         <div class="bg-white dark:bg-[#1e1e1e] rounded-lg shadow-xl max-w-md w-full">
             <div class="p-6">
                 <h3 class="text-lg font-bold text-gray-800 dark:text-white mb-4">
@@ -185,7 +186,7 @@
                         </div>
                     </div>
                     <div class="flex justify-end gap-3 mt-6">
-                        <button type="button" onclick="document.getElementById('renameModal').classList.add('hidden')"
+                        <button type="button" id="renameModalCancel"
                                 class="btn bg-gray-200 dark:bg-gray-700 text-gray-700 dark:text-gray-300">
                             Cancel
                         </button>
@@ -200,37 +201,70 @@
 
     <script>
     document.addEventListener('DOMContentLoaded', function () {
-        // 3-dot dropdown toggle
+        var renameModal = document.getElementById('renameModal');
+
+        function closeAllMenus() {
+            document.querySelectorAll('.course-menu-dropdown').forEach(function (m) {
+                m.classList.remove('is-open');
+            });
+            document.querySelectorAll('.course-menu-toggle').forEach(function (btn) {
+                btn.setAttribute('aria-expanded', 'false');
+            });
+        }
+
+        function openMenu(menu, toggleBtn) {
+            closeAllMenus();
+            menu.classList.add('is-open');
+            toggleBtn.setAttribute('aria-expanded', 'true');
+        }
+
         document.querySelectorAll('.course-menu-toggle').forEach(function (btn) {
             btn.addEventListener('click', function (e) {
                 e.stopPropagation();
                 var id = btn.dataset.courseId;
-                var menu = document.querySelector('[data-menu-id="' + id + '"]');
-                var isOpen = !menu.classList.contains('hidden');
-                closeAllMenus();
-                if (!isOpen) menu.classList.remove('hidden');
+                var menu = document.querySelector('.course-menu-dropdown[data-menu-id="' + id + '"]');
+                if (!menu) return;
+                if (menu.classList.contains('is-open')) {
+                    closeAllMenus();
+                } else {
+                    openMenu(menu, btn);
+                }
             });
         });
 
-        document.addEventListener('click', closeAllMenus);
-
-        function closeAllMenus() {
-            document.querySelectorAll('.course-menu').forEach(function (m) {
-                m.classList.add('hidden');
-            });
-        }
-
-        // Rename button opens modal
-        document.querySelectorAll('.course-rename-btn').forEach(function (btn) {
-            btn.addEventListener('click', function () {
+        document.addEventListener('click', function (e) {
+            if (!e.target.closest('.course-action-wrap')) {
                 closeAllMenus();
-                var id = btn.dataset.id;
+            }
+        });
+
+        document.addEventListener('keydown', function (e) {
+            if (e.key === 'Escape') {
+                closeAllMenus();
+                if (renameModal) renameModal.classList.remove('is-open');
+            }
+        });
+
+        document.querySelectorAll('.course-rename-btn').forEach(function (btn) {
+            btn.addEventListener('click', function (e) {
+                e.stopPropagation();
+                closeAllMenus();
                 document.getElementById('renameCode').value = btn.dataset.code;
                 document.getElementById('renameTitle').value = btn.dataset.title;
-                document.getElementById('renameForm').action = '/dean/courses/' + id;
-                document.getElementById('renameModal').classList.remove('hidden');
+                document.getElementById('renameForm').action = '/dean/courses/' + btn.dataset.id;
+                if (renameModal) renameModal.classList.add('is-open');
             });
         });
+
+        var cancelBtn = document.getElementById('renameModalCancel');
+        if (cancelBtn && renameModal) {
+            cancelBtn.addEventListener('click', function () {
+                renameModal.classList.remove('is-open');
+            });
+            renameModal.addEventListener('click', function (e) {
+                if (e.target === renameModal) renameModal.classList.remove('is-open');
+            });
+        }
     });
     </script>
 @endsection

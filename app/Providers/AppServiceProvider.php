@@ -89,5 +89,23 @@ class AppServiceProvider extends ServiceProvider
 
             $view->with(compact('pendingTeachingGuidesCount', 'pendingExamQuestionnairesCount'));
         });
+
+        View::composer(['partials.dean-sidebar', 'partials.secretary-sidebar'], function ($view) {
+            $user = auth()->user();
+            if (!$user?->isDeanOrSecretary()) {
+                return;
+            }
+
+            $activeId = SchoolYear::activeId();
+            $pendingScope = fn ($q) => $q->where('status', 'pending')
+                ->where(function ($q2) use ($activeId) {
+                    $q2->where('school_year_id', $activeId)->orWhereNull('school_year_id');
+                });
+
+            $view->with([
+                'pendingTeachingGuidesCount' => TeachingGuide::query()->where($pendingScope)->count(),
+                'pendingExamQuestionnairesCount' => ExamQuestionnaire::query()->where($pendingScope)->count(),
+            ]);
+        });
     }
 }

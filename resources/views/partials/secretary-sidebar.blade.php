@@ -41,7 +41,13 @@
 </a>
 <a href="{{ route('dean.teaching-guides.index') }}" class="menu-item {{ request()->routeIs('dean.teaching-guides.*') ? 'active' : '' }}">
     <i class="fas fa-book-open"></i> Pending Teaching Guides
+    @if(($pendingTeachingGuidesCount ?? 0) > 0)
+    <span class="badge badge-danger ml-auto">{{ $pendingTeachingGuidesCount }}</span>
+    @endif
 </a>
 <a href="{{ route('dean.exam-questionnaires.index') }}" class="menu-item {{ request()->routeIs('dean.exam-questionnaires.*') ? 'active' : '' }}">
     <i class="fas fa-file-alt"></i> Pending Exam Questionnaires
+    @if(($pendingExamQuestionnairesCount ?? 0) > 0)
+    <span class="badge badge-danger ml-auto">{{ $pendingExamQuestionnairesCount }}</span>
+    @endif
 </a>

@@ -11,6 +11,10 @@ use Illuminate\Contracts\Pagination\LengthAwarePaginator;
 
 class RecycleBinService
 {
+    public function __construct(
+        protected NotificationService $notificationService,
+    ) {}
+
     public function paginateForUser(User $user, int $perPage = 15): LengthAwarePaginator
     {
         return $this->baseQuery($user)
@@ -69,6 +73,8 @@ class RecycleBinService
         }
 
         $document = Document::onlyTrashed()->findOrFail($documentId);
+
+        $this->notificationService->notifyDocumentPermanentlyDeleted($document, $user);
 
         if ($document->file_path && UploadStorage::exists($document->file_path)) {
             UploadStorage::delete($document->file_path);

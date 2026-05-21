@@ -2,6 +2,7 @@
 
 namespace App\Services;
 
+use App\Models\Document;
 use App\Models\ExamQuestionnaire;
 use App\Models\Notification;
 use App\Models\TeachingGuide;
@@ -214,6 +215,26 @@ class NotificationService
     protected function reviewerLabel(User $reviewer): string
     {
         return $reviewer->isSecretary() ? 'Secretary' : 'Dean';
+    }
+
+    /**
+     * Notify the document uploader that the Dean permanently removed their file from the Recycle Bin.
+     */
+    public function notifyDocumentPermanentlyDeleted(Document $document, User $dean): void
+    {
+        $uploaderId = (int) $document->uploaded_by;
+        if ($uploaderId <= 0 || $uploaderId === (int) $dean->id) {
+            return;
+        }
+
+        $title = trim((string) ($document->document_title ?? ''));
+        $label = $title !== '' ? "\"{$title}\"" : 'your file';
+
+        $this->notify(
+            $uploaderId,
+            "The Dean permanently deleted {$label} from the Recycle Bin. It cannot be recovered.",
+            Notification::TONE_DANGER,
+        );
     }
 
     /**

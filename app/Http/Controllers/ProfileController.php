@@ -25,7 +25,10 @@ class ProfileController extends Controller
         $canEditFullName = $user->isDean() || $user->isProgramCoordinator();
 
         $rules = [
-            'email' => 'required|email|max:45|unique:users,email,'.$user->id,
+            // Email is optional (no SMTP wired up) and not enforced unique
+            // because the system uses username for identity. Once SMTP lands
+            // we may re-introduce uniqueness then.
+            'email' => 'nullable|email|max:45',
             'employee_no' => 'nullable|string|max:15|regex:/^[0-9]*$/|unique:employees,employee_no,'.$employee->employee_id.',employee_id',
             'department' => 'nullable|in:Engineering,Information Technology',
         ];
@@ -37,7 +40,7 @@ class ProfileController extends Controller
         $validated = $request->validate($rules);
 
         $user->update([
-            'email' => $validated['email'],
+            'email' => $validated['email'] ?: null,
         ]);
 
         $employeeData = [

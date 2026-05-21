@@ -24,6 +24,8 @@ use App\Http\Controllers\CoordinatorCourseController;
 use App\Http\Controllers\TgSubjectFolderController;
 use App\Http\Controllers\EqSubjectFolderController;
 use App\Http\Controllers\RecycleBinController;
+use App\Http\Controllers\ForgotPasswordController;
+use App\Http\Controllers\PasswordResetRequestController;
 
 // Authentication Routes
 Route::get('/', [AuthController::class, 'showLogin'])->name('login');
@@ -33,6 +35,15 @@ Route::post('/login', [AuthController::class, 'login'])->middleware('throttle:20
 // Route::get('/register', [AuthController::class, 'showRegister'])->name('register');
 // Route::post('/register', [AuthController::class, 'register'])->middleware('throttle:5,1')->name('register.post');
 Route::post('/logout', [AuthController::class, 'logout'])->name('logout')->middleware('auth');
+
+// Public forgot-password request flow. The user submits their username and
+// the request is queued for the Dean/Secretary to review. Aggressive IP-level
+// throttle on top of the per-username throttle inside the controller.
+Route::get('/password/forgot', [ForgotPasswordController::class, 'show'])
+    ->name('password.forgot.show');
+Route::post('/password/forgot', [ForgotPasswordController::class, 'submit'])
+    ->middleware('throttle:10,60')
+    ->name('password.forgot.submit');
 
 // Mandatory password-change gate (locked overlay) for accounts created by an
 // admin with a temporary password. Throttled to mitigate temp-password brute force.
@@ -107,6 +118,22 @@ Route::middleware(['auth', 'no.back'])->prefix('professional-development')->name
 Route::middleware(['auth', 'no.back'])->get('/user-guide', function () {
     return view('user-guide');
 })->name('user-guide');
+
+// Password Reset Requests (Dean + Secretary review queue). Kept outside the
+// dean.* group so the URL stays generic (/password-reset-requests) and can be
+// linked to from both sidebars without prefix surprises.
+Route::middleware(['auth', 'no.back', 'role:Dean,Secretary'])
+    ->prefix('password-reset-requests')
+    ->name('password-reset-requests.')
+    ->group(function () {
+        Route::get('/', [PasswordResetRequestController::class, 'index'])->name('index');
+        Route::post('/{id}/approve', [PasswordResetRequestController::class, 'approve'])
+            ->middleware('throttle:30,1')
+            ->name('approve');
+        Route::post('/{id}/deny', [PasswordResetRequestController::class, 'deny'])
+            ->middleware('throttle:30,1')
+            ->name('deny');
+    });
 
 // Dean + Secretary Routes (Secretary has same access as Dean)
 Route::middleware(['auth', 'no.back', 'role:Dean,Secretary'])->prefix('dean')->name('dean.')->group(function () {

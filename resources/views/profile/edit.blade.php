@@ -39,9 +39,9 @@
                 </div>
 
                 <div class="form-group">
-                    <label class="form-label">Email Address</label>
+                    <label class="form-label">Email Address <span class="text-xs text-gray-500">(optional)</span></label>
                     <input type="email" name="email" class="form-control"
-                           value="{{ old('email', $user->email) }}" required>
+                           value="{{ old('email', $user->email) }}" placeholder="you@example.com">
                 </div>
 
                 <div class="form-group">

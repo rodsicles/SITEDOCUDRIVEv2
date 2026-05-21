@@ -107,7 +107,7 @@
                             <input type="checkbox" id="remember" name="remember" checked>
                             <span>Remember me</span>
                         </label>
-                        <a href="#" class="login-portal-forgot">Forgot password?</a>
+                        <a href="{{ route('password.forgot.show') }}" class="login-portal-forgot">Forgot password?</a>
                     </div>
 
                     <div class="login-portal-submit-wrap">

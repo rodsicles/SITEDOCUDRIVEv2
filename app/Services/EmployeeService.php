@@ -32,7 +32,7 @@ class EmployeeService
                 'role_id' => 2,
                 'name' => $validated['full_name'],
                 'username' => $validated['username'],
-                'email' => $validated['email'],
+                'email' => $validated['email'] ?? null,
                 'password' => Hash::make($validated['password']),
                 'status' => 'Active',
                 // Force a password rotation on first login so the Dean is not
@@ -79,7 +79,7 @@ class EmployeeService
                 'role_id' => 3,
                 'name' => $validated['full_name'],
                 'username' => $validated['username'],
-                'email' => $validated['email'],
+                'email' => $validated['email'] ?? null,
                 'password' => Hash::make($validated['password']),
                 'status' => 'Active',
                 // Force a password rotation on first login (chain-of-custody).
@@ -127,7 +127,7 @@ class EmployeeService
 
             $employee->user->update([
                 'name' => $validated['full_name'],
-                'email' => $validated['email'],
+                'email' => $validated['email'] ?? null,
             ]);
 
             DashboardLog::create([
@@ -187,7 +187,7 @@ class EmployeeService
 
             $employee->user->update([
                 'name' => $validated['full_name'],
-                'email' => $validated['email'],
+                'email' => $validated['email'] ?? null,
             ]);
 
             DashboardLog::create([
@@ -305,12 +305,14 @@ class EmployeeService
     }
 
     /**
-     * Auto-assign employee number and internal email for new coordinator/faculty accounts.
+     * Auto-assign the employee number for new coordinator/faculty accounts.
+     *
+     * Email is intentionally NOT auto-generated. Until SMTP is wired up, the
+     * field is optional and left NULL when the admin does not supply one.
      */
     protected function applyGeneratedAccountFields(array &$validated, string $role): void
     {
         $generator = app(EmployeeNumberGenerator::class);
         $validated['employee_no'] = $generator->next($validated['department'], $role);
-        $validated['email'] = strtolower($validated['username']) . '@employees.internal';
     }
 }

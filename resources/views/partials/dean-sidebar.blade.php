@@ -1,4 +1,13 @@
 {{-- Consistent Dean Sidebar - Appears on ALL Dean Pages --}}
+@php
+    try {
+        $pendingResetCount = \App\Models\PasswordResetRequest::pending()
+            ->where('expires_at', '>', now())
+            ->count();
+    } catch (\Throwable $e) {
+        $pendingResetCount = 0;
+    }
+@endphp
 <div class="sidebar-section-label">Core Functions</div>
 <a href="{{ route('dean.dashboard') }}" class="menu-item {{ request()->routeIs('dean.dashboard') ? 'active' : '' }}">
     <i class="fas fa-chart-line"></i> Dashboard
@@ -24,6 +33,12 @@
 <div class="sidebar-section-label">Management</div>
 <a href="{{ route('dean.employees') }}" class="menu-item {{ request()->routeIs('dean.employees', 'dean.employee-profile', 'dean.edit-employee') ? 'active' : '' }}">
     <i class="fas fa-users"></i> Faculty Members
+</a>
+<a href="{{ route('password-reset-requests.index') }}" class="menu-item {{ request()->routeIs('password-reset-requests.*') ? 'active' : '' }}">
+    <i class="fas fa-key"></i> Password Resets
+    @if($pendingResetCount > 0)
+    <span class="badge badge-danger ml-auto">{{ $pendingResetCount }}</span>
+    @endif
 </a>
 <a href="{{ route('dean.courses') }}" class="menu-item {{ request()->routeIs('dean.courses*') ? 'active' : '' }}">
     <i class="fas fa-book"></i> Course Catalog

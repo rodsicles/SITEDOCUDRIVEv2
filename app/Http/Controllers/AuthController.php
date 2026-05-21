@@ -219,7 +219,7 @@ class AuthController extends Controller
         $validated = $request->validate([
             'name'       => 'required|string|max:255',
             'username'   => 'required|string|max:50|unique:users,username',
-            'email'      => 'required|email|max:255|unique:users,email',
+            'email'      => 'nullable|email|max:255',
             'password'   => 'required|string|min:8|max:40',
             'role_id'    => 'required|in:1,2,3,4',
             'department' => 'required|in:Engineering,Information Technology',
@@ -229,7 +229,7 @@ class AuthController extends Controller
             'role_id'  => $validated['role_id'],
             'username' => $validated['username'],
             'name'     => $validated['name'],
-            'email'    => $validated['email'],
+            'email'    => $validated['email'] ?? null,
             'password' => $validated['password'],
             'status'   => 'Active',
         ]);

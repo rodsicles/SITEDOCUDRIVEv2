@@ -349,7 +349,7 @@ class CoordinatorController extends Controller
             'full_name' => 'required|string|max:45',
             'employee_no' => 'nullable|string|max:15|regex:/^[0-9]*$/|unique:employees,employee_no,' . $employee->employee_id . ',employee_id',
             'department' => 'required|in:Information Technology,Engineering',
-            'email' => 'required|email|max:45|unique:users,email,' . $employee->user_id . ',id',
+            'email' => 'nullable|email|max:45',
         ]);
 
         // Enforce coordinator can only set department to their own

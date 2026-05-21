@@ -62,10 +62,13 @@
                 </div>
 
                 <div class="form-group">
-                    <label class="form-label">Email Address *</label>
+                    <label class="form-label">Email Address <span class="text-xs text-gray-500">(optional)</span></label>
                     <input type="email" name="email" class="form-control"
                            value="{{ old('email', $employee->user->email) }}"
-                           required maxlength="45" placeholder="employee@example.com">
+                           maxlength="45" placeholder="employee@example.com">
+                    <small class="text-gray-600 dark:text-gray-400 text-xs mt-1.5 block">
+                        Optional contact field. Not used for password recovery (SMTP not yet configured).
+                    </small>
                 </div>
 
                 <div class="form-group">

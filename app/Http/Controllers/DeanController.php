@@ -38,13 +38,7 @@ class DeanController extends Controller
     {
         $user = auth()->user();
         $stats = $this->dashboardService->getDeanStats($user->id);
-        $monthlyUsage = $this->dashboardService->getMonthlyUsage(date('Y'));
-        $monthNames = $this->dashboardService->getMonthNames();
-        $recentActivities = $this->dashboardService->getRecentActivities($user, 10);
-        $performanceData = $this->dashboardService->getPerformanceData();
-        $topPerformers = $this->dashboardService->getTopPerformers(5);
         $announcements = $this->dashboardService->getAnnouncements($user, 5);
-        $docAnalyticsData = $this->dashboardService->getDeanDocumentAnalytics();
         $insight = $this->weeklyInsightService->generateForDean();
 
         $recentTasks = Task::with(['assignedTo.employee'])
@@ -59,18 +53,23 @@ class DeanController extends Controller
             });
         $pendingTeachingGuidesCount = \App\Models\TeachingGuide::query()->where($pendingScope)->count();
         $pendingExamQuestionnairesCount = \App\Models\ExamQuestionnaire::query()->where($pendingScope)->count();
+        $pendingApprovals = $pendingTeachingGuidesCount + $pendingExamQuestionnairesCount;
 
-        return view('dean.dashboard', array_merge($stats, $docAnalyticsData, compact(
-            'monthlyUsage',
-            'monthNames',
-            'recentActivities',
-            'performanceData',
-            'topPerformers',
+        $docsThisSchoolYear = \App\Models\Document::where(function ($q) use ($activeId) {
+            $q->where('school_year_id', $activeId)->orWhereNull('school_year_id');
+        })->count();
+
+        $tasksInProgress = Task::where('status', 'In Progress')->count();
+
+        return view('dean.dashboard', array_merge($stats, compact(
             'announcements',
             'recentTasks',
             'insight',
             'pendingTeachingGuidesCount',
             'pendingExamQuestionnairesCount',
+            'pendingApprovals',
+            'docsThisSchoolYear',
+            'tasksInProgress',
         )));
     }
 

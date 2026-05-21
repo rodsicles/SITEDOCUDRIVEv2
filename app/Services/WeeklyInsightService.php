@@ -3,12 +3,9 @@
 namespace App\Services;
 
 use App\Models\Announcement;
-use App\Models\AnnouncementRead;
 use App\Models\DashboardLog;
-use App\Models\LeaveRequest;
 use App\Models\Task;
 use App\Models\User;
-use Carbon\Carbon;
 use Illuminate\Support\Facades\Cache;
 use Illuminate\Support\Facades\DB;
 
@@ -93,9 +90,6 @@ class WeeklyInsightService
             ->map(fn($u) => $u->employee->full_name ?? $u->username)
             ->values();
 
-        // Pending leave approvals awaiting Dean
-        $pendingLeaves = LeaveRequest::where('status', 'Pending')->count();
-
         // Most-engaged announcement (highest read rate this week)
         $totalFaculty = max(1, User::where('role_id', 3)->where('status', 'Active')->count());
 
@@ -129,7 +123,6 @@ class WeeklyInsightService
             ] : null,
             'inactive_count'    => $inactiveFaculty->count(),
             'inactive_names'    => $inactiveFaculty->take(3)->all(),
-            'pending_leaves'    => $pendingLeaves,
             'top_announcement'  => $topAnnouncement,
             'overdue_rate_this' => $overdueRateThis,
             'overdue_rate_last' => $overdueRateLast,
@@ -181,11 +174,6 @@ class WeeklyInsightService
             $parts[] = 'All faculty have been active in the system within the last 5 days.';
         }
 
-        // Pending approvals
-        if ($m['pending_leaves'] > 0) {
-            $parts[] = '<strong>' . $m['pending_leaves'] . ' leave request' . ($m['pending_leaves'] > 1 ? 's are' : ' is') . '</strong> awaiting your countersign.';
-        }
-
         // Most-engaged announcement
         if ($m['top_announcement'] && $m['top_announcement']['read_rate'] > 0) {
             $parts[] = "The most-engaged announcement was &ldquo;<strong>" . e($m['top_announcement']['title']) . '</strong>&rdquo; (read by '
@@ -218,11 +206,6 @@ class WeeklyInsightService
                 'tone'  => $m['inactive_count'] === 0 ? 'positive' : 'warning',
             ],
             [
-                'label' => 'Pending Leave Approvals',
-                'value' => (string) $m['pending_leaves'],
-                'tone'  => $m['pending_leaves'] === 0 ? 'positive' : 'warning',
-            ],
-            [
                 'label' => 'Overdue Rate',
                 'value' => $m['overdue_rate_this'] . '%',
                 'tone'  => $m['overdue_jumped'] ? 'negative' : 'neutral',
@@ -239,9 +222,6 @@ class WeeklyInsightService
 
         if ($m['inactive_count'] > 0) {
             $recs[] = 'Reach out to inactive faculty — they may need access support or have unaddressed concerns.';
-        }
-        if ($m['pending_leaves'] > 0) {
-            $recs[] = 'Review and act on the ' . $m['pending_leaves'] . ' pending leave request' . ($m['pending_leaves'] > 1 ? 's' : '') . ' to avoid approval delays.';
         }
         if ($m['overdue_jumped']) {
             $recs[] = 'Open the Tasks view filtered by Overdue — current rate (' . $m['overdue_rate_this'] . '%) is significantly higher than last week.';

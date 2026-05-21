@@ -16,12 +16,9 @@ class CourseService
         if ($departmentFilter === 'inactive') {
             $query->where('is_active', false);
         } elseif ($departmentFilter && $departmentFilter !== 'all') {
-            $map = [
-                'it' => Course::DEPT_IT,
-                'engineering' => Course::DEPT_ENGINEERING,
-            ];
-            if (isset($map[$departmentFilter])) {
-                $query->where('department', $map[$departmentFilter]);
+            $department = self::slugToDepartment($departmentFilter);
+            if ($department) {
+                $query->where('department', $department);
             }
         }
 
@@ -34,6 +31,46 @@ class CourseService
         }
 
         return $query->get();
+    }
+
+    /**
+     * List courses for a single department (Program Coordinator scope).
+     */
+    public function listForDepartment(string $department, ?string $filter = 'all', ?string $search = null): Collection
+    {
+        $query = Course::query()->ordered()->where('department', $department);
+
+        if ($filter === 'inactive') {
+            $query->where('is_active', false);
+        }
+
+        if ($search !== null && trim($search) !== '') {
+            $term = '%' . trim($search) . '%';
+            $query->where(function ($q) use ($term) {
+                $q->where('code', 'like', $term)
+                    ->orWhere('title', 'like', $term);
+            });
+        }
+
+        return $query->get();
+    }
+
+    public static function slugToDepartment(?string $slug): ?string
+    {
+        return match ($slug) {
+            'it' => Course::DEPT_IT,
+            'engineering' => Course::DEPT_ENGINEERING,
+            default => null,
+        };
+    }
+
+    public static function departmentToSlug(?string $department): ?string
+    {
+        return match ($department) {
+            Course::DEPT_IT => 'it',
+            Course::DEPT_ENGINEERING => 'engineering',
+            default => null,
+        };
     }
 
     public function create(array $data, int $deanUserId): Course

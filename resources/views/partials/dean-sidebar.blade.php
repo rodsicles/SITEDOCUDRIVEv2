@@ -25,9 +25,6 @@
 <a href="{{ route('dean.employees') }}" class="menu-item {{ request()->routeIs('dean.employees', 'dean.employee-profile', 'dean.edit-employee') ? 'active' : '' }}">
     <i class="fas fa-users"></i> Faculty Members
 </a>
-<a href="{{ route('dean.reports') }}" class="menu-item {{ request()->routeIs('dean.reports') ? 'active' : '' }}">
-    <i class="fas fa-file-alt"></i> Reports
-</a>
 <a href="{{ route('dean.courses') }}" class="menu-item {{ request()->routeIs('dean.courses*') ? 'active' : '' }}">
     <i class="fas fa-book"></i> Course Catalog
 </a>

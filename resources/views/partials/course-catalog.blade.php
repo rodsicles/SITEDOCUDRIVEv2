@@ -1,0 +1,314 @@
+@php
+    use App\Models\Course;
+    use App\Services\CourseService;
+
+    $routePrefix = $routePrefix ?? 'dean';
+    $lockedDepartment = $lockedDepartment ?? null;
+    $departments = $departments ?? CourseService::departments();
+    $departmentFilter = $departmentFilter ?? 'all';
+    $search = $search ?? null;
+    $courses = $courses ?? collect();
+
+    $indexRoute = $routePrefix . '.courses';
+    $storeRoute = $routePrefix . '.courses.store';
+    $updateRouteBase = url($routePrefix . '/courses');
+    $destroyRoute = fn (Course $course) => route($routePrefix . '.courses.destroy', $course);
+    $restoreRoute = fn (Course $course) => route($routePrefix . '.courses.restore', $course);
+
+    if ($lockedDepartment) {
+        $deptSlug = $deptSlug ?? CourseService::departmentToSlug($lockedDepartment);
+        $deptLinks = [
+            ['label' => 'All courses', 'value' => 'all'],
+            ['label' => $lockedDepartment, 'value' => $deptSlug],
+            ['label' => 'Inactive', 'value' => 'inactive'],
+        ];
+    } else {
+        $deptLinks = [
+            ['label' => 'All courses', 'value' => 'all'],
+            ['label' => 'Information Technology', 'value' => 'it'],
+            ['label' => 'Engineering', 'value' => 'engineering'],
+            ['label' => 'Inactive', 'value' => 'inactive'],
+        ];
+    }
+
+    $dept = $departmentFilter;
+@endphp
+
+@if(session('success'))
+    <div class="alert alert-success mb-4">{{ session('success') }}</div>
+@endif
+@if(session('error'))
+    <div class="alert alert-danger mb-4">{{ session('error') }}</div>
+@endif
+
+<div class="content-card mb-6">
+    <div class="card-header">
+        <h3 class="card-title"><i class="fas fa-plus-circle mr-2"></i>Add Course</h3>
+    </div>
+    <form action="{{ route($storeRoute) }}" method="POST" class="p-4">
+        @csrf
+        <div class="grid grid-cols-1 md:grid-cols-4 gap-4 items-end">
+            <div class="form-group mb-0">
+                <label class="form-label">Course Code <span class="text-red-500">*</span></label>
+                <input type="text" name="code" class="form-control" placeholder="e.g. ITE127" value="{{ old('code') }}" required maxlength="20">
+            </div>
+            <div class="form-group mb-0 md:col-span-2">
+                <label class="form-label">Course Title <span class="text-red-500">*</span></label>
+                <input type="text" name="title" class="form-control" placeholder="Full course title" value="{{ old('title') }}" required maxlength="150">
+            </div>
+            @if($lockedDepartment)
+            <div class="form-group mb-0">
+                <label class="form-label">Department</label>
+                <input type="text" class="form-control bg-gray-100 dark:bg-gray-800" value="{{ $lockedDepartment }}" readonly disabled>
+            </div>
+            @else
+            <div class="form-group mb-0">
+                <label class="form-label">Department <span class="text-red-500">*</span></label>
+                <select name="department" class="form-control" required>
+                    @foreach($departments as $value => $label)
+                        <option value="{{ $value }}" @selected(old('department') === $value)>{{ $label }}</option>
+                    @endforeach
+                </select>
+            </div>
+            @endif
+        </div>
+        <p class="text-xs text-gray-500 dark:text-gray-400 mt-2 mb-3">
+            @if($lockedDepartment)
+                Faculty and coordinators in <strong>{{ $lockedDepartment }}</strong> will see this course when uploading to Teaching Guides or Exam Questionnaires.
+            @else
+                Faculty and coordinators in the selected department will see this course when uploading to Teaching Guides or Exam Questionnaires.
+            @endif
+        </p>
+        <button type="submit" class="btn btn-primary">
+            <i class="fas fa-plus"></i> Add Course
+        </button>
+    </form>
+</div>
+
+<div class="content-card">
+    <div class="card-header flex-col sm:flex-row gap-3 items-start sm:items-center">
+        <h3 class="card-title mb-0">All Courses</h3>
+        <div class="flex flex-col sm:flex-row sm:items-center gap-3 w-full sm:w-auto sm:ml-auto">
+            <form action="{{ route($indexRoute) }}" method="GET" class="flex items-center gap-2 w-full sm:w-auto">
+                @if($dept !== 'all')
+                    <input type="hidden" name="department" value="{{ $dept }}">
+                @endif
+                <input type="search" name="search" value="{{ $search ?? '' }}" class="form-control text-sm w-full sm:min-w-[220px]" placeholder="Search code or title...">
+                <button type="submit" class="btn btn-primary text-sm whitespace-nowrap">
+                    <i class="fas fa-search"></i>
+                </button>
+                @if($search)
+                    <a href="{{ route($indexRoute, array_filter(['department' => $dept !== 'all' ? $dept : null])) }}" class="btn bg-gray-200 dark:bg-gray-700 text-gray-700 dark:text-gray-300 text-sm">
+                        <i class="fas fa-times"></i>
+                    </a>
+                @endif
+            </form>
+            <span class="badge badge-info whitespace-nowrap">{{ $courses->count() }} shown</span>
+        </div>
+    </div>
+
+    <div class="px-4 pb-3 flex flex-wrap gap-2 border-b border-gray-200 dark:border-gray-700">
+        @foreach($deptLinks as $link)
+            <a href="{{ route($indexRoute, array_filter(['department' => $link['value'], 'search' => $search ?? null])) }}"
+               class="btn text-sm {{ $dept === $link['value'] ? ($link['value'] === 'inactive' ? 'btn-danger' : 'btn-primary') : 'bg-gray-200 dark:bg-gray-700 text-gray-700 dark:text-gray-300' }}">
+                {{ $link['label'] }}
+            </a>
+        @endforeach
+    </div>
+
+    <div class="course-catalog-table-wrap">
+    <table class="data-table">
+        <thead>
+            <tr>
+                <th>Code</th>
+                <th>Title</th>
+                <th>Department</th>
+                <th>Status</th>
+                <th class="text-right">Action</th>
+            </tr>
+        </thead>
+        <tbody>
+            @forelse($courses as $course)
+            <tr>
+                <td><strong>{{ $course->code }}</strong></td>
+                <td>{{ $course->title }}</td>
+                <td>{{ $course->department }}</td>
+                <td>
+                    @if($course->is_active)
+                        <span class="badge badge-success">Active</span>
+                    @else
+                        <span class="badge badge-warning">Removed</span>
+                    @endif
+                </td>
+                <td class="text-right course-action-cell">
+                    <div class="course-action-wrap">
+                        <button type="button"
+                                class="course-catalog-actions-btn"
+                                data-course-id="{{ $course->id }}"
+                                aria-label="Actions for {{ $course->code }}"
+                                aria-expanded="false"
+                                aria-haspopup="true"
+                                aria-controls="course-popover-{{ $course->id }}">
+                            <i class="fas fa-ellipsis-v" aria-hidden="true"></i>
+                        </button>
+                        <div id="course-popover-{{ $course->id }}"
+                             class="course-catalog-popover"
+                             data-popover-id="{{ $course->id }}"
+                             role="menu"
+                             hidden>
+                            <button type="button"
+                                    class="course-catalog-popover-item course-catalog-rename-btn"
+                                    data-id="{{ $course->id }}"
+                                    data-code="{{ $course->code }}"
+                                    data-title="{{ $course->title }}"
+                                    role="menuitem">
+                                <i class="fas fa-pen text-xs" aria-hidden="true"></i> Rename
+                            </button>
+                            @if($course->is_active)
+                            <form action="{{ $destroyRoute($course) }}" method="POST"
+                                  onsubmit="return confirm('Remove this course from faculty upload choices?');">
+                                @csrf
+                                @method('DELETE')
+                                <button type="submit" class="course-catalog-popover-item course-catalog-action-remove" role="menuitem">
+                                    <i class="fas fa-trash text-xs" aria-hidden="true"></i> Remove
+                                </button>
+                            </form>
+                            @else
+                            <form action="{{ $restoreRoute($course) }}" method="POST">
+                                @csrf
+                                <button type="submit" class="course-catalog-popover-item course-catalog-action-restore" role="menuitem">
+                                    <i class="fas fa-undo text-xs" aria-hidden="true"></i> Restore
+                                </button>
+                            </form>
+                            @endif
+                        </div>
+                    </div>
+                </td>
+            </tr>
+            @empty
+            <tr>
+                <td colspan="5" class="text-center text-gray-500 py-8">
+                    @if($dept === 'inactive')
+                        No inactive courses.
+                    @else
+                        No courses yet. Add courses using the form above.
+                    @endif
+                </td>
+            </tr>
+            @endforelse
+        </tbody>
+    </table>
+    </div>
+</div>
+
+{{-- Rename Modal --}}
+<div id="renameModal" class="fixed inset-0 bg-black bg-opacity-50 z-50 p-4">
+    <div class="bg-white dark:bg-[#1e1e1e] rounded-lg shadow-xl max-w-md w-full">
+        <div class="p-6">
+            <h3 class="text-lg font-bold text-gray-800 dark:text-white mb-4">
+                <i class="fas fa-pen mr-2 text-blue-500"></i>Rename Course
+            </h3>
+            <form id="renameForm" method="POST">
+                @csrf
+                @method('PATCH')
+                <div class="space-y-4">
+                    <div>
+                        <label class="text-sm font-semibold text-gray-600 dark:text-gray-300 block mb-1">Course Code</label>
+                        <input type="text" name="code" id="renameCode" class="form-control" required maxlength="20">
+                    </div>
+                    <div>
+                        <label class="text-sm font-semibold text-gray-600 dark:text-gray-300 block mb-1">Course Title</label>
+                        <input type="text" name="title" id="renameTitle" class="form-control" required maxlength="150">
+                    </div>
+                </div>
+                <div class="flex justify-end gap-3 mt-6">
+                    <button type="button" id="renameModalCancel"
+                            class="btn bg-gray-200 dark:bg-gray-700 text-gray-700 dark:text-gray-300">
+                        Cancel
+                    </button>
+                    <button type="submit" class="btn btn-primary">
+                        <i class="fas fa-check"></i> Save
+                    </button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+
+<script>
+document.addEventListener('DOMContentLoaded', function () {
+    var renameModal = document.getElementById('renameModal');
+    var updateRouteBase = @json($updateRouteBase);
+
+    function closePopover(popover, toggleBtn) {
+        if (!popover) return;
+        popover.classList.remove('is-open');
+        popover.setAttribute('hidden', '');
+        if (toggleBtn) toggleBtn.setAttribute('aria-expanded', 'false');
+    }
+
+    function closeAllPopovers() {
+        document.querySelectorAll('.course-catalog-popover').forEach(function (popover) {
+            var id = popover.dataset.popoverId;
+            var btn = document.querySelector('.course-catalog-actions-btn[data-course-id="' + id + '"]');
+            closePopover(popover, btn);
+        });
+    }
+
+    function openPopover(popover, toggleBtn) {
+        closeAllPopovers();
+        popover.classList.add('is-open');
+        popover.removeAttribute('hidden');
+        toggleBtn.setAttribute('aria-expanded', 'true');
+    }
+
+    document.querySelectorAll('.course-catalog-actions-btn').forEach(function (btn) {
+        btn.addEventListener('click', function (e) {
+            e.preventDefault();
+            e.stopPropagation();
+            var id = btn.dataset.courseId;
+            var popover = document.getElementById('course-popover-' + id);
+            if (!popover) return;
+            if (popover.classList.contains('is-open')) {
+                closePopover(popover, btn);
+            } else {
+                openPopover(popover, btn);
+            }
+        });
+    });
+
+    document.addEventListener('click', function (e) {
+        if (!e.target.closest('.course-action-wrap')) {
+            closeAllPopovers();
+        }
+    });
+
+    document.addEventListener('keydown', function (e) {
+        if (e.key === 'Escape') {
+            closeAllPopovers();
+            if (renameModal) renameModal.classList.remove('is-open');
+        }
+    });
+
+    document.querySelectorAll('.course-catalog-rename-btn').forEach(function (btn) {
+        btn.addEventListener('click', function (e) {
+            e.stopPropagation();
+            closeAllPopovers();
+            document.getElementById('renameCode').value = btn.dataset.code;
+            document.getElementById('renameTitle').value = btn.dataset.title;
+            document.getElementById('renameForm').action = updateRouteBase + '/' + btn.dataset.id;
+            if (renameModal) renameModal.classList.add('is-open');
+        });
+    });
+
+    var cancelBtn = document.getElementById('renameModalCancel');
+    if (cancelBtn && renameModal) {
+        cancelBtn.addEventListener('click', function () {
+            renameModal.classList.remove('is-open');
+        });
+        renameModal.addEventListener('click', function (e) {
+            if (e.target === renameModal) renameModal.classList.remove('is-open');
+        });
+    }
+});
+</script>

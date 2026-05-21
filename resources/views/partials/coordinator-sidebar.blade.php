@@ -25,6 +25,9 @@
 <a href="{{ route('coordinator.faculty') }}" class="menu-item {{ request()->routeIs('coordinator.faculty', 'coordinator.create-faculty', 'coordinator.edit-faculty') ? 'active' : '' }}">
     <i class="fas fa-users"></i> Faculty Members
 </a>
+<a href="{{ route('coordinator.courses') }}" class="menu-item {{ request()->routeIs('coordinator.courses*') ? 'active' : '' }}">
+    <i class="fas fa-book"></i> Course Catalog
+</a>
 <a href="{{ route('coordinator.analytics') }}" class="menu-item {{ request()->routeIs('coordinator.analytics') ? 'active' : '' }}">
     <i class="fas fa-chart-pie"></i> Analytics
 </a>

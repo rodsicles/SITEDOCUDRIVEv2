@@ -20,6 +20,7 @@ use App\Http\Controllers\TaskAttachmentController;
 use App\Http\Controllers\SchoolYearController;
 use App\Http\Controllers\AnalyticsController;
 use App\Http\Controllers\DeanCourseController;
+use App\Http\Controllers\CoordinatorCourseController;
 use App\Http\Controllers\TgSubjectFolderController;
 use App\Http\Controllers\EqSubjectFolderController;
 use App\Http\Controllers\RecycleBinController;
@@ -216,6 +217,13 @@ Route::middleware(['auth', 'no.back', 'role:Program Coordinator'])->prefix('coor
     Route::post('/notifications/{id}/read', [CoordinatorController::class, 'markNotificationRead'])->middleware('throttle:120,1')->name('mark-notification-read');
     Route::post('/notifications/mark-all-read', [CoordinatorController::class, 'markAllNotificationsRead'])->middleware('throttle:30,1')->name('notifications.mark-all-read');
     
+    // Course Catalog (scoped to coordinator department)
+    Route::get('/courses', [CoordinatorCourseController::class, 'index'])->name('courses');
+    Route::post('/courses', [CoordinatorCourseController::class, 'store'])->name('courses.store');
+    Route::patch('/courses/{course}', [CoordinatorCourseController::class, 'update'])->name('courses.update');
+    Route::delete('/courses/{course}', [CoordinatorCourseController::class, 'destroy'])->name('courses.destroy');
+    Route::post('/courses/{course}/restore', [CoordinatorCourseController::class, 'restore'])->name('courses.restore');
+
     // Faculty Management
     Route::get('/faculty', [CoordinatorController::class, 'faculty'])->name('faculty');
     Route::get('/faculty/{id}/profile', [CoordinatorController::class, 'viewEmployeeProfile'])->name('faculty-profile');

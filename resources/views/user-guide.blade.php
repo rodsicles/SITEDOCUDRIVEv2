@@ -17,13 +17,21 @@
 @endsection
 
 @section('content')
+@php
+    $user = auth()->user();
+    $isFaculty = $user->isFaculty();
+    $isCoordinator = $user->isProgramCoordinator();
+    $isDean = $user->isDean();
+    $isSecretary = $user->isSecretary();
+    $isDeanOrSecretary = $user->isDeanOrSecretary();
+@endphp
 
 {{-- Welcome Banner --}}
 <div class="guide-welcome-banner">
     <div class="guide-welcome-icon"><i class="fas fa-book-open"></i></div>
     <div>
-        <div class="guide-welcome-title">Welcome, {{ auth()->user()->role->role_name }}</div>
-        <div class="guide-welcome-sub">This guide covers all the features available to your role. Follow the steps to get the most out of the Employee Dashboard.</div>
+        <div class="guide-welcome-title">Welcome, {{ $user->role->role_name }}</div>
+        <div class="guide-welcome-sub">This guide covers the features available to your role. Follow the steps below to use the Employee Dashboard effectively.</div>
     </div>
 </div>
 
@@ -33,35 +41,59 @@
         <h3 class="card-title"><i class="fas fa-list mr-2"></i> Table of Contents</h3>
     </div>
     <div class="guide-toc">
-        @if(auth()->user()->isFaculty())
+        @if($isFaculty)
+            <a href="#guide-dashboard" class="guide-toc-item"><span class="guide-toc-num">1</span> Dashboard</a>
+            <a href="#guide-tasks" class="guide-toc-item"><span class="guide-toc-num">2</span> My Tasks</a>
+            <a href="#guide-activity-log" class="guide-toc-item"><span class="guide-toc-num">3</span> Activity Log</a>
+            <a href="#guide-analytics" class="guide-toc-item"><span class="guide-toc-num">4</span> Performance Analytics</a>
+            <a href="#guide-announcements" class="guide-toc-item"><span class="guide-toc-num">5</span> Announcements</a>
+            <a href="#guide-notifications" class="guide-toc-item"><span class="guide-toc-num">6</span> Notifications</a>
+            <a href="#guide-documents" class="guide-toc-item"><span class="guide-toc-num">7</span> Documents</a>
+            <a href="#guide-recycle-bin" class="guide-toc-item"><span class="guide-toc-num">8</span> Recycle Bin</a>
+            <a href="#guide-teaching" class="guide-toc-item"><span class="guide-toc-num">9</span> Teaching Guides</a>
+            <a href="#guide-exams" class="guide-toc-item"><span class="guide-toc-num">10</span> Exam Questionnaires</a>
+            <a href="#guide-archives" class="guide-toc-item"><span class="guide-toc-num">11</span> Archives</a>
+            <a href="#guide-profile" class="guide-toc-item"><span class="guide-toc-num">12</span> Profile</a>
+        @elseif($isCoordinator)
+            <a href="#guide-dashboard" class="guide-toc-item"><span class="guide-toc-num">1</span> Dashboard</a>
+            <a href="#guide-tasks" class="guide-toc-item"><span class="guide-toc-num">2</span> My Tasks</a>
+            <a href="#guide-activity-log" class="guide-toc-item"><span class="guide-toc-num">3</span> Activity Log</a>
+            <a href="#guide-announcements" class="guide-toc-item"><span class="guide-toc-num">4</span> Announcements</a>
+            <a href="#guide-notifications" class="guide-toc-item"><span class="guide-toc-num">5</span> Notifications</a>
+            <a href="#guide-faculty" class="guide-toc-item"><span class="guide-toc-num">6</span> Faculty Members</a>
+            <a href="#guide-courses" class="guide-toc-item"><span class="guide-toc-num">7</span> Course Catalog</a>
+            <a href="#guide-analytics" class="guide-toc-item"><span class="guide-toc-num">8</span> Analytics</a>
+            <a href="#guide-documents" class="guide-toc-item"><span class="guide-toc-num">9</span> Documents</a>
+            <a href="#guide-recycle-bin" class="guide-toc-item"><span class="guide-toc-num">10</span> Recycle Bin</a>
+            <a href="#guide-teaching" class="guide-toc-item"><span class="guide-toc-num">11</span> Teaching Guides</a>
+            <a href="#guide-exams" class="guide-toc-item"><span class="guide-toc-num">12</span> Exam Questionnaires</a>
+            <a href="#guide-archives" class="guide-toc-item"><span class="guide-toc-num">13</span> Archives</a>
+        @elseif($isSecretary)
             <a href="#guide-dashboard" class="guide-toc-item"><span class="guide-toc-num">1</span> Dashboard</a>
             <a href="#guide-tasks" class="guide-toc-item"><span class="guide-toc-num">2</span> Tasks</a>
-            <a href="#guide-calendar" class="guide-toc-item"><span class="guide-toc-num">3</span> Calendar</a>
-            <a href="#guide-announcements" class="guide-toc-item"><span class="guide-toc-num">4</span> Announcements</a>
-            <a href="#guide-documents" class="guide-toc-item"><span class="guide-toc-num">5</span> Documents</a>
-            <a href="#guide-teaching" class="guide-toc-item"><span class="guide-toc-num">6</span> Teaching Guides</a>
-            <a href="#guide-exams" class="guide-toc-item"><span class="guide-toc-num">7</span> Exam Questionnaires</a>
-            <a href="#guide-profile" class="guide-toc-item"><span class="guide-toc-num">8</span> Profile</a>
-        @elseif(auth()->user()->isProgramCoordinator())
-            <a href="#guide-dashboard" class="guide-toc-item"><span class="guide-toc-num">1</span> Dashboard</a>
-            <a href="#guide-tasks" class="guide-toc-item"><span class="guide-toc-num">2</span> Tasks</a>
-            <a href="#guide-calendar" class="guide-toc-item"><span class="guide-toc-num">3</span> Calendar</a>
-            <a href="#guide-announcements" class="guide-toc-item"><span class="guide-toc-num">4</span> Announcements</a>
-            <a href="#guide-faculty" class="guide-toc-item"><span class="guide-toc-num">5</span> Faculty Members</a>
-            <a href="#guide-documents" class="guide-toc-item"><span class="guide-toc-num">6</span> Documents</a>
-            <a href="#guide-teaching" class="guide-toc-item"><span class="guide-toc-num">7</span> Teaching Guides</a>
-            <a href="#guide-exams" class="guide-toc-item"><span class="guide-toc-num">8</span> Exam Questionnaires</a>
+            <a href="#guide-activity-log" class="guide-toc-item"><span class="guide-toc-num">3</span> Activity Log</a>
+            <a href="#guide-notifications" class="guide-toc-item"><span class="guide-toc-num">4</span> Notifications</a>
+            <a href="#guide-announcements" class="guide-toc-item"><span class="guide-toc-num">5</span> Announcements</a>
+            <a href="#guide-faculty" class="guide-toc-item"><span class="guide-toc-num">6</span> Faculty Members</a>
+            <a href="#guide-courses" class="guide-toc-item"><span class="guide-toc-num">7</span> Course Catalog</a>
+            <a href="#guide-analytics" class="guide-toc-item"><span class="guide-toc-num">8</span> Analytics</a>
+            <a href="#guide-documents" class="guide-toc-item"><span class="guide-toc-num">9</span> Documents</a>
+            <a href="#guide-teaching" class="guide-toc-item"><span class="guide-toc-num">10</span> Pending Teaching Guides</a>
+            <a href="#guide-exams" class="guide-toc-item"><span class="guide-toc-num">11</span> Pending Exam Questionnaires</a>
         @else
             <a href="#guide-dashboard" class="guide-toc-item"><span class="guide-toc-num">1</span> Dashboard</a>
             <a href="#guide-tasks" class="guide-toc-item"><span class="guide-toc-num">2</span> Tasks</a>
-            <a href="#guide-calendar" class="guide-toc-item"><span class="guide-toc-num">3</span> Calendar</a>
-            <a href="#guide-announcements" class="guide-toc-item"><span class="guide-toc-num">4</span> Announcements</a>
-            <a href="#guide-faculty" class="guide-toc-item"><span class="guide-toc-num">5</span> Faculty Members</a>
-            <a href="#guide-reports" class="guide-toc-item"><span class="guide-toc-num">6</span> Reports</a>
-            <a href="#guide-analytics" class="guide-toc-item"><span class="guide-toc-num">7</span> Analytics</a>
-            <a href="#guide-documents" class="guide-toc-item"><span class="guide-toc-num">8</span> Documents</a>
-            <a href="#guide-teaching" class="guide-toc-item"><span class="guide-toc-num">9</span> Teaching Guides</a>
-            <a href="#guide-exams" class="guide-toc-item"><span class="guide-toc-num">10</span> Exam Questionnaires</a>
+            <a href="#guide-activity-log" class="guide-toc-item"><span class="guide-toc-num">3</span> Activity Log</a>
+            <a href="#guide-notifications" class="guide-toc-item"><span class="guide-toc-num">4</span> Notifications</a>
+            <a href="#guide-announcements" class="guide-toc-item"><span class="guide-toc-num">5</span> Announcements</a>
+            <a href="#guide-faculty" class="guide-toc-item"><span class="guide-toc-num">6</span> Faculty Members</a>
+            <a href="#guide-courses" class="guide-toc-item"><span class="guide-toc-num">7</span> Course Catalog</a>
+            <a href="#guide-analytics" class="guide-toc-item"><span class="guide-toc-num">8</span> Analytics</a>
+            <a href="#guide-documents" class="guide-toc-item"><span class="guide-toc-num">9</span> Documents</a>
+            <a href="#guide-recycle-bin" class="guide-toc-item"><span class="guide-toc-num">10</span> Recycle Bin</a>
+            <a href="#guide-teaching" class="guide-toc-item"><span class="guide-toc-num">11</span> Pending Teaching Guides</a>
+            <a href="#guide-exams" class="guide-toc-item"><span class="guide-toc-num">12</span> Pending Exam Questionnaires</a>
+            <a href="#guide-archives" class="guide-toc-item"><span class="guide-toc-num">13</span> Archives</a>
         @endif
     </div>
 </div>
@@ -71,130 +103,194 @@
     <div class="card-header">
         <h3 class="card-title"><i class="fas fa-chart-line mr-2"></i> 1. Dashboard</h3>
     </div>
-    <p class="guide-intro">The Dashboard is your home page. It gives you a quick overview of your current status and recent activity.</p>
+    <p class="guide-intro">The Dashboard is your home page. It summarizes your workload, recent activity, and quick actions.</p>
     <ol class="guide-steps">
-        <li>Click <strong>Dashboard</strong> in the left sidebar to go to your home page.</li>
-        <li>View your <strong>statistics</strong> at the top — these show counts of your tasks, documents, and other key data.</li>
-        <li>Check <strong>Recent Tasks</strong> to see your latest pending and in-progress tasks.</li>
-        <li>Check <strong>Recent Activities</strong> to see a log of recent actions done in the system.</li>
-        @if(!auth()->user()->isFaculty())
-        <li>Use the <strong>toggle buttons</strong> (Show/Hide) on each section to expand or collapse them as needed.</li>
+        <li>Click <strong>Dashboard</strong> in the left sidebar.</li>
+        <li>Review the <strong>statistics cards</strong> at the top for tasks, documents, and other counts relevant to your role.</li>
+        @if($isFaculty)
+        <li>Check <strong>My Tasks</strong> and recent updates assigned to you.</li>
+        <li>Open shortcuts from the dashboard when you need to upload files or view pending submissions.</li>
+        @elseif($isCoordinator)
+        <li>Review department overview widgets and use quick links such as <strong>Post Announcement</strong> when needed.</li>
+        @else
+        <li>Use <strong>Show/Hide</strong> toggles on dashboard sections to expand or collapse details.</li>
+        <li>From the Dean dashboard, use <strong>Create New Task</strong> to assign work across roles.</li>
         @endif
     </ol>
-    <div class="guide-tip"><i class="fas fa-lightbulb mr-1"></i> <strong>Tip:</strong> The dashboard refreshes each time you navigate to it, so your data is always up to date.</div>
+    <div class="guide-tip"><i class="fas fa-lightbulb mr-1"></i> <strong>Tip:</strong> The dashboard reloads each time you open it, so counts and lists stay current.</div>
 </div>
 
 {{-- ===== TASKS ===== --}}
 <div id="guide-tasks" class="content-card">
     <div class="card-header">
-        <h3 class="card-title"><i class="fas fa-tasks mr-2"></i> 2. Tasks</h3>
+        <h3 class="card-title"><i class="fas fa-tasks mr-2"></i> 2. {{ $isFaculty || $isCoordinator ? 'My Tasks' : 'Tasks' }}</h3>
     </div>
-    <p class="guide-intro">The Tasks page lets you manage your work items. You can view, create, and track the progress of tasks.</p>
+    <p class="guide-intro">Tasks help you track assignments, deadlines, and completion status.</p>
     <ol class="guide-steps">
-        <li>Click <strong>Tasks</strong> in the sidebar to open the Tasks page.</li>
-        <li>Browse the task list — each task shows its <strong>title</strong>, <strong>status</strong>, <strong>priority</strong>, and <strong>due date</strong>.</li>
-        @if(auth()->user()->isFaculty())
-        <li>Tasks assigned to you will appear here. You can update the <strong>status</strong> of a task (e.g., In Progress → Completed).</li>
+        <li>Click <strong>{{ $isFaculty || $isCoordinator ? 'My Tasks' : 'Tasks' }}</strong> in the sidebar.</li>
+        <li>Each task shows its <strong>title</strong>, <strong>status</strong>, <strong>priority</strong>, and <strong>due date</strong>.</li>
+        @if($isFaculty || $isCoordinator)
+        <li>Update the <strong>status</strong> of tasks assigned to you (for example, Pending → In Progress → Completed).</li>
+        <li>Open a task to view details, comments, or attachments when provided.</li>
         @else
-        <li>Click <strong>Create Task</strong> to assign a new task. Fill in the title, description, assignee, priority, and due date.</li>
-        <li>To update a task, click the <strong>Edit</strong> button beside it and change the details.</li>
-        <li>To remove a task, click <strong>Delete</strong> and confirm.</li>
+        <li>Click <strong>Create New Task</strong> to assign work. Set the title, description, assignee, priority, and due date.</li>
+        <li>Edit or delete tasks you manage using the actions on the task list or detail page.</li>
         @endif
-        <li>Use the <strong>filter/search</strong> options to find specific tasks quickly.</li>
+        <li>Use <strong>search and filters</strong> to find tasks quickly.</li>
     </ol>
-    <div class="guide-tip"><i class="fas fa-lightbulb mr-1"></i> <strong>Tip:</strong> Keep task statuses updated so the team always knows the current progress.</div>
+    <div class="guide-tip"><i class="fas fa-lightbulb mr-1"></i> <strong>Tip:</strong> Update task status promptly so coordinators and the Dean see accurate progress.</div>
 </div>
 
-{{-- ===== CALENDAR ===== --}}
-<div id="guide-calendar" class="content-card">
+{{-- ===== ACTIVITY LOG ===== --}}
+<div id="guide-activity-log" class="content-card">
     <div class="card-header">
-        <h3 class="card-title"><i class="fas fa-calendar mr-2"></i> 3. Calendar</h3>
+        <h3 class="card-title"><i class="fas fa-history mr-2"></i> 3. Activity Log</h3>
     </div>
-    <p class="guide-intro">The Calendar shows all scheduled events. Use it to stay informed about upcoming activities and deadlines.</p>
+    <p class="guide-intro">The Activity Log records actions performed in the system, such as uploads, approvals, and task updates.</p>
     <ol class="guide-steps">
-        <li>Click <strong>Calendar</strong> in the sidebar to open the Calendar page.</li>
-        <li>Navigate between months using the <strong>left and right arrows</strong> at the top.</li>
-        <li>Click on any <strong>event</strong> to view its full details (title, description, date, time, location).</li>
-        @if(!auth()->user()->isFaculty())
-        <li>Click <strong>Create Event</strong> to add a new calendar event. Fill in the event name, date, time, and description.</li>
-        <li>You can <strong>edit or delete</strong> events you created using the buttons on the event detail page.</li>
+        <li>Click <strong>Activity Log</strong> in the sidebar.</li>
+        <li>Browse entries to see <strong>who</strong> performed an action, <strong>what</strong> changed, and <strong>when</strong> it happened.</li>
+        @if($isDeanOrSecretary)
+        <li>Use this page to review department-wide activity and audit important changes.</li>
+        @else
+        <li>Use this page to review your own recent actions and track your work history.</li>
         @endif
-        <li>Events are color-coded — check the legend to understand what each color represents.</li>
+        <li>Use available <strong>filters or search</strong> (if shown) to narrow the list.</li>
     </ol>
-    <div class="guide-tip"><i class="fas fa-lightbulb mr-1"></i> <strong>Tip:</strong> Check the calendar regularly before the start of each week to stay prepared.</div>
+    <div class="guide-tip"><i class="fas fa-lightbulb mr-1"></i> <strong>Tip:</strong> Check the Activity Log when you need to confirm whether a file was uploaded or a submission was processed.</div>
 </div>
+
+{{-- ===== PERFORMANCE ANALYTICS (Faculty) ===== --}}
+@if($isFaculty)
+<div id="guide-analytics" class="content-card">
+    <div class="card-header">
+        <h3 class="card-title"><i class="fas fa-chart-pie mr-2"></i> 4. Performance Analytics</h3>
+    </div>
+    <p class="guide-intro">Performance Analytics shows charts and summaries related to your own work and submissions.</p>
+    <ol class="guide-steps">
+        <li>Click <strong>Performance Analytics</strong> in the sidebar.</li>
+        <li>Review charts for task progress, document activity, and related metrics.</li>
+        <li>Hover over chart elements to see exact values.</li>
+    </ol>
+    <div class="guide-tip"><i class="fas fa-lightbulb mr-1"></i> <strong>Tip:</strong> Use this page to monitor your productivity over the term.</div>
+</div>
+@endif
 
 {{-- ===== ANNOUNCEMENTS ===== --}}
 <div id="guide-announcements" class="content-card">
     <div class="card-header">
-        <h3 class="card-title"><i class="fas fa-bullhorn mr-2"></i> 4. Announcements</h3>
+        <h3 class="card-title"><i class="fas fa-bullhorn mr-2"></i>
+            @if($isFaculty) 5. @elseif($isCoordinator) 4. @elseif($isSecretary) 5. @else 5. @endif
+            Announcements
+        </h3>
     </div>
-    <p class="guide-intro">Announcements keep the whole team informed about important news, updates, and reminders.</p>
+    <p class="guide-intro">Announcements share important news, reminders, and updates with selected roles.</p>
     <ol class="guide-steps">
-        <li>Click <strong>Announcements</strong> in the sidebar to view all announcements.</li>
-        <li>Unread announcements are highlighted with a <strong>blue dot</strong> indicator. They will be automatically marked as read after you view them for 1.5 seconds.</li>
-        <li>Click <strong>Mark as read</strong> manually if you want to mark it immediately.</li>
-        <li>Pinned announcements (shown with a <strong>pin icon</strong> and green border) are important — read these first.</li>
-        @if(!auth()->user()->isFaculty())
-        <li>Click <strong>Post Announcement</strong> to create a new one. Fill in the title, body, visibility, and optionally set an expiry date.</li>
-        <li>Use the <strong>three-dot menu (⋮)</strong> on your own announcements to <strong>Edit</strong> or <strong>Delete</strong> them.</li>
-        <li>Check the <strong>visibility setting</strong> when posting — you can target All roles or a specific role.</li>
+        <li>Click <strong>Announcements</strong> in the sidebar.</li>
+        <li>Unread items are marked with a <strong>blue dot</strong> and are auto-marked read after you view them for about 1.5 seconds.</li>
+        <li>Click <strong>Mark as read</strong> to clear an item immediately.</li>
+        <li>Read <strong>pinned</strong> announcements first — they stay at the top with a pin icon and highlighted border.</li>
+        @if($isDean || $isCoordinator)
+        <li>Click <strong>Post Announcement</strong> to publish a new item. Set the title, body, visibility (all roles or a specific role), and optional expiry.</li>
+        <li>Use the <strong>three-dot menu (⋮)</strong> on your own posts to edit or delete them.</li>
         @endif
     </ol>
-    <div class="guide-tip"><i class="fas fa-lightbulb mr-1"></i> <strong>Tip:</strong> Pinned announcements stay at the top of the list so they are always visible.</div>
+    <div class="guide-tip"><i class="fas fa-lightbulb mr-1"></i> <strong>Tip:</strong> Faculty and Secretary users can read announcements but cannot post them unless your role includes that button.</div>
 </div>
 
-{{-- ===== FACULTY MEMBERS (Dean / Coordinator only) ===== --}}
-@if(!auth()->user()->isFaculty())
+{{-- ===== NOTIFICATIONS ===== --}}
+@if($isFaculty || $isCoordinator || $isDeanOrSecretary)
+<div id="guide-notifications" class="content-card">
+    <div class="card-header">
+        <h3 class="card-title"><i class="fas fa-bell mr-2"></i>
+            @if($isFaculty) 6. @elseif($isCoordinator) 5. @elseif($isSecretary) 4. @else 4. @endif
+            Notifications
+        </h3>
+    </div>
+    <p class="guide-intro">Notifications alert you to task assignments, approvals, rejections, and other system events.</p>
+    <ol class="guide-steps">
+        <li>Click <strong>Notifications</strong> in the sidebar. A red badge shows your unread count.</li>
+        <li>Open a notification to see details and follow any linked action.</li>
+        <li>Mark individual notifications as read, or use <strong>Mark all as read</strong> to clear the list.</li>
+        @if($isFaculty)
+        <li>You receive notifications when teaching guides or exam questionnaires are <strong>approved</strong> or <strong>rejected</strong> by the Dean.</li>
+        @endif
+    </ol>
+    <div class="guide-tip"><i class="fas fa-lightbulb mr-1"></i> <strong>Tip:</strong> Check notifications after uploading submissions so you catch approval results quickly.</div>
+</div>
+@endif
+
+{{-- ===== FACULTY MEMBERS ===== --}}
+@if(!$isFaculty)
 <div id="guide-faculty" class="content-card">
     <div class="card-header">
-        <h3 class="card-title"><i class="fas fa-users mr-2"></i> 5. Faculty Members</h3>
+        <h3 class="card-title"><i class="fas fa-users mr-2"></i> 6. Faculty Members</h3>
     </div>
-    <p class="guide-intro">The Faculty Members page lets you view and manage the employee records in your department.</p>
+    <p class="guide-intro">Faculty Members lists employee accounts in your department.</p>
     <ol class="guide-steps">
-        <li>Click <strong>Faculty Members</strong> in the sidebar to open the employee list.</li>
-        <li>Browse the list of all faculty employees — each row shows their name, role, department, and status.</li>
-        <li>Click <strong>View Profile</strong> to see a faculty member's full profile including documents, skills, and performance data.</li>
-        @if(auth()->user()->isDean())
-        <li>Click <strong>Edit</strong> to update an employee's information.</li>
-        <li>Use the <strong>search/filter</strong> at the top to quickly find a specific faculty member by name or department.</li>
+        <li>Click <strong>Faculty Members</strong> in the sidebar.</li>
+        <li>Browse the directory for employee number, name, email, department, and status.</li>
+        <li>Click <strong>View Profile</strong> to open a faculty member's full record.</li>
+        @if($isDean)
+        <li>Click <strong>Edit</strong> on a profile to update employee information.</li>
+        <li>Use <strong>search or filters</strong> to find someone by name or department.</li>
+        @elseif($isCoordinator)
+        <li>Coordinators can view profiles but manage accounts through the Dean when changes are required.</li>
+        @else
+        <li>Secretary users can view profiles to support office operations; account edits are handled by the Dean.</li>
         @endif
     </ol>
-    <div class="guide-tip"><i class="fas fa-lightbulb mr-1"></i> <strong>Tip:</strong> Keep employee profiles updated for accurate reporting and analytics.</div>
+    <div class="guide-tip"><i class="fas fa-lightbulb mr-1"></i> <strong>Tip:</strong> Accurate faculty records help with analytics and document ownership.</div>
 </div>
 @endif
 
-{{-- ===== REPORTS (Dean only) ===== --}}
-@if(auth()->user()->isDean() || auth()->user()->isSecretary())
-<div id="guide-reports" class="content-card">
+{{-- ===== COURSE CATALOG (Coordinator / Dean / Secretary) ===== --}}
+@if($isCoordinator || $isDeanOrSecretary)
+<div id="guide-courses" class="content-card">
     <div class="card-header">
-        <h3 class="card-title"><i class="fas fa-file-alt mr-2"></i> 6. Reports</h3>
+        <h3 class="card-title"><i class="fas fa-book mr-2"></i>
+            @if($isCoordinator) 7. @else 7. @endif
+            Course Catalog
+        </h3>
     </div>
-    <p class="guide-intro">The Reports page provides performance data summaries for your department's faculty.</p>
+    @if($isCoordinator)
+    <p class="guide-intro">The Course Catalog lists courses for your department only (Information Technology or Engineering). You have the same add, rename, remove, and restore controls as the Dean, scoped to your program.</p>
     <ol class="guide-steps">
-        <li>Click <strong>Reports</strong> in the sidebar to open the performance reports page.</li>
-        <li>Browse the report summaries for each faculty member in the list.</li>
-        <li>Use the <strong>filter options</strong> to narrow down by department or date range.</li>
-        <li>Click on a specific report entry to view its full details.</li>
+        <li>Click <strong>Course Catalog</strong> in the sidebar under Management.</li>
+        <li>Add a course with <strong>course code</strong> and <strong>title</strong>. Your department is fixed automatically.</li>
+        <li>Use tabs: <strong>All courses</strong>, your <strong>department name</strong>, or <strong>Inactive</strong> for removed courses.</li>
+        <li>Search by code or title, then use the <strong>⋮</strong> menu to <strong>Rename</strong>, <strong>Remove</strong>, or <strong>Restore</strong> a course.</li>
     </ol>
-    <div class="guide-tip"><i class="fas fa-lightbulb mr-1"></i> <strong>Tip:</strong> Use reports during evaluation periods to support performance reviews.</div>
+    @else
+    <p class="guide-intro">The Course Catalog defines ITE and Engineering courses used when faculty and coordinators upload teaching guides and exam questionnaires.</p>
+    <ol class="guide-steps">
+        <li>Click <strong>Course Catalog</strong> in the sidebar.</li>
+        <li>Add a course with <strong>course code</strong>, <strong>title</strong>, and <strong>department</strong>, then click <strong>Add Course</strong>.</li>
+        <li>Filter by department or search by code/title to find existing entries.</li>
+        <li>Edit or deactivate courses from the list when offerings change.</li>
+    </ol>
+    @endif
+    <div class="guide-tip"><i class="fas fa-lightbulb mr-1"></i> <strong>Tip:</strong> Keep the catalog updated before each term so upload pickers show the correct subjects.</div>
 </div>
 @endif
 
-{{-- ===== ANALYTICS (Dean only) ===== --}}
-@if(auth()->user()->isDean() || auth()->user()->isSecretary())
+{{-- ===== ANALYTICS (Coordinator / Dean / Secretary) ===== --}}
+@if($isCoordinator || $isDeanOrSecretary)
 <div id="guide-analytics" class="content-card">
     <div class="card-header">
-        <h3 class="card-title"><i class="fas fa-chart-pie mr-2"></i> 7. Analytics</h3>
+        <h3 class="card-title"><i class="fas fa-chart-pie mr-2"></i>
+            @if($isCoordinator) 8. @elseif($isSecretary) 8. @else 8. @endif
+            Analytics
+        </h3>
     </div>
-    <p class="guide-intro">Analytics gives you a visual overview of department-wide data through charts and graphs.</p>
+    <p class="guide-intro">Analytics provides charts and summaries for department activity, tasks, and document trends.</p>
     <ol class="guide-steps">
-        <li>Click <strong>Analytics</strong> in the sidebar to open the analytics dashboard.</li>
-        <li>View charts for task completion rates, faculty activity, and document uploads.</li>
-        <li>Hover over chart elements to see detailed data values.</li>
-        <li>Use the date or department filters (if available) to narrow the data shown.</li>
+        <li>Click <strong>Analytics</strong> in the sidebar.</li>
+        <li>Review charts for task completion, uploads, and faculty activity.</li>
+        <li>Hover over chart segments for detailed values.</li>
+        <li>Apply any available <strong>date or department filters</strong> to focus the view.</li>
     </ol>
-    <div class="guide-tip"><i class="fas fa-lightbulb mr-1"></i> <strong>Tip:</strong> Analytics is best used at the end of the month to review overall department performance.</div>
+    <div class="guide-tip"><i class="fas fa-lightbulb mr-1"></i> <strong>Tip:</strong> Use Analytics at month-end to review overall department performance.</div>
 </div>
 @endif
 
@@ -202,75 +298,184 @@
 <div id="guide-documents" class="content-card">
     <div class="card-header">
         <h3 class="card-title"><i class="fas fa-folder mr-2"></i>
-            @if(auth()->user()->isFaculty()) 5. @elseif(auth()->user()->isProgramCoordinator()) 6. @else 8. @endif
+            @if($isFaculty) 7.
+            @elseif($isCoordinator) 9.
+            @elseif($isSecretary) 9.
+            @else 9.
+            @endif
             Documents
         </h3>
     </div>
-    <p class="guide-intro">The Documents section is where you store, organize, and access files. Files are grouped into folders for easy navigation.</p>
+    <p class="guide-intro">Documents is the central file library. Files are grouped by category tabs and an academic folder hierarchy (school year, semester, subject, and type).</p>
     <ol class="guide-steps">
-        <li>Click <strong>Documents</strong> in the sidebar to open your document library.</li>
-        <li>Files are organized into <strong>folders</strong>. Click a folder to open it and see its files.</li>
-        <li>To <strong>upload a file</strong>, open a folder then click the <strong>Upload</strong> button. Select your file and confirm.</li>
-        <li>To <strong>create a new folder</strong>, click the <strong>New Folder</strong> button, enter a folder name, and save.</li>
-        <li>To <strong>delete a file</strong>, find the file and click its <strong>Delete</strong> button, then confirm.</li>
-        <li>Use the <strong>search bar</strong> at the top to find a specific document by name.</li>
-        <li>The <strong>Uncategorized</strong> folder holds files that have not been placed in a specific folder.</li>
+        <li>Click <strong>Documents</strong> in the sidebar.</li>
+        <li>Switch between top-level <strong>category tabs</strong> (for example Academics, Accreditation, Custom Folders).</li>
+        <li>Open folders using the cards or breadcrumb trail until you reach the correct upload location.</li>
+        @if($isFaculty)
+        <li>For <strong>Teaching Guides</strong> and <strong>Exam Questionnaires</strong>, navigate to the correct school year → semester → subject (and assessment type for exams), then upload. Submissions stay <strong>pending</strong> until the Dean approves them.</li>
+        <li>For personal or department files, use <strong>Academics</strong> or <strong>Custom Folders</strong> as appropriate.</li>
+        @else
+        <li>Coordinators and Dean office roles can upload shared documents in Teaching Guides and Exam Questionnaires folders and assign recipients when prompted.</li>
+        <li>Use <strong>Custom Folders</strong> to create your own subfolders for general files.</li>
+        @endif
+        <li>Click <strong>Upload</strong> at a leaf folder, choose your file(s), complete required fields (title, subject, type), and submit.</li>
+        <li>Click a file name to <strong>view</strong> or use <strong>Download</strong>. Delete moves the file to the Recycle Bin (not permanent until removed from there).</li>
+        <li>Use the <strong>filter panel and search</strong> below the tabs to find files by name, category, or uploader.</li>
     </ol>
-    <div class="guide-tip"><i class="fas fa-lightbulb mr-1"></i> <strong>Tip:</strong> Use descriptive folder names to keep your documents organized and easy to find.</div>
+    <div class="guide-tip"><i class="fas fa-lightbulb mr-1"></i> <strong>Tip:</strong> Follow the folder path shown on Teaching Guides and Exam Questionnaires pages to jump back to the upload location.</div>
 </div>
+
+{{-- ===== RECYCLE BIN ===== --}}
+@if($isFaculty || $isCoordinator || $isDean)
+<div id="guide-recycle-bin" class="content-card">
+    <div class="card-header">
+        <h3 class="card-title"><i class="fas fa-recycle mr-2"></i>
+            @if($isFaculty) 8. @elseif($isCoordinator) 10. @else 10. @endif
+            Recycle Bin
+        </h3>
+    </div>
+    <p class="guide-intro">Deleted files from Documents are moved here first. You can restore them or remove them permanently.</p>
+    <ol class="guide-steps">
+        <li>Click <strong>Recycle Bin</strong> in the sidebar.</li>
+        <li>Review deleted files with their <strong>original folder</strong> and <strong>deleted date</strong>.</li>
+        <li>Click <strong>Restore</strong> to return a file to its folder (or to <strong>Uncategorized</strong> if that folder no longer exists).</li>
+        @if($isDean)
+        <li>As Dean, you may <strong>delete permanently</strong> items in the Recycle Bin. This cannot be undone.</li>
+        @else
+        <li>Permanent deletion from the Recycle Bin is limited to the Dean role.</li>
+        @endif
+    </ol>
+    <div class="guide-tip"><i class="fas fa-lightbulb mr-1"></i> <strong>Tip:</strong> Restore files promptly if they were removed by mistake.</div>
+</div>
+@endif
 
 {{-- ===== TEACHING GUIDES ===== --}}
 <div id="guide-teaching" class="content-card">
     <div class="card-header">
         <h3 class="card-title"><i class="fas fa-book-open mr-2"></i>
-            @if(auth()->user()->isFaculty()) 6. @elseif(auth()->user()->isProgramCoordinator()) 7. @else 9. @endif
-            Teaching Guides
+            @if($isFaculty) 9.
+            @elseif($isCoordinator) 11.
+            @elseif($isSecretary) 10.
+            @else 11.
+            @endif
+            @if($isDeanOrSecretary) Pending Teaching Guides @else Teaching Guides @endif
         </h3>
     </div>
-    <p class="guide-intro">Teaching Guides is a dedicated library for instructional materials and lesson resources.</p>
+    @if($isDeanOrSecretary)
+    <p class="guide-intro">Review faculty teaching guide submissions, approve valid files, or reject submissions that need revision.</p>
     <ol class="guide-steps">
-        <li>Click <strong>Teaching Guides</strong> in the sidebar to open the library.</li>
-        <li>Browse uploaded guides by subject or category.</li>
-        <li>Click <strong>View</strong> or the file name to open and read a guide.</li>
-        <li>To upload a new guide, click <strong>Upload Guide</strong>, select your file, fill in the title and subject, then save.</li>
-        <li>To remove a guide, click the <strong>Delete</strong> button on its row and confirm.</li>
+        <li>Click <strong>Pending Teaching Guides</strong> in the sidebar. The badge shows how many items await review.</li>
+        <li>Filter by <strong>Status</strong> (pending, approved, rejected) and <strong>Semester</strong>, or search by title, subject, or faculty name.</li>
+        <li><strong>View</strong> or <strong>Download</strong> a submission before deciding.</li>
+        <li>Click <strong>Approve</strong> to publish the guide to the shared library and notify the uploader.</li>
+        <li>Click <strong>Reject</strong>, enter a required reason, and submit. The faculty member is notified to revise and re-upload.</li>
     </ol>
-    <div class="guide-tip"><i class="fas fa-lightbulb mr-1"></i> <strong>Tip:</strong> Keep guides organized by subject so colleagues can find them easily.</div>
+    @elseif($isCoordinator)
+    <p class="guide-intro">Upload and manage teaching guides for your department. You can also browse approved guides shared in your program.</p>
+    <ol class="guide-steps">
+        <li>Open <strong>Teaching Guides</strong> in the sidebar.</li>
+        <li>Use the upload form: enter a <strong>title</strong>, pick the <strong>school year, semester, and subject</strong>, select <strong>recipients</strong>, and attach PDF or Word files.</li>
+        <li>Browse the list of approved guides. Use <strong>View</strong> and <strong>Download</strong> to access files.</li>
+        <li>You may also upload through <strong>Documents → Teaching Guides</strong> using the same folder hierarchy.</li>
+    </ol>
+    @else
+    <p class="guide-intro">View approved teaching guides and track your own submissions through the Dean approval workflow.</p>
+    <ol class="guide-steps">
+        <li>Upload files from <strong>Documents → Teaching Guides</strong> (school year → semester → subject → TG/LB folder).</li>
+        <li>After upload, the file is <strong>Pending</strong> until the Dean approves it. A badge on the sidebar shows your pending count.</li>
+        <li>Open <strong>Teaching Guides</strong> to see pending items at the top and approved guides in the main list.</li>
+        <li>While pending, you can <strong>rename</strong> the submission title. If rejected, read the remarks, fix the file, and upload again (or delete rejected items).</li>
+        <li>Approved guides appear in the list with <strong>View</strong> and <strong>Download</strong>. The folder path under each title links back to Documents.</li>
+    </ol>
+    @endif
+    <div class="guide-tip"><i class="fas fa-lightbulb mr-1"></i> <strong>Tip:</strong> Only approved teaching guides are visible to the wider department library.</div>
 </div>
 
 {{-- ===== EXAM QUESTIONNAIRES ===== --}}
 <div id="guide-exams" class="content-card">
     <div class="card-header">
         <h3 class="card-title"><i class="fas fa-file-alt mr-2"></i>
-            @if(auth()->user()->isFaculty()) 7. @elseif(auth()->user()->isProgramCoordinator()) 8. @else 10. @endif
-            Exam Questionnaires
+            @if($isFaculty) 10.
+            @elseif($isCoordinator) 12.
+            @elseif($isSecretary) 11.
+            @else 12.
+            @endif
+            @if($isDeanOrSecretary) Pending Exam Questionnaires @else Exam Questionnaires @endif
         </h3>
     </div>
-    <p class="guide-intro">Exam Questionnaires is where exam files and question sets are stored and managed.</p>
+    @if($isDeanOrSecretary)
+    <p class="guide-intro">Review exam questionnaire submissions (TOQ, MCQ, and related types) before they are published.</p>
     <ol class="guide-steps">
-        <li>Click <strong>Exam Questionnaires</strong> in the sidebar to open the section.</li>
-        <li>Browse the list of uploaded exam files.</li>
-        <li>Click <strong>View</strong> to open and review a questionnaire.</li>
-        <li>To upload a new questionnaire, click <strong>Upload</strong>, select the file, provide a title and subject, then save.</li>
-        <li>To delete a questionnaire, click <strong>Delete</strong> on its row and confirm the action.</li>
+        <li>Click <strong>Pending Exam Questionnaires</strong> in the sidebar. The badge shows pending items.</li>
+        <li>Filter by status, semester, or search by subject, type, or faculty.</li>
+        <li><strong>View</strong> or <strong>Download</strong> each file, then <strong>Approve</strong> or <strong>Reject</strong> with remarks.</li>
+        <li>Approved questionnaires become available in the shared library; rejected ones return to the uploader for correction.</li>
     </ol>
-    <div class="guide-tip"><i class="fas fa-lightbulb mr-1"></i> <strong>Tip:</strong> Label each questionnaire with the course code and term for quick identification.</div>
+    @elseif($isCoordinator)
+    <p class="guide-intro">Upload and manage exam questionnaires for your department using the academic hierarchy.</p>
+    <ol class="guide-steps">
+        <li>Open <strong>Exam Questionnaires</strong> in the sidebar.</li>
+        <li>Complete the upload form with title, school year, semester, subject, exam type, recipients, and files.</li>
+        <li>Browse approved questionnaires with search and sort tools.</li>
+        <li>Alternatively, upload through <strong>Documents → Exam Questionnaires</strong> down to the correct assessment folder.</li>
+    </ol>
+    @else
+    <p class="guide-intro">View approved exam questionnaires and track your submissions through Dean approval.</p>
+    <ol class="guide-steps">
+        <li>Upload from <strong>Documents → Exam Questionnaires</strong> (school year → semester → subject → assessment type such as TOQ/MCQ).</li>
+        <li>New uploads are <strong>Pending</strong> until approved. Check the sidebar badge and the pending section on this page.</li>
+        <li>Rename pending submissions if needed. If rejected, review remarks and re-upload.</li>
+        <li>Approved items appear in the list with <strong>View</strong>, <strong>Download</strong>, and a link to their folder in Documents.</li>
+    </ol>
+    @endif
+    <div class="guide-tip"><i class="fas fa-lightbulb mr-1"></i> <strong>Tip:</strong> Label uploads with the correct course and term so reviewers can approve them faster.</div>
 </div>
 
+{{-- ===== ARCHIVES ===== --}}
+@if($isFaculty || $isCoordinator || $isDean)
+<div id="guide-archives" class="content-card">
+    <div class="card-header">
+        <h3 class="card-title"><i class="fas fa-box-archive mr-2"></i>
+            @if($isFaculty) 11. @elseif($isCoordinator) 13. @else 13. @endif
+            Archives
+        </h3>
+    </div>
+    @if($isDean)
+    <p class="guide-intro">Archives let you close out a school year and browse past terms. Only the Dean can archive the active school year.</p>
+    <ol class="guide-steps">
+        <li>Click <strong>Archives</strong> in the sidebar to open School Year Archives.</li>
+        <li>Review the <strong>current school year</strong> counts for documents, teaching guides, and exam questionnaires.</li>
+        <li>When a term ends, click <strong>Archive This School Year</strong>, confirm the archive name, and submit. This moves current data into an archive and starts a clean active year.</li>
+        <li>Browse archived years below and click <strong>Browse</strong> to view read-only files from past terms.</li>
+    </ol>
+    @else
+    <p class="guide-intro">Archives store completed school years. You can browse past documents, teaching guides, and exam questionnaires in read-only mode.</p>
+    <ol class="guide-steps">
+        <li>Click <strong>Archives</strong> in the sidebar.</li>
+        <li>Select an archived school year and click <strong>Browse</strong>.</li>
+        <li>View or download files from that year. You cannot upload into archived years.</li>
+        <li>Use search on the archive detail page to find specific files.</li>
+    </ol>
+    @endif
+    <div class="guide-tip"><i class="fas fa-lightbulb mr-1"></i> <strong>Tip:</strong> Coordinators and faculty should finish uploading for the term before the Dean archives the school year.</div>
+</div>
+@endif
+
 {{-- ===== PROFILE (Faculty only) ===== --}}
-@if(auth()->user()->isFaculty())
+@if($isFaculty)
 <div id="guide-profile" class="content-card">
     <div class="card-header">
-        <h3 class="card-title"><i class="fas fa-user mr-2"></i> 8. Profile</h3>
+        <h3 class="card-title"><i class="fas fa-user mr-2"></i> 12. Profile</h3>
     </div>
-    <p class="guide-intro">Your Profile page contains your personal and professional information visible to administrators.</p>
+    <p class="guide-intro">Your Profile contains personal and professional information visible to administrators.</p>
     <ol class="guide-steps">
-        <li>Click your <strong>name or avatar</strong> at the top-right of the screen to access your profile.</li>
-        <li>View your personal details: name, department, position, and contact info.</li>
-        <li>Click <strong>Edit Profile</strong> to update your information — name, email, or contact number.</li>
-        <li>To change your <strong>password</strong>, scroll to the Change Password section, enter your current password, then your new password, and save.</li>
+        <li>Click your <strong>name or avatar</strong> at the top-right of the screen.</li>
+        <li>View your name, department, position, and contact details.</li>
+        <li>Click <strong>Edit Profile</strong> to update your email or contact number.</li>
+        <li>To change your <strong>password</strong>, use the Change Password section: enter your current password, then your new password, and save.</li>
+        <li>Performance review entries appear on your profile when recorded by administrators.</li>
     </ol>
-    <div class="guide-tip"><i class="fas fa-lightbulb mr-1"></i> <strong>Tip:</strong> Keep your contact information up to date so administrators can reach you easily.</div>
+    <div class="guide-tip"><i class="fas fa-lightbulb mr-1"></i> <strong>Tip:</strong> Keep your contact information current so the Dean and coordinators can reach you.</div>
 </div>
 @endif
 

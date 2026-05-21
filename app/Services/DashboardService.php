@@ -151,7 +151,7 @@ class DashboardService
     }
 
     /**
-     * Get analytics data: task statuses, departments, monthly performance.
+     * Get analytics data: task statuses.
      */
     public function getAnalyticsData(): array
     {
@@ -160,22 +160,7 @@ class DashboardService
                 ->groupBy('status')
                 ->get();
 
-            $departmentData = Employee::select('department', DB::raw('count(*) as count'))
-                ->whereNotNull('department')
-                ->groupBy('department')
-                ->get();
-
-            $monthlyPerformance = PerformanceReport::select(
-                    DB::raw('DATE_FORMAT(report_date, "%Y-%m") as month'),
-                    DB::raw('AVG(rating) as avg_rating'),
-                    DB::raw('COUNT(*) as total_reports')
-                )
-                ->groupBy('month')
-                ->orderBy('month', 'desc')
-                ->take(12)
-                ->get();
-
-            return compact('taskStatusData', 'departmentData', 'monthlyPerformance');
+            return compact('taskStatusData');
         });
     }
 

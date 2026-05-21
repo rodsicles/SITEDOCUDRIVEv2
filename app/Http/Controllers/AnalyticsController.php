@@ -3,7 +3,7 @@
 namespace App\Http\Controllers;
 
 use App\Services\DashboardService;
-use App\Services\ExamRecordService;
+use App\Services\EngagementAnalyticsService;
 use App\Services\SubmissionAnalyticsService;
 use Illuminate\Http\Request;
 
@@ -12,7 +12,7 @@ class AnalyticsController extends Controller
     public function __construct(
         protected DashboardService $dashboardService,
         protected SubmissionAnalyticsService $submissionAnalytics,
-        protected ExamRecordService $examRecordService,
+        protected EngagementAnalyticsService $engagementAnalytics,
     ) {}
 
     public function index(Request $request)
@@ -28,16 +28,14 @@ class AnalyticsController extends Controller
             ];
 
         $submissionData = $this->submissionAnalytics->getAnalytics($user, $filterInput);
+        $engagementData = $this->engagementAnalytics->getEngagement($user, $filterInput);
 
-        $data = array_merge($submissionData, [
+        $data = array_merge($submissionData, $engagementData, [
             'analyticsRoute' => $this->routeNameFor($user),
         ]);
 
         if ($user->isDean() || $user->isSecretary()) {
-            $data = array_merge($data, $this->dashboardService->getAnalyticsData(), [
-                'examTrends' => $this->examRecordService->getTrends(),
-            ]);
-
+            $data = array_merge($data, $this->dashboardService->getAnalyticsData());
             return view('dean.analytics', $data);
         }
 

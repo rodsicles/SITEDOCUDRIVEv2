@@ -11,7 +11,6 @@ use App\Models\DocumentView;
 use App\Services\DashboardService;
 use App\Services\DocumentService;
 use App\Services\FolderService;
-use App\Services\ExamRecordService;
 use App\Services\TaskService;
 use App\Services\EmployeeService;
 use Illuminate\Http\Request;
@@ -28,8 +27,7 @@ class CoordinatorController extends Controller
         protected DocumentService $documentService,
         protected TaskService $taskService,
         protected EmployeeService $employeeService,
-        protected FolderService $folderService,
-        protected ExamRecordService $examRecordService
+        protected FolderService $folderService
     ) {}
 
     /**
@@ -89,14 +87,12 @@ class CoordinatorController extends Controller
         $recentActivities = $this->dashboardService->getRecentActivities($user, 10);
         $announcements = $this->dashboardService->getAnnouncements($user, 5);
         $docAnalyticsData = $this->dashboardService->getCoordinatorDocumentAnalytics($user->id);
-        $examTrends = $this->examRecordService->getTrends();
 
         return view('coordinator.dashboard', array_merge($stats, $docAnalyticsData, compact(
             'recentTasks',
             'facultyList',
             'recentActivities',
-            'announcements',
-            'examTrends'
+            'announcements'
         )));
     }
 
@@ -265,55 +261,6 @@ class CoordinatorController extends Controller
         }
 
         return redirect()->back()->with('success', $message);
-    }
-
-    public function storeExamRecord(Request $request)
-    {
-        $folderSlug = $request->input('folder_slug');
-
-        if ($folderSlug === \App\Models\ExamRecord::PRC_FOLDER_SLUG) {
-            $request->validate([
-                'batch_label' => 'required|string|max:50',
-                'ce_passed' => 'required|integer|min:0',
-                'ce_total' => 'nullable|integer|min:0',
-                'ese_passed' => 'required|integer|min:0',
-                'ese_total' => 'nullable|integer|min:0',
-                'ce_names' => 'nullable|string',
-                'ese_names' => 'nullable|string',
-            ]);
-
-            $documentId = $this->examRecordService->storePrcResults($request->only([
-                'batch_label', 'ce_passed', 'ce_total', 'ese_passed', 'ese_total', 'ce_names', 'ese_names'
-            ]), auth()->id());
-
-            return response()->json([
-                'success' => true,
-                'message' => 'PRC exam results recorded and document generated.',
-                'document_id' => $documentId,
-            ]);
-        }
-
-        if (in_array($folderSlug, \App\Models\ExamRecord::CERT_FOLDER_SLUGS)) {
-            $request->validate([
-                'folder_id' => 'required|exists:folders,folder_id',
-                'batch_label' => 'required|string|max:50',
-                'passed_count' => 'required|integer|min:0',
-                'passer_names' => 'nullable|string',
-            ]);
-
-            $this->examRecordService->storeCertificationCount(
-                $request->input('folder_id'),
-                $request->only(['batch_label', 'passed_count', 'passer_names']),
-                auth()->id()
-            );
-
-            return response()->json([
-                'success' => true,
-                'message' => 'Certification passer count recorded.',
-            ]);
-        }
-
-        return response()->json(['success' => false, 'message' => 'Invalid folder type.'], 422);
     }
 
     public function editFaculty($id)

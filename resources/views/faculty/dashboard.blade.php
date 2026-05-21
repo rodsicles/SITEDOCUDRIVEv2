@@ -37,9 +37,6 @@
         </div>
     </div>
 
-    <!-- Exam & Certification Trends -->
-    @include('partials.exam-trends')
-
     <!-- Two-column row: Document Quick Stats + Upcoming Deadlines -->
     <div class="faculty-dashboard-row">
 

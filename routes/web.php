@@ -180,7 +180,6 @@ Route::middleware(['auth', 'no.back', 'role:Dean,Secretary'])->prefix('dean')->n
     Route::get('/documents/list-search', [DocumentListSearchController::class, 'suggest'])->name('documents.list-search');
     Route::get('/documents/recipient-search', [DocumentRecipientController::class, 'search'])->name('documents.recipient-search');
     Route::post('/documents', [DeanController::class, 'uploadDocument'])->middleware('throttle:6,60')->name('upload-document');
-    Route::post('/exam-records', [DeanController::class, 'storeExamRecord'])->middleware('throttle:10,60')->name('store-exam-record');
     Route::get('/documents/{id}/view', [DeanController::class, 'viewDocument'])->name('view-document');
     Route::get('/documents/{id}/download', [DeanController::class, 'downloadDocument'])->name('download-document');
     Route::delete('/documents/{id}', [DeanController::class, 'deleteDocument'])->name('delete-document');
@@ -262,7 +261,6 @@ Route::middleware(['auth', 'no.back', 'role:Program Coordinator'])->prefix('coor
     Route::get('/documents/list-search', [DocumentListSearchController::class, 'suggest'])->name('documents.list-search');
     Route::get('/documents/recipient-search', [DocumentRecipientController::class, 'search'])->name('documents.recipient-search');
     Route::post('/documents', [CoordinatorController::class, 'uploadDocument'])->middleware('throttle:6,60')->name('upload-document');
-    Route::post('/exam-records', [CoordinatorController::class, 'storeExamRecord'])->middleware('throttle:10,60')->name('store-exam-record');
     Route::get('/documents/{id}/view', [CoordinatorController::class, 'viewDocument'])->name('view-document');
     Route::get('/documents/{id}/download', [CoordinatorController::class, 'downloadDocument'])->name('download-document');
     Route::delete('/documents/{id}', [CoordinatorController::class, 'deleteDocument'])->name('delete-document');
@@ -321,7 +319,6 @@ Route::middleware(['auth', 'no.back', 'role:Faculty Employee'])->prefix('faculty
     Route::get('/documents', [FacultyController::class, 'documents'])->name('documents');
     Route::get('/documents/list-search', [DocumentListSearchController::class, 'suggest'])->name('documents.list-search');
     Route::post('/documents', [FacultyController::class, 'uploadDocument'])->middleware('throttle:6,60')->name('upload-document');
-    Route::post('/exam-records', [FacultyController::class, 'storeExamRecord'])->middleware('throttle:10,60')->name('store-exam-record');
     Route::get('/documents/{id}/view', [FacultyController::class, 'viewDocument'])->name('view-document');
     Route::post('/documents/{id}/favorite', [FacultyController::class, 'toggleFavorite'])->middleware('throttle:60,1')->name('toggle-favorite');
     Route::get('/documents/{id}/download', [FacultyController::class, 'downloadDocument'])->name('download-document');

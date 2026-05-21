@@ -3679,6 +3679,113 @@ a.doc-sort-item:hover,
     @apply flex gap-1.5 flex-wrap;
 }
 
+/* Document list 3-dot action popover */
+.doc-action-wrap {
+    position: relative;
+    display: inline-block;
+}
+
+.doc-actions-btn {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    width: 2rem;
+    height: 2rem;
+    padding: 0;
+    border: none;
+    background: transparent;
+    border-radius: 0.375rem;
+    color: #4b5563;
+    cursor: pointer;
+    transition: background-color 0.15s ease;
+}
+
+.doc-actions-btn:hover,
+.doc-actions-btn[aria-expanded="true"] {
+    background: #e5e7eb;
+}
+
+.dark .doc-actions-btn {
+    color: #d1d5db;
+}
+
+.dark .doc-actions-btn:hover,
+.dark .doc-actions-btn[aria-expanded="true"] {
+    background: #374151;
+}
+
+.doc-list-popover {
+    display: none !important;
+    visibility: hidden !important;
+    pointer-events: none !important;
+    position: absolute;
+    right: 0;
+    top: calc(100% + 4px);
+    min-width: 10rem;
+    z-index: 200;
+    padding: 0.25rem 0;
+    margin: 0;
+    background: #fff;
+    border: 1px solid #e5e7eb;
+    border-radius: 0.5rem;
+    box-shadow: 0 10px 25px rgba(0, 0, 0, 0.12);
+}
+
+.dark .doc-list-popover {
+    background: #2a2a2a;
+    border-color: #4b5563;
+}
+
+.doc-list-popover.is-open {
+    display: block !important;
+    visibility: visible !important;
+    pointer-events: auto !important;
+}
+
+.doc-list-popover form {
+    margin: 0;
+    padding: 0;
+}
+
+.doc-list-popover-item {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+    width: 100%;
+    padding: 0.5rem 1rem;
+    border: none;
+    background: transparent;
+    font-size: 0.875rem;
+    text-align: left;
+    cursor: pointer;
+    color: #374151;
+    box-sizing: border-box;
+    text-decoration: none;
+}
+
+.dark .doc-list-popover-item {
+    color: #e5e7eb;
+}
+
+.doc-list-popover-item:hover {
+    background: #f3f4f6;
+    text-decoration: none;
+    color: #374151;
+}
+
+.dark .doc-list-popover-item:hover {
+    background: #374151;
+    color: #e5e7eb;
+}
+
+.doc-list-popover-item--danger {
+    color: #dc2626;
+}
+
+.doc-list-popover-item--danger:hover {
+    color: #dc2626;
+}
+
 /* Resource list header: title + left-aligned search/sort (Teaching Guides, Exam Questionnaires) */
 .resource-list-header {
     display: flex;

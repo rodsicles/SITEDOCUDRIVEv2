@@ -208,6 +208,18 @@
 })();
 
 (function () {
+    var params = new URLSearchParams(window.location.search);
+    if (params.has('sort') || params.has('file_type')) {
+        var table = document.getElementById('documentsListTable');
+        if (table) {
+            setTimeout(function () {
+                table.scrollIntoView({ behavior: 'smooth', block: 'start' });
+            }, 80);
+        }
+    }
+})();
+
+(function () {
     var searchWrap = document.getElementById('docListSearchWrap');
     var searchInput = document.getElementById('docListSearchInput');
     var searchForm = document.getElementById('docListSearchForm');

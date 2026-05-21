@@ -12,7 +12,7 @@
             <th>Type</th>
             <th>Uploaded By</th>
             <th>Upload Date</th>
-            <th>Action</th>
+            <th class="text-right">Action</th>
         </tr>
     </thead>
     <tbody>
@@ -37,19 +37,7 @@
                 </div>
             </td>
             <td>
-                <div class="doc-title-cell">
-                    @if($canRename)
-                    <button type="button"
-                            class="doc-rename-handle"
-                            title="Rename document"
-                            aria-label="Rename {{ $document->document_title }}"
-                            onclick="openRenameDocumentModal({{ $document->document_id }}, @js($document->document_title))">
-                        <i class="fas fa-pen" aria-hidden="true"></i>
-                        <span class="doc-rename-label">Rename</span>
-                    </button>
-                    @endif
-                    <strong class="doc-title-text" id="doc-title-text-{{ $document->document_id }}">{{ $document->document_title }}</strong>
-                </div>
+                <strong class="doc-title-text" id="doc-title-text-{{ $document->document_id }}">{{ $document->document_title }}</strong>
             </td>
             <td>
                 @if($document->category)
@@ -66,22 +54,50 @@
             </td>
             <td>{{ $document->uploader->employee->full_name ?? $document->uploader->username }}</td>
             <td>{{ $document->created_at->format('M d, Y') }}</td>
-            <td>
-                <div class="doc-action-btns">
-                    <a href="{{ route($routePrefix . '.view-document', $document->document_id) }}" target="_blank" class="btn btn-action-view text-xs">
-                        <i class="fas fa-eye"></i> View
-                    </a>
-                    <a href="{{ route($routePrefix . '.download-document', $document->document_id) }}" class="btn btn-action-download text-xs">
-                        <i class="fas fa-download"></i> Download
-                    </a>
-                    @if($canDelete)
-                    <form id="delete-doc-{{ $document->document_id }}" action="{{ route($routePrefix . '.delete-document', $document->document_id) }}" method="POST" class="d-inline">
-                        @csrf @method('DELETE')
-                    </form>
-                    <button type="button" onclick="confirmDelete({{ $document->document_id }})" class="btn btn-danger text-xs">
-                        <i class="fas fa-trash"></i> Delete
+            <td class="text-right">
+                <div class="doc-action-wrap">
+                    <button type="button"
+                            class="doc-actions-btn"
+                            data-doc-id="{{ $document->document_id }}"
+                            aria-label="Actions for {{ $document->document_title }}"
+                            aria-expanded="false"
+                            aria-haspopup="true"
+                            aria-controls="doc-popover-{{ $document->document_id }}">
+                        <i class="fas fa-ellipsis-v" aria-hidden="true"></i>
                     </button>
-                    @endif
+                    <div id="doc-popover-{{ $document->document_id }}"
+                         class="doc-list-popover"
+                         data-popover-id="{{ $document->document_id }}"
+                         role="menu"
+                         hidden>
+                        @if($canRename)
+                        <button type="button"
+                                class="doc-list-popover-item"
+                                role="menuitem"
+                                onclick="openRenameDocumentModal({{ $document->document_id }}, @js($document->document_title))">
+                            <i class="fas fa-pen text-xs" aria-hidden="true"></i> Rename
+                        </button>
+                        @endif
+                        <a href="{{ route($routePrefix . '.view-document', $document->document_id) }}"
+                           target="_blank"
+                           class="doc-list-popover-item"
+                           role="menuitem">
+                            <i class="fas fa-eye text-xs" aria-hidden="true"></i> View
+                        </a>
+                        <a href="{{ route($routePrefix . '.download-document', $document->document_id) }}"
+                           class="doc-list-popover-item"
+                           role="menuitem">
+                            <i class="fas fa-download text-xs" aria-hidden="true"></i> Download
+                        </a>
+                        @if($canDelete)
+                        <form id="delete-doc-{{ $document->document_id }}" action="{{ route($routePrefix . '.delete-document', $document->document_id) }}" method="POST">
+                            @csrf @method('DELETE')
+                            <button type="button" class="doc-list-popover-item doc-list-popover-item--danger" role="menuitem" onclick="confirmDelete({{ $document->document_id }})">
+                                <i class="fas fa-trash text-xs" aria-hidden="true"></i> Delete
+                            </button>
+                        </form>
+                        @endif
+                    </div>
                 </div>
             </td>
         </tr>
@@ -100,3 +116,56 @@
 </div>
 
 @include('partials.rename-document-modal', ['routePrefix' => $routePrefix])
+
+@once
+@push('scripts')
+<script>
+document.addEventListener('DOMContentLoaded', function () {
+    function closeDocPopover(popover, toggleBtn) {
+        if (!popover) return;
+        popover.classList.remove('is-open');
+        popover.setAttribute('hidden', '');
+        if (toggleBtn) toggleBtn.setAttribute('aria-expanded', 'false');
+    }
+
+    function closeAllDocPopovers() {
+        document.querySelectorAll('.doc-list-popover').forEach(function (popover) {
+            var id = popover.dataset.popoverId;
+            var btn = document.querySelector('.doc-actions-btn[data-doc-id="' + id + '"]');
+            closeDocPopover(popover, btn);
+        });
+    }
+
+    document.querySelectorAll('.doc-actions-btn').forEach(function (btn) {
+        btn.addEventListener('click', function (e) {
+            e.stopPropagation();
+            var id = btn.dataset.docId;
+            var popover = document.getElementById('doc-popover-' + id);
+            if (!popover) return;
+            var isOpen = popover.classList.contains('is-open');
+            closeAllDocPopovers();
+            if (!isOpen) {
+                popover.classList.add('is-open');
+                popover.removeAttribute('hidden');
+                btn.setAttribute('aria-expanded', 'true');
+            }
+        });
+    });
+
+    document.addEventListener('click', function () {
+        closeAllDocPopovers();
+    });
+
+    document.querySelectorAll('.doc-list-popover').forEach(function (popover) {
+        popover.addEventListener('click', function (e) {
+            e.stopPropagation();
+        });
+    });
+
+    document.addEventListener('keydown', function (e) {
+        if (e.key === 'Escape') closeAllDocPopovers();
+    });
+});
+</script>
+@endpush
+@endonce

@@ -34,13 +34,6 @@
     $dept = $departmentFilter;
 @endphp
 
-@if(session('success'))
-    <div class="alert alert-success mb-4">{{ session('success') }}</div>
-@endif
-@if(session('error'))
-    <div class="alert alert-danger mb-4">{{ session('error') }}</div>
-@endif
-
 <div class="content-card mb-6">
     <div class="card-header">
         <h3 class="card-title"><i class="fas fa-plus-circle mr-2"></i>Add Course</h3>

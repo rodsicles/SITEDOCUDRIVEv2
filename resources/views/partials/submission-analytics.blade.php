@@ -2,7 +2,6 @@
     $filters = $filters ?? [];
     $routeName = $analyticsRoute ?? 'dean.analytics';
     $maxMonthly = max($monthlyTrend->max('count') ?: 1, 1);
-    $maxTop = max($topFaculty->max('count') ?: 1, 1);
 @endphp
 
 <div class="content-card mb-6">
@@ -70,63 +69,85 @@
     <div class="p-4 grid grid-cols-1 xl:grid-cols-2 gap-6">
         <div>
             <h4 class="font-semibold text-gray-800 dark:text-gray-200 mb-4">
-                @if($showTopFacultyTable ?? true)
-                    <i class="fas fa-trophy mr-1 text-amber-500"></i> Top Faculty Submitters
+                @if($showResponsivenessTable ?? true)
+                    <i class="fas fa-tachometer-alt mr-1 text-blue-500"></i> Faculty Responsiveness
                 @else
-                    <i class="fas fa-user-check mr-1 text-emerald-500"></i> Your Submissions
+                    <i class="fas fa-user-check mr-1 text-emerald-500"></i> Your Responsiveness
                 @endif
             </h4>
-            @if($showTopFacultyTable ?? true)
+            @if($showResponsivenessTable ?? true)
                 <table class="data-table">
                     <thead>
                         <tr>
-                            <th>#</th>
                             <th>Faculty</th>
-                            <th>Department</th>
+                            <th>Avg. Task Response</th>
+                            <th>Announcement Read Rate</th>
                             <th>Submissions</th>
-                            <th>Share</th>
                         </tr>
                     </thead>
                     <tbody>
-                        @forelse($topFaculty as $row)
+                        @forelse($facultyResponsiveness as $row)
                         <tr>
-                            <td>{{ $row['rank'] }}</td>
-                            <td><strong>{{ $row['name'] }}</strong></td>
-                            <td>{{ $row['department'] }}</td>
-                            <td>{{ $row['count'] }}</td>
                             <td>
-                                <div class="flex items-center gap-2">
-                                    <div class="flex-1 bg-gray-200 dark:bg-gray-700 h-2">
-                                        <div class="bg-gradient-to-r from-[#4caf50] to-[#028a0f] h-full" style="width: {{ ($row['count'] / $maxTop) * 100 }}%;"></div>
-                                    </div>
-                                    <span class="text-xs text-gray-500">{{ $row['percent'] }}%</span>
+                                <div>
+                                    <strong>{{ $row['name'] }}</strong>
+                                    <div class="text-xs text-gray-500 dark:text-gray-400">{{ $row['department'] }}</div>
                                 </div>
                             </td>
+                            <td>
+                                @if($row['avg_response_days'] !== null)
+                                    @php
+                                        $days = $row['avg_response_days'];
+                                        $responseClass = $days <= 2 ? 'text-emerald-600' : ($days <= 5 ? 'text-amber-600' : 'text-red-600');
+                                    @endphp
+                                    <span class="font-semibold {{ $responseClass }}">{{ $days }} day{{ $days != 1 ? 's' : '' }}</span>
+                                @else
+                                    <span class="text-gray-400">No tasks</span>
+                                @endif
+                            </td>
+                            <td>
+                                @php
+                                    $rate = $row['read_rate'];
+                                    $rateClass = $rate >= 75 ? 'text-emerald-600' : ($rate >= 40 ? 'text-amber-600' : 'text-red-600');
+                                @endphp
+                                <div class="flex items-center gap-2">
+                                    <div class="flex-1 bg-gray-200 dark:bg-gray-700 h-2 max-w-[80px]">
+                                        <div class="h-full {{ $rate >= 75 ? 'bg-emerald-500' : ($rate >= 40 ? 'bg-amber-500' : 'bg-red-500') }}" style="width: {{ $rate }}%;"></div>
+                                    </div>
+                                    <span class="text-xs font-semibold {{ $rateClass }}">{{ $rate }}%</span>
+                                </div>
+                            </td>
+                            <td>{{ $row['submissions'] }}</td>
                         </tr>
                         @empty
                         <tr>
-                            <td colspan="5" class="text-center text-gray-500 dark:text-gray-400 py-6">No submissions for the selected filters.</td>
+                            <td colspan="4" class="text-center text-gray-500 dark:text-gray-400 py-6">No faculty data for the selected filters.</td>
                         </tr>
                         @endforelse
                     </tbody>
                 </table>
             @else
-                @php $you = $topFaculty->first() ?? ['count' => 0, 'department' => auth()->user()->employee?->department ?? '—']; @endphp
-                <div class="doc-analytics-grid">
-                    <div class="doc-analytics-row">
-                        <div class="doc-analytics-item">
-                            <div class="doc-analytics-label">Total Submissions</div>
-                            <div class="doc-analytics-value">{{ $you['count'] ?? 0 }}</div>
-                        </div>
-                        <div class="doc-analytics-item">
-                            <div class="doc-analytics-label">Department</div>
-                            <div class="doc-analytics-value">{{ $you['department'] ?? '—' }}</div>
+                @php $you = $facultyResponsiveness->first(); @endphp
+                <div class="grid grid-cols-1 sm:grid-cols-3 gap-4">
+                    <div class="bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-lg p-4">
+                        <div class="text-xs font-semibold uppercase tracking-wide text-gray-500 dark:text-gray-400 mb-1">Avg. Task Response</div>
+                        <div class="text-2xl font-bold text-gray-800 dark:text-gray-100">
+                            @if($you && $you['avg_response_days'] !== null)
+                                {{ $you['avg_response_days'] }} day{{ $you['avg_response_days'] != 1 ? 's' : '' }}
+                            @else
+                                —
+                            @endif
                         </div>
                     </div>
+                    <div class="bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-lg p-4">
+                        <div class="text-xs font-semibold uppercase tracking-wide text-gray-500 dark:text-gray-400 mb-1">Announcement Read Rate</div>
+                        <div class="text-2xl font-bold text-gray-800 dark:text-gray-100">{{ $you['read_rate'] ?? 0 }}%</div>
+                    </div>
+                    <div class="bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-lg p-4">
+                        <div class="text-xs font-semibold uppercase tracking-wide text-gray-500 dark:text-gray-400 mb-1">Submissions</div>
+                        <div class="text-2xl font-bold text-gray-800 dark:text-gray-100">{{ $you['submissions'] ?? 0 }}</div>
+                    </div>
                 </div>
-                @if(empty($you['count']))
-                    <p class="text-center text-gray-500 dark:text-gray-400 py-4">No submissions for the selected filters.</p>
-                @endif
             @endif
         </div>
 

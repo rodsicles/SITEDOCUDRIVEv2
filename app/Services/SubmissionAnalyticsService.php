@@ -2,9 +2,12 @@
 
 namespace App\Services;
 
+use App\Models\Announcement;
+use App\Models\AnnouncementRead;
 use App\Models\Document;
 use App\Models\ExamQuestionnaire;
 use App\Models\SchoolYear;
+use App\Models\Task;
 use App\Models\TeachingGuide;
 use App\Models\User;
 use App\Support\AcademicYear;
@@ -14,18 +17,6 @@ use Illuminate\Support\Facades\DB;
 
 class SubmissionAnalyticsService
 {
-    /**
-     * @param  array{school_year: ?int, semester: ?string, department: ?string}  $filters
-     * @return array{
-     *     topFaculty: Collection,
-     *     monthlyTrend: Collection,
-     *     totalSubmissions: int,
-     *     scopeLabel: string,
-     *     showTopFacultyTable: bool,
-     *     schoolYearOptions: array,
-     *     filters: array
-     * }
-     */
     public function getAnalytics(User $viewer, array $filters = []): array
     {
         $filters = $this->normalizeFilters($viewer, $filters);
@@ -36,14 +27,14 @@ class SubmissionAnalyticsService
             $counts = $this->aggregateFacultyCounts($facultyIds, $filters);
             $monthly = $this->aggregateMonthlyTrend($facultyIds, $filters);
 
-            $topFaculty = $this->buildTopFacultyList($counts, $viewer);
+            $responsiveness = $this->buildFacultyResponsiveness($facultyIds, $counts, $viewer, $filters);
 
             return [
-                'topFaculty' => $topFaculty,
+                'facultyResponsiveness' => $responsiveness,
                 'monthlyTrend' => $monthly,
                 'totalSubmissions' => (int) $counts->sum('count'),
                 'scopeLabel' => $this->scopeLabel($viewer, $filters),
-                'showTopFacultyTable' => !$viewer->isFaculty(),
+                'showResponsivenessTable' => !$viewer->isFaculty(),
                 'schoolYearOptions' => AcademicYear::options(),
                 'filters' => $filters,
             ];
@@ -236,49 +227,97 @@ class SubmissionAnalyticsService
         }
     }
 
-    protected function buildTopFacultyList(Collection $counts, User $viewer): Collection
+    protected function buildFacultyResponsiveness(array $facultyIds, Collection $counts, User $viewer, array $filters): Collection
     {
-        if ($viewer->isFaculty()) {
-            $row = $counts->first(fn ($r) => ($r['user_id'] ?? null) === $viewer->id)
-                ?? ['user_id' => $viewer->id, 'count' => 0];
-            $user = $viewer->loadMissing('employee');
-
-            return collect([[
-                'rank' => 1,
-                'name' => $user->employee?->full_name ?? $user->username ?? 'You',
-                'department' => $user->employee?->department ?? '—',
-                'count' => (int) ($row['count'] ?? 0),
-                'percent' => 0,
-            ]]);
-        }
-
-        if ($counts->isEmpty()) {
+        if (empty($facultyIds)) {
             return collect();
         }
 
-        $userIds = $counts->pluck('user_id')->all();
+        $schoolYear = SchoolYear::find($filters['school_year_id']);
+        $yearStart = $schoolYear?->created_at ?? now()->startOfYear();
+        $yearEnd = now();
+
+        $taskResponseTimes = $this->computeTaskResponseTimes($facultyIds, $yearStart, $yearEnd);
+        $readRates = $this->computeAnnouncementReadRates($facultyIds, $yearStart, $yearEnd);
+
+        $submissionMap = $counts->keyBy('user_id');
+
         $users = User::with('employee')
-            ->whereIn('id', $userIds)
+            ->whereIn('id', $facultyIds)
             ->get()
             ->keyBy('id');
 
-        $total = max(1, (int) $counts->sum('count'));
+        if ($viewer->isFaculty()) {
+            $user = $viewer->loadMissing('employee');
+            $submissions = ($submissionMap->get($viewer->id)['count'] ?? 0);
 
-        return $counts
-            ->sortByDesc('count')
-            ->take(10)
-            ->values()
-            ->map(function ($row, $index) use ($users, $total) {
-                $user = $users->get($row['user_id']);
+            return collect([[
+                'name' => $user->employee?->full_name ?? $user->username ?? 'You',
+                'department' => $user->employee?->department ?? '—',
+                'avg_response_days' => $taskResponseTimes->get($viewer->id),
+                'read_rate' => $readRates->get($viewer->id, 0),
+                'submissions' => $submissions,
+            ]]);
+        }
 
-                return [
-                    'rank' => $index + 1,
-                    'name' => $user?->employee?->full_name ?? $user?->username ?? 'Unknown',
-                    'department' => $user?->employee?->department ?? '—',
-                    'count' => $row['count'],
-                    'percent' => round(($row['count'] / $total) * 100, 1),
-                ];
-            });
+        $rows = collect($facultyIds)->map(function ($id) use ($users, $taskResponseTimes, $readRates, $submissionMap) {
+            $user = $users->get($id);
+            if (!$user) {
+                return null;
+            }
+
+            return [
+                'user_id' => $id,
+                'name' => $user->employee?->full_name ?? $user->username ?? 'Unknown',
+                'department' => $user->employee?->department ?? '—',
+                'avg_response_days' => $taskResponseTimes->get($id),
+                'read_rate' => $readRates->get($id, 0),
+                'submissions' => ($submissionMap->get($id)['count'] ?? 0),
+            ];
+        })
+        ->filter()
+        ->sortBy(function ($row) {
+            if ($row['avg_response_days'] === null) {
+                return PHP_INT_MAX;
+            }
+            return $row['avg_response_days'];
+        })
+        ->values();
+
+        return $rows;
+    }
+
+    protected function computeTaskResponseTimes(array $facultyIds, $from, $to): Collection
+    {
+        $rows = Task::selectRaw('assigned_to, AVG(TIMESTAMPDIFF(HOUR, created_at, updated_at)) as avg_hours')
+            ->whereIn('assigned_to', $facultyIds)
+            ->where('status', 'Completed')
+            ->whereBetween('created_at', [$from, $to])
+            ->groupBy('assigned_to')
+            ->pluck('avg_hours', 'assigned_to');
+
+        return $rows->map(fn ($hours) => round($hours / 24, 1));
+    }
+
+    protected function computeAnnouncementReadRates(array $facultyIds, $from, $to): Collection
+    {
+        $totalAnnouncements = Announcement::whereBetween('created_at', [$from, $to])->count();
+
+        if ($totalAnnouncements === 0) {
+            return collect(array_fill_keys($facultyIds, 0));
+        }
+
+        $readCounts = AnnouncementRead::query()
+            ->whereIn('user_id', $facultyIds)
+            ->whereHas('announcement', fn ($q) => $q->whereBetween('created_at', [$from, $to]))
+            ->selectRaw('user_id, COUNT(DISTINCT announcement_id) as read_count')
+            ->groupBy('user_id')
+            ->pluck('read_count', 'user_id');
+
+        return collect($facultyIds)->mapWithKeys(function ($id) use ($readCounts, $totalAnnouncements) {
+            $reads = $readCounts->get($id, 0);
+            return [$id => (int) round(($reads / $totalAnnouncements) * 100)];
+        });
     }
 
     protected function scopeLabel(User $viewer, array $filters): string

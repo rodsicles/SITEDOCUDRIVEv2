@@ -29,13 +29,16 @@ class SubmissionAnalyticsService
 
             $responsiveness = $this->buildFacultyResponsiveness($facultyIds, $counts, $viewer, $filters);
 
+            $active = SchoolYear::active();
+
             return [
                 'facultyResponsiveness' => $responsiveness,
                 'monthlyTrend' => $monthly,
                 'totalSubmissions' => (int) $counts->sum('count'),
                 'scopeLabel' => $this->scopeLabel($viewer, $filters),
                 'showResponsivenessTable' => !$viewer->isFaculty(),
-                'schoolYearOptions' => AcademicYear::options(),
+                'schoolYearOptions' => SchoolYear::filterOptions(),
+                'activeSchoolYearStart' => $active?->start_year,
                 'filters' => $filters,
             ];
         });
@@ -47,9 +50,16 @@ class SubmissionAnalyticsService
             ? (int) $filters['school_year']
             : null;
 
+        $active = SchoolYear::active();
+
         if (!$schoolYear) {
-            $active = SchoolYear::active();
-            $schoolYear = $active?->start_year ?? AcademicYear::currentStartYear();
+            $schoolYear = $active?->start_year
+                ?? SchoolYear::orderByDesc('start_year')->value('start_year')
+                ?? AcademicYear::currentStartYear();
+        }
+
+        if (!SchoolYear::where('start_year', $schoolYear)->exists() && $active) {
+            $schoolYear = $active->start_year;
         }
 
         $semester = $viewer->isFaculty() ? null : ($filters['semester'] ?? null);
@@ -322,7 +332,7 @@ class SubmissionAnalyticsService
 
     protected function scopeLabel(User $viewer, array $filters): string
     {
-        $parts = [AcademicYear::label((int) $filters['school_year'])];
+        $parts = [SchoolYear::labelForStartYear((int) $filters['school_year'])];
 
         if ($filters['semester']) {
             $parts[] = $filters['semester'] . ' Semester';

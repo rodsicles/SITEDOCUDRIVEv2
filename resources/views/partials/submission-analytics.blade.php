@@ -13,56 +13,74 @@
         <span class="badge badge-info">{{ number_format($totalSubmissions ?? 0) }} total submissions</span>
     </div>
 
-    <form method="GET" action="{{ route($routeName) }}" class="p-4 border-b border-gray-200 dark:border-gray-700">
+    <form method="GET" action="{{ route($routeName) }}" class="submission-analytics-filters">
         @if(auth()->user()->isFaculty())
-        <div class="max-w-xs">
-            <label class="block text-xs font-semibold uppercase tracking-wide text-gray-500 dark:text-gray-400 mb-1">School Year</label>
-            <select name="school_year" class="form-select w-full" onchange="this.form.submit()">
-                @foreach($schoolYearOptions ?? [] as $value => $label)
-                    <option value="{{ $value }}" @selected((string) ($filters['school_year'] ?? '') === (string) $value)>{{ $label }}</option>
-                @endforeach
-            </select>
-        </div>
-        @else
-        <div class="grid grid-cols-1 md:grid-cols-4 gap-4 items-end">
-            <div>
-                <label class="block text-xs font-semibold uppercase tracking-wide text-gray-500 dark:text-gray-400 mb-1">School Year</label>
-                <select name="school_year" class="form-select w-full">
+        <div class="submission-analytics-filters__grid submission-analytics-filters__grid--single">
+            <div class="submission-analytics-filters__field">
+                <label class="submission-analytics-filters__label" for="submission-school-year">
+                    <i class="fas fa-calendar-alt"></i> School Year
+                </label>
+                <select id="submission-school-year" name="school_year" class="submission-analytics-filters__select" onchange="this.form.submit()">
                     @foreach($schoolYearOptions ?? [] as $value => $label)
                         <option value="{{ $value }}" @selected((string) ($filters['school_year'] ?? '') === (string) $value)>{{ $label }}</option>
                     @endforeach
                 </select>
             </div>
-            <div>
-                <label class="block text-xs font-semibold uppercase tracking-wide text-gray-500 dark:text-gray-400 mb-1">Semester</label>
-                <select name="semester" class="form-select w-full">
+        </div>
+        @else
+        <div class="submission-analytics-filters__grid">
+            <div class="submission-analytics-filters__field">
+                <label class="submission-analytics-filters__label" for="submission-school-year">
+                    <i class="fas fa-calendar-alt"></i> School Year
+                </label>
+                <select id="submission-school-year" name="school_year" class="submission-analytics-filters__select">
+                    @foreach($schoolYearOptions ?? [] as $value => $label)
+                        <option value="{{ $value }}" @selected((string) ($filters['school_year'] ?? '') === (string) $value)>{{ $label }}</option>
+                    @endforeach
+                </select>
+            </div>
+            <div class="submission-analytics-filters__field">
+                <label class="submission-analytics-filters__label" for="submission-semester">
+                    <i class="fas fa-book-open"></i> Semester
+                </label>
+                <select id="submission-semester" name="semester" class="submission-analytics-filters__select">
                     <option value="">All semesters</option>
                     <option value="1st" @selected(($filters['semester'] ?? '') === '1st')>1st Semester</option>
                     <option value="2nd" @selected(($filters['semester'] ?? '') === '2nd')>2nd Semester</option>
                 </select>
             </div>
             @if(auth()->user()->isDean() || auth()->user()->isSecretary())
-            <div>
-                <label class="block text-xs font-semibold uppercase tracking-wide text-gray-500 dark:text-gray-400 mb-1">Department</label>
-                <select name="department" class="form-select w-full">
+            <div class="submission-analytics-filters__field">
+                <label class="submission-analytics-filters__label" for="submission-department">
+                    <i class="fas fa-building"></i> Department
+                </label>
+                <select id="submission-department" name="department" class="submission-analytics-filters__select">
                     <option value="">All departments</option>
                     <option value="Information Technology" @selected(($filters['department'] ?? '') === 'Information Technology')>Information Technology</option>
                     <option value="Engineering" @selected(($filters['department'] ?? '') === 'Engineering')>Engineering</option>
                 </select>
             </div>
             @elseif(auth()->user()->isProgramCoordinator())
-            <div>
-                <label class="block text-xs font-semibold uppercase tracking-wide text-gray-500 dark:text-gray-400 mb-1">Department</label>
-                <input type="text" class="form-input w-full bg-gray-100 dark:bg-gray-800" value="{{ $filters['department'] ?? '—' }}" readonly>
+            <div class="submission-analytics-filters__field">
+                <label class="submission-analytics-filters__label">
+                    <i class="fas fa-building"></i> Department
+                </label>
+                <input type="text" class="submission-analytics-filters__input submission-analytics-filters__input--readonly" value="{{ $filters['department'] ?? '—' }}" readonly>
             </div>
             @endif
-            <div class="flex gap-2">
-                <button type="submit" class="btn btn-primary flex-1">
-                    <i class="fas fa-search mr-1"></i> Apply
+            <div class="submission-analytics-filters__actions">
+                <button type="submit" class="btn btn-primary submission-analytics-filters__btn">
+                    <i class="fas fa-search"></i> Apply
                 </button>
-                <a href="{{ route($routeName) }}" class="btn btn-secondary">Reset</a>
+                <a href="{{ route($routeName) }}" class="btn btn-secondary submission-analytics-filters__btn">Reset</a>
             </div>
         </div>
+        @endif
+        @if(isset($activeSchoolYearStart) && (string) ($filters['school_year'] ?? '') === (string) $activeSchoolYearStart)
+        <p class="submission-analytics-filters__hint">
+            <i class="fas fa-check-circle text-[#028a0f]"></i>
+            Showing data for the current school year.
+        </p>
         @endif
     </form>
 

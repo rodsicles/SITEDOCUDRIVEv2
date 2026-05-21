@@ -57,6 +57,30 @@ class SchoolYear extends Model
         return static::where('is_active', true)->value('id');
     }
 
+    /**
+     * School years for filter dropdowns (newest first). Keys are start_year strings.
+     *
+     * @return array<string, string>
+     */
+    public static function filterOptions(): array
+    {
+        return static::orderByDesc('start_year')
+            ->get()
+            ->mapWithKeys(fn (self $sy) => [
+                (string) $sy->start_year => $sy->is_active
+                    ? $sy->name . ' (Current)'
+                    : $sy->name,
+            ])
+            ->all();
+    }
+
+    public static function labelForStartYear(int $startYear): string
+    {
+        $record = static::where('start_year', $startYear)->first();
+
+        return $record?->name ?? ('S.Y. ' . $startYear . '-' . ($startYear + 1));
+    }
+
     public function isArchived(): bool
     {
         return $this->archived_at !== null;

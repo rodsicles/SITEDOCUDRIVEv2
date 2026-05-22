@@ -359,7 +359,10 @@ class DocumentService
             'visibility' => 'own',
         ]);
 
-        return UploadStorage::downloadResponse($downloadPath, basename($downloadPath));
+        return UploadStorage::downloadResponse(
+            $downloadPath,
+            \App\Support\DocumentNaming::downloadFilename($document->document_title, $downloadPath),
+        );
     }
 
     /**

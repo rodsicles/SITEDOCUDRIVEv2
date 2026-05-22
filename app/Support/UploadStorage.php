@@ -273,13 +273,38 @@ class UploadStorage
         ]);
     }
 
-    public static function downloadResponse(string $path, string $downloadName): StreamedResponse
+    /**
+     * Attachment download with a user-facing filename (works on local disk and S3/R2 on Laravel Cloud).
+     */
+    public static function downloadResponse(string $path, string $downloadName): BinaryFileResponse|StreamedResponse
     {
         if (!static::exists($path)) {
             abort(404, 'File not found');
         }
 
-        return static::disk()->download($path, $downloadName);
+        $downloadName = DocumentNaming::sanitizeDownloadFilename($downloadName);
+        $mimeType = static::mimeType($path) ?? 'application/octet-stream';
+
+        if (static::isLocal()) {
+            return response()->download(static::disk()->path($path), $downloadName, [
+                'Content-Type' => $mimeType,
+            ]);
+        }
+
+        return response()->streamDownload(function () use ($path) {
+            $stream = static::disk()->readStream($path);
+            if ($stream === false) {
+                abort(404, 'File not found');
+            }
+
+            fpassthru($stream);
+
+            if (is_resource($stream)) {
+                fclose($stream);
+            }
+        }, $downloadName, [
+            'Content-Type' => $mimeType,
+        ]);
     }
 
     /** Local absolute path — only when upload disk is local (generators). */

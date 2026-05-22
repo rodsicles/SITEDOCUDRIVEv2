@@ -214,7 +214,10 @@ class ExamQuestionnaireController extends Controller
 
         $this->logSubmissionActivity($user, 'Downloaded exam questionnaire: '.$questionnaire->title, 'exam_questionnaire_downloaded');
 
-        return UploadStorage::downloadResponse($questionnaire->file_path, $questionnaire->title.'.pdf');
+        return UploadStorage::downloadResponse(
+            $questionnaire->file_path,
+            \App\Support\DocumentNaming::downloadFilename($questionnaire->title, $questionnaire->file_path),
+        );
     }
 
     public function approve(Request $request, $id)

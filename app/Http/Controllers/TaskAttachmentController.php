@@ -96,7 +96,10 @@ class TaskAttachmentController extends Controller
 
         UploadStorage::assertPathInDirectory($attachment->file_path, 'task-attachments');
 
-        return UploadStorage::downloadResponse($attachment->file_path, $attachment->original_name);
+        return UploadStorage::downloadResponse(
+            $attachment->file_path,
+            \App\Support\DocumentNaming::downloadFilename($attachment->original_name, $attachment->file_path),
+        );
     }
 
     private function canManageTask(Task $task, int $userId, bool $isDeanOrSecretary): bool

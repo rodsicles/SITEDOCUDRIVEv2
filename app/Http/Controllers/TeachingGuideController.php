@@ -313,7 +313,10 @@ class TeachingGuideController extends Controller
 
         $this->logSubmissionActivity($user, 'Downloaded teaching guide: '.$guide->title, 'teaching_guide_downloaded');
 
-        return UploadStorage::downloadResponse($guide->file_path, basename($guide->file_path));
+        return UploadStorage::downloadResponse(
+            $guide->file_path,
+            \App\Support\DocumentNaming::downloadFilename($guide->title, $guide->file_path),
+        );
     }
 
     public function rename(\App\Http\Requests\RenameDocumentRequest $request, $id)

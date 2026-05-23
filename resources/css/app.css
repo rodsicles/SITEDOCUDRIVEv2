@@ -3676,13 +3676,15 @@ a.doc-sort-item:hover,
 }
 
 .doc-action-btns {
-    @apply flex gap-1.5 flex-wrap;
+    @apply flex items-center gap-1.5 flex-wrap;
 }
 
-/* Document list 3-dot action popover */
+/* Document list more-actions popover (opens below ⋮, extends to the right) */
 .doc-action-wrap {
     position: relative;
-    display: inline-block;
+    display: inline-flex;
+    flex-shrink: 0;
+    vertical-align: middle;
 }
 
 .doc-actions-btn {
@@ -3719,9 +3721,10 @@ a.doc-sort-item:hover,
     visibility: hidden !important;
     pointer-events: none !important;
     position: absolute;
-    right: 0;
+    left: 0;
+    right: auto;
     top: calc(100% + 4px);
-    min-width: 10rem;
+    min-width: 9.5rem;
     z-index: 200;
     padding: 0.25rem 0;
     margin: 0;

@@ -346,9 +346,9 @@
                 <form action="{{ route($docsRoute) }}" method="GET" class="flex gap-2 items-center">
                     <input type="hidden" name="tab" value="{{ $tab }}">
                     <input type="hidden" name="folder" value="{{ $currentFolder->folder_id }}">
-                    <div class="flex-1 relative">
-                        <input type="text" name="search" value="{{ request('search') }}" class="form-control text-sm pl-9" placeholder="Search documents in this folder...">
-                        <i class="fas fa-search absolute left-3 top-1/2 -translate-y-1/2 text-gray-400 text-xs"></i>
+                    <div class="folder-doc-search flex-1">
+                        <i class="fas fa-search folder-doc-search-icon" aria-hidden="true"></i>
+                        <input type="text" name="search" value="{{ request('search') }}" class="form-control text-sm" placeholder="Search documents in this folder...">
                     </div>
                     <button type="submit" class="btn btn-primary text-sm">
                         <i class="fas fa-search"></i> Search

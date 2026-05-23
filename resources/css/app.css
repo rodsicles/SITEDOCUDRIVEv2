@@ -3624,6 +3624,18 @@ a.doc-sort-item:hover,
     @apply pl-9;
 }
 
+.folder-doc-search {
+    @apply relative w-full;
+}
+
+.folder-doc-search-icon {
+    @apply absolute left-3 top-1/2 -translate-y-1/2 text-gray-400 text-xs pointer-events-none z-[1];
+}
+
+.folder-doc-search .form-control {
+    @apply pl-11;
+}
+
 .notifications-toolbar-select {
     @apply w-auto max-w-[9.5rem] flex-none;
 }

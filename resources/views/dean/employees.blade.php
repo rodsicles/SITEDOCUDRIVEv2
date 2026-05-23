@@ -46,7 +46,6 @@
                         <th>Employee No.</th>
                         <th>Full Name</th>
                         <th>Department</th>
-                        <th>Position</th>
                         <th>Role</th>
                         <th>Action</th>
                         <th>Status</th>
@@ -58,9 +57,8 @@
                         <td><strong>{{ $employee->employee_no ?? 'N/A' }}</strong></td>
                         <td>{{ $employee->full_name }}</td>
                         <td>{{ $employee->department ?? 'N/A' }}</td>
-                        <td>{{ $employee->position ?? 'N/A' }}</td>
                         <td>
-                            <span class="badge badge-info">{{ $employee->user->role->role_name }}</span>
+                            <span class="badge badge-info">{{ $employee->user->role->role_name ?? ($employee->position ?? 'N/A') }}</span>
                         </td>
                         <td>
                             <a href="{{ route('dean.employee-profile', $employee->employee_id) }}" class="btn btn-primary text-xs">
@@ -77,7 +75,7 @@
                     </tr>
                     @empty
                     <tr>
-                        <td colspan="7" class="text-center text-gray-500 dark:text-gray-400">No employees found</td>
+                        <td colspan="6" class="text-center text-gray-500 dark:text-gray-400">No employees found</td>
                     </tr>
                     @endforelse
                 </tbody>

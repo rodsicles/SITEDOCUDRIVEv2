@@ -3086,6 +3086,26 @@ input[type="password"].has-toggle::-webkit-textfield-decoration-container {
     min-width: 14rem;
 }
 
+.archive-row-actions {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.35rem;
+    flex-shrink: 0;
+}
+
+.archive-row-actions__btn {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    min-width: 2rem;
+    padding: 0.35rem 0.5rem;
+    line-height: 1;
+}
+
+.archive-row-actions__btn:hover {
+    filter: brightness(0.95);
+}
+
 .archive-doc-search-input {
     flex: 1;
     min-width: 0;

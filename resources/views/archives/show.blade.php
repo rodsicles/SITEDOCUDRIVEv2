@@ -74,14 +74,12 @@
                         <td>{{ $doc->uploader->employee->full_name ?? $doc->uploader->username ?? '-' }}</td>
                         <td>{{ $doc->created_at->format('M d, Y') }}</td>
                         <td>
-                            <div class="doc-action-btns">
-                                <a href="{{ route($role . '.view-document', $doc->document_id) }}" class="btn btn-action-view text-xs">
-                                    <i class="fas fa-eye"></i> View
-                                </a>
-                                <a href="{{ route($role . '.download-document', $doc->document_id) }}" class="btn btn-action-download text-xs">
-                                    <i class="fas fa-download"></i> Download
-                                </a>
-                            </div>
+                            @include('partials.archive-row-actions', [
+                                'viewUrl' => route($role . '.view-document', $doc->document_id),
+                                'downloadUrl' => route($role . '.download-document', $doc->document_id),
+                                'viewLabel' => 'View ' . $doc->document_title,
+                                'downloadLabel' => 'Download ' . $doc->document_title,
+                            ])
                         </td>
                     </tr>
                     @endforeach
@@ -124,9 +122,12 @@
                         <td>{{ $guide->uploader->employee->full_name ?? $guide->uploader->username ?? '-' }}</td>
                         <td>{{ $guide->created_at->format('M d, Y') }}</td>
                         <td>
-                            <a href="{{ route($role . '.teaching-guides.download', $guide->id) }}" class="btn btn-sm btn-success border-0">
-                                <i class="fas fa-download"></i>
-                            </a>
+                            @include('partials.archive-row-actions', [
+                                'viewUrl' => route($role . '.teaching-guides.view', $guide->id),
+                                'downloadUrl' => route($role . '.teaching-guides.download', $guide->id),
+                                'viewLabel' => 'View ' . $guide->title,
+                                'downloadLabel' => 'Download ' . $guide->title,
+                            ])
                         </td>
                     </tr>
                     @endforeach
@@ -169,12 +170,12 @@
                         <td>{{ $eq->submitter->employee->full_name ?? $eq->submitter->username ?? '-' }}</td>
                         <td>{{ $eq->created_at->format('M d, Y') }}</td>
                         <td>
-                            <a href="{{ route($role . '.exam-questionnaires.view', $eq->id) }}" class="btn btn-sm btn-primary border-0" target="_blank">
-                                <i class="fas fa-eye"></i>
-                            </a>
-                            <a href="{{ route($role . '.exam-questionnaires.download', $eq->id) }}" class="btn btn-sm btn-success border-0">
-                                <i class="fas fa-download"></i>
-                            </a>
+                            @include('partials.archive-row-actions', [
+                                'viewUrl' => route($role . '.exam-questionnaires.view', $eq->id),
+                                'downloadUrl' => route($role . '.exam-questionnaires.download', $eq->id),
+                                'viewLabel' => 'View ' . $eq->title,
+                                'downloadLabel' => 'Download ' . $eq->title,
+                            ])
                         </td>
                     </tr>
                     @endforeach

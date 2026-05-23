@@ -151,6 +151,7 @@
         <!-- Sidebar -->
         <aside class="w-64 bg-white dark:bg-[#2a2a2a] border-r border-gray-200 dark:border-gray-700 fixed h-screen overflow-hidden z-[1000] sidebar">
             <div class="sidebar-brand">
+                <div class="sidebar-brand-line" aria-hidden="true"></div>
                 <img src="{{ asset('images/site-logo.png') }}" alt="SITE Logo" class="sidebar-brand-logo">
                 <div class="sidebar-brand-line" aria-hidden="true"></div>
                 <h2 class="sidebar-brand-title">EMPLOYEE DASHBOARD</h2>

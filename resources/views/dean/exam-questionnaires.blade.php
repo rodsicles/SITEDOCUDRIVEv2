@@ -53,6 +53,7 @@
             </form>
         </div>
 
+        <div class="submission-review-table-wrap">
         <table class="data-table">
             <thead>
                 <tr>
@@ -86,46 +87,19 @@
                     <td><span class="doc-category-badge">{{ strtoupper($q->submission_type ?? 'toq') }}</span></td>
                     <td>{{ $q->exam_type }}</td>
                     <td>{{ $q->semester }}</td>
-                    <td>
-                        @if($q->isPending())
-                            <span class="badge" style="background:#b45309;color:#fff;" title="Awaiting Dean approval">
-                                <i class="fas fa-clock"></i> Not Approved
-                            </span>
-                        @elseif($q->isApproved())
-                            <span class="badge badge-success">
-                                <i class="fas fa-check"></i> Approved
-                            </span>
-                            @if($q->reviewer)
-                                <div class="text-xs text-gray-500 mt-1">by {{ $q->reviewer->employee->full_name ?? $q->reviewer->username }}</div>
-                            @endif
-                        @else
-                            <span class="badge badge-danger">
-                                <i class="fas fa-times"></i> Rejected
-                            </span>
-                            @if($q->remarks)
-                                <div class="text-xs text-gray-500 mt-1">{{ $q->remarks }}</div>
-                            @endif
-                        @endif
+                    <td class="submission-approval-cell">
+                        @include('partials.submission-approval-status', ['submission' => $q])
                     </td>
                     <td>{{ $q->created_at->format('M d, Y') }}</td>
-                    <td>
-                        <div class="doc-action-btns">
-                            <a href="{{ route('dean.exam-questionnaires.view', $q->id) }}" target="_blank" class="btn btn-action-view text-xs">
-                                <i class="fas fa-eye"></i> View
-                            </a>
-                            <a href="{{ route('dean.exam-questionnaires.download', $q->id) }}" class="btn btn-action-download text-xs">
-                                <i class="fas fa-download"></i> Download
-                            </a>
-                            @if($q->isPending())
-                                <form action="{{ route('dean.exam-questionnaires.approve', $q->id) }}" method="POST">
-                                    @csrf
-                                    <button type="submit" class="btn btn-primary text-xs"><i class="fas fa-check"></i> Approve</button>
-                                </form>
-                                <button type="button" class="btn btn-danger text-xs" onclick="openRejectModal({{ $q->id }})">
-                                    <i class="fas fa-times"></i> Reject
-                                </button>
-                            @endif
-                        </div>
+                    <td class="submission-action-cell text-right">
+                        @include('partials.submission-review-actions', [
+                            'submission' => $q,
+                            'popoverPrefix' => 'eq',
+                            'viewUrl' => route('dean.exam-questionnaires.view', $q->id),
+                            'downloadUrl' => route('dean.exam-questionnaires.download', $q->id),
+                            'approveUrl' => route('dean.exam-questionnaires.approve', $q->id),
+                            'rejectOnClick' => 'openRejectModal',
+                        ])
                     </td>
                 </tr>
                 @empty
@@ -135,8 +109,11 @@
                 @endforelse
             </tbody>
         </table>
+        </div>
         <div class="mt-5">{{ $questionnaires->links() }}</div>
     </div>
+
+    @include('partials.submission-review-table-scripts')
 
     {{-- Reject Modal --}}
     <div id="rejectModal" style="display:none;position:fixed;inset:0;background:rgba(0,0,0,0.5);z-index:1000;align-items:center;justify-content:center;">

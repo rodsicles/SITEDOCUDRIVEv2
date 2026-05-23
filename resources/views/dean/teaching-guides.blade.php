@@ -53,6 +53,7 @@
             </form>
         </div>
 
+        <div class="submission-review-table-wrap">
         <table class="data-table">
             <thead>
                 <tr>
@@ -84,46 +85,19 @@
                     <td>{{ $guide->uploader->employee->full_name ?? $guide->uploader->username }}</td>
                     <td><span class="doc-category-badge">TG</span></td>
                     <td>{{ $guide->semester ?? '—' }}</td>
-                    <td>
-                        @if($guide->isPending())
-                            <span class="badge" style="background:#b45309;color:#fff;" title="Awaiting Dean approval">
-                                <i class="fas fa-clock"></i> Not Approved
-                            </span>
-                        @elseif($guide->isApproved())
-                            <span class="badge badge-success">
-                                <i class="fas fa-check"></i> Approved
-                            </span>
-                            @if($guide->reviewer)
-                                <div class="text-xs text-gray-500 mt-1">by {{ $guide->reviewer->employee->full_name ?? $guide->reviewer->username }}</div>
-                            @endif
-                        @else
-                            <span class="badge badge-danger">
-                                <i class="fas fa-times"></i> Rejected
-                            </span>
-                            @if($guide->remarks)
-                                <div class="text-xs text-gray-500 mt-1">{{ $guide->remarks }}</div>
-                            @endif
-                        @endif
+                    <td class="submission-approval-cell">
+                        @include('partials.submission-approval-status', ['submission' => $guide])
                     </td>
                     <td>{{ $guide->created_at->format('M d, Y') }}</td>
-                    <td>
-                        <div class="doc-action-btns">
-                            <a href="{{ route('dean.teaching-guides.view', $guide->id) }}" target="_blank" class="btn btn-action-view text-xs">
-                                <i class="fas fa-eye"></i> View
-                            </a>
-                            <a href="{{ route('dean.teaching-guides.download', $guide->id) }}" class="btn btn-action-download text-xs">
-                                <i class="fas fa-download"></i> Download
-                            </a>
-                            @if($guide->isPending())
-                                <form action="{{ route('dean.teaching-guides.approve', $guide->id) }}" method="POST">
-                                    @csrf
-                                    <button type="submit" class="btn btn-primary text-xs"><i class="fas fa-check"></i> Approve</button>
-                                </form>
-                                <button type="button" class="btn btn-danger text-xs" onclick="openTgRejectModal({{ $guide->id }})">
-                                    <i class="fas fa-times"></i> Reject
-                                </button>
-                            @endif
-                        </div>
+                    <td class="submission-action-cell text-right">
+                        @include('partials.submission-review-actions', [
+                            'submission' => $guide,
+                            'popoverPrefix' => 'tg',
+                            'viewUrl' => route('dean.teaching-guides.view', $guide->id),
+                            'downloadUrl' => route('dean.teaching-guides.download', $guide->id),
+                            'approveUrl' => route('dean.teaching-guides.approve', $guide->id),
+                            'rejectOnClick' => 'openTgRejectModal',
+                        ])
                     </td>
                 </tr>
                 @empty
@@ -133,8 +107,11 @@
                 @endforelse
             </tbody>
         </table>
+        </div>
         <div class="mt-5">{{ $guides->links() }}</div>
     </div>
+
+    @include('partials.submission-review-table-scripts')
 
     {{-- Reject Modal --}}
     <div id="tgRejectModal" style="display:none;position:fixed;inset:0;background:rgba(0,0,0,0.5);z-index:1000;align-items:center;justify-content:center;">

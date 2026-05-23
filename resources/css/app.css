@@ -3729,6 +3729,93 @@ a.doc-sort-item:hover,
     border-radius: 0;
 }
 
+/* Dean submission review tables (TG / EQ) — compact approval chips */
+.submission-status-cell {
+    max-width: 9rem;
+}
+
+.submission-status {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.35rem;
+    padding: 0.2rem 0.55rem;
+    font-size: 0.6875rem;
+    font-weight: 600;
+    line-height: 1.2;
+    border-radius: 9999px;
+    white-space: nowrap;
+}
+
+.submission-status--pending {
+    background: #fef3c7;
+    color: #92400e;
+    border: 1px solid #fcd34d;
+}
+
+.dark .submission-status--pending {
+    background: rgba(180, 83, 9, 0.25);
+    color: #fcd34d;
+    border-color: rgba(251, 191, 36, 0.45);
+}
+
+.submission-status--approved {
+    background: rgba(2, 138, 15, 0.1);
+    color: #028a0f;
+    border: 1px solid rgba(2, 138, 15, 0.35);
+}
+
+.dark .submission-status--approved {
+    background: rgba(2, 138, 15, 0.2);
+    color: #6ec48a;
+    border-color: rgba(110, 196, 138, 0.4);
+}
+
+.submission-status--rejected {
+    background: #fee2e2;
+    color: #991b1b;
+    border: 1px solid #fecaca;
+}
+
+.dark .submission-status--rejected {
+    background: rgba(153, 27, 27, 0.25);
+    color: #fca5a5;
+    border-color: rgba(248, 113, 113, 0.4);
+}
+
+.submission-status-meta {
+    display: block;
+    margin-top: 0.2rem;
+    font-size: 0.65rem;
+    font-weight: 400;
+    color: #6b7280;
+    line-height: 1.25;
+    white-space: normal;
+    max-width: 9rem;
+}
+
+.dark .submission-status-meta {
+    color: #9ca3af;
+}
+
+.submission-review-table-wrap {
+    overflow: visible;
+}
+
+.submission-review-table-wrap .data-table tbody td.submission-action-cell,
+.submission-review-table-wrap .data-table tbody td.submission-approval-cell {
+    overflow: visible;
+    position: relative;
+    white-space: nowrap;
+    vertical-align: middle;
+}
+
+.submission-action-wrap {
+    position: relative;
+    display: inline-flex;
+    flex-shrink: 0;
+    vertical-align: middle;
+}
+
 .doc-action-btns {
     @apply flex items-center gap-1.5 flex-wrap;
 }

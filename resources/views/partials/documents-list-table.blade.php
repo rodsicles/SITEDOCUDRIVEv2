@@ -1,7 +1,5 @@
 ﻿@php
     $routePrefix = $routePrefix ?? 'faculty';
-    $user = auth()->user();
-    $documentService = app(\App\Services\DocumentService::class);
 @endphp
 
 <table class="data-table" id="documentsListTable">
@@ -19,8 +17,6 @@
         @forelse($documents as $document)
         @php
             $extension = strtolower(pathinfo($document->file_path, PATHINFO_EXTENSION));
-            $canRename = $documentService->userCanRenameDocument($document, $user);
-            $canDelete = $user->isDean() || $user->isSecretary() || (int) $document->uploaded_by === (int) $user->id;
         @endphp
         <tr>
             <td>
@@ -65,21 +61,6 @@
                        class="btn btn-action-download text-xs">
                         <i class="fas fa-download"></i> Download
                     </a>
-                    @if($canRename)
-                    <button type="button"
-                            class="btn btn-action-view text-xs"
-                            onclick="openRenameDocumentModal({{ $document->document_id }}, @js($document->document_title))">
-                        <i class="fas fa-pen"></i> Rename
-                    </button>
-                    @endif
-                    @if($canDelete)
-                    <form id="delete-doc-{{ $document->document_id }}" action="{{ route($routePrefix . '.delete-document', $document->document_id) }}" method="POST" class="inline">
-                        @csrf @method('DELETE')
-                        <button type="button" class="btn btn-danger text-xs" onclick="confirmDelete({{ $document->document_id }})">
-                            <i class="fas fa-trash"></i> Delete
-                        </button>
-                    </form>
-                    @endif
                 </div>
             </td>
         </tr>
@@ -96,5 +77,3 @@
 <div class="mt-5">
     {{ $documents->links() }}
 </div>
-
-@include('partials.rename-document-modal', ['routePrefix' => $routePrefix])

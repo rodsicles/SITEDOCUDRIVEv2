@@ -3713,7 +3713,18 @@ a.doc-sort-item:hover,
     @apply flex items-center gap-1.5 flex-wrap;
 }
 
-/* Document list more-actions popover (opens below ⋮, extends to the right) */
+/* Document list more-actions popover (opens below ⋮, extends to the left) */
+.documents-list-table-wrap {
+    overflow: visible;
+}
+
+.documents-list-table-wrap .data-table tbody td.doc-action-cell {
+    overflow: visible;
+    position: relative;
+    white-space: nowrap;
+    vertical-align: middle;
+}
+
 .doc-action-wrap {
     position: relative;
     display: inline-flex;
@@ -3755,8 +3766,8 @@ a.doc-sort-item:hover,
     visibility: hidden !important;
     pointer-events: none !important;
     position: absolute;
-    left: 0;
-    right: auto;
+    left: auto;
+    right: 0;
     top: calc(100% + 4px);
     min-width: 9.5rem;
     z-index: 200;

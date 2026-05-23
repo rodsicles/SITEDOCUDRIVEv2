@@ -4,6 +4,7 @@
     $documentService = app(\App\Services\DocumentService::class);
 @endphp
 
+<div class="documents-list-table-wrap">
 <table class="data-table" id="documentsListTable">
     <thead>
         <tr>
@@ -55,7 +56,7 @@
             </td>
             <td>{{ $document->uploader->employee->full_name ?? $document->uploader->username }}</td>
             <td>{{ $document->created_at->format('M d, Y') }}</td>
-            <td>
+            <td class="doc-action-cell">
                 <div class="doc-action-btns">
                     <a href="{{ route($routePrefix . '.view-document', $document->document_id) }}"
                        class="btn btn-action-view text-xs">
@@ -112,6 +113,7 @@
         @endforelse
     </tbody>
 </table>
+</div>
 
 <div class="mt-5">
     {{ $documents->links() }}

@@ -78,7 +78,7 @@
                         @endif
                     </td>
                     <td class="text-sm text-gray-600 dark:text-gray-400 whitespace-nowrap">
-                        {{ $activity->log_date->format('M d, Y h:i A') }}
+                        {{ $activity->log_date->timezone(config('app.timezone'))->format('M d, Y g:i A') }}
                     </td>
                 </tr>
                 @empty

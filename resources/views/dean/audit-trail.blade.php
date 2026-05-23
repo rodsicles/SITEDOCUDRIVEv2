@@ -99,8 +99,12 @@
                     @forelse($logs as $log)
                         <tr>
                             <td class="text-xs text-gray-600 dark:text-gray-400 whitespace-nowrap">
-                                {{ optional($log->log_date)->format('M d, Y') }}<br>
-                                <span class="text-gray-400 dark:text-gray-500">{{ optional($log->log_date)->format('h:i:s A') }}</span>
+                                @if($log->log_date)
+                                    {{ $log->log_date->timezone(config('app.timezone'))->format('M d, Y') }}<br>
+                                    <span class="text-gray-400 dark:text-gray-500">{{ $log->log_date->timezone(config('app.timezone'))->format('g:i:s A') }}</span>
+                                @else
+                                    —
+                                @endif
                             </td>
                             <td>
                                 <strong class="text-sm text-gray-800 dark:text-gray-200">

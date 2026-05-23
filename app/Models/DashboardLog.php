@@ -28,6 +28,10 @@ class DashboardLog extends Model
     protected static function booted(): void
     {
         static::creating(function (DashboardLog $log) {
+            if (empty($log->log_date)) {
+                $log->log_date = now();
+            }
+
             if (empty($log->ip_address) && request()) {
                 $log->ip_address = request()->ip();
             }

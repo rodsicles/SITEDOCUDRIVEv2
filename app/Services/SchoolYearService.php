@@ -35,8 +35,10 @@ class SchoolYearService
 
     /**
      * Archive the current school year and start a new one.
+     *
+     * @return array{schoolYear: SchoolYear, detached: array{teaching_guides: int, exam_questionnaires: int, total: int}}
      */
-    public function archive(User $dean, string $archiveName, string $newName, int $newStartYear): SchoolYear
+    public function archive(User $dean, string $archiveName, string $newName, int $newStartYear): array
     {
         return DB::transaction(function () use ($dean, $archiveName, $newName, $newStartYear) {
             $current = $this->getActive();
@@ -50,6 +52,9 @@ class SchoolYearService
             Folder::where('is_system', false)
                 ->whereNull('school_year_id')
                 ->update(['school_year_id' => $current->id]);
+
+            // Only approved TG/EQ belong in the official archive; rejected and pending stay active.
+            $detached = $this->detachNonApprovedSubmissions($current->id);
 
             // Mark current school year as archived
             $current->update([
@@ -71,8 +76,38 @@ class SchoolYearService
             app(AcademicHierarchyService::class)->ensureSchoolYearStructure('tg', $newStartYear);
             app(AcademicHierarchyService::class)->ensureSchoolYearStructure('eq', $newStartYear);
 
-            return $newSchoolYear;
+            return [
+                'schoolYear' => $newSchoolYear,
+                'detached' => $detached,
+            ];
         });
+    }
+
+    /**
+     * Remove rejected and pending submissions from the year being archived.
+     * They keep school_year_id null so they appear in the new active year's workflows.
+     *
+     * @return array{teaching_guides: int, exam_questionnaires: int, total: int}
+     */
+    protected function detachNonApprovedSubmissions(int $schoolYearId): array
+    {
+        $detachScope = fn ($q) => $q->where('status', 'rejected')
+            ->orWhere('status', 'pending')
+            ->orWhereNull('status');
+
+        $tgDetached = TeachingGuide::where('school_year_id', $schoolYearId)
+            ->where($detachScope)
+            ->update(['school_year_id' => null]);
+
+        $eqDetached = ExamQuestionnaire::where('school_year_id', $schoolYearId)
+            ->where($detachScope)
+            ->update(['school_year_id' => null]);
+
+        return [
+            'teaching_guides' => $tgDetached,
+            'exam_questionnaires' => $eqDetached,
+            'total' => $tgDetached + $eqDetached,
+        ];
     }
 
     /**

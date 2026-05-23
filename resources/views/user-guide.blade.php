@@ -441,20 +441,20 @@
         </h3>
     </div>
     @if($isDean)
-    <p class="guide-intro">Archives let you close out a school year and browse past terms. Only the Dean can archive the active school year.</p>
+    <p class="guide-intro">Archives let you close out a school year and browse past terms. Only the Dean can archive the active school year. Archives keep all documents and only <strong>approved</strong> teaching guides and exam questionnaires; pending and rejected submissions stay in the new active year.</p>
     <ol class="guide-steps">
         <li>Click <strong>Archives</strong> in the sidebar to open School Year Archives.</li>
-        <li>Review the <strong>current school year</strong> counts for documents, teaching guides, and exam questionnaires.</li>
-        <li>When a term ends, click <strong>Archive This School Year</strong>, confirm the archive name, and submit. This moves current data into an archive and starts a clean active year.</li>
-        <li>Browse archived years below and click <strong>Browse</strong> to view read-only files from past terms.</li>
+        <li>Review the <strong>current school year</strong> counts (approved TG/EQ totals) before archiving.</li>
+        <li>When a term ends, click <strong>Archive This School Year</strong>, confirm the archive name, and submit. Pending and rejected submissions are not archived.</li>
+        <li>Browse archived years and click <strong>Browse</strong>. Use <strong>Search this school year</strong> to find files within that archive only.</li>
     </ol>
     @else
-    <p class="guide-intro">Archives store completed school years. You can browse past documents, teaching guides, and exam questionnaires in read-only mode.</p>
+    <p class="guide-intro">Archives store completed school years with official documents and approved teaching guides and exam questionnaires only.</p>
     <ol class="guide-steps">
         <li>Click <strong>Archives</strong> in the sidebar.</li>
         <li>Select an archived school year and click <strong>Browse</strong>.</li>
         <li>View or download files from that year. You cannot upload into archived years.</li>
-        <li>Use search on the archive detail page to find specific files.</li>
+        <li>Use <strong>Search this school year</strong> on the browse page to filter within that archive only.</li>
     </ol>
     @endif
     <div class="guide-tip"><i class="fas fa-lightbulb mr-1"></i> <strong>Tip:</strong> Coordinators and faculty should finish uploading for the term before the Dean archives the school year.</div>

@@ -26,11 +26,11 @@
                     <p class="text-lg font-bold text-gray-800 dark:text-white">{{ $activeDocCount }}</p>
                 </div>
                 <div>
-                    <p class="text-sm text-gray-500 dark:text-gray-400">Teaching Guides</p>
+                    <p class="text-sm text-gray-500 dark:text-gray-400">Teaching Guides <span class="text-xs">(approved)</span></p>
                     <p class="text-lg font-bold text-gray-800 dark:text-white">{{ $activeTgCount }}</p>
                 </div>
                 <div>
-                    <p class="text-sm text-gray-500 dark:text-gray-400">Exam Questionnaires</p>
+                    <p class="text-sm text-gray-500 dark:text-gray-400">Exam Questionnaires <span class="text-xs">(approved)</span></p>
                     <p class="text-lg font-bold text-gray-800 dark:text-white">{{ $activeEqCount }}</p>
                 </div>
             </div>
@@ -40,8 +40,24 @@
                     <i class="fas fa-archive"></i> Archive This School Year
                 </button>
                 <p class="text-xs text-gray-500 dark:text-gray-400 mt-2">
-                    This will archive all current documents, teaching guides, and exam questionnaires, then start a new clean school year.
+                    Documents for this year are archived in full. Only <strong>approved</strong> teaching guides and exam questionnaires are kept in the archive; pending and rejected submissions stay in the active year for review or faculty cleanup.
                 </p>
+                @if(($pendingTgCount + $pendingEqCount + $rejectedTgCount + $rejectedEqCount) > 0)
+                <p class="text-xs text-amber-700 dark:text-amber-300 mt-2">
+                    <i class="fas fa-info-circle mr-1"></i>
+                    Not archived with this year:
+                    @if($pendingTgCount + $pendingEqCount > 0)
+                        {{ $pendingTgCount + $pendingEqCount }} pending
+                    @endif
+                    @if($pendingTgCount + $pendingEqCount > 0 && $rejectedTgCount + $rejectedEqCount > 0)
+                        ,
+                    @endif
+                    @if($rejectedTgCount + $rejectedEqCount > 0)
+                        {{ $rejectedTgCount + $rejectedEqCount }} rejected
+                    @endif
+                    (carried forward to the new school year).
+                </p>
+                @endif
             </div>
         </div>
     </div>
@@ -96,7 +112,7 @@
                 <div class="bg-yellow-50 dark:bg-yellow-900/20 border border-yellow-200 dark:border-yellow-800 rounded p-3 mb-4">
                     <p class="text-sm text-yellow-800 dark:text-yellow-200">
                         <i class="fas fa-exclamation-triangle mr-1"></i>
-                        <strong>Warning:</strong> This action will archive all documents, teaching guides, and exam questionnaires from the current school year. User-created folders will also be archived. The system will start fresh with empty default folders.
+                        <strong>Warning:</strong> This action archives all documents from the current school year and only <strong>approved</strong> teaching guides and exam questionnaires. Pending and rejected submissions are <strong>not</strong> archived—they remain active for the new school year. User-created folders are archived with the year. The system will start fresh with empty default folders.
                     </p>
                 </div>
 

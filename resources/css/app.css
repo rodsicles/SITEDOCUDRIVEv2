@@ -3070,7 +3070,8 @@ input[type="password"].has-toggle::-webkit-textfield-decoration-container {
     @apply flex-shrink-0;
 }
 
-.archive-doc-search-form {
+.archive-doc-search-form,
+.archive-year-search-form {
     display: flex;
     align-items: center;
     gap: 0.35rem;
@@ -3078,6 +3079,11 @@ input[type="password"].has-toggle::-webkit-textfield-decoration-container {
     max-width: 14rem;
     flex: 1 1 10rem;
     margin-left: auto;
+}
+
+.archive-year-search-form {
+    max-width: 22rem;
+    min-width: 14rem;
 }
 
 .archive-doc-search-input {

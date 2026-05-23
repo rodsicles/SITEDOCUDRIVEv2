@@ -29,14 +29,22 @@ class SchoolYearController extends Controller
             $q->where('school_year_id', $activeSchoolYear->id)
               ->orWhereNull('school_year_id');
         })->count();
-        $activeTgCount = TeachingGuide::where(function ($q) use ($activeSchoolYear) {
+        $activeYearScope = function ($q) use ($activeSchoolYear) {
             $q->where('school_year_id', $activeSchoolYear->id)
               ->orWhereNull('school_year_id');
-        })->count();
-        $activeEqCount = ExamQuestionnaire::where(function ($q) use ($activeSchoolYear) {
-            $q->where('school_year_id', $activeSchoolYear->id)
-              ->orWhereNull('school_year_id');
-        })->count();
+        };
+
+        $activeTgCount = TeachingGuide::where($activeYearScope)->approved()->count();
+        $activeEqCount = ExamQuestionnaire::where($activeYearScope)->approved()->count();
+
+        $pendingTgCount = TeachingGuide::where($activeYearScope)
+            ->where(fn ($q) => $q->where('status', 'pending')->orWhereNull('status'))
+            ->count();
+        $pendingEqCount = ExamQuestionnaire::where($activeYearScope)
+            ->where(fn ($q) => $q->where('status', 'pending')->orWhereNull('status'))
+            ->count();
+        $rejectedTgCount = TeachingGuide::where($activeYearScope)->where('status', 'rejected')->count();
+        $rejectedEqCount = ExamQuestionnaire::where($activeYearScope)->where('status', 'rejected')->count();
 
         // Suggest next school year
         $suggestedStartYear = $activeSchoolYear->start_year + 1;
@@ -44,6 +52,7 @@ class SchoolYearController extends Controller
         return view('dean.archives', compact(
             'activeSchoolYear', 'archivedYears',
             'activeDocCount', 'activeTgCount', 'activeEqCount',
+            'pendingTgCount', 'pendingEqCount', 'rejectedTgCount', 'rejectedEqCount',
             'suggestedStartYear'
         ));
     }
@@ -66,15 +75,21 @@ class SchoolYearController extends Controller
             return back()->withInput()->with('error', 'A school year starting in ' . $request->new_start_year . ' already exists.');
         }
 
-        $newSchoolYear = $this->schoolYearService->archive(
+        $result = $this->schoolYearService->archive(
             $user,
             $request->archive_name,
             $request->new_name,
             (int) $request->new_start_year
         );
 
-        return redirect()->route('dean.archives.index')
-            ->with('success', "School year archived successfully. Now active: {$newSchoolYear->name}");
+        $newSchoolYear = $result['schoolYear'];
+        $message = "School year archived successfully. Now active: {$newSchoolYear->name}";
+
+        if (($result['detached']['total'] ?? 0) > 0) {
+            $message .= ' Pending and rejected teaching guides and exam questionnaires were not archived; they remain in the active year for review or faculty cleanup.';
+        }
+
+        return redirect()->route('dean.archives.index')->with('success', $message);
     }
 
     /**
@@ -97,41 +112,45 @@ class SchoolYearController extends Controller
         }
 
         $archiveSearch = trim((string) request('q', ''));
+
         if ($archiveSearch !== '') {
-            $documentsQuery->where(function ($query) use ($archiveSearch) {
-                $query->where('document_title', 'like', '%'.$archiveSearch.'%')
-                    ->orWhere('category', 'like', '%'.$archiveSearch.'%')
-                    ->orWhereHas('uploader', function ($uploaderQuery) use ($archiveSearch) {
-                        $uploaderQuery->where('username', 'like', '%'.$archiveSearch.'%')
-                            ->orWhereHas('employee', fn ($employeeQuery) => $employeeQuery->where('full_name', 'like', '%'.$archiveSearch.'%'));
-                    });
-            });
+            $this->applyArchiveDocumentSearch($documentsQuery, $archiveSearch);
         }
 
         $documents = $documentsQuery->latest()->paginate(20)->withQueryString();
 
         $teachingGuidesQuery = TeachingGuide::where('school_year_id', $schoolYear->id)
+            ->approved()
             ->with('uploader.employee');
 
         if ($user->isFaculty()) {
             $teachingGuidesQuery->where('user_id', $user->id);
         }
 
-        $teachingGuides = $teachingGuidesQuery->latest()->paginate(20);
+        if ($archiveSearch !== '') {
+            $this->applyArchiveTeachingGuideSearch($teachingGuidesQuery, $archiveSearch);
+        }
+
+        $teachingGuides = $teachingGuidesQuery->latest()->paginate(20)->withQueryString();
 
         $examQuestionnairesQuery = ExamQuestionnaire::where('school_year_id', $schoolYear->id)
+            ->approved()
             ->with('submitter.employee');
 
         if ($user->isFaculty()) {
             $examQuestionnairesQuery->where('submitted_by', $user->id);
         }
 
-        $examQuestionnaires = $examQuestionnairesQuery->latest()->paginate(20);
+        if ($archiveSearch !== '') {
+            $this->applyArchiveExamQuestionnaireSearch($examQuestionnairesQuery, $archiveSearch);
+        }
+
+        $examQuestionnaires = $examQuestionnairesQuery->latest()->paginate(20)->withQueryString();
 
         $role = $this->getViewRole();
 
         return view('archives.show', compact(
-            'schoolYear', 'documents', 'teachingGuides', 'examQuestionnaires', 'role'
+            'schoolYear', 'documents', 'teachingGuides', 'examQuestionnaires', 'role', 'archiveSearch'
         ));
     }
 
@@ -141,7 +160,11 @@ class SchoolYearController extends Controller
     public function list()
     {
         $archivedYears = SchoolYear::archived()
-            ->withCount(['documents', 'teachingGuides', 'examQuestionnaires'])
+            ->withCount([
+                'documents',
+                'teachingGuides as teaching_guides_count' => fn ($q) => $q->approved(),
+                'examQuestionnaires as exam_questionnaires_count' => fn ($q) => $q->approved(),
+            ])
             ->get();
 
         $role = $this->getViewRole();
@@ -155,5 +178,42 @@ class SchoolYearController extends Controller
         if ($user->isDean() || $user->isSecretary()) return 'dean';
         if ($user->isProgramCoordinator()) return 'coordinator';
         return 'faculty';
+    }
+
+    private function applyArchiveDocumentSearch($query, string $search): void
+    {
+        $query->where(function ($q) use ($search) {
+            $q->where('document_title', 'like', '%'.$search.'%')
+                ->orWhere('category', 'like', '%'.$search.'%')
+                ->orWhereHas('uploader', function ($uploaderQuery) use ($search) {
+                    $uploaderQuery->where('username', 'like', '%'.$search.'%')
+                        ->orWhereHas('employee', fn ($employeeQuery) => $employeeQuery->where('full_name', 'like', '%'.$search.'%'));
+                });
+        });
+    }
+
+    private function applyArchiveTeachingGuideSearch($query, string $search): void
+    {
+        $query->where(function ($q) use ($search) {
+            $q->where('title', 'like', '%'.$search.'%')
+                ->orWhere('subject', 'like', '%'.$search.'%')
+                ->orWhereHas('uploader', function ($uploaderQuery) use ($search) {
+                    $uploaderQuery->where('username', 'like', '%'.$search.'%')
+                        ->orWhereHas('employee', fn ($employeeQuery) => $employeeQuery->where('full_name', 'like', '%'.$search.'%'));
+                });
+        });
+    }
+
+    private function applyArchiveExamQuestionnaireSearch($query, string $search): void
+    {
+        $query->where(function ($q) use ($search) {
+            $q->where('title', 'like', '%'.$search.'%')
+                ->orWhere('subject', 'like', '%'.$search.'%')
+                ->orWhere('exam_type', 'like', '%'.$search.'%')
+                ->orWhereHas('submitter', function ($submitterQuery) use ($search) {
+                    $submitterQuery->where('username', 'like', '%'.$search.'%')
+                        ->orWhereHas('employee', fn ($employeeQuery) => $employeeQuery->where('full_name', 'like', '%'.$search.'%'));
+                });
+        });
     }
 }

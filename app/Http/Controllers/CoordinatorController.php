@@ -360,10 +360,14 @@ class CoordinatorController extends Controller
         return view('employees.profile', $profileData);
     }
 
-    public function viewDocument($id)
+    public function viewDocument($id, Request $request)
     {
         try {
-            return $this->documentService->viewDocument($id, auth()->user(), true);
+            if ($request->boolean('stream')) {
+                return $this->documentService->viewDocument($id, auth()->user(), true);
+            }
+
+            return view('submissions.file-preview', $this->documentService->documentPreviewPage($id, auth()->user()));
         } catch (\RuntimeException $e) {
             return back()->with('error', $e->getMessage());
         }

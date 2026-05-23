@@ -15,7 +15,7 @@
     <div class="flex items-center gap-2 shrink-0 text-xs text-gray-500">
         <span>{{ isset($doc['created_at']) ? $doc['created_at']->format('M d, Y') : '' }}</span>
         @if(!empty($doc['id']) && is_numeric($doc['id']) && !empty($viewRoute))
-            <a href="{{ route($viewRoute, $doc['id']) }}" target="_blank" class="btn btn-action-view py-0.5 px-2 text-xs">
+            <a href="{{ route($viewRoute, $doc['id']) }}" class="btn btn-action-view py-0.5 px-2 text-xs">
                 <i class="fas fa-eye"></i> View
             </a>
         @elseif(!empty($doc['is_questionnaire']) || !empty($doc['is_pending_submission']))

@@ -70,12 +70,14 @@
                         <td>{{ $doc->uploader->employee->full_name ?? $doc->uploader->username ?? '-' }}</td>
                         <td>{{ $doc->created_at->format('M d, Y') }}</td>
                         <td>
-                            <a href="{{ route($role . '.view-document', $doc->document_id) }}" class="btn btn-sm btn-primary border-0" target="_blank">
-                                <i class="fas fa-eye"></i>
-                            </a>
-                            <a href="{{ route($role . '.download-document', $doc->document_id) }}" class="btn btn-sm btn-success border-0">
-                                <i class="fas fa-download"></i>
-                            </a>
+                            <div class="doc-action-btns">
+                                <a href="{{ route($role . '.view-document', $doc->document_id) }}" class="btn btn-action-view text-xs">
+                                    <i class="fas fa-eye"></i> View
+                                </a>
+                                <a href="{{ route($role . '.download-document', $doc->document_id) }}" class="btn btn-action-download text-xs">
+                                    <i class="fas fa-download"></i> Download
+                                </a>
+                            </div>
                         </td>
                     </tr>
                     @endforeach

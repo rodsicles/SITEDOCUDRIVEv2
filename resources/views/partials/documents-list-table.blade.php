@@ -53,7 +53,6 @@
             <td>
                 <div class="doc-action-btns">
                     <a href="{{ route($routePrefix . '.view-document', $document->document_id) }}"
-                       target="_blank"
                        class="btn btn-action-view text-xs">
                         <i class="fas fa-eye"></i> View
                     </a>

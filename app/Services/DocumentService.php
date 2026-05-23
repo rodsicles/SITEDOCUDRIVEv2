@@ -12,6 +12,8 @@ use App\Services\NotificationService;
 use App\Services\TeachingGuideSyncService;
 use App\Models\SchoolYear;
 use App\Support\AcademicYear;
+use App\Support\DocumentNaming;
+use App\Support\SubmissionLocation;
 use App\Support\UploadStorage;
 use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Support\Collection;
@@ -277,6 +279,49 @@ class DocumentService
     }
 
     /**
+     * Data for the in-app file preview page (same layout as exam questionnaires / teaching guides).
+     *
+     * @return array{title: string, folderPath: string, documentsUrl: ?string, streamUrl: string, downloadUrl: string, backUrl: string}
+     */
+    public function documentPreviewPage(int $documentId, User $user): array
+    {
+        $document = Document::with('folder.parent.parent')->findOrFail($documentId);
+
+        if (!$document->canView($user)) {
+            abort(403, 'Unauthorized access');
+        }
+
+        UploadStorage::assertPathAllowed($document->file_path);
+
+        if (!UploadStorage::exists($document->file_path)) {
+            throw new \RuntimeException('This file is no longer available. It was uploaded to a previous storage provider and no longer exists in the current storage.');
+        }
+
+        $routePrefix = match (true) {
+            $user->isFaculty() => 'faculty',
+            $user->isProgramCoordinator() => 'coordinator',
+            default => 'dean',
+        };
+
+        $documentsUrl = SubmissionLocation::documentsUrl($user, $document->folder);
+        $backUrl = $documentsUrl ?? route($routePrefix.'.documents');
+
+        $folderPath = SubmissionLocation::folderBreadcrumb($document->folder);
+        if ($folderPath === '' && !empty($document->category)) {
+            $folderPath = $document->category;
+        }
+
+        return [
+            'title' => $document->document_title,
+            'folderPath' => $folderPath,
+            'documentsUrl' => $documentsUrl,
+            'streamUrl' => route($routePrefix.'.view-document', ['id' => $documentId, 'stream' => 1]),
+            'downloadUrl' => route($routePrefix.'.download-document', $documentId),
+            'backUrl' => $backUrl,
+        ];
+    }
+
+    /**
      * View a document (returns file response).
      */
     public function viewDocument(int $documentId, User $user, bool $trackView = false)
@@ -321,7 +366,11 @@ class DocumentService
 
         UploadStorage::assertPathAllowed($serveFilePath);
 
-        return UploadStorage::inlineResponse($serveFilePath, basename($serveFilePath), $mimeType);
+        return UploadStorage::inlineResponse(
+            $serveFilePath,
+            DocumentNaming::downloadFilename($document->document_title, $serveFilePath),
+            $mimeType,
+        );
     }
 
     /**

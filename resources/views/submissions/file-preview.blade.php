@@ -9,6 +9,8 @@
         @include('partials.faculty-sidebar')
     @elseif(auth()->user()->isProgramCoordinator())
         @include('partials.coordinator-sidebar')
+    @elseif(auth()->user()->isSecretary())
+        @include('partials.secretary-sidebar')
     @else
         @include('partials.dean-sidebar')
     @endif

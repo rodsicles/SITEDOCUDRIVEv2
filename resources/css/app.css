@@ -1483,6 +1483,28 @@ body {
     padding-right: 3.5rem;
 }
 
+/* Any password field with a custom show/hide toggle */
+input[type="password"].has-toggle::-ms-reveal,
+input[type="password"].has-toggle::-ms-clear {
+    display: none;
+    width: 0;
+    height: 0;
+}
+
+input[type="password"].has-toggle::-webkit-credentials-auto-fill-button,
+input[type="password"].has-toggle::-webkit-strong-password-auto-fill-button {
+    display: none !important;
+    visibility: hidden;
+    pointer-events: none;
+    width: 0;
+    height: 0;
+    margin: 0;
+}
+
+input[type="password"].has-toggle::-webkit-textfield-decoration-container {
+    display: none !important;
+}
+
 .login-input:focus {
     @apply outline-none border-[#028a0f] dark:border-[#02b815];
 }
@@ -6021,6 +6043,28 @@ a.doc-sort-item:hover,
 .login-portal-input::placeholder { color: rgba(255,255,255,0.45); }
 .login-portal-input:focus { border-color: #6ec48a; background: rgba(255,255,255,0.08); }
 .login-portal-input.has-toggle { padding-right: 38px; }
+
+/* Hide browser-native password reveal/clear — keep custom green toggle only */
+.login-portal-input-wrapper input[type="password"]::-ms-reveal,
+.login-portal-input-wrapper input[type="password"]::-ms-clear {
+    display: none;
+    width: 0;
+    height: 0;
+}
+
+.login-portal-input-wrapper input[type="password"]::-webkit-credentials-auto-fill-button,
+.login-portal-input-wrapper input[type="password"]::-webkit-strong-password-auto-fill-button {
+    display: none !important;
+    visibility: hidden;
+    pointer-events: none;
+    width: 0;
+    height: 0;
+    margin: 0;
+}
+
+.login-portal-input-wrapper input[type="password"]::-webkit-textfield-decoration-container {
+    display: none !important;
+}
 
 .login-portal-pw-toggle {
     position: absolute;

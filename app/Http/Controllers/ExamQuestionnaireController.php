@@ -10,6 +10,7 @@ use App\Models\Document;
 use App\Services\DocumentService;
 use App\Services\NotificationService;
 use App\Support\AcademicYear;
+use App\Support\CoordinatorDepartment;
 use App\Support\IteSubjects;
 use App\Support\SubmissionLocation;
 use App\Support\UploadStorage;
@@ -30,6 +31,11 @@ class ExamQuestionnaireController extends Controller
     public function index(Request $request)
     {
         $user = auth()->user();
+
+        if ($user->isProgramCoordinator()) {
+            CoordinatorDepartment::require($user);
+        }
+
         $search = $request->query('search');
         $sort = $this->normalizeListSort($request->query('sort'));
         $statusFilter = $request->query('status');
@@ -109,7 +115,7 @@ class ExamQuestionnaireController extends Controller
         }
 
         $validated = $request->validate([
-            'subject' => ['required', 'string', Rule::in(IteSubjects::labels())],
+            'subject' => ['required', 'string', Rule::in(IteSubjects::labelsForUser($user))],
             'exam_type' => 'required|in:Quiz,Prelim,Midterm,Pre-Final,Final',
             'submission_type' => 'required|in:tos,toq',
             'academic_year_start' => 'nullable|integer',

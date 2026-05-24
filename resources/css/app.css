@@ -3846,6 +3846,10 @@ a.doc-sort-item:hover,
     @apply flex items-center gap-1.5 flex-wrap;
 }
 
+.doc-action-btns--with-menu {
+    gap: 0.35rem;
+}
+
 /* Document list more-actions popover (opens below ⋮, extends to the left) */
 .documents-list-table-wrap {
     overflow: visible;

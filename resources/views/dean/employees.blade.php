@@ -33,13 +33,6 @@
                 <span class="badge badge-info">{{ $employees->total() }} Total</span>
             </div>
 
-            @if(session('success'))
-                <div class="alert alert-success">
-                    <strong><i class="fas fa-check-circle"></i> Success!</strong>
-                    <p>{{ session('success') }}</p>
-                </div>
-            @endif
-
             <table class="data-table">
                 <thead>
                     <tr>

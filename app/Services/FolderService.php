@@ -7,6 +7,7 @@ use App\Models\Document;
 use App\Models\DashboardLog;
 use App\Models\SchoolYear;
 use App\Models\User;
+use App\Support\CoordinatorDepartment;
 use Illuminate\Support\Collection;
 
 class FolderService
@@ -163,6 +164,11 @@ class FolderService
             $folders = $folders->filter(function (Folder $folder) {
                 return in_array(strtoupper(trim((string) $folder->folder_name)), ['TOS', 'TOQ'], true);
             })->values();
+        }
+
+        if ($viewer?->isProgramCoordinator()
+            && ($hierarchy->isTgSemesterFolder($parent) || $hierarchy->isEqSemesterFolder($parent))) {
+            $folders = CoordinatorDepartment::filterSubjectFolders($folders, $viewer);
         }
 
         return $this->attachSubtreeDocumentCounts($folders, $viewer);

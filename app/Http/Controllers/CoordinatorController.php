@@ -13,6 +13,7 @@ use App\Services\DocumentService;
 use App\Services\FolderService;
 use App\Services\TaskService;
 use App\Services\EmployeeService;
+use App\Support\CoordinatorDepartment;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
 
@@ -35,7 +36,12 @@ class CoordinatorController extends Controller
      */
     private function getCoordinatorDepartment(): ?string
     {
-        return optional(auth()->user()->employee)->department;
+        return CoordinatorDepartment::name(auth()->user());
+    }
+
+    private function requireCoordinatorDepartment(): string
+    {
+        return CoordinatorDepartment::require(auth()->user());
     }
 
     /**
@@ -48,13 +54,13 @@ class CoordinatorController extends Controller
         $query = User::with('employee')
             ->where('role_id', 3);
 
-        if ($dept) {
-            $query->whereHas('employee', function ($q) use ($dept) {
-                $q->where('department', $dept);
-            });
+        if (!$dept) {
+            return $query->whereRaw('1 = 0');
         }
 
-        return $query;
+        return $query->whereHas('employee', function ($q) use ($dept) {
+            $q->where('department', $dept);
+        });
     }
 
     /**
@@ -62,9 +68,9 @@ class CoordinatorController extends Controller
      */
     private function verifyDepartmentAccess(Employee $employee): void
     {
-        $dept = $this->getCoordinatorDepartment();
+        $dept = $this->requireCoordinatorDepartment();
 
-        if ($dept && $employee->department && $employee->department !== $dept) {
+        if ($employee->department && $employee->department !== $dept) {
             abort(403, 'You do not have access to faculty members outside your department.');
         }
     }
@@ -72,6 +78,7 @@ class CoordinatorController extends Controller
     public function dashboard()
     {
         $user = auth()->user();
+        $this->requireCoordinatorDepartment();
         $stats = $this->dashboardService->getCoordinatorStats($user->id);
 
         $recentTasks = Task::with(['assignedBy.employee'])
@@ -129,6 +136,8 @@ class CoordinatorController extends Controller
 
     public function faculty()
     {
+        $this->requireCoordinatorDepartment();
+
         $facultyMembers = $this->scopedFacultyQuery()
             ->latest('created_at')
             ->paginate(15);
@@ -137,7 +146,7 @@ class CoordinatorController extends Controller
 
     public function createFaculty()
     {
-        $dept = $this->getCoordinatorDepartment();
+        $dept = $this->requireCoordinatorDepartment();
         $nextFacultyNo = $dept
             ? app(\App\Support\EmployeeNumberGenerator::class)->next($dept, \App\Support\EmployeeNumberGenerator::ROLE_FACULTY)
             : '';
@@ -147,7 +156,7 @@ class CoordinatorController extends Controller
 
     public function storeFaculty(Request $request)
     {
-        $coordDept = $this->getCoordinatorDepartment();
+        $coordDept = $this->requireCoordinatorDepartment();
 
         $validated = $request->validate([
             'username' => 'required|string|unique:users,username|max:20',
@@ -176,6 +185,8 @@ class CoordinatorController extends Controller
 
     public function documents(Request $request)
     {
+        $this->requireCoordinatorDepartment();
+
         $categoryFilter = $request->query('category');
         $folderFilter = $request->query('folder');
         $tab = $request->query('tab', 'accreditation');

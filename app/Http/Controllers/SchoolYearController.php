@@ -8,6 +8,7 @@ use App\Models\SchoolYear;
 use App\Models\TeachingGuide;
 use App\Services\SchoolYearService;
 use App\Support\AcademicYear;
+use App\Support\CoordinatorDepartment;
 use Illuminate\Http\Request;
 
 class SchoolYearController extends Controller
@@ -100,16 +101,17 @@ class SchoolYearController extends Controller
         $schoolYear = SchoolYear::findOrFail($id);
         $user = auth()->user();
 
+        if ($user->isProgramCoordinator()) {
+            CoordinatorDepartment::require($user);
+        }
+
         if (!$schoolYear->isArchived()) {
             return redirect()->route('dean.archives.index');
         }
 
         $documentsQuery = Document::where('school_year_id', $schoolYear->id)
+            ->visibleTo($user)
             ->with('uploader.employee', 'folder');
-
-        if ($user->isFaculty()) {
-            $documentsQuery->where('uploaded_by', $user->id);
-        }
 
         $archiveSearch = trim((string) request('q', ''));
 
@@ -121,11 +123,8 @@ class SchoolYearController extends Controller
 
         $teachingGuidesQuery = TeachingGuide::where('school_year_id', $schoolYear->id)
             ->approved()
+            ->visibleTo($user)
             ->with('uploader.employee');
-
-        if ($user->isFaculty()) {
-            $teachingGuidesQuery->where('user_id', $user->id);
-        }
 
         if ($archiveSearch !== '') {
             $this->applyArchiveTeachingGuideSearch($teachingGuidesQuery, $archiveSearch);
@@ -135,11 +134,8 @@ class SchoolYearController extends Controller
 
         $examQuestionnairesQuery = ExamQuestionnaire::where('school_year_id', $schoolYear->id)
             ->approved()
+            ->visibleTo($user)
             ->with('submitter.employee');
-
-        if ($user->isFaculty()) {
-            $examQuestionnairesQuery->where('submitted_by', $user->id);
-        }
 
         if ($archiveSearch !== '') {
             $this->applyArchiveExamQuestionnaireSearch($examQuestionnairesQuery, $archiveSearch);
@@ -159,11 +155,17 @@ class SchoolYearController extends Controller
      */
     public function list()
     {
+        $user = auth()->user();
+
+        if ($user->isProgramCoordinator()) {
+            CoordinatorDepartment::require($user);
+        }
+
         $archivedYears = SchoolYear::archived()
             ->withCount([
-                'documents',
-                'teachingGuides as teaching_guides_count' => fn ($q) => $q->approved(),
-                'examQuestionnaires as exam_questionnaires_count' => fn ($q) => $q->approved(),
+                'documents' => fn ($q) => $q->visibleTo($user),
+                'teachingGuides as teaching_guides_count' => fn ($q) => $q->approved()->visibleTo($user),
+                'examQuestionnaires as exam_questionnaires_count' => fn ($q) => $q->approved()->visibleTo($user),
             ])
             ->get();
 

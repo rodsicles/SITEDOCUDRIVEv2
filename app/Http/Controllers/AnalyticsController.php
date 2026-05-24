@@ -5,6 +5,7 @@ namespace App\Http\Controllers;
 use App\Services\DashboardService;
 use App\Services\EngagementAnalyticsService;
 use App\Services\SubmissionAnalyticsService;
+use App\Support\CoordinatorDepartment;
 use Illuminate\Http\Request;
 
 class AnalyticsController extends Controller
@@ -40,6 +41,8 @@ class AnalyticsController extends Controller
         }
 
         if ($user->isProgramCoordinator()) {
+            CoordinatorDepartment::require($user);
+
             return view('coordinator.analytics', $data);
         }
 

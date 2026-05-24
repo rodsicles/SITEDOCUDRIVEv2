@@ -569,14 +569,21 @@ class DocumentService
     /**
      * Search faculty and coordinators for recipient picker (dean/coordinator uploads).
      */
-    public function searchRecipients(string $term, int $limit = 20): Collection
+    public function searchRecipients(User $user, string $term, int $limit = 20): Collection
     {
         $term = trim($term);
 
-        return User::query()
+        $query = User::query()
             ->with(['employee', 'role'])
             ->where('status', 'Active')
-            ->whereHas('role', fn ($q) => $q->whereIn('role_name', ['Faculty Employee', 'Program Coordinator']))
+            ->whereHas('role', fn ($q) => $q->where('role_name', 'Faculty Employee'));
+
+        if ($user->isProgramCoordinator()) {
+            $department = \App\Support\CoordinatorDepartment::require($user);
+            $query->whereHas('employee', fn ($e) => $e->where('department', $department));
+        }
+
+        return $query
             ->when($term !== '', function ($q) use ($term) {
                 $q->where(function ($inner) use ($term) {
                     $inner->where('username', 'like', "%{$term}%")

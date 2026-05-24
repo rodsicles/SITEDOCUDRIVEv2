@@ -4,6 +4,7 @@ namespace App\Http\Controllers;
 
 use App\Models\Course;
 use App\Services\CourseService;
+use App\Support\CoordinatorDepartment;
 use Illuminate\Http\Request;
 use Illuminate\Validation\Rule;
 
@@ -104,7 +105,7 @@ class CoordinatorCourseController extends Controller
 
     private function coordinatorDepartment(): string
     {
-        $dept = optional(auth()->user()->employee)->department;
+        $dept = CoordinatorDepartment::require(auth()->user());
 
         if (!in_array($dept, [Course::DEPT_IT, Course::DEPT_ENGINEERING], true)) {
             abort(403, 'Your account must be assigned to Information Technology or Engineering to manage the course catalog.');

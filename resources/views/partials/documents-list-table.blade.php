@@ -57,15 +57,13 @@
             <td>{{ $document->uploader->employee->full_name ?? $document->uploader->username }}</td>
             <td>{{ $document->created_at->format('M d, Y') }}</td>
             <td class="doc-action-cell">
-                <div class="doc-action-btns">
-                    <a href="{{ route($routePrefix . '.view-document', $document->document_id) }}"
-                       class="btn btn-action-view text-xs">
-                        <i class="fas fa-eye"></i> View
-                    </a>
-                    <a href="{{ route($routePrefix . '.download-document', $document->document_id) }}"
-                       class="btn btn-action-download text-xs">
-                        <i class="fas fa-download"></i> Download
-                    </a>
+                <div class="doc-action-btns doc-action-btns--with-menu">
+                    @include('partials.archive-row-actions', [
+                        'viewUrl' => route($routePrefix . '.view-document', $document->document_id),
+                        'downloadUrl' => route($routePrefix . '.download-document', $document->document_id),
+                        'viewLabel' => 'View ' . $document->document_title,
+                        'downloadLabel' => 'Download ' . $document->document_title,
+                    ])
                     @if($showMoreMenu)
                     <div class="doc-action-wrap">
                         <button type="button"

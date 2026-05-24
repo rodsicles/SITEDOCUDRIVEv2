@@ -19,7 +19,7 @@ class DocumentRecipientController extends Controller
             'q' => 'nullable|string|max:100',
         ]);
 
-        $users = $this->documentService->searchRecipients($validated['q'] ?? '');
+        $users = $this->documentService->searchRecipients(auth()->user(), $validated['q'] ?? '');
 
         return response()->json([
             'results' => $users->map(fn ($user) => [

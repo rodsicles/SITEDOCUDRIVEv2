@@ -11,6 +11,7 @@ use App\Services\DocumentService;
 use App\Services\NotificationService;
 use App\Services\TeachingGuideSyncService;
 use App\Support\AcademicYear;
+use App\Support\CoordinatorDepartment;
 use App\Support\IteSubjects;
 use App\Support\SubmissionLocation;
 use App\Support\UploadStorage;
@@ -32,6 +33,11 @@ class TeachingGuideController extends Controller
     public function index(Request $request)
     {
         $user = auth()->user();
+
+        if ($user->isProgramCoordinator()) {
+            CoordinatorDepartment::require($user);
+        }
+
         $search = $request->query('search');
         $sort = $this->normalizeListSort($request->query('sort'));
         $semesterFilter = $request->query('semester');
@@ -105,7 +111,7 @@ class TeachingGuideController extends Controller
 
         $validated = $request->validate([
             'title' => 'required|string|max:150',
-            'subject' => ['required', 'string', Rule::in(IteSubjects::labels())],
+            'subject' => ['required', 'string', Rule::in(IteSubjects::labelsForUser($user))],
             'academic_year_start' => 'required|integer',
             'semester' => 'required|in:1st,2nd',
             'guide_type' => 'required|in:teaching-guides,lesson,lab-manual',

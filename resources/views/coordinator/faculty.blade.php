@@ -15,13 +15,6 @@
             <h3 class="card-title">Faculty Directory</h3>
         </div>
 
-        @if(session('success'))
-            <div class="alert alert-success">
-                <strong><i class="fas fa-check-circle"></i> Success!</strong>
-                <p>{{ session('success') }}</p>
-            </div>
-        @endif
-
         <table class="data-table">
             <thead>
                 <tr>

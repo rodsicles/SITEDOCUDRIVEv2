@@ -59,24 +59,25 @@ class DashboardLog extends Model
             // Dean sees everything
             $query->latest('log_date');
         } elseif ($user->role_id === 2) { // Program Coordinator
-            $coordinatorDept = optional($user->employee)->department;
+            $coordinatorDept = \App\Support\CoordinatorDepartment::name($user);
 
-            // Coordinator sees:
-            // 1. Their own activities
-            // 2. Activities where they are the target
-            // 3. Faculty activities from the SAME DEPARTMENT only
-            $query->where(function($q) use ($user, $coordinatorDept) {
-                $q->where('user_id', $user->id)
-                  ->orWhere('target_user_id', $user->id)
-                  ->orWhereHas('user', function($subQ) use ($coordinatorDept) {
-                      $subQ->where('role_id', 3);
-                      if ($coordinatorDept) {
-                          $subQ->whereHas('employee', function($empQ) use ($coordinatorDept) {
-                              $empQ->where('department', $coordinatorDept);
-                          });
-                      }
-                  });
-            });
+            if (!$coordinatorDept) {
+                $query->where(function ($q) use ($user) {
+                    $q->where('user_id', $user->id)
+                        ->orWhere('target_user_id', $user->id);
+                });
+            } else {
+                $query->where(function ($q) use ($user, $coordinatorDept) {
+                    $q->where('user_id', $user->id)
+                        ->orWhere('target_user_id', $user->id)
+                        ->orWhereHas('user', function ($subQ) use ($coordinatorDept) {
+                            $subQ->where('role_id', 3)
+                                ->whereHas('employee', function ($empQ) use ($coordinatorDept) {
+                                    $empQ->where('department', $coordinatorDept);
+                                });
+                        });
+                });
+            }
         } else { // Faculty
             // Faculty sees:
             // 1. Only their own activities
@@ -100,19 +101,25 @@ class DashboardLog extends Model
         if ($user->isDean()) {
             $query->latest('log_date');
         } elseif ($user->role_id === 2) {
-            $coordinatorDept = optional($user->employee)->department;
-            $query->where(function($q) use ($user, $coordinatorDept) {
-                $q->where('user_id', $user->id)
-                  ->orWhere('target_user_id', $user->id)
-                  ->orWhereHas('user', function($subQ) use ($coordinatorDept) {
-                      $subQ->where('role_id', 3);
-                      if ($coordinatorDept) {
-                          $subQ->whereHas('employee', function($empQ) use ($coordinatorDept) {
-                              $empQ->where('department', $coordinatorDept);
-                          });
-                      }
-                  });
-            });
+            $coordinatorDept = \App\Support\CoordinatorDepartment::name($user);
+
+            if (!$coordinatorDept) {
+                $query->where(function ($q) use ($user) {
+                    $q->where('user_id', $user->id)
+                        ->orWhere('target_user_id', $user->id);
+                });
+            } else {
+                $query->where(function ($q) use ($user, $coordinatorDept) {
+                    $q->where('user_id', $user->id)
+                        ->orWhere('target_user_id', $user->id)
+                        ->orWhereHas('user', function ($subQ) use ($coordinatorDept) {
+                            $subQ->where('role_id', 3)
+                                ->whereHas('employee', function ($empQ) use ($coordinatorDept) {
+                                    $empQ->where('department', $coordinatorDept);
+                                });
+                        });
+                });
+            }
         } else {
             $query->where(function($q) use ($user) {
                 $q->where('user_id', $user->id)

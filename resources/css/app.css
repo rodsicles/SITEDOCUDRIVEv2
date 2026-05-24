@@ -3835,6 +3835,37 @@ a.doc-sort-item:hover,
     vertical-align: middle;
 }
 
+.submission-review-table-wrap .data-table tbody td {
+    vertical-align: middle;
+}
+
+.submission-review-table-wrap .data-table tbody td .w-9 {
+    margin: 0 auto;
+}
+
+.submission-browse-actions {
+    display: inline-flex;
+    align-items: center;
+    justify-content: flex-end;
+    gap: 0.35rem;
+    flex-shrink: 0;
+}
+
+.submission-browse-actions__delete {
+    margin: 0;
+    padding: 0;
+    display: inline-flex;
+}
+
+.submission-browse-actions__btn {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    min-width: 2rem;
+    padding: 0.35rem 0.5rem;
+    line-height: 1;
+}
+
 .submission-action-wrap {
     position: relative;
     display: inline-flex;

@@ -2,14 +2,13 @@
 
 @section('title', 'Exam Questionnaires - Coordinator')
 @section('page-title', 'Exam Questionnaires')
-@section('page-subtitle', 'View faculty submissions — Dean approves all uploads')
+@section('page-subtitle', 'View department exam questionnaire submissions — Dean approves all uploads')
 
 @section('sidebar')
     @include('partials.coordinator-sidebar')
 @endsection
 
 @section('content')
-
     <div class="content-card">
         <div class="card-header">
             <h3 class="card-title">Exam Questionnaire Submissions</h3>
@@ -46,6 +45,7 @@
             </form>
         </div>
 
+        <div class="submission-review-table-wrap">
         <table class="data-table">
             <thead>
                 <tr>
@@ -73,75 +73,33 @@
                             @endif
                         </div>
                     </td>
-                    <td><strong>{{ $q->title }}</strong></td>
+                    <td><strong class="doc-title-text">{{ $q->title }}</strong></td>
                     <td><span class="doc-category-badge">{{ $q->subject }}</span></td>
                     <td>{{ $q->submitter->employee->full_name ?? $q->submitter->username }}</td>
                     <td><span class="doc-category-badge">{{ strtoupper($q->submission_type ?? 'toq') }}</span></td>
                     <td>{{ $q->exam_type }}</td>
-                    <td>{{ $q->semester }}</td>
-                    <td>
-                        @if($q->isPending())
-                            <span class="badge" style="background:#b45309;color:#fff;"><i class="fas fa-clock"></i> Awaiting Dean</span>
-                        @elseif($q->isApproved())
-                            <span class="badge badge-success"><i class="fas fa-check"></i> Approved</span>
-                        @else
-                            <span class="badge badge-danger"><i class="fas fa-times"></i> Rejected</span>
-                            @if($q->remarks)
-                                <div class="text-xs text-gray-500 mt-1">{{ $q->remarks }}</div>
-                            @endif
-                        @endif
+                    <td>{{ $q->semester ?? '—' }}</td>
+                    <td class="submission-approval-cell">
+                        @include('partials.submission-approval-status', ['submission' => $q])
                     </td>
                     <td>{{ $q->created_at->format('M d, Y') }}</td>
-                    <td>
-                        <div class="doc-action-btns">
-                            <a href="{{ route('coordinator.exam-questionnaires.view', $q->id) }}" target="_blank" class="btn btn-action-view text-xs">
-                                <i class="fas fa-eye"></i> View
-                            </a>
-                            <a href="{{ route('coordinator.exam-questionnaires.download', $q->id) }}" class="btn btn-action-download text-xs">
-                                <i class="fas fa-download"></i> Download
-                            </a>
-                        </div>
+                    <td class="submission-action-cell text-right">
+                        @include('partials.submission-browse-actions', [
+                            'viewUrl' => route('coordinator.exam-questionnaires.view', $q->id),
+                            'downloadUrl' => route('coordinator.exam-questionnaires.download', $q->id),
+                            'viewLabel' => 'View ' . $q->title,
+                            'downloadLabel' => 'Download ' . $q->title,
+                        ])
                     </td>
                 </tr>
                 @empty
                 <tr>
-                    <td colspan="9" class="text-center text-gray-500 dark:text-gray-400 py-8">No submissions found.</td>
+                    <td colspan="10" class="text-center text-gray-500 dark:text-gray-400 py-8">No submissions found.</td>
                 </tr>
                 @endforelse
             </tbody>
         </table>
-        <div class="mt-5">{{ $questionnaires->links() }}</div>
-    </div>
-
-    {{-- Reject Modal --}}
-    <div id="rejectModal" style="display:none;position:fixed;inset:0;background:rgba(0,0,0,0.5);z-index:1000;align-items:center;justify-content:center;">
-        <div class="content-card" style="width:100%;max-width:480px;margin:auto;">
-            <div class="card-header">
-                <h3 class="card-title">Reject Questionnaire</h3>
-                <button onclick="closeRejectModal()" class="btn btn-sm bg-gray-200 dark:bg-gray-700"><i class="fas fa-times"></i></button>
-            </div>
-            <form id="rejectForm" method="POST">
-                @csrf
-                <div class="p-4">
-                    <label class="form-label">Reason for Rejection <span class="text-red-500">*</span></label>
-                    <textarea name="remarks" class="form-control" rows="3" maxlength="500" required placeholder="Provide feedback for the faculty..."></textarea>
-                </div>
-                <div class="px-4 pb-4 flex gap-2">
-                    <button type="submit" class="btn btn-danger"><i class="fas fa-times"></i> Reject</button>
-                    <button type="button" onclick="closeRejectModal()" class="btn bg-gray-200 dark:bg-gray-700 text-gray-700 dark:text-gray-300">Cancel</button>
-                </div>
-            </form>
         </div>
+        <div class="mt-5 px-4 pb-4">{{ $questionnaires->links() }}</div>
     </div>
-
-    <script>
-        function openRejectModal(id) {
-            document.getElementById('rejectForm').action = '/coordinator/exam-questionnaires/' + id + '/reject';
-            var modal = document.getElementById('rejectModal');
-            modal.style.display = 'flex';
-        }
-        function closeRejectModal() {
-            document.getElementById('rejectModal').style.display = 'none';
-        }
-    </script>
 @endsection

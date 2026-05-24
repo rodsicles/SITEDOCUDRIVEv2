@@ -146,6 +146,8 @@ Route::middleware(['auth', 'no.back', 'role:Dean,Secretary'])->prefix('dean')->n
     Route::post('/accounts/faculty', [DeanController::class, 'storeFaculty'])->middleware('throttle:10,60')->name('store-faculty');
     Route::get('/accounts/{id}/edit', [DeanController::class, 'editEmployee'])->name('edit-employee');
     Route::patch('/accounts/{id}', [DeanController::class, 'updateEmployee'])->middleware('throttle:10,60')->name('update-employee');
+    Route::post('/accounts/{id}/deactivate', [DeanController::class, 'deactivateEmployee'])->middleware('throttle:10,60')->name('deactivate-employee');
+    Route::post('/accounts/{id}/reactivate', [DeanController::class, 'reactivateEmployee'])->middleware('throttle:10,60')->name('reactivate-employee');
     Route::post('/accounts/{id}/reset-password', [DeanController::class, 'resetEmployeePassword'])->middleware('throttle:5,1')->name('reset-password');
 
     Route::get('/courses', [DeanCourseController::class, 'index'])->name('courses');

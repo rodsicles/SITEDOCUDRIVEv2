@@ -155,11 +155,13 @@ class GlobalSearchService
 
     private function searchEmployees(User $user, string $query, int $limit): Collection
     {
-        $employeeQuery = Employee::query()->where(function ($q) use ($query) {
-            $q->where('full_name', 'like', "%{$query}%")
-                ->orWhere('employee_no', 'like', "%{$query}%")
-                ->orWhere('department', 'like', "%{$query}%");
-        });
+        $employeeQuery = Employee::query()
+            ->whereHas('user', fn ($q) => $q->where('status', 'Active'))
+            ->where(function ($q) use ($query) {
+                $q->where('full_name', 'like', "%{$query}%")
+                    ->orWhere('employee_no', 'like', "%{$query}%")
+                    ->orWhere('department', 'like', "%{$query}%");
+            });
 
         if ($user->isProgramCoordinator()) {
             $dept = optional($user->employee)->department;

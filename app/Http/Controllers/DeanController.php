@@ -480,12 +480,54 @@ class DeanController extends Controller
         }
     }
 
+    public function deactivateEmployee($id)
+    {
+        $employee = Employee::with('user')->where('employee_id', $id)->firstOrFail();
+
+        try {
+            $this->employeeService->setAccountStatus($employee, 'Inactive', auth()->user());
+
+            return redirect()
+                ->route('dean.employee-profile', $id)
+                ->with('success', $employee->full_name . ' has been deactivated. Their uploads and folders are unchanged.');
+        } catch (\Symfony\Component\HttpKernel\Exception\HttpException $e) {
+            throw $e;
+        } catch (\Exception $e) {
+            \Log::error('Account deactivation error: ' . $e->getMessage());
+
+            return back()->withErrors(['error' => 'Failed to deactivate account.']);
+        }
+    }
+
+    public function reactivateEmployee($id)
+    {
+        $employee = Employee::with('user')->where('employee_id', $id)->firstOrFail();
+
+        try {
+            $this->employeeService->setAccountStatus($employee, 'Active', auth()->user());
+
+            return redirect()
+                ->route('dean.employee-profile', $id)
+                ->with('success', $employee->full_name . ' has been reactivated and can sign in again.');
+        } catch (\Symfony\Component\HttpKernel\Exception\HttpException $e) {
+            throw $e;
+        } catch (\Exception $e) {
+            \Log::error('Account reactivation error: ' . $e->getMessage());
+
+            return back()->withErrors(['error' => 'Failed to reactivate account.']);
+        }
+    }
+
     public function resetEmployeePassword(Request $request, $id)
     {
         $employee = Employee::with('user')->where('employee_id', $id)->firstOrFail();
 
         if ($employee->user->role_id === 1) {
             abort(403, 'Cannot reset Dean password.');
+        }
+
+        if ($employee->user->status !== 'Active') {
+            return back()->withErrors(['error' => 'Reactivate this account before resetting the password.']);
         }
 
         $validated = $request->validate([

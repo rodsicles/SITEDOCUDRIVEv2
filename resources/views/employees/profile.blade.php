@@ -31,11 +31,26 @@
     <div class="content-card">
         <div class="card-header">
             <h3 class="card-title">Basic Information</h3>
-            <div class="flex gap-2.5 items-center">
-                @if(auth()->user()->isDean() && $employee->user->role_id !== 1)
+            <div class="flex flex-wrap gap-2.5 items-center">
+                @if(auth()->user()->isDeanOrSecretary() && $employee->user->role_id !== 1)
                     <a href="{{ route('dean.edit-employee', $employee->employee_id) }}" class="btn btn-primary py-2 px-5 text-sm">
                         <i class="fas fa-edit"></i> Edit Information
                     </a>
+                    @if($employee->user->status === 'Active' && (int) $employee->user_id !== (int) auth()->id())
+                    <form action="{{ route('dean.deactivate-employee', $employee->employee_id) }}" method="POST" class="m-0" id="deactivateAccountForm">
+                        @csrf
+                        <button type="button" class="btn btn-danger py-2 px-5 text-sm" onclick="confirmDeactivateAccount()">
+                            <i class="fas fa-user-slash"></i> Deactivate Account
+                        </button>
+                    </form>
+                    @elseif($employee->user->status === 'Inactive')
+                    <form action="{{ route('dean.reactivate-employee', $employee->employee_id) }}" method="POST" class="m-0">
+                        @csrf
+                        <button type="submit" class="btn btn-primary py-2 px-5 text-sm" style="background:#028a0f;border-color:#028a0f;">
+                            <i class="fas fa-user-check"></i> Reactivate Account
+                        </button>
+                    </form>
+                    @endif
                 @elseif(auth()->user()->role_id === 2)
                     <a href="{{ route('coordinator.edit-faculty', $employee->employee_id) }}" class="btn btn-primary py-2 px-5 text-sm">
                         <i class="fas fa-edit"></i> Edit Information
@@ -46,6 +61,15 @@
                 </span>
             </div>
         </div>
+        @if(auth()->user()->isDeanOrSecretary() && $employee->user->status === 'Inactive')
+        <div class="mx-0 mb-0 mt-0 px-5 pb-4">
+            <div class="bg-amber-50 dark:bg-amber-900/20 border-l-4 border-amber-500 p-4 text-sm text-amber-900 dark:text-amber-200">
+                <i class="fas fa-info-circle mr-1"></i>
+                This account is <strong>inactive</strong>. The user cannot sign in or appear in task assignment and user search.
+                Their uploaded documents and folders remain in the system for archiving and records.
+            </div>
+        </div>
+        @endif
         <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 py-2.5">
             <div>
                 <p class="text-gray-500 dark:text-gray-400 mb-1 text-sm">Employee Number</p>
@@ -387,6 +411,34 @@
 
 @push('scripts')
 <script>
+function confirmDeactivateAccount() {
+    var form = document.getElementById('deactivateAccountForm');
+    if (!form) return;
+
+    var message = 'Deactivate this account? They will not be able to sign in or be selected for new tasks. Uploaded documents and folders stay in the system for records.';
+
+    if (typeof Swal !== 'undefined') {
+        Swal.fire({
+            title: 'Deactivate account?',
+            text: message,
+            icon: 'warning',
+            showCancelButton: true,
+            confirmButtonText: 'Yes, deactivate',
+            cancelButtonText: 'Cancel',
+            confirmButtonColor: '#dc2626',
+            cancelButtonColor: '#6b7280',
+            customClass: { popup: 'swal-flat' }
+        }).then(function (result) {
+            if (result.isConfirmed) form.submit();
+        });
+        return;
+    }
+
+    if (confirm(message)) {
+        form.submit();
+    }
+}
+
 function filterDocuments(folderId) {
     const rows = document.querySelectorAll('.document-row');
     const buttons = document.querySelectorAll('.folder-filter-btn');

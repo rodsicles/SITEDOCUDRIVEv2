@@ -207,6 +207,58 @@ class EmployeeService
     }
 
     /**
+     * Activate or deactivate a faculty/coordinator account (Dean). Does not delete records or uploads.
+     */
+    public function setAccountStatus(Employee $employee, string $status, User $actor): Employee
+    {
+        if (!in_array($status, ['Active', 'Inactive'], true)) {
+            throw new \InvalidArgumentException('Status must be Active or Inactive.');
+        }
+
+        $user = $employee->user;
+
+        if ($user->role_id === 1) {
+            abort(403, 'Cannot change status for Dean accounts.');
+        }
+
+        if ($actor->id === $user->id && $status === 'Inactive') {
+            abort(403, 'You cannot deactivate your own account.');
+        }
+
+        $previous = $user->status;
+        if ($previous === $status) {
+            return $employee->fresh(['user.role']);
+        }
+
+        $user->update(['status' => $status]);
+
+        $label = $status === 'Inactive' ? 'Deactivated' : 'Reactivated';
+        DashboardLog::create([
+            'user_id' => $actor->id,
+            'target_user_id' => $user->id,
+            'activity' => "{$label} account: {$employee->full_name}",
+            'activity_type' => $status === 'Inactive' ? 'account_deactivated' : 'account_reactivated',
+            'visibility' => 'dean',
+        ]);
+
+        if ($status === 'Inactive') {
+            Notification::create([
+                'user_id' => $user->id,
+                'message' => 'Your SITE Employee Dashboard account has been deactivated by the Dean. You can no longer sign in. Uploaded documents remain on record for the department.',
+                'tone' => \App\Models\Notification::TONE_DANGER,
+            ]);
+        } else {
+            Notification::create([
+                'user_id' => $user->id,
+                'message' => 'Your SITE Employee Dashboard account has been reactivated. You may sign in again with your username and password.',
+                'tone' => \App\Models\Notification::TONE_SUCCESS,
+            ]);
+        }
+
+        return $employee->fresh(['user.role']);
+    }
+
+    /**
      * Reset an employee's password (used by Dean).
      */
     public function resetEmployeePassword(Employee $employee, string $newPassword, User $resetter): void

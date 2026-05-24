@@ -42,6 +42,13 @@
             <span class="badge badge-info">{{ $employee->user->role->role_name }}</span>
         </div>
 
+        @if($employee->user->status === 'Inactive')
+        <div class="bg-amber-50 dark:bg-amber-900/20 border-l-4 border-amber-500 p-4 mb-5 text-sm text-amber-900 dark:text-amber-200">
+            <i class="fas fa-info-circle mr-1"></i>
+            Account is inactive. Reactivate from the employee profile before editing or resetting password.
+        </div>
+        @endif
+
         <form action="{{ route('dean.update-employee', $employee->employee_id) }}" method="POST">
             @csrf
             @method('PATCH')
@@ -99,6 +106,7 @@
     </div>
 
     <!-- Reset Password Section -->
+    @if($employee->user->status === 'Active')
     <div class="content-card">
         <div class="card-header">
             <h3 class="card-title">Reset Password</h3>
@@ -136,6 +144,7 @@
             </div>
         </form>
     </div>
+    @endif
 
     <script>
         function confirmPasswordReset() {

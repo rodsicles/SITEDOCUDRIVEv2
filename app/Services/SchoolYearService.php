@@ -7,9 +7,12 @@ use App\Models\ExamQuestionnaire;
 use App\Models\Folder;
 use App\Models\SchoolYear;
 use App\Models\TeachingGuide;
+use App\Models\DashboardLog;
 use App\Models\User;
 use App\Support\AcademicYear;
+use Illuminate\Support\Facades\Cache;
 use Illuminate\Support\Facades\DB;
+use InvalidArgumentException;
 
 class SchoolYearService
 {
@@ -110,6 +113,85 @@ class SchoolYearService
         ];
     }
 
+
+    /**
+     * Restore an archived school year as active and remove the mistaken active year.
+     *
+     * @return array{schoolYear: SchoolYear, removed: array<string, int>|null}
+     */
+    public function restoreArchivedAsActive(SchoolYear $archivedYear, User $dean): array
+    {
+        if (!$archivedYear->isArchived()) {
+            throw new InvalidArgumentException('Only archived school years can be restored.');
+        }
+
+        return DB::transaction(function () use ($archivedYear, $dean) {
+            $active = SchoolYear::active();
+            $removed = null;
+
+            if ($active && $active->id !== $archivedYear->id) {
+                $this->reattachOrphanedRecords($archivedYear->id);
+
+                $removed = app(SchoolYearArchiveDeletionService::class)->purgeSchoolYearBucket(
+                    $active,
+                    $dean,
+                    "Removed school year {$active->name} while restoring {$archivedYear->name} as active",
+                    'archive_restored',
+                );
+            }
+
+            $archivedYear->update([
+                'is_active' => true,
+                'archived_at' => null,
+                'archived_by' => null,
+            ]);
+
+            DashboardLog::create([
+                'user_id' => $dean->id,
+                'target_user_id' => null,
+                'activity' => "Restored archived school year as active: {$archivedYear->name}",
+                'activity_type' => 'archive_restored',
+                'visibility' => 'dean',
+            ]);
+
+            $this->clearAnalyticsCaches();
+
+            return [
+                'schoolYear' => $archivedYear->fresh(),
+                'removed' => $removed,
+            ];
+        });
+    }
+
+    /**
+     * Re-tag records carried forward to the active year back to the restored archive year.
+     */
+    protected function reattachOrphanedRecords(int $schoolYearId): void
+    {
+        Document::whereNull('school_year_id')->update(['school_year_id' => $schoolYearId]);
+        TeachingGuide::whereNull('school_year_id')->update(['school_year_id' => $schoolYearId]);
+        ExamQuestionnaire::whereNull('school_year_id')->update(['school_year_id' => $schoolYearId]);
+
+        Folder::where('is_system', false)
+            ->whereNull('school_year_id')
+            ->update(['school_year_id' => $schoolYearId]);
+    }
+
+    /**
+     * Clear cached analytics so dashboards pick up the restored school year immediately.
+     */
+    protected function clearAnalyticsCaches(): void
+    {
+        if (config('cache.default') === 'array') {
+            return;
+        }
+
+        try {
+            Cache::flush();
+        } catch (\Throwable) {
+            // Non-fatal: analytics caches expire within 10 minutes anyway.
+        }
+    }
     /**
      * Get all archived school years.
      */

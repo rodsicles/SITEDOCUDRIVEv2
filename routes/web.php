@@ -227,6 +227,7 @@ Route::middleware(['auth', 'no.back', 'role:Dean,Secretary'])->prefix('dean')->n
     Route::get('/archives', [SchoolYearController::class, 'index'])->name('archives.index');
     Route::post('/archives', [SchoolYearController::class, 'archive'])->middleware('throttle:5,60')->name('archives.archive');
     Route::get('/archives/list', [SchoolYearController::class, 'list'])->name('archives.list');
+    Route::post('/archives/{id}/restore', [SchoolYearController::class, 'restoreArchived'])->middleware('throttle:3,60')->name('archives.restore');
     Route::post('/archives/{id}/permanent-delete', [SchoolYearController::class, 'destroyArchived'])->middleware('throttle:3,60')->name('archives.destroy');
     Route::get('/archives/{id}', [SchoolYearController::class, 'show'])->name('archives.show');
 });

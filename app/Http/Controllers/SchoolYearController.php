@@ -114,6 +114,59 @@ class SchoolYearController extends Controller
         }
     }
 
+
+    /**
+     * Restore an archived school year as the active year (Dean only).
+     */
+    public function restoreArchived(Request $request, $id)
+    {
+        $schoolYear = SchoolYear::findOrFail($id);
+
+        $validated = $request->validate([
+            'confirm_name' => 'required|string|max:50',
+            'confirm_phrase' => 'required|string|max:50',
+        ]);
+
+        if ($validated['confirm_name'] !== $schoolYear->name) {
+            return back()->withErrors([
+                'confirm_name' => 'School year name does not match.',
+            ]);
+        }
+
+        if ($validated['confirm_phrase'] !== 'RESTORE AS ACTIVE') {
+            return back()->withErrors([
+                'confirm_phrase' => 'Type RESTORE AS ACTIVE in all caps to confirm.',
+            ]);
+        }
+
+        try {
+            $result = $this->schoolYearService->restoreArchivedAsActive($schoolYear, auth()->user());
+            $restored = $result['schoolYear'];
+            $removed = $result['removed'];
+
+            $message = "School year restored. Now active: {$restored->name}. Faculty performance and analytics will use this school year.";
+
+            if ($removed) {
+                $message .= sprintf(
+                    ' Removed the previous active year: %d document(s), %d teaching guide(s), %d exam questionnaire(s), %d folder(s).',
+                    $removed['documents'],
+                    $removed['teaching_guides'],
+                    $removed['exam_questionnaires'],
+                    $removed['folders'],
+                );
+            }
+
+            return redirect()
+                ->route('dean.archives.index')
+                ->with('success', $message);
+        } catch (\Throwable $e) {
+            report($e);
+
+            return back()->withErrors([
+                'error' => $e->getMessage() ?: 'Failed to restore archived school year.',
+            ]);
+        }
+    }
     /**
      * Execute the archive action (Dean only).
      */

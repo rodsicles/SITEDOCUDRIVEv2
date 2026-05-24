@@ -38,8 +38,26 @@ class SchoolYearArchiveDeletionService
             abort(403, 'Cannot delete the active school year.');
         }
 
+        return $this->purgeSchoolYearBucket(
+            $schoolYear,
+            $dean,
+            "Permanently deleted archived school year and all tagged data: {$schoolYear->name}",
+            'archive_deleted',
+        );
+    }
+
+    /**
+     * Remove a school year bucket and all records/files tagged to it.
+     *
+     * @return array<string, int>
+     */
+    public function purgeSchoolYearBucket(
+        SchoolYear $schoolYear,
+        User $dean,
+        string $logActivity,
+        string $logType = 'archive_deleted',
+    ): array {
         $syId = (int) $schoolYear->id;
-        $name = $schoolYear->name;
 
         $summary = [
             'documents' => 0,
@@ -49,7 +67,7 @@ class SchoolYearArchiveDeletionService
             'folders' => 0,
         ];
 
-        DB::transaction(function () use ($syId, $name, $dean, $schoolYear, &$summary) {
+        DB::transaction(function () use ($syId, $dean, $schoolYear, $logActivity, $logType, &$summary) {
             $folderIds = Folder::query()
                 ->where('school_year_id', $syId)
                 ->pluck('folder_id')
@@ -70,8 +88,8 @@ class SchoolYearArchiveDeletionService
             DashboardLog::create([
                 'user_id' => $dean->id,
                 'target_user_id' => null,
-                'activity' => "Permanently deleted archived school year and all tagged data: {$name}",
-                'activity_type' => 'archive_deleted',
+                'activity' => $logActivity,
+                'activity_type' => $logType,
                 'visibility' => 'dean',
             ]);
 

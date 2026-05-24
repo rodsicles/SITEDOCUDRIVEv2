@@ -115,6 +115,11 @@
                             <a href="{{ route('dean.archives.show', $year->id) }}" class="btn btn-sm btn-primary border-0">
                                 <i class="fas fa-eye"></i> Browse
                             </a>
+                            <button type="button"
+                                    class="btn btn-sm btn-success border-0"
+                                    onclick="openArchiveRestoreModal({{ $year->id }}, @json($year->name))">
+                                <i class="fas fa-undo"></i> Restore as Active
+                            </button>
                             @if($allowArchiveHardDelete)
                             <button type="button"
                                     class="btn btn-sm btn-danger border-0"
@@ -305,7 +310,7 @@
         }
     }
 
-    @if(old('confirm_name') && $errors->any())
+    @if(old('confirm_phrase') && str_contains(strtoupper(old('confirm_phrase')), 'DELETE') && $errors->any())
     document.addEventListener('DOMContentLoaded', function () {
         document.getElementById('archiveDeleteModal').classList.remove('hidden');
         document.getElementById('archiveDeleteYearLabel').textContent = @json(old('confirm_name'));
@@ -314,4 +319,5 @@
     @endif
     </script>
     @endif
+@include('partials.archive-restore-modal')
 @endsection

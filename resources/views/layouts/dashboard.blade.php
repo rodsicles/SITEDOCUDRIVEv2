@@ -4,6 +4,7 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <meta name="csrf-token" content="{{ csrf_token() }}">
+    <meta name="request-guard-cooldown-ms" content="{{ config('rate_limits.request_guard_cooldown_ms', 2500) }}">
     <title>@yield('title', 'Employee Dashboard with Data Analytics - SITE')</title>
     <link rel="icon" type="image/png" href="{{ asset('images/SPUP-final-logo.png') }}">
     @vite(['resources/css/app.css', 'resources/js/app.js'])

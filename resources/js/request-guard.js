@@ -132,7 +132,16 @@ function sleep(ms) {
     return new Promise((resolve) => setTimeout(resolve, ms));
 }
 
-const defaultGuard = createRequestGuard({ cooldownMs: 2500 });
+function readCooldownMs() {
+    const meta = document.querySelector('meta[name="request-guard-cooldown-ms"]');
+    if (!meta) {
+        return 2500;
+    }
+    const value = parseInt(meta.getAttribute('content') || '2500', 10);
+    return Number.isFinite(value) && value >= 0 ? value : 2500;
+}
+
+const defaultGuard = createRequestGuard({ cooldownMs: readCooldownMs() });
 
 if (typeof window !== 'undefined') {
     window.requestGuard = defaultGuard;

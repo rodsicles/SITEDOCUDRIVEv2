@@ -23,6 +23,7 @@ return Application::configure(basePath: dirname(__DIR__))
             'role'                  => \App\Http\Middleware\RoleMiddleware::class,
             'no.back'               => \App\Http\Middleware\PreventBackHistory::class,
             'password.changed'      => \App\Http\Middleware\EnsurePasswordChanged::class,
+            'throttle'              => \App\Http\Middleware\DefenseAwareThrottle::class,
         ]);
 
         // Apply the password-change gate to every web request. Inside the

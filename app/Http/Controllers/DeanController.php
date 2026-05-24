@@ -11,6 +11,7 @@ use App\Models\Task;
 use App\Models\User;
 use App\Services\DashboardService;
 use App\Services\DocumentService;
+use App\Services\EmployeeAccountDeletionService;
 use App\Services\EmployeeService;
 use App\Services\FolderService;
 use App\Services\TaskService;
@@ -515,6 +516,56 @@ class DeanController extends Controller
             \Log::error('Account reactivation error: ' . $e->getMessage());
 
             return back()->withErrors(['error' => 'Failed to reactivate account.']);
+        }
+    }
+
+    public function destroyEmployee(Request $request, $id, EmployeeAccountDeletionService $deletionService)
+    {
+        $employee = Employee::with(['user.role'])->where('employee_id', $id)->firstOrFail();
+
+        $validated = $request->validate([
+            'confirm_username' => 'required|string|max:50',
+            'confirm_phrase' => 'required|string|max:50',
+        ]);
+
+        if ($validated['confirm_username'] !== $employee->user->username) {
+            return back()->withErrors([
+                'confirm_username' => 'Username does not match this account.',
+            ]);
+        }
+
+        if ($validated['confirm_phrase'] !== 'DELETE PERMANENTLY') {
+            return back()->withErrors([
+                'confirm_phrase' => 'Type DELETE PERMANENTLY in all caps to confirm.',
+            ]);
+        }
+
+        try {
+            $name = $employee->full_name;
+            $summary = $deletionService->permanentlyDelete($employee, auth()->user());
+
+            $detail = sprintf(
+                'Removed %d document(s), %d teaching guide(s), %d exam questionnaire(s), %d task(s).',
+                $summary['documents'],
+                $summary['teaching_guides'],
+                $summary['exam_questionnaires'],
+                $summary['tasks'],
+            );
+
+            return redirect()
+                ->route('dean.employees')
+                ->with('success', "Account for {$name} was permanently deleted. {$detail}");
+        } catch (\Symfony\Component\HttpKernel\Exception\HttpException $e) {
+            throw $e;
+        } catch (\Exception $e) {
+            \Log::error('Account permanent delete error: ' . $e->getMessage(), [
+                'employee_id' => $id,
+                'exception' => $e,
+            ]);
+
+            return back()->withErrors([
+                'error' => 'Permanent delete failed. No changes were saved. Check logs if this persists.',
+            ]);
         }
     }
 

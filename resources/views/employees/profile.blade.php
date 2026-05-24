@@ -407,10 +407,109 @@
         </div>
         @endif
     </div>
+
+    @if(auth()->user()->isDeanOrSecretary() && config('employee.allow_hard_delete') && in_array((int) $employee->user->role_id, [2, 3], true) && (int) $employee->user_id !== (int) auth()->id())
+    <div class="content-card account-delete-danger mt-6">
+        <div class="card-header">
+            <h3 class="card-title text-red-700 dark:text-red-400">
+                <i class="fas fa-exclamation-triangle mr-2"></i> Dry-run cleanup — permanent delete
+            </h3>
+        </div>
+        <div class="p-5 pt-0">
+            <p class="text-sm text-gray-700 dark:text-gray-300 mb-4">
+                <strong>Temporary feature.</strong> This removes the account and <strong>all</strong> related data:
+                documents (including recycle bin), teaching guides, exam questionnaires, tasks, notifications,
+                custom folders, announcements they authored, and activity tied to this user. <strong>This cannot be undone.</strong>
+            </p>
+            <p class="text-sm text-gray-600 dark:text-gray-400 mb-4">
+                Prefer <strong>Deactivate</strong> if you only need to block login but keep files for archiving.
+            </p>
+
+            @error('confirm_username')
+                <p class="text-red-600 text-sm mb-2">{{ $message }}</p>
+            @enderror
+            @error('confirm_phrase')
+                <p class="text-red-600 text-sm mb-2">{{ $message }}</p>
+            @enderror
+            @error('error')
+                <p class="text-red-600 text-sm mb-2">{{ $message }}</p>
+            @enderror
+
+            <form action="{{ route('dean.destroy-employee', $employee->employee_id) }}" method="POST" id="permanentDeleteForm" class="max-w-lg">
+                @csrf
+                <div class="form-group">
+                    <label class="form-label" for="confirm_username">Type username to confirm</label>
+                    <input type="text" name="confirm_username" id="confirm_username" class="form-control"
+                           value="{{ old('confirm_username') }}"
+                           placeholder="{{ $employee->user->username }}" autocomplete="off" required>
+                </div>
+                <div class="form-group">
+                    <label class="form-label" for="confirm_phrase">Type DELETE PERMANENTLY</label>
+                    <input type="text" name="confirm_phrase" id="confirm_phrase" class="form-control"
+                           value="{{ old('confirm_phrase') }}"
+                           placeholder="DELETE PERMANENTLY" autocomplete="off" required>
+                </div>
+                <button type="button" class="btn btn-danger" onclick="confirmPermanentDeleteAccount()">
+                    <i class="fas fa-trash-alt"></i> Permanently delete account and all data
+                </button>
+            </form>
+        </div>
+    </div>
+    @endif
 @endsection
 
 @push('scripts')
 <script>
+function confirmPermanentDeleteAccount() {
+    var form = document.getElementById('permanentDeleteForm');
+    if (!form) return;
+
+    var expectedUser = @json($employee->user->username);
+    var usernameInput = document.getElementById('confirm_username');
+    var phraseInput = document.getElementById('confirm_phrase');
+
+    if (usernameInput && usernameInput.value.trim() !== expectedUser) {
+        if (typeof Swal !== 'undefined') {
+            Swal.fire({ title: 'Username mismatch', text: 'Enter the exact username: ' + expectedUser, icon: 'error', confirmButtonColor: '#028a0f', customClass: { popup: 'swal-flat' } });
+        } else {
+            alert('Username does not match.');
+        }
+        return;
+    }
+
+    if (phraseInput && phraseInput.value.trim() !== 'DELETE PERMANENTLY') {
+        if (typeof Swal !== 'undefined') {
+            Swal.fire({ title: 'Confirmation required', text: 'Type DELETE PERMANENTLY in all caps.', icon: 'error', confirmButtonColor: '#028a0f', customClass: { popup: 'swal-flat' } });
+        } else {
+            alert('Type DELETE PERMANENTLY to confirm.');
+        }
+        return;
+    }
+
+    var message = 'This will permanently delete every file, task, and record for this person. This cannot be undone.';
+
+    if (typeof Swal !== 'undefined') {
+        Swal.fire({
+            title: 'Permanently delete account?',
+            text: message,
+            icon: 'warning',
+            showCancelButton: true,
+            confirmButtonText: 'Yes, delete everything',
+            cancelButtonText: 'Cancel',
+            confirmButtonColor: '#dc2626',
+            cancelButtonColor: '#6b7280',
+            customClass: { popup: 'swal-flat' }
+        }).then(function (result) {
+            if (result.isConfirmed) form.submit();
+        });
+        return;
+    }
+
+    if (confirm(message)) {
+        form.submit();
+    }
+}
+
 function confirmDeactivateAccount() {
     var form = document.getElementById('deactivateAccountForm');
     if (!form) return;

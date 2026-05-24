@@ -1303,6 +1303,14 @@ body {
     padding: 0.5rem 0.625rem !important;
 }
 
+.account-delete-danger {
+    border: 2px solid #fecaca;
+}
+
+.dark .account-delete-danger {
+    border-color: #991b1b;
+}
+
 .alert {
     @apply px-5 py-4 mb-5;
 }

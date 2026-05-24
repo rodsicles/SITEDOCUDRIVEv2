@@ -6,6 +6,7 @@ use App\Models\Document;
 use App\Models\ExamQuestionnaire;
 use App\Models\SchoolYear;
 use App\Models\TeachingGuide;
+use App\Services\SchoolYearArchiveDeletionService;
 use App\Services\SchoolYearService;
 use App\Support\AcademicYear;
 use App\Support\CoordinatorDepartment;
@@ -23,7 +24,12 @@ class SchoolYearController extends Controller
     public function index()
     {
         $activeSchoolYear = $this->schoolYearService->getActive();
-        $archivedYears = $this->schoolYearService->getArchived();
+        $archivedYears = SchoolYear::archived()
+            ->with('archivedByUser.employee')
+            ->withCount(['documents', 'teachingGuides', 'examQuestionnaires', 'folders'])
+            ->get();
+
+        $allowArchiveHardDelete = (bool) config('school_year.allow_archive_hard_delete', false);
 
         // Counts for active year
         $activeDocCount = Document::where(function ($q) use ($activeSchoolYear) {
@@ -54,8 +60,58 @@ class SchoolYearController extends Controller
             'activeSchoolYear', 'archivedYears',
             'activeDocCount', 'activeTgCount', 'activeEqCount',
             'pendingTgCount', 'pendingEqCount', 'rejectedTgCount', 'rejectedEqCount',
-            'suggestedStartYear'
+            'suggestedStartYear',
+            'allowArchiveHardDelete',
         ));
+    }
+
+    /**
+     * Permanently delete an archived school year and all tagged data (Dean dry-run cleanup).
+     */
+    public function destroyArchived(Request $request, $id, SchoolYearArchiveDeletionService $deletionService)
+    {
+        $schoolYear = SchoolYear::findOrFail($id);
+
+        $validated = $request->validate([
+            'confirm_name' => 'required|string|max:50',
+            'confirm_phrase' => 'required|string|max:50',
+        ]);
+
+        if ($validated['confirm_name'] !== $schoolYear->name) {
+            return back()->withErrors([
+                'confirm_name' => 'School year name does not match.',
+            ]);
+        }
+
+        if ($validated['confirm_phrase'] !== 'DELETE PERMANENTLY') {
+            return back()->withErrors([
+                'confirm_phrase' => 'Type DELETE PERMANENTLY in all caps to confirm.',
+            ]);
+        }
+
+        try {
+            $name = $schoolYear->name;
+            $summary = $deletionService->permanentlyDeleteArchived($schoolYear, auth()->user());
+
+            $detail = sprintf(
+                'Removed %d document(s), %d teaching guide(s), %d exam questionnaire(s), %d exam record(s), %d folder(s).',
+                $summary['documents'],
+                $summary['teaching_guides'],
+                $summary['exam_questionnaires'],
+                $summary['exam_records'],
+                $summary['folders'],
+            );
+
+            return redirect()
+                ->route('dean.archives.index')
+                ->with('success', "Archived school year \"{$name}\" was permanently deleted. {$detail}");
+        } catch (\Throwable $e) {
+            report($e);
+
+            return back()->withErrors([
+                'error' => $e->getMessage() ?: 'Failed to delete archived school year.',
+            ]);
+        }
     }
 
     /**

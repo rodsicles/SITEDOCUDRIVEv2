@@ -1080,6 +1080,229 @@ body {
     @apply w-full px-5 py-4 border-2 border-gray-200 dark:border-gray-700 text-base focus:outline-none focus:border-[#028a0f] dark:focus:border-[#02b815] focus:shadow-[0_0_0_4px_rgba(2,138,15,0.1)] bg-white dark:bg-[#1e1e1e] text-gray-800 dark:text-gray-200;
 }
 
+/* Dean create task — department filter + dual assignee picker */
+.task-assignee-picker {
+    display: grid;
+    grid-template-columns: 1fr auto 1fr;
+    gap: 0.75rem;
+    align-items: stretch;
+}
+
+@media (max-width: 768px) {
+    .task-assignee-picker {
+        grid-template-columns: 1fr;
+    }
+
+    .task-assignee-picker__actions {
+        flex-direction: row !important;
+        justify-content: center;
+    }
+}
+
+.task-assignee-picker__panel {
+    display: flex;
+    flex-direction: column;
+    min-height: 14rem;
+    border: 2px solid #e5e7eb;
+    background: #fff;
+}
+
+.dark .task-assignee-picker__panel {
+    border-color: #4b5563;
+    background: #1e1e1e;
+}
+
+.task-assignee-picker__panel--selected {
+    border-color: rgba(2, 138, 15, 0.35);
+}
+
+.dark .task-assignee-picker__panel--selected {
+    border-color: rgba(2, 184, 21, 0.45);
+}
+
+.task-assignee-picker__panel-head {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 0.5rem;
+    padding: 0.625rem 0.875rem;
+    font-size: 0.8125rem;
+    font-weight: 600;
+    text-transform: uppercase;
+    letter-spacing: 0.04em;
+    color: #374151;
+    background: #f9fafb;
+    border-bottom: 2px solid #e5e7eb;
+}
+
+.dark .task-assignee-picker__panel-head {
+    color: #e5e7eb;
+    background: #2a2a2a;
+    border-bottom-color: #4b5563;
+}
+
+.task-assignee-picker__panel--selected .task-assignee-picker__panel-head {
+    color: #028a0f;
+    background: rgba(2, 138, 15, 0.06);
+    border-bottom-color: rgba(2, 138, 15, 0.2);
+}
+
+.dark .task-assignee-picker__panel--selected .task-assignee-picker__panel-head {
+    color: #02b815;
+    background: rgba(2, 138, 15, 0.12);
+}
+
+.task-assignee-picker__hint,
+.task-assignee-picker__count {
+    font-size: 0.75rem;
+    font-weight: 500;
+    text-transform: none;
+    letter-spacing: normal;
+    color: #6b7280;
+}
+
+.task-assignee-picker__count {
+    color: #028a0f;
+    font-weight: 700;
+}
+
+.dark .task-assignee-picker__count {
+    color: #02b815;
+}
+
+.task-assignee-picker__list {
+    flex: 1;
+    overflow-y: auto;
+    max-height: 16rem;
+    padding: 0.375rem;
+}
+
+.task-assignee-picker__placeholder {
+    margin: 0.75rem;
+    font-size: 0.875rem;
+    color: #6b7280;
+    text-align: center;
+    line-height: 1.45;
+}
+
+.dark .task-assignee-picker__placeholder {
+    color: #9ca3af;
+}
+
+.task-assignee-picker__empty {
+    margin: 0;
+    padding: 0.75rem 0.875rem 1rem;
+    font-size: 0.8125rem;
+    color: #6b7280;
+    text-align: center;
+}
+
+.task-assignee-picker__item {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+    width: 100%;
+    margin-bottom: 0.25rem;
+    padding: 0.5rem 0.625rem;
+    border: 2px solid transparent;
+    background: #f9fafb;
+    text-align: left;
+    cursor: pointer;
+    transition: background-color 0.15s ease, border-color 0.15s ease;
+}
+
+.dark .task-assignee-picker__item {
+    background: #2a2a2a;
+}
+
+.task-assignee-picker__item:hover {
+    border-color: #d1d5db;
+    background: #f3f4f6;
+}
+
+.dark .task-assignee-picker__item:hover {
+    border-color: #6b7280;
+    background: #374151;
+}
+
+.task-assignee-picker__item.is-active {
+    border-color: #028a0f;
+    background: rgba(2, 138, 15, 0.08);
+    box-shadow: 0 0 0 3px rgba(2, 138, 15, 0.12);
+}
+
+.dark .task-assignee-picker__item.is-active {
+    border-color: #02b815;
+    background: rgba(2, 138, 15, 0.15);
+}
+
+.task-assignee-picker__item-name {
+    flex: 1;
+    min-width: 0;
+    font-size: 0.9375rem;
+    font-weight: 600;
+    color: #111827;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+}
+
+.dark .task-assignee-picker__item-name {
+    color: #f3f4f6;
+}
+
+.task-assignee-picker__item-meta {
+    flex-shrink: 0;
+    font-size: 0.75rem;
+    font-weight: 500;
+    color: #6b7280;
+}
+
+.dark .task-assignee-picker__item-meta {
+    color: #9ca3af;
+}
+
+.task-assignee-picker__item--selected .task-assignee-picker__item-meta {
+    display: none;
+}
+
+@media (min-width: 480px) {
+    .task-assignee-picker__item--selected .task-assignee-picker__item-meta {
+        display: inline;
+    }
+}
+
+.task-assignee-picker__remove {
+    flex-shrink: 0;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    width: 1.5rem;
+    height: 1.5rem;
+    color: #9ca3af;
+    font-size: 0.75rem;
+}
+
+.task-assignee-picker__item--selected:hover .task-assignee-picker__remove {
+    color: #dc2626;
+}
+
+.task-assignee-picker__actions {
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+    gap: 0.5rem;
+    padding: 0.25rem 0;
+}
+
+.task-assignee-picker__action-btn {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    min-width: 2.5rem;
+    padding: 0.5rem 0.625rem !important;
+}
+
 .alert {
     @apply px-5 py-4 mb-5;
 }

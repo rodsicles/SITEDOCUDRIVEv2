@@ -111,19 +111,21 @@
                             {{ $year->documents_count }} doc · {{ $year->teaching_guides_count }} TG · {{ $year->exam_questionnaires_count }} EQ · {{ $year->folders_count }} folders
                         </td>
                         @endif
-                        <td class="flex flex-wrap gap-2">
+                        <td class="flex flex-wrap gap-2 relative z-10 whitespace-normal">
                             <a href="{{ route('dean.archives.show', $year->id) }}" class="btn btn-sm btn-primary border-0">
                                 <i class="fas fa-eye"></i> Browse
                             </a>
                             <button type="button"
-                                    class="btn btn-sm btn-success border-0"
-                                    onclick="openArchiveRestoreModal({{ $year->id }}, @json($year->name))">
+                                    class="btn btn-sm btn-success border-0 js-archive-restore-open"
+                                    data-restore-url="{{ route('dean.archives.restore', $year) }}"
+                                    data-restore-name="{{ $year->name }}">
                                 <i class="fas fa-undo"></i> Restore as Active
                             </button>
                             @if($allowArchiveHardDelete)
                             <button type="button"
-                                    class="btn btn-sm btn-danger border-0"
-                                    onclick="openArchiveDeleteModal({{ $year->id }}, @json($year->name))">
+                                    class="btn btn-sm btn-danger border-0 js-archive-delete-open"
+                                    data-delete-url="{{ route('dean.archives.destroy', $year) }}"
+                                    data-delete-name="{{ $year->name }}">
                                 <i class="fas fa-trash-alt"></i> Delete permanently
                             </button>
                             @endif
@@ -206,7 +208,7 @@
     @endif
 
     @if($allowArchiveHardDelete)
-    <div id="archiveDeleteModal" class="hidden fixed inset-0 bg-black bg-opacity-50 z-50 flex items-center justify-center p-4">
+    <div id="archiveDeleteModal" class="hidden fixed inset-0 bg-black bg-opacity-50 z-[60] flex items-center justify-center p-4">
         <div class="bg-white dark:bg-[#1e1e1e] rounded-lg shadow-xl max-w-lg w-full">
             <div class="p-6">
                 <h3 class="text-lg font-bold text-red-600 dark:text-red-400 mb-2">
@@ -252,72 +254,212 @@
     </div>
 
     <script>
-    var archiveDeleteExpectedName = '';
-    var archiveDeleteRouteTemplate = @json(route('dean.archives.destroy', ['id' => 999999999]));
-
-    function openArchiveDeleteModal(id, name) {
-        archiveDeleteExpectedName = name;
-        document.getElementById('archiveDeleteYearLabel').textContent = name;
-        document.getElementById('archiveDeleteForm').action = archiveDeleteRouteTemplate.replace('999999999', String(id));
-        document.getElementById('archiveDeleteModal').classList.remove('hidden');
-    }
-
-    function closeArchiveDeleteModal() {
-        document.getElementById('archiveDeleteModal').classList.add('hidden');
-    }
-
-    function submitArchiveDelete() {
-        var form = document.getElementById('archiveDeleteForm');
-        var nameInput = form.querySelector('[name="confirm_name"]');
-        var phraseInput = form.querySelector('[name="confirm_phrase"]');
-
-        if (nameInput && nameInput.value.trim() !== archiveDeleteExpectedName) {
-            if (typeof Swal !== 'undefined') {
-                Swal.fire({ title: 'Name mismatch', text: 'Type the school year name exactly as shown.', icon: 'error', confirmButtonColor: '#028a0f', customClass: { popup: 'swal-flat' } });
-            } else {
-                alert('School year name does not match.');
-            }
+    (function () {
+        var deleteModal = document.getElementById('archiveDeleteModal');
+        if (!deleteModal) {
             return;
         }
 
-        if (phraseInput && phraseInput.value.trim() !== 'DELETE PERMANENTLY') {
-            if (typeof Swal !== 'undefined') {
-                Swal.fire({ title: 'Confirmation required', text: 'Type DELETE PERMANENTLY in all caps.', icon: 'error', confirmButtonColor: '#028a0f', customClass: { popup: 'swal-flat' } });
-            } else {
-                alert('Type DELETE PERMANENTLY to confirm.');
+        var deleteForm = document.getElementById('archiveDeleteForm');
+        var deleteLabel = document.getElementById('archiveDeleteYearLabel');
+        var deleteExpectedName = '';
+
+        function openArchiveDeleteModal(url, name) {
+            deleteExpectedName = name || '';
+            if (deleteLabel) {
+                deleteLabel.textContent = deleteExpectedName;
             }
-            return;
+            if (deleteForm) {
+                deleteForm.action = url || '';
+            }
+            deleteModal.classList.remove('hidden');
         }
 
-        var message = 'This will permanently delete the entire archived school year and all linked files. This cannot be undone.';
-        if (typeof Swal !== 'undefined') {
-            Swal.fire({
-                title: 'Delete archived school year?',
-                text: message,
-                icon: 'warning',
-                showCancelButton: true,
-                confirmButtonColor: '#dc2626',
-                cancelButtonColor: '#6b7280',
-                confirmButtonText: 'Yes, delete permanently',
-                customClass: { popup: 'swal-flat' }
-            }).then(function (result) {
-                if (result.isConfirmed) {
-                    form.submit();
+        function closeArchiveDeleteModal() {
+            deleteModal.classList.add('hidden');
+        }
+
+        window.closeArchiveDeleteModal = closeArchiveDeleteModal;
+
+        document.addEventListener('click', function (event) {
+            var openBtn = event.target.closest('.js-archive-delete-open');
+            if (openBtn) {
+                event.preventDefault();
+                event.stopPropagation();
+                openArchiveDeleteModal(
+                    openBtn.getAttribute('data-delete-url'),
+                    openBtn.getAttribute('data-delete-name')
+                );
+            }
+        });
+
+        window.submitArchiveDelete = function () {
+            if (!deleteForm) {
+                return;
+            }
+
+            var nameInput = deleteForm.querySelector('[name="confirm_name"]');
+            var phraseInput = deleteForm.querySelector('[name="confirm_phrase"]');
+
+            if (nameInput && nameInput.value.trim() !== deleteExpectedName) {
+                if (typeof Swal !== 'undefined') {
+                    Swal.fire({ title: 'Name mismatch', text: 'Type the school year name exactly as shown.', icon: 'error', confirmButtonColor: '#028a0f', customClass: { popup: 'swal-flat' } });
+                } else {
+                    alert('School year name does not match.');
                 }
-            });
-        } else if (confirm(message)) {
-            form.submit();
-        }
-    }
+                return;
+            }
 
-    @if(old('confirm_phrase') && str_contains(strtoupper(old('confirm_phrase')), 'DELETE') && $errors->any())
-    document.addEventListener('DOMContentLoaded', function () {
-        document.getElementById('archiveDeleteModal').classList.remove('hidden');
-        document.getElementById('archiveDeleteYearLabel').textContent = @json(old('confirm_name'));
-        archiveDeleteExpectedName = @json(old('confirm_name'));
-    });
-    @endif
+            if (phraseInput && phraseInput.value.trim() !== 'DELETE PERMANENTLY') {
+                if (typeof Swal !== 'undefined') {
+                    Swal.fire({ title: 'Confirmation required', text: 'Type DELETE PERMANENTLY in all caps.', icon: 'error', confirmButtonColor: '#028a0f', customClass: { popup: 'swal-flat' } });
+                } else {
+                    alert('Type DELETE PERMANENTLY to confirm.');
+                }
+                return;
+            }
+
+            var message = 'This will permanently delete the entire archived school year and all linked files. This cannot be undone.';
+            if (typeof Swal !== 'undefined') {
+                Swal.fire({
+                    title: 'Delete archived school year?',
+                    text: message,
+                    icon: 'warning',
+                    showCancelButton: true,
+                    confirmButtonColor: '#dc2626',
+                    cancelButtonColor: '#6b7280',
+                    confirmButtonText: 'Yes, delete permanently',
+                    customClass: { popup: 'swal-flat' }
+                }).then(function (result) {
+                    if (result.isConfirmed) {
+                        deleteForm.submit();
+                    }
+                });
+            } else if (confirm(message)) {
+                deleteForm.submit();
+            }
+        };
+
+        @if(old('confirm_phrase') && str_contains(strtoupper((string) old('confirm_phrase')), 'DELETE') && $errors->any())
+        document.addEventListener('DOMContentLoaded', function () {
+            openArchiveDeleteModal('', @json(old('confirm_name')));
+            deleteExpectedName = @json(old('confirm_name'));
+        });
+        @endif
+    })();
     </script>
     @endif
-@include('partials.archive-restore-modal')
+
+    @if($archivedYears->isNotEmpty())
+        @include('partials.archive-restore-modal')
+    @endif
 @endsection
+
+@push('scripts')
+<script>
+(function () {
+    var restoreModal = document.getElementById('archiveRestoreModal');
+    if (!restoreModal) {
+        return;
+    }
+
+    var restoreForm = document.getElementById('archiveRestoreForm');
+    var restoreLabel = document.getElementById('archiveRestoreYearLabel');
+    var restoreExpectedName = '';
+
+    function openArchiveRestoreModal(url, name) {
+        restoreExpectedName = name || '';
+        if (restoreLabel) {
+            restoreLabel.textContent = restoreExpectedName;
+        }
+        if (restoreForm) {
+            restoreForm.action = url || '';
+        }
+        restoreModal.classList.remove('hidden');
+    }
+
+    function closeArchiveRestoreModal() {
+        restoreModal.classList.add('hidden');
+    }
+
+    document.addEventListener('click', function (event) {
+        var openBtn = event.target.closest('.js-archive-restore-open');
+        if (openBtn) {
+            event.preventDefault();
+            event.stopPropagation();
+            openArchiveRestoreModal(
+                openBtn.getAttribute('data-restore-url'),
+                openBtn.getAttribute('data-restore-name')
+            );
+            return;
+        }
+
+        if (event.target === restoreModal) {
+            closeArchiveRestoreModal();
+        }
+    });
+
+    var restoreCancelBtn = document.getElementById('archiveRestoreCancelBtn');
+    if (restoreCancelBtn) {
+        restoreCancelBtn.addEventListener('click', closeArchiveRestoreModal);
+    }
+
+    var restoreSubmitBtn = document.getElementById('archiveRestoreSubmitBtn');
+    if (restoreSubmitBtn) {
+        restoreSubmitBtn.addEventListener('click', function () {
+            if (!restoreForm) {
+                return;
+            }
+
+            var nameInput = restoreForm.querySelector('[name="confirm_name"]');
+            var phraseInput = restoreForm.querySelector('[name="confirm_phrase"]');
+
+            if (nameInput && nameInput.value.trim() !== restoreExpectedName) {
+                if (typeof Swal !== 'undefined') {
+                    Swal.fire({ title: 'Name mismatch', text: 'Type the school year name exactly as shown.', icon: 'error', confirmButtonColor: '#028a0f', customClass: { popup: 'swal-flat' } });
+                } else {
+                    alert('School year name does not match.');
+                }
+                return;
+            }
+
+            if (phraseInput && phraseInput.value.trim() !== 'RESTORE AS ACTIVE') {
+                if (typeof Swal !== 'undefined') {
+                    Swal.fire({ title: 'Confirmation required', text: 'Type RESTORE AS ACTIVE in all caps.', icon: 'error', confirmButtonColor: '#028a0f', customClass: { popup: 'swal-flat' } });
+                } else {
+                    alert('Type RESTORE AS ACTIVE to confirm.');
+                }
+                return;
+            }
+
+            var message = 'Restore this school year as active? The current active year and its data will be removed. Analytics will sync to the restored year.';
+            if (typeof Swal !== 'undefined') {
+                Swal.fire({
+                    title: 'Restore school year?',
+                    text: message,
+                    icon: 'warning',
+                    showCancelButton: true,
+                    confirmButtonColor: '#028a0f',
+                    cancelButtonColor: '#6b7280',
+                    confirmButtonText: 'Yes, restore as active',
+                    customClass: { popup: 'swal-flat' }
+                }).then(function (result) {
+                    if (result.isConfirmed) {
+                        restoreForm.submit();
+                    }
+                });
+            } else if (confirm(message)) {
+                restoreForm.submit();
+            }
+        });
+    }
+
+    @if(old('confirm_phrase') && str_contains(strtoupper((string) old('confirm_phrase')), 'RESTORE') && $errors->any())
+    document.addEventListener('DOMContentLoaded', function () {
+        openArchiveRestoreModal('', @json(old('confirm_name')));
+        restoreExpectedName = @json(old('confirm_name'));
+    });
+    @endif
+})();
+</script>
+@endpush

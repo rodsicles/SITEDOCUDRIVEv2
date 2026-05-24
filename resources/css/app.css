@@ -2559,6 +2559,11 @@ input[type="password"].has-toggle::-webkit-textfield-decoration-container {
     background: #dc2626 !important;
 }
 
+.notification-message--multiline {
+    white-space: pre-wrap;
+    word-break: break-word;
+}
+
 .notification-row--danger .notification-message {
     color: #b91c1c;
 }

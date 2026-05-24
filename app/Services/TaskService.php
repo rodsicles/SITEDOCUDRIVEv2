@@ -19,44 +19,57 @@ class TaskService
     ) {}
 
     /**
+     * Create one task per assignee (same title, description, due date, and attachment copies).
+     *
+     * @param  list<int>  $assigneeUserIds
+     * @return list<Task>
+     */
+    public function createTasksForAssignees(array $validated, int $assignedByUserId, array $assigneeUserIds, array $attachments = []): array
+    {
+        $assignedBy = User::find($assignedByUserId);
+        $created = [];
+
+        foreach ($assigneeUserIds as $assigneeUserId) {
+            $payload = array_merge($validated, ['assigned_to' => $assigneeUserId]);
+            $created[] = $this->createTask($payload, $assignedByUserId, $attachments, $assignedBy);
+        }
+
+        return $created;
+    }
+
+    /**
      * Create a new task with notification and logging.
      */
-    public function createTask(array $validated, int $assignedByUserId, array $attachments = []): Task
-    {
+    public function createTask(
+        array $validated,
+        int $assignedByUserId,
+        array $attachments = [],
+        ?User $assignedBy = null,
+    ): Task {
         $assigneeUserId = (int) $validated['assigned_to'];
-        $assignedBy = User::find($assignedByUserId);
+        $assignedBy ??= User::find($assignedByUserId);
 
         return DB::transaction(function () use ($validated, $assigneeUserId, $assignedByUserId, $assignedBy, $attachments) {
             $task = Task::create([
                 'assigned_by' => $assignedByUserId,
                 'assigned_to' => $assigneeUserId,
                 'task_title' => $validated['task_title'],
-                'task_description' => $validated['task_description'],
+                'task_description' => $validated['task_description'] ?? null,
                 'due_date' => $validated['due_date'],
                 'status' => 'Pending',
             ]);
 
-            foreach ($attachments as $attachment) {
-                if (!$attachment instanceof UploadedFile) {
-                    continue;
-                }
+            $attachmentNames = $this->storeTaskAttachments($task, $assignedByUserId, $attachments);
 
-                $storedPath = UploadStorage::store($attachment, 'task-attachments');
-
-                TaskAttachment::create([
-                    'task_id' => $task->task_id,
-                    'uploaded_by' => $assignedByUserId,
-                    'original_name' => $attachment->getClientOriginalName(),
-                    'file_path' => $storedPath,
-                    'mime_type' => $attachment->getClientMimeType(),
-                    'file_size' => $attachment->getSize(),
-                ]);
-            }
+            $assignee = User::with('role')->find($assigneeUserId);
 
             $this->notificationService->notifyTaskAssigned(
                 $assigneeUserId,
                 $validated['task_title'],
                 $assignedBy,
+                $validated['task_description'] ?? null,
+                $attachmentNames,
+                $assignee,
             );
 
             DashboardLog::create([
@@ -67,7 +80,7 @@ class TaskService
                 'visibility' => 'dean',
             ]);
 
-            if (!empty($attachments)) {
+            if ($attachmentNames !== []) {
                 DashboardLog::create([
                     'user_id' => $assignedByUserId,
                     'target_user_id' => $assigneeUserId,
@@ -79,6 +92,36 @@ class TaskService
 
             return $task;
         });
+    }
+
+    /**
+     * @param  list<UploadedFile|mixed>  $attachments
+     * @return list<string> Original file names stored
+     */
+    protected function storeTaskAttachments(Task $task, int $uploadedByUserId, array $attachments): array
+    {
+        $names = [];
+
+        foreach ($attachments as $attachment) {
+            if (!$attachment instanceof UploadedFile) {
+                continue;
+            }
+
+            $storedPath = UploadStorage::store($attachment, 'task-attachments');
+            $originalName = $attachment->getClientOriginalName();
+            $names[] = $originalName;
+
+            TaskAttachment::create([
+                'task_id' => $task->task_id,
+                'uploaded_by' => $uploadedByUserId,
+                'original_name' => $originalName,
+                'file_path' => $storedPath,
+                'mime_type' => $attachment->getClientMimeType(),
+                'file_size' => $attachment->getSize(),
+            ]);
+        }
+
+        return $names;
     }
 
     /**

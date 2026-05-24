@@ -166,7 +166,7 @@ Route::middleware(['auth', 'no.back', 'role:Dean,Secretary'])->prefix('dean')->n
     Route::post('/notifications/mark-all-read', [DeanController::class, 'markAllNotificationsRead'])->middleware('throttle:30,1')->name('notifications.mark-all-read');
 
     Route::post('/insight/refresh', [DeanController::class, 'refreshInsight'])
-        ->middleware('throttle:6,1')
+        ->middleware('throttle:15,1')
         ->name('insight.refresh');
 
     // Tasks
@@ -179,20 +179,21 @@ Route::middleware(['auth', 'no.back', 'role:Dean,Secretary'])->prefix('dean')->n
     Route::get('/documents', [DeanController::class, 'documents'])->name('documents');
     Route::get('/documents/list-search', [DocumentListSearchController::class, 'suggest'])->name('documents.list-search');
     Route::get('/documents/recipient-search', [DocumentRecipientController::class, 'search'])->name('documents.recipient-search');
-    Route::post('/documents', [DeanController::class, 'uploadDocument'])->middleware('throttle:6,60')->name('upload-document');
+    Route::post('/documents', [DeanController::class, 'uploadDocument'])->middleware('throttle:20,60')->name('upload-document');
     Route::get('/documents/{id}/view', [DeanController::class, 'viewDocument'])->name('view-document');
     Route::get('/documents/{id}/download', [DeanController::class, 'downloadDocument'])->name('download-document');
     Route::delete('/documents/{id}', [DeanController::class, 'deleteDocument'])->name('delete-document');
     Route::patch('/documents/{id}/rename', [DeanController::class, 'renameDocument'])->middleware('throttle:60,1')->name('rename-document');
 
     Route::get('/recycle-bin', [RecycleBinController::class, 'index'])->name('recycle-bin.index');
-    Route::post('/recycle-bin/{id}/restore', [RecycleBinController::class, 'restore'])->middleware('throttle:30,1')->name('recycle-bin.restore');
-    Route::delete('/recycle-bin/{id}', [RecycleBinController::class, 'forceDelete'])->middleware('throttle:10,1')->name('recycle-bin.force-delete');
+    Route::post('/recycle-bin/{id}/restore', [RecycleBinController::class, 'restore'])->middleware('throttle:60,1')->name('recycle-bin.restore');
+    Route::delete('/recycle-bin/{id}', [RecycleBinController::class, 'forceDelete'])->middleware('throttle:60,1')->name('recycle-bin.force-delete');
+    Route::post('/recycle-bin/bulk-force-delete', [RecycleBinController::class, 'bulkForceDelete'])->middleware('throttle:10,1')->name('recycle-bin.bulk-force-delete');
 
     // Folder Management - Rate Limited: 3 folders per hour
     Route::post('/folders', [FolderController::class, 'store'])->middleware('throttle:30,60')->name('folders.store');
-    Route::patch('/folders/{folder}', [FolderController::class, 'update'])->middleware('throttle:10,60')->name('folders.update');
-    Route::delete('/folders/{folder}', [FolderController::class, 'destroy'])->middleware('throttle:10,60')->name('folders.destroy');
+    Route::patch('/folders/{folder}', [FolderController::class, 'update'])->middleware('throttle:30,60')->name('folders.update');
+    Route::delete('/folders/{folder}', [FolderController::class, 'destroy'])->middleware('throttle:30,60')->name('folders.destroy');
     Route::get('/folders/list', [FolderController::class, 'getUserFolders'])->name('folders.list');
     Route::post('/documents/{document}/move', [FolderController::class, 'moveDocument'])->name('documents.move');
 
@@ -221,7 +222,7 @@ Route::middleware(['auth', 'no.back', 'role:Dean,Secretary'])->prefix('dean')->n
 
     // Archives (Dean manages + browses)
     Route::get('/archives', [SchoolYearController::class, 'index'])->name('archives.index');
-    Route::post('/archives', [SchoolYearController::class, 'archive'])->middleware('throttle:2,60')->name('archives.archive');
+    Route::post('/archives', [SchoolYearController::class, 'archive'])->middleware('throttle:5,60')->name('archives.archive');
     Route::get('/archives/list', [SchoolYearController::class, 'list'])->name('archives.list');
     Route::get('/archives/{id}', [SchoolYearController::class, 'show'])->name('archives.show');
 });
@@ -267,12 +268,12 @@ Route::middleware(['auth', 'no.back', 'role:Program Coordinator'])->prefix('coor
     Route::patch('/documents/{id}/rename', [CoordinatorController::class, 'renameDocument'])->middleware('throttle:60,1')->name('rename-document');
 
     Route::get('/recycle-bin', [RecycleBinController::class, 'index'])->name('recycle-bin.index');
-    Route::post('/recycle-bin/{id}/restore', [RecycleBinController::class, 'restore'])->middleware('throttle:30,1')->name('recycle-bin.restore');
+    Route::post('/recycle-bin/{id}/restore', [RecycleBinController::class, 'restore'])->middleware('throttle:60,1')->name('recycle-bin.restore');
 
     // Folder Management - Rate Limited: 3 folders per hour
     Route::post('/folders', [FolderController::class, 'store'])->middleware('throttle:30,60')->name('folders.store');
-    Route::patch('/folders/{folder}', [FolderController::class, 'update'])->middleware('throttle:10,60')->name('folders.update');
-    Route::delete('/folders/{folder}', [FolderController::class, 'destroy'])->middleware('throttle:10,60')->name('folders.destroy');
+    Route::patch('/folders/{folder}', [FolderController::class, 'update'])->middleware('throttle:30,60')->name('folders.update');
+    Route::delete('/folders/{folder}', [FolderController::class, 'destroy'])->middleware('throttle:30,60')->name('folders.destroy');
     Route::get('/folders/list', [FolderController::class, 'getUserFolders'])->name('folders.list');
     Route::post('/documents/{document}/move', [FolderController::class, 'moveDocument'])->name('documents.move');
 
@@ -308,8 +309,8 @@ Route::middleware(['auth', 'no.back', 'role:Faculty Employee'])->prefix('faculty
     
     // Folder Management - Rate Limited: 3 folders per hour
     Route::post('/folders', [FolderController::class, 'store'])->middleware('throttle:30,60')->name('folders.store');
-    Route::patch('/folders/{folder}', [FolderController::class, 'update'])->middleware('throttle:10,60')->name('folders.update');
-    Route::delete('/folders/{folder}', [FolderController::class, 'destroy'])->middleware('throttle:10,60')->name('folders.destroy');
+    Route::patch('/folders/{folder}', [FolderController::class, 'update'])->middleware('throttle:30,60')->name('folders.update');
+    Route::delete('/folders/{folder}', [FolderController::class, 'destroy'])->middleware('throttle:30,60')->name('folders.destroy');
     Route::get('/folders/list', [FolderController::class, 'getUserFolders'])->name('folders.list');
     Route::post('/documents/{document}/move', [FolderController::class, 'moveDocument'])->name('documents.move');
     Route::post('/notifications/{id}/read', [FacultyController::class, 'markNotificationRead'])->middleware('throttle:120,1')->name('mark-notification-read');
@@ -326,7 +327,7 @@ Route::middleware(['auth', 'no.back', 'role:Faculty Employee'])->prefix('faculty
     Route::patch('/documents/{id}/rename', [FacultyController::class, 'renameDocument'])->middleware('throttle:60,1')->name('rename-document');
 
     Route::get('/recycle-bin', [RecycleBinController::class, 'index'])->name('recycle-bin.index');
-    Route::post('/recycle-bin/{id}/restore', [RecycleBinController::class, 'restore'])->middleware('throttle:30,1')->name('recycle-bin.restore');
+    Route::post('/recycle-bin/{id}/restore', [RecycleBinController::class, 'restore'])->middleware('throttle:60,1')->name('recycle-bin.restore');
 
     Route::get('/profile', [FacultyController::class, 'profile'])->name('profile');
 

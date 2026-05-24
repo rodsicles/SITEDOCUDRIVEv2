@@ -20,10 +20,33 @@
         <span class="badge badge-info">{{ $documents->total() }} item(s)</span>
     </div>
 
+    @if($canForceDelete && $documents->count() > 0)
+    <form action="{{ route($routePrefix . '.recycle-bin.bulk-force-delete') }}" method="POST" class="recycle-bin-bulk-form px-4 mb-3" id="recycleBinBulkForm" data-request-guard>
+        @csrf
+        <div class="flex flex-wrap items-center gap-2">
+            <button type="button" class="btn bg-gray-200 dark:bg-gray-700 text-gray-800 dark:text-gray-200 text-sm" id="recycleBinSelectAll">
+                Select all on page
+            </button>
+            <button type="button" class="btn bg-gray-200 dark:bg-gray-700 text-gray-800 dark:text-gray-200 text-sm" id="recycleBinClearSelection">
+                Clear selection
+            </button>
+            <button type="button" class="btn btn-danger text-sm" id="recycleBinBulkDeleteBtn" disabled>
+                <i class="fas fa-trash-alt"></i> Permanently delete selected
+            </button>
+            <span class="text-xs text-gray-500 dark:text-gray-400" id="recycleBinSelectedCount">0 selected</span>
+        </div>
+    </form>
+    @endif
+
     <div class="recycle-bin-table-wrap">
         <table class="data-table recycle-bin-table">
             <thead>
                 <tr>
+                    @if($canForceDelete)
+                    <th class="w-10">
+                        <span class="sr-only">Select</span>
+                    </th>
+                    @endif
                     <th>File Name</th>
                     <th>Original Folder</th>
                     <th>Deleted By</th>
@@ -34,6 +57,11 @@
             <tbody>
                 @forelse($documents as $document)
                 <tr>
+                    @if($canForceDelete)
+                    <td>
+                        <input type="checkbox" name="document_ids[]" value="{{ $document->document_id }}" form="recycleBinBulkForm" class="recycle-bin-row-check" aria-label="Select {{ $document->document_title }}">
+                    </td>
+                    @endif
                     <td>
                         <div class="recycle-bin-file">
                             <span class="recycle-bin-file__icon" aria-hidden="true">
@@ -82,7 +110,7 @@
                 </tr>
                 @empty
                 <tr>
-                    <td colspan="5">
+                    <td colspan="{{ $canForceDelete ? 6 : 5 }}">
                         <div class="recycle-bin-empty">
                             <i class="fas fa-recycle recycle-bin-empty__icon" aria-hidden="true"></i>
                             <p class="recycle-bin-empty__title">Recycle Bin is empty</p>
@@ -174,6 +202,75 @@ document.addEventListener('DOMContentLoaded', function () {
     document.addEventListener('keydown', function (e) {
         if (e.key === 'Escape') closeAllPopovers();
     });
+
+    var bulkForm = document.getElementById('recycleBinBulkForm');
+    var bulkBtn = document.getElementById('recycleBinBulkDeleteBtn');
+    var countEl = document.getElementById('recycleBinSelectedCount');
+    var selectAllBtn = document.getElementById('recycleBinSelectAll');
+    var clearBtn = document.getElementById('recycleBinClearSelection');
+
+    function getRowChecks() {
+        return document.querySelectorAll('.recycle-bin-row-check');
+    }
+
+    function updateBulkSelection() {
+        if (!bulkBtn || !countEl) return;
+        var checked = document.querySelectorAll('.recycle-bin-row-check:checked');
+        bulkBtn.disabled = checked.length === 0;
+        countEl.textContent = checked.length + ' selected';
+    }
+
+    if (selectAllBtn) {
+        selectAllBtn.addEventListener('click', function () {
+            getRowChecks().forEach(function (cb) { cb.checked = true; });
+            updateBulkSelection();
+        });
+    }
+
+    if (clearBtn) {
+        clearBtn.addEventListener('click', function () {
+            getRowChecks().forEach(function (cb) { cb.checked = false; });
+            updateBulkSelection();
+        });
+    }
+
+    getRowChecks().forEach(function (cb) {
+        cb.addEventListener('change', updateBulkSelection);
+    });
+
+    if (bulkBtn && bulkForm) {
+        bulkBtn.addEventListener('click', function () {
+            var checked = document.querySelectorAll('.recycle-bin-row-check:checked');
+            if (checked.length === 0) return;
+
+            var submitBulk = function () {
+                bulkForm.submit();
+            };
+
+            if (typeof Swal !== 'undefined') {
+                Swal.fire({
+                    title: 'Delete ' + checked.length + ' file(s) permanently?',
+                    text: 'These files will be removed from storage and cannot be recovered. Uploaders will be notified.',
+                    icon: 'warning',
+                    showCancelButton: true,
+                    confirmButtonText: 'Yes, delete forever',
+                    cancelButtonText: 'Cancel',
+                    confirmButtonColor: '#dc2626',
+                    cancelButtonColor: '#6b7280',
+                    customClass: { popup: 'swal-flat' }
+                }).then(function (result) {
+                    if (result.isConfirmed) submitBulk();
+                });
+                return;
+            }
+
+            if (confirm('Permanently delete ' + checked.length + ' selected file(s)?')) {
+                submitBulk();
+            }
+        });
+    }
+
+    updateBulkSelection();
 });
 </script>
 @endpush

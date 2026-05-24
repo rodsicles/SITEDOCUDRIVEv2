@@ -240,16 +240,44 @@ class NotificationService
     /**
      * Notify a faculty member or program coordinator that a task was assigned to them.
      */
-    public function notifyTaskAssigned(int $assigneeUserId, string $taskTitle, ?User $assignedBy = null): Notification
-    {
+    public function notifyTaskAssigned(
+        int $assigneeUserId,
+        string $taskTitle,
+        ?User $assignedBy = null,
+        ?string $description = null,
+        array $attachmentNames = [],
+        ?User $assignee = null,
+    ): Notification {
         $creator = $assignedBy?->employee?->full_name
             ?? $assignedBy?->name
             ?? $assignedBy?->username
             ?? 'the Dean';
 
+        $assignee ??= User::with('role')->find($assigneeUserId);
+        $tasksRoute = $assignee?->isProgramCoordinator()
+            ? route('coordinator.tasks')
+            : route('faculty.tasks');
+
+        $lines = [
+            "New task assigned: \"{$taskTitle}\" from {$creator}.",
+        ];
+
+        $description = trim((string) $description);
+        if ($description !== '') {
+            $lines[] = 'Description: ' . $description;
+        }
+
+        if ($attachmentNames !== []) {
+            $lines[] = 'Attachment(s): ' . implode(', ', $attachmentNames);
+        } else {
+            $lines[] = 'Attachment(s): None';
+        }
+
+        $lines[] = 'Open My Tasks: ' . $tasksRoute;
+
         return $this->notify(
             $assigneeUserId,
-            "New task assigned: \"{$taskTitle}\" from {$creator}. View it under My Tasks.",
+            implode("\n", $lines),
             Notification::TONE_SUCCESS,
         );
     }

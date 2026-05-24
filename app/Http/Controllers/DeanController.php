@@ -208,40 +208,62 @@ class DeanController extends Controller
 
     public function createTask()
     {
-        $assignableUsers = User::with(['employee', 'role'])
-            ->whereIn('role_id', [2, 3])
-            ->where('status', 'Active')
-            ->whereHas('employee')
-            ->get()
-            ->sortBy(fn ($u) => $u->employee->full_name ?? $u->username);
+        $assignableUsers = \App\Support\TaskAssigneeResolver::assignableUsersSorted();
 
         return view('dean.create-task', compact('assignableUsers'));
     }
 
     public function storeTask(Request $request)
     {
+        $scopes = [
+            \App\Support\TaskAssigneeResolver::SCOPE_INDIVIDUAL,
+            \App\Support\TaskAssigneeResolver::SCOPE_DEPARTMENT_IT,
+            \App\Support\TaskAssigneeResolver::SCOPE_DEPARTMENT_ENGINEERING,
+            \App\Support\TaskAssigneeResolver::SCOPE_DEPARTMENT_SITE,
+        ];
+
         $validated = $request->validate([
-            'assigned_to' => 'required|integer|exists:users,id',
-            'task_title' => 'required|string|max:15',
-            'task_description' => 'nullable|string|max:150',
+            'assignment_scope' => 'required|in:' . implode(',', $scopes),
+            'assignee_ids' => 'nullable|array',
+            'assignee_ids.*' => 'integer',
+            'task_title' => 'required|string|max:50',
+            'task_description' => 'nullable|string|max:250',
             'due_date' => 'required|date',
             'attachments' => 'nullable|array|max:5',
             'attachments.*' => 'file|max:10240|mimes:pdf,doc,docx,xls,xlsx,csv,txt,jpg,jpeg,png',
         ]);
 
-        $assignee = User::query()
-            ->whereKey((int) $validated['assigned_to'])
-            ->whereIn('role_id', [2, 3])
-            ->where('status', 'Active')
-            ->whereHas('employee')
-            ->firstOrFail();
+        $assigneeIds = \App\Support\TaskAssigneeResolver::resolve(
+            $validated['assignment_scope'],
+            $validated['assignee_ids'] ?? [],
+        );
 
-        $validated['assigned_to'] = $assignee->id;
+        if ($assigneeIds === []) {
+            return redirect()
+                ->back()
+                ->withInput()
+                ->withErrors([
+                    'assignee_ids' => $validated['assignment_scope'] === \App\Support\TaskAssigneeResolver::SCOPE_INDIVIDUAL
+                        ? 'Select at least one faculty member or coordinator.'
+                        : 'No active accounts were found for the selected department group.',
+                ]);
+        }
 
-        $this->taskService->createTask($validated, auth()->id(), $request->file('attachments', []));
+        unset($validated['assignment_scope'], $validated['assignee_ids']);
 
-        return redirect()->route('dean.tasks')
-            ->with('success', 'Task created successfully');
+        $created = $this->taskService->createTasksForAssignees(
+            $validated,
+            auth()->id(),
+            $assigneeIds,
+            $request->file('attachments', []),
+        );
+
+        $count = count($created);
+        $message = $count === 1
+            ? 'Task created and assigned successfully.'
+            : "Task created and assigned to {$count} people.";
+
+        return redirect()->route('dean.tasks')->with('success', $message);
     }
 
     public function updateTask(Request $request, $id)

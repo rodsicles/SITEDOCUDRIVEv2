@@ -90,6 +90,34 @@ class RecycleBinService
         $document->forceDelete();
     }
 
+    /**
+     * @param  list<int>  $documentIds
+     * @return int Number permanently deleted
+     */
+    public function bulkForceDelete(array $documentIds, User $user): int
+    {
+        if (!$user->isDean()) {
+            abort(403, 'Only the Dean can permanently delete documents.');
+        }
+
+        $documentIds = array_values(array_unique(array_map('intval', $documentIds)));
+        $documentIds = array_filter($documentIds, fn ($id) => $id > 0);
+
+        $deleted = 0;
+
+        foreach ($documentIds as $documentId) {
+            $document = Document::onlyTrashed()->find($documentId);
+            if (!$document) {
+                continue;
+            }
+
+            $this->forceDelete($documentId, $user);
+            $deleted++;
+        }
+
+        return $deleted;
+    }
+
     public function canRestore(Document $document, User $user): bool
     {
         if ($user->isDeanOrSecretary()) {

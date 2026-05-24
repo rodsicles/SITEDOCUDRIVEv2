@@ -42,6 +42,22 @@ class RecycleBinController extends Controller
             ->with('success', 'Document permanently deleted.');
     }
 
+    public function bulkForceDelete(Request $request)
+    {
+        $validated = $request->validate([
+            'document_ids' => 'required|array|min:1|max:50',
+            'document_ids.*' => 'integer|min:1',
+        ]);
+
+        $count = $this->recycleBin->bulkForceDelete($validated['document_ids'], auth()->user());
+
+        return redirect()
+            ->route($this->routePrefix() . '.recycle-bin.index')
+            ->with('success', $count === 1
+                ? '1 document permanently deleted.'
+                : "{$count} documents permanently deleted.");
+    }
+
     protected function routePrefix(): string
     {
         $user = auth()->user();

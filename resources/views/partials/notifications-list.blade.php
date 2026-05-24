@@ -93,7 +93,7 @@
                     @if(!$notification->is_read)
                         <span class="inline-block w-2 h-2 mr-2 align-middle notification-dot {{ $isDanger ? '' : 'bg-[#028a0f]' }}"></span>
                     @endif
-                    <span class="notification-message">{{ $notification->message }}</span>
+                    <span class="notification-message notification-message--multiline">{{ $notification->message }}</span>
                 </td>
                 <td>{{ $notification->created_at->format('M d, Y h:i A') }}</td>
                 <td>

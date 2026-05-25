@@ -486,17 +486,26 @@
             }, 4000);
         }
 
-        @if(session('success'))
-            showToast('{{ session("success") }}', 'success');
-        @endif
+        (function () {
+            if (window.__sessionFlashShown) {
+                return;
+            }
+            window.__sessionFlashShown = true;
 
-        @if(session('error'))
-            showToast('{{ session("error") }}', 'error');
-        @endif
+            @if(session('success'))
+                showToast(@json(session('success')), 'success');
+            @endif
 
-        @if($errors->any())
-            showToast('{{ $errors->first() }}', 'error');
-        @endif
+            @if(session('error'))
+                showToast(@json(session('error')), 'error');
+            @endif
+
+            @unless(session()->has('success') || session()->has('error'))
+                @if($errors->any())
+                    showToast(@json($errors->first()), 'error');
+                @endif
+            @endunless
+        })();
 
 
 

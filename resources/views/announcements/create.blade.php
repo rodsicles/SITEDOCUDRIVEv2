@@ -22,16 +22,6 @@
             </a>
         </div>
 
-        @if($errors->any())
-        <div class="alert alert-error">
-            <ul class="m-0 pl-4">
-                @foreach($errors->all() as $error)
-                    <li>{{ $error }}</li>
-                @endforeach
-            </ul>
-        </div>
-        @endif
-
         <form action="{{ route('announcements.store') }}" method="POST">
             @csrf
 

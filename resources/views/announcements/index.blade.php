@@ -17,12 +17,6 @@
 
 @section('content')
 
-    @if(session('success'))
-    <div class="alert alert-success">
-        <i class="fas fa-check-circle mr-2"></i> {{ session('success') }}
-    </div>
-    @endif
-
     <div class="content-card">
         <div class="card-header">
             <h3 class="card-title">

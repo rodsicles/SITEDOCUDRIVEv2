@@ -3,16 +3,20 @@
 namespace App\Http\Middleware;
 
 use Closure;
-use Illuminate\Http\Request;
 use Illuminate\Routing\Middleware\ThrottleRequests;
-use Symfony\Component\HttpFoundation\Response;
 
 class DefenseAwareThrottle extends ThrottleRequests
 {
     /**
-     * @param  \Closure(\Illuminate\Http\Request): (\Symfony\Component\HttpFoundation\Response)  $next
+     * Signature must match ThrottleRequests::handle() exactly (no added type hints).
+     *
+     * @param  \Illuminate\Http\Request  $request
+     * @param  \Closure  $next
+     * @param  int|string  $maxAttempts
+     * @param  float|int  $decayMinutes
+     * @param  string  $prefix
      */
-    public function handle(Request $request, Closure $next, int|string $maxAttempts = 60, float|int $decayMinutes = 1, string $prefix = ''): Response
+    public function handle($request, Closure $next, $maxAttempts = 60, $decayMinutes = 1, $prefix = '')
     {
         if (config('rate_limits.relaxed', false)) {
             return $next($request);

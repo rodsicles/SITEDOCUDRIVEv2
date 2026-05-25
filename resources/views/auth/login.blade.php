@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0">
-    <title>Login - Employee Dashboard with Data Analytics - SITE</title>
+    <title>Login - SITE DocuDrive - SITE</title>
     <link rel="icon" type="image/png" href="{{ asset('images/SPUP-final-logo.png') }}">
     @vite(['resources/css/app.css', 'resources/js/app.js'])
 </head>
@@ -45,8 +45,8 @@
     <main class="login-portal-main">
         <div class="login-portal-card">
             <div class="login-portal-card-header">
-                <h2 class="login-portal-card-title">Employee Dashboard</h2>
-                <p class="login-portal-card-subtitle">with Data Analytics</p>
+                <h2 class="login-portal-card-title">SITE DocuDrive</h2>
+                <p class="login-portal-card-subtitle">Employee Dashboard</p>
             </div>
 
             <div class="login-portal-card-body">

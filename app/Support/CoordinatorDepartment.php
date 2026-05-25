@@ -65,11 +65,23 @@ class CoordinatorDepartment
         return $code && in_array(strtolower($code), $codes, true);
     }
 
+    /**
+     * Limit TG/EQ semester subject folders to the viewer's department (IT or Engineering).
+     * Dean and Secretary see all subjects; faculty and coordinators see their department only.
+     */
     public static function filterSubjectFolders(Collection $folders, ?User $viewer): Collection
     {
-        $department = self::name($viewer);
+        if (!$viewer || $viewer->isDeanOrSecretary()) {
+            return $folders;
+        }
+
+        $department = CourseCatalog::departmentForUser($viewer);
         if (!$department) {
-            return collect();
+            if ($viewer->isProgramCoordinator() || $viewer->isFaculty()) {
+                return collect();
+            }
+
+            return $folders;
         }
 
         return $folders

@@ -166,7 +166,8 @@ class FolderService
             })->values();
         }
 
-        if ($viewer?->isProgramCoordinator()
+        if ($viewer
+            && ! $viewer->isDeanOrSecretary()
             && ($hierarchy->isTgSemesterFolder($parent) || $hierarchy->isEqSemesterFolder($parent))) {
             $folders = CoordinatorDepartment::filterSubjectFolders($folders, $viewer);
         }

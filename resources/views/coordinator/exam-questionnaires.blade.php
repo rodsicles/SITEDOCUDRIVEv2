@@ -1,8 +1,8 @@
 @extends('layouts.dashboard')
 
-@section('title', 'Exam Questionnaires - Coordinator')
-@section('page-title', 'Exam Questionnaires')
-@section('page-subtitle', 'View department exam questionnaire submissions — Dean approves all uploads')
+@section('title', 'Pending Exam Questionnaires - Coordinator')
+@section('page-title', 'Pending Exam Questionnaires')
+@section('page-subtitle', 'Review and approve exam questionnaire submissions from your department faculty')
 
 @section('sidebar')
     @include('partials.coordinator-sidebar')
@@ -13,7 +13,15 @@
         <div class="card-header">
             <h3 class="card-title">Exam Questionnaire Submissions</h3>
             <span class="badge badge-info">{{ $questionnaires->total() }} Submissions</span>
+            @if(($pendingCount ?? 0) > 0)
+                <span class="badge" style="background:#b45309;color:#fff;">{{ $pendingCount }} Pending Review</span>
+            @endif
         </div>
+
+        <p class="px-4 pt-2 pb-0 text-xs text-gray-500 dark:text-gray-400 mb-0">
+            <i class="fas fa-info-circle mr-1"></i>
+            You only see submissions from faculty in your department.
+        </p>
 
         <div class="px-4 pb-4 flex items-center gap-4 flex-wrap">
             <div class="flex items-center gap-2">
@@ -84,17 +92,28 @@
                     </td>
                     <td>{{ $q->created_at->format('M d, Y') }}</td>
                     <td class="submission-action-cell text-right">
-                        @include('partials.submission-browse-actions', [
-                            'viewUrl' => route('coordinator.exam-questionnaires.view', $q->id),
-                            'downloadUrl' => route('coordinator.exam-questionnaires.download', $q->id),
-                            'viewLabel' => 'View ' . $q->title,
-                            'downloadLabel' => 'Download ' . $q->title,
-                        ])
+                        @if($canReviewSubmissions ?? false)
+                            @include('partials.submission-review-actions', [
+                                'submission' => $q,
+                                'popoverPrefix' => 'eq',
+                                'viewUrl' => route('coordinator.exam-questionnaires.view', $q->id),
+                                'downloadUrl' => route('coordinator.exam-questionnaires.download', $q->id),
+                                'approveUrl' => route('coordinator.exam-questionnaires.approve', $q->id),
+                                'rejectOnClick' => 'openRejectModal',
+                            ])
+                        @else
+                            @include('partials.submission-browse-actions', [
+                                'viewUrl' => route('coordinator.exam-questionnaires.view', $q->id),
+                                'downloadUrl' => route('coordinator.exam-questionnaires.download', $q->id),
+                                'viewLabel' => 'View ' . $q->title,
+                                'downloadLabel' => 'Download ' . $q->title,
+                            ])
+                        @endif
                     </td>
                 </tr>
                 @empty
                 <tr>
-                    <td colspan="10" class="text-center text-gray-500 dark:text-gray-400 py-8">No submissions found.</td>
+                    <td colspan="10" class="text-center text-gray-500 dark:text-gray-400 py-8">No submissions found for your department.</td>
                 </tr>
                 @endforelse
             </tbody>
@@ -102,4 +121,38 @@
         </div>
         <div class="mt-5 px-4 pb-4">{{ $questionnaires->links() }}</div>
     </div>
+
+    @if($canReviewSubmissions ?? false)
+    @include('partials.submission-review-table-scripts')
+
+    <div id="rejectModal" style="display:none;position:fixed;inset:0;background:rgba(0,0,0,0.5);z-index:1000;align-items:center;justify-content:center;">
+        <div class="content-card" style="width:100%;max-width:480px;margin:auto;">
+            <div class="card-header">
+                <h3 class="card-title">Reject Questionnaire</h3>
+                <button type="button" onclick="closeRejectModal()" class="btn btn-sm bg-gray-200 dark:bg-gray-700"><i class="fas fa-times"></i></button>
+            </div>
+            <form id="rejectForm" method="POST">
+                @csrf
+                <div class="p-4">
+                    <label class="form-label">Reason for Rejection <span class="text-red-500">*</span></label>
+                    <textarea name="remarks" class="form-control" rows="3" maxlength="500" required placeholder="Provide feedback for the faculty..."></textarea>
+                </div>
+                <div class="px-4 pb-4 flex gap-2">
+                    <button type="submit" class="btn btn-danger"><i class="fas fa-times"></i> Reject</button>
+                    <button type="button" onclick="closeRejectModal()" class="btn bg-gray-200 dark:bg-gray-700 text-gray-700 dark:text-gray-300">Cancel</button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <script>
+        function openRejectModal(id) {
+            document.getElementById('rejectForm').action = '{{ url('/coordinator/exam-questionnaires') }}/' + id + '/reject';
+            document.getElementById('rejectModal').style.display = 'flex';
+        }
+        function closeRejectModal() {
+            document.getElementById('rejectModal').style.display = 'none';
+        }
+    </script>
+    @endif
 @endsection

@@ -96,15 +96,21 @@ class AppServiceProvider extends ServiceProvider
                 return;
             }
 
-            $activeId = SchoolYear::activeId();
-            $pendingScope = fn ($q) => $q->where('status', 'pending')
-                ->where(function ($q2) use ($activeId) {
-                    $q2->where('school_year_id', $activeId)->orWhereNull('school_year_id');
-                });
+            $view->with([
+                'pendingTeachingGuidesCount' => \App\Support\SubmissionPendingCounts::teachingGuidesFor($user),
+                'pendingExamQuestionnairesCount' => \App\Support\SubmissionPendingCounts::examQuestionnairesFor($user),
+            ]);
+        });
+
+        View::composer('partials.coordinator-sidebar', function ($view) {
+            $user = auth()->user();
+            if (!$user?->isProgramCoordinator()) {
+                return;
+            }
 
             $view->with([
-                'pendingTeachingGuidesCount' => TeachingGuide::query()->where($pendingScope)->count(),
-                'pendingExamQuestionnairesCount' => ExamQuestionnaire::query()->where($pendingScope)->count(),
+                'pendingTeachingGuidesCount' => \App\Support\SubmissionPendingCounts::teachingGuidesFor($user),
+                'pendingExamQuestionnairesCount' => \App\Support\SubmissionPendingCounts::examQuestionnairesFor($user),
             ]);
         });
     }

@@ -287,13 +287,17 @@ Route::middleware(['auth', 'no.back', 'role:Program Coordinator'])->prefix('coor
     Route::post('/teaching-guides', [TeachingGuideController::class, 'store'])->middleware('throttle:6,60')->name('teaching-guides.store');
     Route::get('/teaching-guides/{id}/view', [TeachingGuideController::class, 'view'])->name('teaching-guides.view');
     Route::get('/teaching-guides/{id}/download', [TeachingGuideController::class, 'download'])->name('teaching-guides.download');
+    Route::post('/teaching-guides/{id}/approve', [TeachingGuideController::class, 'approve'])->middleware('throttle:30,1')->name('teaching-guides.approve');
+    Route::post('/teaching-guides/{id}/reject', [TeachingGuideController::class, 'reject'])->middleware('throttle:30,1')->name('teaching-guides.reject');
     Route::delete('/teaching-guides/{id}', [TeachingGuideController::class, 'destroy'])->name('teaching-guides.destroy');
 
-    // Exam Questionnaires (coordinator may submit; Dean approves)
+    // Exam Questionnaires (coordinator reviews department faculty submissions)
     Route::get('/exam-questionnaires', [ExamQuestionnaireController::class, 'index'])->name('exam-questionnaires.index');
     Route::post('/exam-questionnaires', [ExamQuestionnaireController::class, 'store'])->middleware('throttle:6,60')->name('exam-questionnaires.store');
     Route::get('/exam-questionnaires/{id}/view', [ExamQuestionnaireController::class, 'view'])->name('exam-questionnaires.view');
     Route::get('/exam-questionnaires/{id}/download', [ExamQuestionnaireController::class, 'download'])->name('exam-questionnaires.download');
+    Route::post('/exam-questionnaires/{id}/approve', [ExamQuestionnaireController::class, 'approve'])->middleware('throttle:30,1')->name('exam-questionnaires.approve');
+    Route::post('/exam-questionnaires/{id}/reject', [ExamQuestionnaireController::class, 'reject'])->middleware('throttle:30,1')->name('exam-questionnaires.reject');
     Route::get('/activity-log', [CoordinatorController::class, 'activityLog'])->name('activity-log');
 
     // Archives (browse only)

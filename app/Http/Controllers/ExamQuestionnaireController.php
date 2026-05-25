@@ -20,6 +20,7 @@ use Illuminate\Validation\Rule;
 class ExamQuestionnaireController extends Controller
 {
     use \App\Http\Controllers\Concerns\AppliesListSort;
+    use \App\Http\Controllers\Concerns\AuthorizesSubmissionReview;
     use \App\Http\Controllers\Concerns\HandlesUploadExceptions;
     use \App\Http\Controllers\Concerns\LogsSubmissionActivity;
 
@@ -91,20 +92,13 @@ class ExamQuestionnaireController extends Controller
         $pendingSubmissions = collect();
         $rejectedSubmissions = collect();
 
-        $activeId = SchoolYear::activeId();
-        $pendingScope = fn ($q) => $q->where('status', 'pending')
-            ->where(function ($q2) use ($activeId) {
-                $q2->where('school_year_id', $activeId)->orWhereNull('school_year_id');
-            });
-        $pendingCount = match (true) {
-            $user->isDean(), $user->isSecretary() => ExamQuestionnaire::where($pendingScope)->count(),
-            $user->isProgramCoordinator() => ExamQuestionnaire::visibleTo($user)->where($pendingScope)->count(),
-            default => 0,
-        };
+        $pendingCount = \App\Support\SubmissionPendingCounts::examQuestionnairesFor($user);
+        $canReviewSubmissions = $user->isDeanOrSecretary() || $user->isProgramCoordinator();
+
         return view("{$role}.exam-questionnaires", compact(
             'questionnaires', 'search', 'sort', 'statusFilter', 'examTypeFilter',
             'semesterFilter', 'academicYearStart', 'archiveYears', 'pendingCount',
-            'pendingSubmissions', 'rejectedSubmissions'
+            'pendingSubmissions', 'rejectedSubmissions', 'canReviewSubmissions',
         ));
     }
 
@@ -228,12 +222,9 @@ class ExamQuestionnaireController extends Controller
 
     public function approve(Request $request, $id)
     {
-        $user = auth()->user();
-        if (!$user->isDean() && !$user->isSecretary()) {
-            abort(403, 'Only the Dean or Secretary can approve submissions.');
-        }
+        $user = $this->submissionReviewer();
 
-        $questionnaire = ExamQuestionnaire::findOrFail($id);
+        $questionnaire = ExamQuestionnaire::query()->visibleTo($user)->findOrFail($id);
 
         if (!$questionnaire->isPending()) {
             if ($questionnaire->isApproved() && !$questionnaire->document_id) {
@@ -271,14 +262,11 @@ class ExamQuestionnaireController extends Controller
 
     public function reject(Request $request, $id)
     {
-        $user = auth()->user();
-        if (!$user->isDean() && !$user->isSecretary()) {
-            abort(403, 'Only the Dean or Secretary can reject submissions.');
-        }
+        $user = $this->submissionReviewer();
 
         $request->validate(['remarks' => 'required|string|max:500']);
 
-        $questionnaire = ExamQuestionnaire::findOrFail($id);
+        $questionnaire = ExamQuestionnaire::query()->visibleTo($user)->findOrFail($id);
 
         if (!$questionnaire->isPending()) {
             return back()->with('info', 'This submission has already been reviewed.');

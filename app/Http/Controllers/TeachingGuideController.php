@@ -21,6 +21,7 @@ use Illuminate\Validation\Rule;
 class TeachingGuideController extends Controller
 {
     use \App\Http\Controllers\Concerns\AppliesListSort;
+    use \App\Http\Controllers\Concerns\AuthorizesSubmissionReview;
     use \App\Http\Controllers\Concerns\HandlesUploadExceptions;
     use \App\Http\Controllers\Concerns\LogsSubmissionActivity;
 
@@ -84,20 +85,12 @@ class TeachingGuideController extends Controller
         $this->applyListSort($query, $sort);
         $guides = $query->paginate(15)->appends($request->query());
 
-        $activeId = SchoolYear::activeId();
-        $pendingScope = fn ($q) => $q->where('status', 'pending')
-            ->where(function ($q2) use ($activeId) {
-                $q2->where('school_year_id', $activeId)->orWhereNull('school_year_id');
-            });
-        $pendingCount = match (true) {
-            $user->isDean(), $user->isSecretary() => TeachingGuide::where($pendingScope)->count(),
-            $user->isProgramCoordinator() => TeachingGuide::visibleTo($user)->where($pendingScope)->count(),
-            default => 0,
-        };
+        $pendingCount = \App\Support\SubmissionPendingCounts::teachingGuidesFor($user);
+        $canReviewSubmissions = $user->isDeanOrSecretary() || $user->isProgramCoordinator();
 
         return view("{$role}.teaching-guides", compact(
             'guides', 'search', 'sort', 'statusFilter', 'semesterFilter', 'academicYearStart',
-            'archiveYears', 'pendingCount',
+            'archiveYears', 'pendingCount', 'canReviewSubmissions',
         ));
     }
 
@@ -203,12 +196,9 @@ class TeachingGuideController extends Controller
 
     public function approve(Request $request, $id)
     {
-        $user = auth()->user();
-        if (!$user->isDean() && !$user->isSecretary()) {
-            abort(403, 'Only the Dean or Secretary can approve.');
-        }
+        $user = $this->submissionReviewer();
 
-        $guide = TeachingGuide::findOrFail($id);
+        $guide = TeachingGuide::query()->visibleTo($user)->findOrFail($id);
 
         if (!$guide->isPending()) {
             return back()->with('info', 'This guide has already been reviewed.');
@@ -232,14 +222,11 @@ class TeachingGuideController extends Controller
 
     public function reject(Request $request, $id)
     {
-        $user = auth()->user();
-        if (!$user->isDean() && !$user->isSecretary()) {
-            abort(403, 'Only the Dean or Secretary can reject.');
-        }
+        $user = $this->submissionReviewer();
 
         $request->validate(['remarks' => 'required|string|max:500']);
 
-        $guide = TeachingGuide::findOrFail($id);
+        $guide = TeachingGuide::query()->visibleTo($user)->findOrFail($id);
 
         if (!$guide->isPending()) {
             return back()->with('info', 'This guide has already been reviewed.');

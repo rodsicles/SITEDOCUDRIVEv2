@@ -13,9 +13,7 @@ return new class extends Migration
                 'slug' => 'accreditation-and-certifications',
                 'children' => [
                     ['name' => 'PAASCU Documentation Files', 'slug' => 'paascu-documentation-files'],
-                    ['name' => 'PRC Results Civil and Sanitary Engineering', 'slug' => 'prc-results-civil-sanitary'],
                     ['name' => 'ISO', 'slug' => 'iso'],
-                    ['name' => 'TESTA', 'slug' => 'testa'],
                     [
                         'name' => 'Certification of IT Exam',
                         'slug' => 'certification-it-exam',

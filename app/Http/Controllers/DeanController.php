@@ -296,21 +296,10 @@ class DeanController extends Controller
         $categories = $this->documentService->getCategories();
         $uploaders = $this->documentService->getAvailableUploaders(auth()->user());
         $savedFilters = auth()->user()->documentFilters()->latest()->get();
-        $examRecords = collect();
-        $isPrcFolder = false;
-        $isCertFolder = false;
-        if ($currentFolder) {
-            $isPrcFolder = $currentFolder->slug === \App\Models\ExamRecord::PRC_FOLDER_SLUG;
-            $isCertFolder = in_array($currentFolder->slug, \App\Models\ExamRecord::CERT_FOLDER_SLUGS);
-            if ($isPrcFolder || $isCertFolder) {
-                $examRecords = $this->examRecordService->getFolderExamRecords($currentFolder->folder_id);
-            }
-        }
 
         return view('dean.documents', compact(
             'documents', 'categories', 'categoryFilter', 'folderFilter',
-            'folderTree', 'currentFolder', 'breadcrumbs', 'tab', 'uploaders', 'savedFilters',
-            'examRecords', 'isPrcFolder', 'isCertFolder'
+            'folderTree', 'currentFolder', 'breadcrumbs', 'tab', 'uploaders', 'savedFilters'
         ));
     }
 

@@ -230,13 +230,11 @@ body {
     border-right-color: rgba(255,255,255,0.06) !important;
 }
 
-/* Sidebar Brand Header — balanced height (~square proportion in 16rem sidebar) */
+/* Sidebar Brand Header */
 .sidebar-brand {
     box-sizing: border-box;
     width: 100%;
-    aspect-ratio: 1;
-    max-height: 15.5rem;
-    padding: 14px 14px 12px;
+    padding: 16px 14px 12px;
     text-align: center;
     background: #083510;
     border-bottom: 1px solid rgba(255, 255, 255, 0.1);
@@ -244,53 +242,49 @@ body {
     flex-direction: column;
     align-items: center;
     justify-content: center;
-    gap: 0;
+    gap: 6px;
     flex-shrink: 0;
 }
 .dark .sidebar-brand {
     background: #062a0d;
     border-bottom-color: rgba(255, 255, 255, 0.08);
 }
-.sidebar-brand-line {
-    flex-shrink: 0;
-    width: calc(100% - 2.5rem);
-    height: 1px;
-    background: rgba(255, 255, 255, 0.15);
-    margin: 0;
-}
-.dark .sidebar-brand-line {
-    background: rgba(255, 255, 255, 0.1);
+.sidebar-brand-heading {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 8px;
+    width: 100%;
 }
 .sidebar-brand-logo {
-    width: 60px;
-    height: 60px;
-    margin: 8px auto;
+    width: 36px;
+    height: 36px;
     display: block;
     object-fit: contain;
     flex-shrink: 0;
 }
 .sidebar-brand-title {
-    font-size: 0.72rem;
-    font-weight: 500;
-    letter-spacing: 0.16em;
-    color: rgba(255, 255, 255, 0.65);
-    margin: 4px 0 3px;
-    line-height: 1.3;
+    font-size: 1.05rem;
+    font-weight: 700;
+    letter-spacing: 0.02em;
+    color: #ffffff;
+    margin: 0;
+    line-height: 1.2;
     flex-shrink: 0;
 }
 .dark .sidebar-brand-title {
-    color: rgba(255, 255, 255, 0.55);
+    color: #f3f4f6;
 }
 .sidebar-brand-welcome {
-    font-size: 1.05rem;
-    font-weight: 700;
-    color: #ffffff;
+    font-size: 0.78rem;
+    font-weight: 500;
+    color: rgba(255, 255, 255, 0.72);
     margin: 0;
     line-height: 1.25;
     flex-shrink: 0;
 }
 .dark .sidebar-brand-welcome {
-    color: #e5e7eb;
+    color: rgba(229, 231, 235, 0.75);
 }
 
 /* Sidebar User Guide Button */
@@ -683,6 +677,112 @@ body {
 
 .dark .menu-item.active:hover {
     background: rgba(255,255,255,0.2) !important;
+}
+
+.menu-item-sub {
+    padding-left: 2rem !important;
+    font-size: 0.8125rem !important;
+}
+
+.menu-item-sub i {
+    font-size: 0.875rem !important;
+    width: 16px !important;
+}
+
+/* Top-bar notification dropdown (Facebook-style) */
+.notification-dropdown {
+    border-radius: 8px;
+    overflow: hidden;
+}
+
+.notification-dropdown-header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 0.75rem 1rem;
+    border-bottom: 1px solid #e5e7eb;
+}
+
+.dark .notification-dropdown-header {
+    border-bottom-color: #404040;
+}
+
+.notification-dropdown-list {
+    max-height: 20rem;
+    overflow-y: auto;
+}
+
+.notification-dropdown-item {
+    display: flex;
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 0.25rem;
+    width: 100%;
+    padding: 0.75rem 1rem;
+    border: none;
+    border-bottom: 1px solid #f3f4f6;
+    background: transparent;
+    text-align: left;
+    cursor: pointer;
+}
+
+.dark .notification-dropdown-item {
+    border-bottom-color: #333;
+}
+
+.notification-dropdown-item:hover {
+    background: rgba(2, 138, 15, 0.06);
+}
+
+.dark .notification-dropdown-item:hover {
+    background: rgba(52, 211, 153, 0.08);
+}
+
+.notification-dropdown-item--unread {
+    background: rgba(2, 138, 15, 0.08);
+}
+
+.dark .notification-dropdown-item--unread {
+    background: rgba(52, 211, 153, 0.1);
+}
+
+.notification-dropdown-item-msg {
+    font-size: 0.8125rem;
+    line-height: 1.35;
+    color: #1f2937;
+}
+
+.dark .notification-dropdown-item-msg {
+    color: #e5e7eb;
+}
+
+.notification-dropdown-item-time {
+    font-size: 0.6875rem;
+    color: #6b7280;
+}
+
+.dark .notification-dropdown-item-time {
+    color: #9ca3af;
+}
+
+.notification-dropdown-empty {
+    padding: 1.25rem 1rem;
+    text-align: center;
+    font-size: 0.8125rem;
+    color: #6b7280;
+    margin: 0;
+}
+
+.notification-dropdown-footer {
+    padding: 0.65rem 1rem;
+    text-align: center;
+    border-top: 1px solid #e5e7eb;
+    background: #f9fafb;
+}
+
+.dark .notification-dropdown-footer {
+    border-top-color: #404040;
+    background: #252525;
 }
 
 .card-header {

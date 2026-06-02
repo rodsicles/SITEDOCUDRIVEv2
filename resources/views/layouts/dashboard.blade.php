@@ -152,10 +152,10 @@
         <!-- Sidebar -->
         <aside class="w-64 bg-white dark:bg-[#2a2a2a] border-r border-gray-200 dark:border-gray-700 fixed h-screen overflow-hidden z-[1000] sidebar">
             <div class="sidebar-brand">
-                <div class="sidebar-brand-line" aria-hidden="true"></div>
-                <img src="{{ asset('images/site-logo.png') }}" alt="SITE Logo" class="sidebar-brand-logo">
-                <div class="sidebar-brand-line" aria-hidden="true"></div>
-                <h2 class="sidebar-brand-title">EMPLOYEE DASHBOARD</h2>
+                <div class="sidebar-brand-heading">
+                    <img src="{{ asset('images/site-logo.png') }}" alt="SITE Logo" class="sidebar-brand-logo">
+                    <h2 class="sidebar-brand-title">SITE DocuDrive</h2>
+                </div>
                 <p class="sidebar-brand-welcome">Welcome, {{ auth()->user()->role->role_name }}</p>
                 <a href="{{ route('user-guide') }}" class="sidebar-guide-btn {{ request()->routeIs('user-guide') ? 'active' : '' }}">
                     <i class="fas fa-book-open"></i> User Guide
@@ -190,10 +190,27 @@
                         };
                     @endphp
                     @if($notificationsPageUrl)
-                    <a href="{{ $notificationsPageUrl }}" class="relative text-lg max-md:text-base text-gray-600 dark:text-gray-400" id="notification-bell-link">
-                        <i class="fas fa-bell"></i>
-                        <span id="notification-badge" class="absolute -top-2 -right-2 bg-[#028a0f] text-white w-4 h-4 text-xs flex items-center justify-center font-bold {{ (isset($unreadNotifications) && $unreadNotifications > 0) ? '' : 'hidden' }}">{{ $unreadNotifications ?? 0 }}</span>
-                    </a>
+                    <div class="relative" id="notification-dropdown-wrap">
+                        <button type="button" class="relative bg-transparent border-none text-gray-600 dark:text-gray-400 cursor-pointer p-1 flex flex-col items-center leading-none" id="notification-bell-btn" aria-label="Notifications" aria-expanded="false" aria-haspopup="true">
+                            <span class="relative text-lg max-md:text-base">
+                                <i class="fas fa-bell"></i>
+                                <span id="notification-badge" class="absolute -top-2 -right-2 bg-[#028a0f] text-white w-4 h-4 text-xs flex items-center justify-center font-bold {{ (isset($unreadNotifications) && $unreadNotifications > 0) ? '' : 'hidden' }}">{{ $unreadNotifications ?? 0 }}</span>
+                            </span>
+                            <i class="fas fa-caret-down text-[9px] mt-0.5 opacity-70"></i>
+                        </button>
+                        <div id="notification-dropdown" class="hidden notification-dropdown absolute top-full right-0 mt-2 w-[min(22rem,calc(100vw-2rem))] bg-white dark:bg-[#2a2a2a] border border-gray-200 dark:border-gray-700 shadow-lg z-[1000]">
+                            <div class="notification-dropdown-header">
+                                <span class="font-semibold text-sm text-gray-800 dark:text-gray-200">Notifications</span>
+                                <button type="button" id="notification-mark-all-btn" class="text-xs text-[#028a0f] dark:text-[#34d399] bg-transparent border-none cursor-pointer font-semibold hidden">Mark all read</button>
+                            </div>
+                            <div id="notification-dropdown-list" class="notification-dropdown-list">
+                                <p class="notification-dropdown-empty">Loading...</p>
+                            </div>
+                            <div class="notification-dropdown-footer">
+                                <a href="{{ $notificationsPageUrl }}" class="text-xs font-semibold text-[#028a0f] dark:text-[#34d399] no-underline">See all notifications</a>
+                            </div>
+                        </div>
+                    </div>
                     @endif
 
                     <!-- Theme & Settings Controls -->
@@ -322,6 +339,10 @@
         document.addEventListener('click', () => {
             fontSizeMenu.classList.add('hidden');
             document.getElementById('userMenu').classList.add('hidden');
+            const notifDropdown = document.getElementById('notification-dropdown');
+            const notifBtn = document.getElementById('notification-bell-btn');
+            if (notifDropdown) notifDropdown.classList.add('hidden');
+            if (notifBtn) notifBtn.setAttribute('aria-expanded', 'false');
         });
         
         // User Menu Toggle
@@ -332,6 +353,10 @@
             e.stopPropagation();
             userMenu.classList.toggle('hidden');
             fontSizeMenu.classList.add('hidden');
+            const notifDropdown = document.getElementById('notification-dropdown');
+            const notifBtn = document.getElementById('notification-bell-btn');
+            if (notifDropdown) notifDropdown.classList.add('hidden');
+            if (notifBtn) notifBtn.setAttribute('aria-expanded', 'false');
         });
         
         // Load saved font size
@@ -735,7 +760,7 @@
     @auth
         @if(auth()->user()->isFaculty() || auth()->user()->isProgramCoordinator() || auth()->user()->isDeanOrSecretary())
         <script>
-            // Notification badge live polling (every 30s) for the top-bar bell.
+            // Notification badge live polling + dropdown panel
             (function() {
                 @php
                     $notificationsUnreadUrl = match (true) {
@@ -744,29 +769,171 @@
                         auth()->user()->isDeanOrSecretary() => route('dean.notifications.unread-count'),
                         default => '',
                     };
+                    $notificationsRecentUrlJs = match (true) {
+                        auth()->user()->isFaculty() => route('faculty.notifications.recent'),
+                        auth()->user()->isProgramCoordinator() => route('coordinator.notifications.recent'),
+                        auth()->user()->isDeanOrSecretary() => route('dean.notifications.recent'),
+                        default => '',
+                    };
+                    $notificationsReadJsonPrefixJs = match (true) {
+                        auth()->user()->isFaculty() => 'faculty',
+                        auth()->user()->isProgramCoordinator() => 'coordinator',
+                        auth()->user()->isDeanOrSecretary() => 'dean',
+                        default => '',
+                    };
+                    $notificationsMarkAllJsonUrl = match (true) {
+                        auth()->user()->isFaculty() => route('faculty.notifications.mark-all-read-json'),
+                        auth()->user()->isProgramCoordinator() => route('coordinator.notifications.mark-all-read-json'),
+                        auth()->user()->isDeanOrSecretary() => route('dean.notifications.mark-all-read-json'),
+                        default => '',
+                    };
+                    $notificationsReadJsonUrlTemplateJs = $notificationsReadJsonPrefixJs
+                        ? route($notificationsReadJsonPrefixJs . '.notifications.read-json', ['id' => '__ID__'])
+                        : '';
                 @endphp
-                const url = @json($notificationsUnreadUrl);
+                const unreadUrl = @json($notificationsUnreadUrl);
+                const recentUrl = @json($notificationsRecentUrlJs);
+                const readJsonUrlTemplate = @json($notificationsReadJsonUrlTemplateJs);
+                const markAllUrl = @json($notificationsMarkAllJsonUrl);
+                const csrfToken = document.querySelector('meta[name="csrf-token"]')?.getAttribute('content') || '';
                 const badge = document.getElementById('notification-badge');
-                if (!badge) return;
+                const bellBtn = document.getElementById('notification-bell-btn');
+                const dropdown = document.getElementById('notification-dropdown');
+                const listEl = document.getElementById('notification-dropdown-list');
+                const markAllBtn = document.getElementById('notification-mark-all-btn');
+                let dropdownLoaded = false;
 
                 function applyCount(count) {
                     if (!badge) return;
                     if (count > 0) {
                         badge.textContent = count > 99 ? '99+' : count;
                         badge.classList.remove('hidden');
+                        if (markAllBtn) markAllBtn.classList.remove('hidden');
                     } else {
                         badge.textContent = '0';
                         badge.classList.add('hidden');
+                        if (markAllBtn) markAllBtn.classList.add('hidden');
                     }
                 }
 
+                function escapeHtml(str) {
+                    const div = document.createElement('div');
+                    div.textContent = str ?? '';
+                    return div.innerHTML;
+                }
+
+                function renderNotifications(items) {
+                    if (!listEl) return;
+                    if (!items.length) {
+                        listEl.innerHTML = '<p class="notification-dropdown-empty">No notifications yet.</p>';
+                        return;
+                    }
+                    listEl.innerHTML = '';
+                    items.forEach(item => {
+                        const row = document.createElement('button');
+                        row.type = 'button';
+                        row.className = 'notification-dropdown-item' + (item.is_read ? '' : ' notification-dropdown-item--unread');
+                        if (item.tone === 'danger') row.classList.add('notification-dropdown-item--danger');
+                        if (item.tone === 'success') row.classList.add('notification-dropdown-item--success');
+                        row.dataset.id = item.id;
+                        row.innerHTML = '<span class="notification-dropdown-item-msg">' + escapeHtml(item.message) + '</span>'
+                            + '<span class="notification-dropdown-item-time">' + escapeHtml(item.time_ago) + '</span>';
+                        listEl.appendChild(row);
+                    });
+                }
+
+                async function loadDropdown(force) {
+                    if (!recentUrl || !listEl) return;
+                    if (dropdownLoaded && !force) return;
+                    listEl.innerHTML = '<p class="notification-dropdown-empty"><i class="fas fa-spinner fa-spin"></i> Loading...</p>';
+                    try {
+                        const r = await fetch(recentUrl, {
+                            headers: { 'Accept': 'application/json', 'X-Requested-With': 'XMLHttpRequest' },
+                            credentials: 'same-origin',
+                        });
+                        if (!r.ok) throw new Error('Failed');
+                        const data = await r.json();
+                        renderNotifications(data.notifications || []);
+                        if (typeof data.unread_count !== 'undefined') applyCount(data.unread_count);
+                        dropdownLoaded = true;
+                    } catch (e) {
+                        listEl.innerHTML = '<p class="notification-dropdown-empty">Could not load notifications.</p>';
+                    }
+                }
+
+                async function markRead(id, rowEl) {
+                    if (!readJsonUrlTemplate || !id) return;
+                    try {
+                        await fetch(readJsonUrlTemplate.replace('__ID__', encodeURIComponent(id)), {
+                            method: 'POST',
+                            headers: {
+                                'Accept': 'application/json',
+                                'Content-Type': 'application/json',
+                                'X-CSRF-TOKEN': csrfToken,
+                                'X-Requested-With': 'XMLHttpRequest',
+                            },
+                            credentials: 'same-origin',
+                        });
+                        if (rowEl) {
+                            rowEl.classList.remove('notification-dropdown-item--unread');
+                        }
+                        await refresh();
+                        dropdownLoaded = false;
+                    } catch (e) {}
+                }
+
+                if (listEl) {
+                    listEl.addEventListener('click', (e) => {
+                        const row = e.target.closest('.notification-dropdown-item');
+                        if (!row || row.classList.contains('notification-dropdown-item--read-only')) return;
+                        if (!row.classList.contains('notification-dropdown-item--unread')) return;
+                        markRead(row.dataset.id, row);
+                    });
+                }
+
+                if (markAllBtn) {
+                    markAllBtn.addEventListener('click', async (e) => {
+                        e.stopPropagation();
+                        if (!markAllUrl) return;
+                        try {
+                            await fetch(markAllUrl, {
+                                method: 'POST',
+                                headers: {
+                                    'Accept': 'application/json',
+                                    'Content-Type': 'application/json',
+                                    'X-CSRF-TOKEN': csrfToken,
+                                    'X-Requested-With': 'XMLHttpRequest',
+                                },
+                                credentials: 'same-origin',
+                            });
+                            dropdownLoaded = false;
+                            await loadDropdown(true);
+                            await refresh();
+                        } catch (err) {}
+                    });
+                }
+
+                if (bellBtn && dropdown) {
+                    bellBtn.addEventListener('click', (e) => {
+                        e.stopPropagation();
+                        const isOpen = !dropdown.classList.contains('hidden');
+                        dropdown.classList.toggle('hidden', isOpen);
+                        bellBtn.setAttribute('aria-expanded', isOpen ? 'false' : 'true');
+                        document.getElementById('userMenu')?.classList.add('hidden');
+                        document.getElementById('fontSizeMenu')?.classList.add('hidden');
+                        if (!isOpen) loadDropdown(false);
+                    });
+                    dropdown.addEventListener('click', (e) => e.stopPropagation());
+                }
+
                 async function refresh() {
+                    if (!unreadUrl || !badge) return;
                     if (window.requestGuard && !window.requestGuard.canProceed('notification-badge')) {
                         return;
                     }
                     const run = window.requestGuard
-                        ? () => window.requestGuard.guardedFetch(url, {}, 'notification-badge')
-                        : () => fetch(url, { headers: { 'Accept': 'application/json', 'X-Requested-With': 'XMLHttpRequest' }, credentials: 'same-origin' }).then(r => ({ skipped: false, response: r }));
+                        ? () => window.requestGuard.guardedFetch(unreadUrl, {}, 'notification-badge')
+                        : () => fetch(unreadUrl, { headers: { 'Accept': 'application/json', 'X-Requested-With': 'XMLHttpRequest' }, credentials: 'same-origin' }).then(r => ({ skipped: false, response: r }));
                     try {
                         const result = await run();
                         if (result.skipped || !result.response) return;
@@ -777,10 +944,8 @@
                     } catch (e) {}
                 }
 
-                // Expose so per-page scripts (e.g. notifications page) can force-refresh
                 window.refreshNotificationBadge = refresh;
 
-                // Pause polling when tab is hidden to save resources
                 let intervalId = null;
                 function start() {
                     if (intervalId) return;

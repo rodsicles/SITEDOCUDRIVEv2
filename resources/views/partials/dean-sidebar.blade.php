@@ -8,44 +8,6 @@
         $pendingResetCount = 0;
     }
 @endphp
-<div class="sidebar-section-label">Core Functions</div>
-<a href="{{ route('dean.dashboard') }}" class="menu-item {{ request()->routeIs('dean.dashboard') ? 'active' : '' }}">
-    <i class="fas fa-chart-line"></i> Dashboard
-</a>
-<a href="{{ route('dean.tasks') }}" class="menu-item {{ request()->routeIs('dean.tasks', 'dean.create-task') ? 'active' : '' }}">
-    <i class="fas fa-tasks"></i> Tasks
-</a>
-<a href="{{ route('dean.audit-trail') }}" class="menu-item {{ request()->routeIs('dean.audit-trail', 'dean.activity-log') ? 'active' : '' }}">
-    <i class="fas fa-history"></i> Activity Log
-</a>
-
-<div class="sidebar-section-label">Communication</div>
-<a href="{{ route('dean.notifications') }}" class="menu-item {{ request()->routeIs('dean.notifications') ? 'active' : '' }}">
-    <i class="fas fa-bell"></i> Notifications
-    @if(isset($unreadNotifications) && $unreadNotifications > 0)
-    <span class="badge badge-danger ml-auto">{{ $unreadNotifications }}</span>
-    @endif
-</a>
-<a href="{{ route('announcements.index') }}" class="menu-item {{ request()->routeIs('announcements.index', 'announcements.show') ? 'active' : '' }}">
-    <i class="fas fa-bullhorn"></i> Announcements
-</a>
-
-<div class="sidebar-section-label">Management</div>
-<a href="{{ route('dean.employees') }}" class="menu-item {{ request()->routeIs('dean.employees', 'dean.employee-profile', 'dean.edit-employee') ? 'active' : '' }}">
-    <i class="fas fa-users"></i> Faculty Members
-</a>
-<a href="{{ route('password-reset-requests.index') }}" class="menu-item {{ request()->routeIs('password-reset-requests.*') ? 'active' : '' }}">
-    <i class="fas fa-key"></i> Password Resets
-    @if($pendingResetCount > 0)
-    <span class="badge badge-danger ml-auto">{{ $pendingResetCount }}</span>
-    @endif
-</a>
-<a href="{{ route('dean.courses') }}" class="menu-item {{ request()->routeIs('dean.courses*') ? 'active' : '' }}">
-    <i class="fas fa-book"></i> Course Catalog
-</a>
-<a href="{{ route('dean.analytics') }}" class="menu-item {{ request()->routeIs('dean.analytics') ? 'active' : '' }}">
-    <i class="fas fa-chart-pie"></i> Analytics
-</a>
 
 <div class="sidebar-section-label">Resources & Development</div>
 <a href="{{ route('dean.documents') }}" class="menu-item {{ request()->routeIs('dean.documents') ? 'active' : '' }}">
@@ -68,4 +30,37 @@
 </a>
 <a href="{{ route('dean.archives.index') }}" class="menu-item {{ request()->routeIs('dean.archives.*') ? 'active' : '' }}">
     <i class="fas fa-box-archive"></i> Archives
+</a>
+
+<div class="sidebar-section-label">Communication</div>
+<a href="{{ route('announcements.index') }}" class="menu-item {{ request()->routeIs('announcements.index', 'announcements.show') ? 'active' : '' }}">
+    <i class="fas fa-bullhorn"></i> Announcements
+</a>
+
+<div class="sidebar-section-label">Core Functions</div>
+<a href="{{ route('dean.dashboard') }}" class="menu-item {{ request()->routeIs('dean.dashboard') ? 'active' : '' }}">
+    <i class="fas fa-chart-line"></i> Dashboard
+</a>
+<a href="{{ route('dean.tasks') }}" class="menu-item {{ request()->routeIs('dean.tasks', 'dean.create-task') ? 'active' : '' }}">
+    <i class="fas fa-tasks"></i> Tasks
+</a>
+<a href="{{ route('dean.audit-trail') }}" class="menu-item {{ request()->routeIs('dean.audit-trail', 'dean.activity-log') ? 'active' : '' }}">
+    <i class="fas fa-history"></i> Activity Log
+</a>
+
+<div class="sidebar-section-label">Management</div>
+<a href="{{ route('dean.employees') }}" class="menu-item {{ request()->routeIs('dean.employees', 'dean.employee-profile', 'dean.edit-employee') ? 'active' : '' }}">
+    <i class="fas fa-users"></i> Faculty Members
+</a>
+<a href="{{ route('password-reset-requests.index') }}" class="menu-item menu-item-sub {{ request()->routeIs('password-reset-requests.*') ? 'active' : '' }}">
+    <i class="fas fa-key"></i> Password Resets
+    @if($pendingResetCount > 0)
+    <span class="badge badge-danger ml-auto">{{ $pendingResetCount }}</span>
+    @endif
+</a>
+<a href="{{ route('dean.courses') }}" class="menu-item {{ request()->routeIs('dean.courses*') ? 'active' : '' }}">
+    <i class="fas fa-book"></i> Course Catalog
+</a>
+<a href="{{ route('dean.analytics') }}" class="menu-item {{ request()->routeIs('dean.analytics') ? 'active' : '' }}">
+    <i class="fas fa-chart-pie"></i> Analytics
 </a>

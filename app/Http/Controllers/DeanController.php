@@ -2,8 +2,6 @@
 
 namespace App\Http\Controllers;
 
-use App\Models\AnnouncementRead;
-use App\Models\DocumentView;
 use App\Models\Employee;
 use App\Models\DashboardLog;
 use App\Models\PerformanceReport;
@@ -39,8 +37,6 @@ class DeanController extends Controller
     {
         $user = auth()->user();
         $stats = $this->dashboardService->getDeanStats($user->id);
-        $announcements = $this->dashboardService->getAnnouncements($user, 5);
-        $insight = $this->weeklyInsightService->generateForDean();
 
         $recentTasks = Task::with(['assignedTo.employee'])
             ->latest()
@@ -63,9 +59,7 @@ class DeanController extends Controller
         $tasksInProgress = Task::where('status', 'In Progress')->count();
 
         return view('dean.dashboard', array_merge($stats, compact(
-            'announcements',
             'recentTasks',
-            'insight',
             'pendingTeachingGuidesCount',
             'pendingExamQuestionnairesCount',
             'pendingApprovals',
@@ -120,19 +114,8 @@ class DeanController extends Controller
             ->sortBy(fn($u) => $u->employee->full_name ?? $u->username)
             ->values();
 
-        $recentDocReads = DocumentView::with(['user.employee', 'document'])
-            ->orderByDesc('viewed_at')
-            ->limit(20)
-            ->get();
-
-        $recentAnnouncementReads = AnnouncementRead::with(['user.employee', 'announcement'])
-            ->orderByDesc('read_at')
-            ->limit(20)
-            ->get();
-
         return view('dean.audit-trail', compact(
             'logs', 'activityTypes', 'users', 'filters',
-            'recentDocReads', 'recentAnnouncementReads'
         ));
     }
 

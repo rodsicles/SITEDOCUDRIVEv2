@@ -10,9 +10,6 @@
 @endsection
 
 @section('content')
-    {{-- Weekly Insight Briefing --}}
-    @include('partials.insight-briefing')
-
     {{-- Stat Chips --}}
     <div class="stats-grid-horizontal">
         <div class="stat-item-horizontal">
@@ -54,9 +51,6 @@
 
     {{-- Pending Reviews --}}
     @include('partials.dean-pending-review-cards')
-
-    {{-- Announcements Feed --}}
-    @include('partials.announcement-widget')
 
     {{-- Recent Tasks (with Quick Action in header) --}}
     <div class="content-card">

@@ -52,7 +52,7 @@
 <a href="{{ route('dean.employees') }}" class="menu-item {{ request()->routeIs('dean.employees', 'dean.employee-profile', 'dean.edit-employee') ? 'active' : '' }}">
     <i class="fas fa-users"></i> Faculty Members
 </a>
-<a href="{{ route('password-reset-requests.index') }}" class="menu-item menu-item-sub {{ request()->routeIs('password-reset-requests.*') ? 'active' : '' }}">
+<a href="{{ route('password-reset-requests.index') }}" class="menu-item {{ request()->routeIs('password-reset-requests.*') ? 'active' : '' }}">
     <i class="fas fa-key"></i> Password Resets
     @if($pendingResetCount > 0)
     <span class="badge badge-danger ml-auto">{{ $pendingResetCount }}</span>

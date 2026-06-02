@@ -2,6 +2,9 @@
     /** @var \App\Models\TeachingGuide|\App\Models\ExamQuestionnaire $submission */
     $popoverKey = ($popoverPrefix ?? 'sub') . '-' . $submission->id;
     $approveFormId = 'approve-form-' . $popoverKey;
+    $submissionLabel = trim((string) ($submission->title ?? '')) !== ''
+        ? $submission->title
+        : ($submission->subject ?? 'Untitled submission');
 @endphp
 <div class="submission-action-wrap">
     <button type="button"
@@ -30,7 +33,8 @@
                 <button type="button"
                         class="doc-list-popover-item submission-approve-btn"
                         role="menuitem"
-                        data-approve-form="{{ $approveFormId }}">
+                        data-approve-form="{{ $approveFormId }}"
+                        data-submission-title="{{ e($submissionLabel) }}">
                     <i class="fas fa-check text-xs" aria-hidden="true"></i> Approve
                 </button>
             </form>

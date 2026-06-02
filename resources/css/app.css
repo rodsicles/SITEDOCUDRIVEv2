@@ -6833,9 +6833,33 @@ a.doc-sort-item:hover,
 .resource-list-table-wrap .data-table {
     min-width: 720px;
 }
+.submission-preview-card {
+    overflow: hidden;
+}
+
+.submission-preview-toolbar {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    justify-content: flex-end;
+    gap: 0.5rem;
+    padding: 0.65rem 1rem;
+    border-bottom: 1px solid #e5e7eb;
+    background: #f9fafb;
+}
+
+.dark .submission-preview-toolbar {
+    border-bottom-color: #404040;
+    background: #252525;
+}
+
+.submission-preview-frame {
+    border-top: none;
+}
+
 .submission-preview-frame__iframe {
     width: 100%;
-    min-height: 70vh;
+    min-height: 72vh;
     border: 0;
     display: block;
 }

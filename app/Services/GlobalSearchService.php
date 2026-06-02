@@ -139,7 +139,9 @@ class GlobalSearchService
                 $dept = $found->employee->department ?? null;
 
                 $url = match (true) {
+                    $user->isDean() && $found->employee => route('dean.employee-profile', $found->employee->employee_id),
                     $user->isDean() => route('dean.employees'),
+                    $user->isProgramCoordinator() && $found->employee => route('coordinator.faculty-profile', $found->employee->employee_id),
                     $user->isProgramCoordinator() => route('coordinator.faculty'),
                     default => route('profile.edit'),
                 };
@@ -170,17 +172,21 @@ class GlobalSearchService
             }
         }
 
-        $url = $user->isDean() ? route('dean.employees') : route('coordinator.faculty');
-
         return $employeeQuery
             ->limit($limit)
             ->get()
-            ->map(fn (Employee $employee) => [
-                'title' => $employee->full_name,
-                'subtitle' => $employee->department ?? 'Employee',
-                'type' => 'Employee',
-                'url' => $url,
-            ]);
+            ->map(function (Employee $employee) use ($user) {
+                $url = $user->isDean()
+                    ? route('dean.employee-profile', $employee->employee_id)
+                    : route('coordinator.faculty-profile', $employee->employee_id);
+
+                return [
+                    'title' => $employee->full_name,
+                    'subtitle' => $employee->department ?? 'Employee',
+                    'type' => 'Employee',
+                    'url' => $url,
+                ];
+            });
     }
 
     private function searchTasks(User $user, string $query, int $limit): Collection

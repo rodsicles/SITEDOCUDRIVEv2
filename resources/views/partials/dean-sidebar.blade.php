@@ -13,9 +13,6 @@
 <a href="{{ route('dean.documents') }}" class="menu-item {{ request()->routeIs('dean.documents') ? 'active' : '' }}">
     <i class="fas fa-folder"></i> Documents
 </a>
-<a href="{{ route('dean.recycle-bin.index') }}" class="menu-item {{ request()->routeIs('dean.recycle-bin.*') ? 'active' : '' }}">
-    <i class="fas fa-recycle"></i> Recycle Bin
-</a>
 <a href="{{ route('dean.teaching-guides.index') }}" class="menu-item {{ request()->routeIs('dean.teaching-guides.*') ? 'active' : '' }}">
     <i class="fas fa-book-open"></i> Pending Teaching Guides
     @if(($pendingTeachingGuidesCount ?? 0) > 0)
@@ -30,6 +27,9 @@
 </a>
 <a href="{{ route('dean.archives.index') }}" class="menu-item {{ request()->routeIs('dean.archives.*') ? 'active' : '' }}">
     <i class="fas fa-box-archive"></i> Archives
+</a>
+<a href="{{ route('dean.recycle-bin.index') }}" class="menu-item {{ request()->routeIs('dean.recycle-bin.*') ? 'active' : '' }}">
+    <i class="fas fa-recycle"></i> Recycle Bin
 </a>
 
 <div class="sidebar-section-label">Communication</div>

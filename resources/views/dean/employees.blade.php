@@ -22,6 +22,12 @@
             <button class="tab-button inline-flex items-center gap-2 px-5 py-3.5 bg-transparent border-0 border-b-[3px] border-transparent text-gray-600 dark:text-gray-400 text-sm font-semibold cursor-pointer" onclick="switchTab('createFaculty')" id="createFacultyTab">
                 <i class="fas fa-user-plus"></i> Create Faculty
             </button>
+            <button class="tab-button inline-flex items-center gap-2 px-5 py-3.5 bg-transparent border-0 border-b-[3px] border-transparent text-gray-600 dark:text-gray-400 text-sm font-semibold cursor-pointer" onclick="switchTab('deactivated')" id="deactivatedTab">
+                <i class="fas fa-user-slash"></i> Deactivated Accounts
+                @if(($deactivatedEmployees->total() ?? 0) > 0)
+                <span class="badge badge-danger text-[10px] py-0.5 px-1.5">{{ $deactivatedEmployees->total() }}</span>
+                @endif
+            </button>
         </div>
     </div>
 
@@ -30,8 +36,9 @@
         <div class="content-card">
             <div class="card-header">
                 <h3 class="card-title">Employee Directory</h3>
-                <span class="badge badge-info">{{ $employees->total() }} Total</span>
+                <span class="badge badge-info">{{ $employees->total() }} Active</span>
             </div>
+            <p class="text-xs text-gray-500 dark:text-gray-400 px-4 -mt-2 mb-3">Active faculty and coordinators only. Deactivated accounts are listed under <strong>Deactivated Accounts</strong>.</p>
 
             <table class="data-table">
                 <thead>
@@ -41,7 +48,6 @@
                         <th>Department</th>
                         <th>Role</th>
                         <th>Action</th>
-                        <th>Status</th>
                     </tr>
                 </thead>
                 <tbody>
@@ -58,23 +64,66 @@
                                 <i class="fas fa-eye"></i> View
                             </a>
                         </td>
-                        <td>
-                            @if($employee->user->status === 'Active')
-                                <span class="badge badge-success">Active</span>
-                            @else
-                                <span class="badge badge-danger">Inactive</span>
-                            @endif
-                        </td>
                     </tr>
                     @empty
                     <tr>
-                        <td colspan="6" class="text-center text-gray-500 dark:text-gray-400">No employees found</td>
+                        <td colspan="5" class="text-center text-gray-500 dark:text-gray-400">No active employees found</td>
                     </tr>
                     @endforelse
                 </tbody>
             </table>
 
             <div class="mt-5">{{ $employees->links() }}</div>
+        </div>
+    </div>
+
+    <!-- Tab: Deactivated Accounts -->
+    <div class="tab-content" id="deactivatedContent" style="display: none;">
+        <div class="content-card">
+            <div class="card-header">
+                <h3 class="card-title">Deactivated Accounts</h3>
+                <span class="badge badge-danger">{{ $deactivatedEmployees->total() }} Deactivated</span>
+            </div>
+            <p class="text-xs text-gray-500 dark:text-gray-400 px-4 -mt-2 mb-3">These accounts cannot sign in. Open a profile and use <strong>Reactivate Account</strong> to restore access.</p>
+
+            <table class="data-table">
+                <thead>
+                    <tr>
+                        <th>Employee No.</th>
+                        <th>Full Name</th>
+                        <th>Department</th>
+                        <th>Role</th>
+                        <th>Action</th>
+                        <th>Status</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    @forelse($deactivatedEmployees as $employee)
+                    <tr>
+                        <td><strong>{{ $employee->employee_no ?? 'N/A' }}</strong></td>
+                        <td>{{ $employee->full_name }}</td>
+                        <td>{{ $employee->department ?? 'N/A' }}</td>
+                        <td>
+                            <span class="badge badge-info">{{ $employee->user->role->role_name ?? ($employee->position ?? 'N/A') }}</span>
+                        </td>
+                        <td>
+                            <a href="{{ route('dean.employee-profile', $employee->employee_id) }}" class="btn btn-primary text-xs">
+                                <i class="fas fa-eye"></i> View
+                            </a>
+                        </td>
+                        <td>
+                            <span class="badge badge-danger">Inactive</span>
+                        </td>
+                    </tr>
+                    @empty
+                    <tr>
+                        <td colspan="6" class="text-center text-gray-500 dark:text-gray-400">No deactivated accounts</td>
+                    </tr>
+                    @endforelse
+                </tbody>
+            </table>
+
+            <div class="mt-5">{{ $deactivatedEmployees->appends(['tab' => 'deactivated'])->links() }}</div>
         </div>
     </div>
 
@@ -219,6 +268,7 @@
                 list: { content: 'listContent', button: 'listTab' },
                 createCoord: { content: 'createCoordContent', button: 'createCoordTab' },
                 createFaculty: { content: 'createFacultyContent', button: 'createFacultyTab' },
+                deactivated: { content: 'deactivatedContent', button: 'deactivatedTab' },
             };
 
             const t = tabMap[tabName];
@@ -229,6 +279,14 @@
                 btn.style.borderBottomColor = 'var(--color-primary)';
                 btn.style.background = 'rgba(2, 138, 15, 0.1)';
             }
+
+            const url = new URL(window.location.href);
+            if (tabName === 'list') {
+                url.searchParams.delete('tab');
+            } else if (['deactivated', 'createCoord', 'createFaculty'].includes(tabName)) {
+                url.searchParams.set('tab', tabName);
+            }
+            window.history.replaceState({}, '', url);
         }
 
         // Auto-open correct tab on validation errors
@@ -238,10 +296,12 @@
             document.addEventListener('DOMContentLoaded', () => switchTab('createFaculty'));
         @endif
 
-        // Default tab
+        // Default tab (supports ?tab=deactivated after deactivation)
         document.addEventListener('DOMContentLoaded', function() {
+            const initialTab = @json(request('tab', 'list'));
+            const allowed = ['list', 'createCoord', 'createFaculty', 'deactivated'];
             if (!document.querySelector('.tab-button[style*="color"]')) {
-                switchTab('list');
+                switchTab(allowed.includes(initialTab) ? initialTab : 'list');
             }
         });
 

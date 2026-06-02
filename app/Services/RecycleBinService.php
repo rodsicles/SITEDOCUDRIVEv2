@@ -6,13 +6,13 @@ use App\Models\DashboardLog;
 use App\Models\Document;
 use App\Models\Folder;
 use App\Models\User;
-use App\Support\UploadStorage;
 use Illuminate\Contracts\Pagination\LengthAwarePaginator;
 
 class RecycleBinService
 {
     public function __construct(
         protected NotificationService $notificationService,
+        protected DocumentPurgeService $documentPurge,
     ) {}
 
     public function paginateForUser(User $user, int $perPage = 15): LengthAwarePaginator
@@ -76,10 +76,6 @@ class RecycleBinService
 
         $this->notificationService->notifyDocumentPermanentlyDeleted($document, $user);
 
-        if ($document->file_path && UploadStorage::exists($document->file_path)) {
-            UploadStorage::delete($document->file_path);
-        }
-
         DashboardLog::create([
             'user_id' => $user->id,
             'activity' => 'Permanently deleted document: ' . $document->document_title,
@@ -87,7 +83,7 @@ class RecycleBinService
             'visibility' => 'dean',
         ]);
 
-        $document->forceDelete();
+        $this->documentPurge->purge($document);
     }
 
     /**

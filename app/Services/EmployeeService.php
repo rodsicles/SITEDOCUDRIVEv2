@@ -309,10 +309,8 @@ class EmployeeService
             'pending' => $tasks->where('status', 'Pending')->count(),
         ];
 
-        $documents = Document::with('folder')
-            ->where('uploaded_by', $employee->user_id)
-            ->orderBy('created_at', 'desc')
-            ->get();
+        $treeService = app(FacultyDocumentTreeService::class);
+        $documents = $treeService->displayableDocumentsForUser($employee->user_id);
 
         $documentStats = [
             'total' => $documents->count(),
@@ -320,7 +318,7 @@ class EmployeeService
             'byCategory' => $documents->groupBy(fn ($d) => $d->category ?: ($d->folder?->top_level_category ?? 'Other'))->map->count(),
         ];
 
-        $documentTree = app(FacultyDocumentTreeService::class)->buildForUser($employee->user_id);
+        $documentTree = $treeService->buildForUser($employee->user_id);
 
         $reports = Report::select('report_id', 'submitted_by', 'report_category', 'created_at')
             ->where('submitted_by', $employee->user_id)

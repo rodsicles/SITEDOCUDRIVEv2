@@ -17,8 +17,8 @@
     <!-- Back Button -->
     <div class="mb-5">
         @if(auth()->user()->isDean())
-            <a href="{{ route('dean.employees') }}" class="btn btn-secondary">
-                <i class="fas fa-arrow-left"></i> Back to Faculty Members
+            <a href="{{ route('dean.employees', $employee->user->status === 'Inactive' ? ['tab' => 'deactivated'] : []) }}" class="btn btn-secondary">
+                <i class="fas fa-arrow-left"></i> {{ $employee->user->status === 'Inactive' ? 'Back to Deactivated Accounts' : 'Back to Faculty Members' }}
             </a>
         @else
             <a href="{{ route('coordinator.faculty') }}" class="btn btn-secondary">

@@ -8,6 +8,7 @@ use App\Models\Folder;
 use App\Models\TeachingGuide;
 use App\Support\AcademicYear;
 use App\Support\IteSubjects;
+use App\Support\UploadStorage;
 use Illuminate\Support\Collection;
 
 class FacultyDocumentTreeService
@@ -22,18 +23,42 @@ class FacultyDocumentTreeService
      *
      * @return array<string, mixed>
      */
+    /**
+     * Active uploads only (excludes recycle bin and missing / purged files).
+     */
+    public function displayableDocumentsForUser(int $userId): Collection
+    {
+        return Document::with('folder')
+            ->where('uploaded_by', $userId)
+            ->orderByDesc('created_at')
+            ->get()
+            ->filter(fn (Document $document) => $this->isDisplayable($document))
+            ->values();
+    }
+
     public function buildForUser(int $userId): array
     {
         $documents = Document::with(['folder.parent.parent.parent.parent.parent'])
             ->where('uploaded_by', $userId)
             ->orderByDesc('created_at')
-            ->get();
+            ->get()
+            ->filter(fn (Document $document) => $this->isDisplayable($document));
+
+        $documentIds = $documents->pluck('document_id')->all();
 
         $teachingGuides = TeachingGuide::with('folder.parent.parent')
             ->where('user_id', $userId)
+            ->where(function ($q) use ($documentIds) {
+                $q->whereNull('document_id')
+                    ->orWhereIn('document_id', $documentIds);
+            })
             ->get()
             ->keyBy('document_id');
         $examQuestionnaires = ExamQuestionnaire::where('submitted_by', $userId)
+            ->where(function ($q) use ($documentIds) {
+                $q->whereNull('document_id')
+                    ->orWhereIn('document_id', $documentIds);
+            })
             ->get()
             ->keyBy('document_id');
 
@@ -283,5 +308,22 @@ class FacultyDocumentTreeService
             ->pluck('folder_name')
             ->push($folder->folder_name)
             ->implode(' › ');
+    }
+
+    protected function isDisplayable(Document $document): bool
+    {
+        if ($document->trashed()) {
+            return false;
+        }
+
+        if (!$document->file_path) {
+            return false;
+        }
+
+        try {
+            return UploadStorage::exists($document->file_path);
+        } catch (\Throwable $e) {
+            return false;
+        }
     }
 }

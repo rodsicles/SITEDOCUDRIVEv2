@@ -183,12 +183,26 @@ class DeanController extends Controller
 
     public function employees()
     {
-        $employees = Employee::with('user.role')->latest('created_at')->paginate(15);
+        $employees = Employee::with('user.role')
+            ->whereHas('user', fn ($q) => $q->where('status', 'Active'))
+            ->latest('created_at')
+            ->paginate(15);
+
+        $deactivatedEmployees = Employee::with('user.role')
+            ->whereHas('user', fn ($q) => $q->where('status', 'Inactive'))
+            ->latest('updated_at')
+            ->paginate(15, ['*'], 'deactivated_page');
+
         $generator = app(\App\Support\EmployeeNumberGenerator::class);
         $coordinatorNumberPreview = $generator->previewMap(\App\Support\EmployeeNumberGenerator::ROLE_COORDINATOR);
         $facultyNumberPreview = $generator->previewMap(\App\Support\EmployeeNumberGenerator::ROLE_FACULTY);
 
-        return view('dean.employees', compact('employees', 'coordinatorNumberPreview', 'facultyNumberPreview'));
+        return view('dean.employees', compact(
+            'employees',
+            'deactivatedEmployees',
+            'coordinatorNumberPreview',
+            'facultyNumberPreview'
+        ));
     }
 
     public function reports()
@@ -478,7 +492,7 @@ class DeanController extends Controller
             $this->employeeService->setAccountStatus($employee, 'Inactive', auth()->user());
 
             return redirect()
-                ->route('dean.employee-profile', $id)
+                ->route('dean.employees', ['tab' => 'deactivated'])
                 ->with('success', $employee->full_name . ' has been deactivated. Their uploads and folders are unchanged.');
         } catch (\Symfony\Component\HttpKernel\Exception\HttpException $e) {
             throw $e;
@@ -497,7 +511,7 @@ class DeanController extends Controller
             $this->employeeService->setAccountStatus($employee, 'Active', auth()->user());
 
             return redirect()
-                ->route('dean.employee-profile', $id)
+                ->route('dean.employees', ['tab' => 'list'])
                 ->with('success', $employee->full_name . ' has been reactivated and can sign in again.');
         } catch (\Symfony\Component\HttpKernel\Exception\HttpException $e) {
             throw $e;

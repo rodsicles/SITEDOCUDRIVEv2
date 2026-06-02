@@ -3,11 +3,11 @@
 <a href="{{ route('faculty.documents') }}" class="menu-item {{ request()->routeIs('faculty.documents', 'faculty.upload-document') ? 'active' : '' }}">
     <i class="fas fa-folder"></i> Documents
 </a>
-<a href="{{ route('faculty.recycle-bin.index') }}" class="menu-item {{ request()->routeIs('faculty.recycle-bin.*') ? 'active' : '' }}">
-    <i class="fas fa-recycle"></i> Recycle Bin
-</a>
 <a href="{{ route('faculty.archives.list') }}" class="menu-item {{ request()->routeIs('faculty.archives.*') ? 'active' : '' }}">
     <i class="fas fa-box-archive"></i> Archives
+</a>
+<a href="{{ route('faculty.recycle-bin.index') }}" class="menu-item {{ request()->routeIs('faculty.recycle-bin.*') ? 'active' : '' }}">
+    <i class="fas fa-recycle"></i> Recycle Bin
 </a>
 
 <div class="sidebar-section-label">Communication</div>

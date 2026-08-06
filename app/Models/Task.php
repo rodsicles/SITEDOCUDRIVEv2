@@ -18,11 +18,25 @@ class Task extends Model
         'task_description',
         'due_date',
         'status',
+        'allow_late_submission',
     ];
 
     protected $casts = [
         'due_date' => 'date',
+        'allow_late_submission' => 'boolean',
     ];
+
+    /**
+     * True if the deadline has passed and late submission has not been allowed.
+     */
+    public function isSubmissionLocked(): bool
+    {
+        if (!$this->due_date || $this->allow_late_submission) {
+            return false;
+        }
+
+        return now()->startOfDay()->gt($this->due_date->endOfDay());
+    }
 
     public function assignedBy()
     {

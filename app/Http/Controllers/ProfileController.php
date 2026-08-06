@@ -4,6 +4,7 @@ namespace App\Http\Controllers;
 
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Hash;
+use Illuminate\Support\Facades\Storage;
 use Illuminate\Validation\Rules\Password;
 use App\Models\DashboardLog;
 
@@ -29,7 +30,7 @@ class ProfileController extends Controller
             // because the system uses username for identity. Once SMTP lands
             // we may re-introduce uniqueness then.
             'email' => 'nullable|email|max:45',
-            'employee_no' => 'nullable|string|max:15|regex:/^[0-9]*$/|unique:employees,employee_no,'.$employee->employee_id.',employee_id',
+            'employee_no' => 'nullable|string|max:15|regex:/^[0-9]*$/|unique:employees,employee_no,'.optional($employee)->employee_id.',employee_id',
             'department' => 'nullable|in:Engineering,Information Technology',
         ];
 
@@ -52,7 +53,9 @@ class ProfileController extends Controller
             $employeeData['full_name'] = $validated['full_name'];
         }
 
-        $employee->update($employeeData);
+        if ($employee) {
+            $employee->update($employeeData);
+        }
 
         DashboardLog::create([
             'user_id' => auth()->id(),
@@ -62,6 +65,32 @@ class ProfileController extends Controller
         ]);
 
         return redirect()->back()->with('success', 'Profile updated successfully');
+    }
+
+    public function uploadAvatar(Request $request)
+    {
+        $request->validate([
+            'avatar' => 'required|image|mimes:jpg,jpeg,png,webp|max:2048',
+        ]);
+
+        $user = auth()->user();
+
+        if ($user->avatar_path) {
+            Storage::disk('public')->delete($user->avatar_path);
+        }
+
+        $path = $request->file('avatar')->store('avatars', 'public');
+
+        $user->update(['avatar_path' => $path]);
+
+        DashboardLog::create([
+            'user_id' => auth()->id(),
+            'activity' => 'Updated profile picture',
+            'activity_type' => 'profile_update',
+            'visibility' => 'own',
+        ]);
+
+        return redirect()->back()->with('success', 'Profile picture updated successfully');
     }
 
     public function changePassword(Request $request)

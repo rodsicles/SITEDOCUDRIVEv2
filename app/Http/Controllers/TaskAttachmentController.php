@@ -23,6 +23,13 @@ class TaskAttachmentController extends Controller
             abort(403);
         }
 
+        // Auto-lock: the assignee can no longer submit attachments once the
+        // deadline has passed, unless the task explicitly allows late submission.
+        // Dean/Secretary and the task creator may still upload past the deadline.
+        if ($task->isSubmissionLocked() && $user->id === $task->assigned_to && !$user->isDeanOrSecretary()) {
+            return back()->with('error', 'The deadline for this task has passed. Submission is locked.');
+        }
+
         // Cap attachments per task to prevent storage spam.
         $maxAttachmentsPerTask = 10;
         if (TaskAttachment::where('task_id', $task->task_id)->count() >= $maxAttachmentsPerTask) {

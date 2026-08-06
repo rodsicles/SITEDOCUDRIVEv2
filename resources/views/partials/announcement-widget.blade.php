@@ -14,7 +14,7 @@
             {{-- Avatar --}}
             <div class="w-8 h-8 flex items-center justify-center text-white text-xs font-bold flex-shrink-0"
                  style="background:linear-gradient(135deg,#028a0f,#026a0c);">
-                {{ strtoupper(substr($announcement->author->username ?? 'A', 0, 1)) }}
+                {{ strtoupper(substr($announcement->author?->username ?? 'A', 0, 1)) }}
             </div>
 
             <div class="flex-1 min-w-0">
@@ -29,7 +29,7 @@
                 </div>
                 <p class="text-gray-500 dark:text-gray-400 text-xs mt-0.5 line-clamp-2 m-0">{{ Str::limit($announcement->body, 100) }}</p>
                 <div class="flex items-center gap-2 mt-1.5 text-xs text-gray-400 dark:text-gray-500 flex-wrap">
-                    <span>{{ $announcement->author->employee->full_name ?? $announcement->author->username }}</span>
+                    <span>{{ $announcement->author ? ($announcement->author->employee->full_name ?? $announcement->author->username) : 'Unknown' }}</span>
                     <span>&middot;</span>
                     <span>{{ $announcement->created_at->diffForHumans() }}</span>
                     @if($announcement->expires_at)

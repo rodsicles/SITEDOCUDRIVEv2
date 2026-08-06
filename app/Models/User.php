@@ -26,6 +26,7 @@ class User extends Authenticatable
         'status',
         'must_change_password',
         'password_changed_at',
+        'avatar_path',
     ];
 
     /**
@@ -50,6 +51,7 @@ class User extends Authenticatable
             'password' => 'hashed',
             'must_change_password' => 'boolean',
             'password_changed_at' => 'datetime',
+            'last_seen_at' => 'datetime',
         ];
     }
 
@@ -156,5 +158,29 @@ class User extends Authenticatable
     public function canUploadSharedDocuments(): bool
     {
         return $this->canManageDocuments();
+    }
+
+    /**
+     * Considered online if seen within the last 5 minutes.
+     */
+    public function isOnline(): bool
+    {
+        return $this->last_seen_at && $this->last_seen_at->gt(now()->subMinutes(5));
+    }
+
+    public function avatarUrl(): ?string
+    {
+        if (!$this->avatar_path) {
+            return null;
+        }
+
+        return \Illuminate\Support\Facades\Storage::disk('public')->url($this->avatar_path);
+    }
+
+    public function initials(): string
+    {
+        $name = optional($this->employee)->full_name ?: $this->username;
+
+        return strtoupper(substr($name, 0, 2));
     }
 }

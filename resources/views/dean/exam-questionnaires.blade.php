@@ -83,7 +83,7 @@
                     </td>
                     <td><strong>{{ $q->title }}</strong></td>
                     <td><span class="doc-category-badge">{{ $q->subject }}</span></td>
-                    <td>{{ $q->submitter->employee->full_name ?? $q->submitter->username }}</td>
+                    <td>{{ $q->submitter ? ($q->submitter->employee->full_name ?? $q->submitter->username) : 'Unknown' }}</td>
                     <td><span class="doc-category-badge">{{ strtoupper($q->submission_type ?? 'toq') }}</span></td>
                     <td>{{ $q->exam_type }}</td>
                     <td>{{ $q->semester }}</td>

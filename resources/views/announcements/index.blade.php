@@ -57,16 +57,18 @@
                         {{-- Avatar --}}
                         <div class="w-10 h-10 flex items-center justify-center text-white text-sm font-bold flex-shrink-0"
                              style="background:linear-gradient(135deg,#028a0f,#026a0c);">
-                            {{ strtoupper(substr($announcement->author->username ?? 'A', 0, 2)) }}
+                            {{ strtoupper(substr($announcement->author?->username ?? 'A', 0, 2)) }}
                         </div>
                         <div class="min-w-0">
                             <div class="flex items-center gap-2 flex-wrap">
                                 <span class="text-sm font-semibold text-gray-900 dark:text-gray-100 truncate">
-                                    {{ $announcement->author->employee->full_name ?? $announcement->author->username }}
+                                    {{ $announcement->author ? ($announcement->author->employee->full_name ?? $announcement->author->username) : 'Unknown' }}
                                 </span>
+                                @if($announcement->author && $announcement->author->role)
                                 <span class="px-2 py-0.5 text-[0.65rem] font-semibold bg-gray-100 dark:bg-gray-700 text-gray-600 dark:text-gray-300">
                                     {{ $announcement->author->role->role_name }}
                                 </span>
+                                @endif
                                 @if(!$announcement->isReadBy(auth()->user()))
                                 <span class="w-2 h-2 bg-blue-500 flex-shrink-0"></span>
                                 @endif

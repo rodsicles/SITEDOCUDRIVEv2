@@ -239,7 +239,12 @@ class FolderService
             Folder::findOrFail($folderId);
         }
 
-        $document->update(['folder_id' => $folderId]);
+        // Keep documents.category in sync with the destination folder's root
+        // category, otherwise the document stays listed under its old tab.
+        $document->update([
+            'folder_id' => $folderId,
+            'category' => app(DocumentService::class)->resolveCategoryForFolder($folderId),
+        ]);
 
         $folderName = $folderId
             ? Folder::find($folderId)->folder_name

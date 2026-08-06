@@ -16,6 +16,7 @@ use App\Http\Controllers\ExamQuestionnaireController;
 use App\Http\Controllers\DocumentFilterController;
 use App\Http\Controllers\DocumentRecipientController;
 use App\Http\Controllers\DocumentListSearchController;
+use App\Http\Controllers\DocumentVersionController;
 use App\Http\Controllers\TaskAttachmentController;
 use App\Http\Controllers\SchoolYearController;
 use App\Http\Controllers\AnalyticsController;
@@ -67,10 +68,21 @@ Route::post('/documents/open-eq-subject', [EqSubjectFolderController::class, 'st
     ->middleware(['auth', 'no.back', 'throttle:30,1'])
     ->name('documents.open-eq-subject');
 
+// Document Version History (shared by all roles; permissions checked per document)
+Route::middleware(['auth', 'no.back'])->prefix('documents')->name('documents.versions.')->group(function () {
+    Route::post('/{id}/versions', [DocumentVersionController::class, 'store'])
+        ->middleware('throttle:20,60')->name('store');
+    Route::get('/{id}/versions/{versionId}/download', [DocumentVersionController::class, 'download'])
+        ->middleware('throttle:60,1')->name('download');
+    Route::post('/{id}/versions/{versionId}/restore', [DocumentVersionController::class, 'restore'])
+        ->middleware('throttle:30,60')->name('restore');
+});
+
 // Profile Management (All authenticated users)
 Route::middleware(['auth', 'no.back'])->prefix('profile')->name('profile.')->group(function () {
     Route::get('/edit', [ProfileController::class, 'edit'])->name('edit');
     Route::post('/update', [ProfileController::class, 'update'])->middleware('throttle:10,1')->name('update');
+    Route::post('/avatar', [ProfileController::class, 'uploadAvatar'])->middleware('throttle:10,1')->name('avatar');
     Route::post('/change-password', [ProfileController::class, 'changePassword'])->middleware('throttle:10,1')->name('change-password');
 });
 

@@ -198,8 +198,14 @@ class CoordinatorController extends Controller
             : null;
         $breadcrumbs = $currentFolder ? $currentFolder->getAncestors() : [];
 
+        // Scope the list to the active tab so each tab only shows its own files.
+        $effectiveCategory = $categoryFilter;
+        if ($effectiveCategory === null && $folderFilter === null) {
+            $effectiveCategory = $this->documentService->categoryForTab($tab, $folderTree);
+        }
+
         $documents = $this->documentService->getFilteredDocuments(
-            auth()->user(), $categoryFilter, $folderFilter, $request->query()
+            auth()->user(), $effectiveCategory, $folderFilter, $request->query()
         );
         $recentDocuments = $this->documentService->getRecentDocuments(auth()->id(), 5);
         $favoriteDocuments = $this->documentService->getFavoriteDocuments(auth()->user());

@@ -74,6 +74,11 @@
                                 </select>
                             </form>
                             @endif
+                            @if($task->isSubmissionLocked() && $task->assigned_to === auth()->id())
+                                <span class="badge badge-danger text-xs">
+                                    <i class="fas fa-lock mr-1"></i>Submission Locked
+                                </span>
+                            @else
                             <form action="{{ route('coordinator.tasks.attachments.store', $task->task_id) }}" method="POST" enctype="multipart/form-data" class="flex flex-col gap-2">
                                 @csrf
                                 <input type="file" name="attachment" class="form-control text-xs" required>
@@ -81,6 +86,7 @@
                                     <i class="fas fa-upload"></i> Upload File
                                 </button>
                             </form>
+                            @endif
                         </div>
                     </td>
                 </tr>

@@ -29,6 +29,7 @@ return Application::configure(basePath: dirname(__DIR__))
         // Apply the password-change gate to every web request. Inside the
         // middleware, unauthenticated requests pass through untouched.
         $middleware->appendToGroup('web', \App\Http\Middleware\EnsurePasswordChanged::class);
+        $middleware->appendToGroup('web', \App\Http\Middleware\UpdateLastSeen::class);
     })
     ->withExceptions(function (Exceptions $exceptions): void {
         $exceptions->render(function (\Illuminate\Http\Exceptions\ThrottleRequestsException $e, \Illuminate\Http\Request $request) {

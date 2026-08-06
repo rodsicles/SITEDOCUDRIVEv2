@@ -54,7 +54,11 @@
                     @forelse($employees as $employee)
                     <tr>
                         <td><strong>{{ $employee->employee_no ?? 'N/A' }}</strong></td>
-                        <td>{{ $employee->full_name }}</td>
+                        <td>
+                            <span class="inline-block w-2 h-2 rounded-full mr-1 {{ optional($employee->user)->isOnline() ? 'bg-green-500' : 'bg-gray-300 dark:bg-gray-600' }}"
+                                  title="{{ optional($employee->user)->isOnline() ? 'Online' : 'Offline' }}"></span>
+                            {{ $employee->full_name }}
+                        </td>
                         <td>{{ $employee->department ?? 'N/A' }}</td>
                         <td>
                             <span class="badge badge-info">{{ $employee->user->role->role_name ?? ($employee->position ?? 'N/A') }}</span>

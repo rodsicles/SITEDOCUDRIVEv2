@@ -54,8 +54,8 @@
                     <span class="doc-category-badge">{{ $document->document_type ?? 'General' }}</span>
                 @endif
             </td>
-            <td>{{ $document->uploader->employee->full_name ?? $document->uploader->username }}</td>
-            <td>{{ $document->created_at->format('M d, Y') }}</td>
+            <td>{{ $document->uploader ? ($document->uploader->employee->full_name ?? $document->uploader->username) : 'Unknown' }}</td>
+            <td>{{ $document->created_at->format('M d, Y g:i A') }}</td>
             <td class="doc-action-cell">
                 <div class="doc-action-btns doc-action-btns--with-menu">
                     @include('partials.archive-row-actions', [

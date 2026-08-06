@@ -139,20 +139,30 @@ function confirmPermanentDelete(btn) {
     if (typeof Swal !== 'undefined') {
         Swal.fire({
             title: 'Delete permanently?',
-            text: 'This file will be removed from storage and cannot be recovered. The uploader will be notified.',
+            html: 'This file will be removed from storage and cannot be recovered. The uploader will be notified.<br><br>Type <strong>DELETE</strong> below to confirm.',
             icon: 'warning',
+            input: 'text',
+            inputPlaceholder: 'Type DELETE to confirm',
             showCancelButton: true,
             confirmButtonText: 'Yes, delete forever',
             cancelButtonText: 'Cancel',
             confirmButtonColor: '#dc2626',
             cancelButtonColor: '#6b7280',
-            customClass: { popup: 'swal-flat' }
+            customClass: { popup: 'swal-flat' },
+            preConfirm: (value) => {
+                if (value !== 'DELETE') {
+                    Swal.showValidationMessage('You must type DELETE exactly to confirm.');
+                    return false;
+                }
+                return true;
+            }
         }).then((result) => {
             if (result.isConfirmed) form.submit();
         });
         return;
     }
-    if (confirm('Delete this file permanently? This cannot be undone. The uploader will be notified.')) {
+    const typed = prompt('Type DELETE to permanently delete this file. This cannot be undone.');
+    if (typed === 'DELETE') {
         form.submit();
     }
 }
@@ -250,21 +260,31 @@ document.addEventListener('DOMContentLoaded', function () {
             if (typeof Swal !== 'undefined') {
                 Swal.fire({
                     title: 'Delete ' + checked.length + ' file(s) permanently?',
-                    text: 'These files will be removed from storage and cannot be recovered. Uploaders will be notified.',
+                    html: 'These files will be removed from storage and cannot be recovered. Uploaders will be notified.<br><br>Type <strong>DELETE</strong> below to confirm.',
                     icon: 'warning',
+                    input: 'text',
+                    inputPlaceholder: 'Type DELETE to confirm',
                     showCancelButton: true,
                     confirmButtonText: 'Yes, delete forever',
                     cancelButtonText: 'Cancel',
                     confirmButtonColor: '#dc2626',
                     cancelButtonColor: '#6b7280',
-                    customClass: { popup: 'swal-flat' }
+                    customClass: { popup: 'swal-flat' },
+                    preConfirm: (value) => {
+                        if (value !== 'DELETE') {
+                            Swal.showValidationMessage('You must type DELETE exactly to confirm.');
+                            return false;
+                        }
+                        return true;
+                    }
                 }).then(function (result) {
                     if (result.isConfirmed) submitBulk();
                 });
                 return;
             }
 
-            if (confirm('Permanently delete ' + checked.length + ' selected file(s)?')) {
+            var typedBulk = prompt('Type DELETE to permanently delete ' + checked.length + ' selected file(s). This cannot be undone.');
+            if (typedBulk === 'DELETE') {
                 submitBulk();
             }
         });

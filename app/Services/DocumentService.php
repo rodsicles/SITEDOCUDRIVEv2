@@ -17,6 +17,7 @@ use App\Support\SubmissionLocation;
 use App\Support\UploadStorage;
 use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Support\Collection;
+use Illuminate\Support\Str;
 use Illuminate\Pagination\LengthAwarePaginator;
 
 class DocumentService
@@ -61,6 +62,40 @@ class DocumentService
         $rootName = $folder->top_level_category;
 
         return in_array($rootName, self::allowedCategories(), true) ? $rootName : 'Other';
+    }
+
+    /**
+     * Resolve the active documents tab slug, mirroring the fallback used by the
+     * folder-tree partial (unknown tab falls back to the first category).
+     */
+    public function resolveActiveTab(?string $tab, Collection $folderTree): ?string
+    {
+        $slugs = $folderTree->map(fn ($category) => Str::slug($category->folder_name));
+
+        return $tab && $slugs->contains($tab) ? $tab : $slugs->first();
+    }
+
+    /**
+     * Map the active tab to the documents.category value it represents, so the
+     * document list only shows files belonging to the tab the user is viewing.
+     */
+    public function categoryForTab(?string $tab, Collection $folderTree): ?string
+    {
+        $activeTab = $this->resolveActiveTab($tab, $folderTree);
+
+        if (!$activeTab) {
+            return null;
+        }
+
+        foreach ($folderTree as $category) {
+            if (Str::slug($category->folder_name) === $activeTab) {
+                return in_array($category->folder_name, self::allowedCategories(), true)
+                    ? $category->folder_name
+                    : 'Other';
+            }
+        }
+
+        return null;
     }
 
     /**
@@ -311,6 +346,8 @@ class DocumentService
             $folderPath = $document->category;
         }
 
+        $canSeeReceipts = (int) $document->uploaded_by === (int) $user->id || $user->canManageDocuments();
+
         return [
             'title' => $document->document_title,
             'folderPath' => $folderPath,
@@ -318,6 +355,10 @@ class DocumentService
             'streamUrl' => route($routePrefix.'.view-document', ['id' => $documentId, 'stream' => 1]),
             'downloadUrl' => route($routePrefix.'.download-document', $documentId),
             'backUrl' => $backUrl,
+            'viewers' => $canSeeReceipts ? $document->viewReceipts() : null,
+            'versionDocument' => $document,
+            'versions' => $document->versions()->with('uploader.employee')->get(),
+            'canManageVersions' => $document->canManageVersions($user),
         ];
     }
 

@@ -97,6 +97,37 @@ class Document extends Model
         return $this->hasMany(DocumentView::class, 'document_id', 'document_id');
     }
 
+    /**
+     * Previous file versions, newest first.
+     */
+    public function versions()
+    {
+        return $this->hasMany(DocumentVersion::class, 'document_id', 'document_id')
+            ->orderByDesc('version_number');
+    }
+
+    /**
+     * Only the uploader and Dean/Secretary may replace or restore the file.
+     */
+    public function canManageVersions(User $user): bool
+    {
+        return (int) $this->uploaded_by === (int) $user->id || $user->isDeanOrSecretary();
+    }
+
+    /**
+     * Read receipts: latest view timestamp per user (excluding the uploader), most recent first.
+     */
+    public function viewReceipts()
+    {
+        return $this->views()
+            ->with('user.employee')
+            ->selectRaw('MAX(id) as id, user_id, MAX(viewed_at) as viewed_at')
+            ->where('user_id', '!=', $this->uploaded_by)
+            ->groupBy('user_id')
+            ->orderByDesc('viewed_at')
+            ->get();
+    }
+
     public function recipients()
     {
         return $this->belongsToMany(User::class, 'document_recipients', 'document_id', 'user_id')

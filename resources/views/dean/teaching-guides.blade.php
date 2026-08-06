@@ -82,7 +82,7 @@
                     </td>
                     <td><strong>{{ $guide->title }}</strong></td>
                     <td><span class="doc-category-badge">{{ $guide->subject }}</span></td>
-                    <td>{{ $guide->uploader->employee->full_name ?? $guide->uploader->username }}</td>
+                    <td>{{ $guide->uploader ? ($guide->uploader->employee->full_name ?? $guide->uploader->username) : 'Unknown' }}</td>
                     <td><span class="doc-category-badge">TG</span></td>
                     <td>{{ $guide->semester ?? '—' }}</td>
                     <td class="submission-approval-cell">

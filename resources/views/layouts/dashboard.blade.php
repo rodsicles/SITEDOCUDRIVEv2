@@ -238,9 +238,13 @@
                         </button>
                     </div>
 
-                    <div class="w-10 h-10 max-md:w-8 max-md:h-8 bg-[#028a0f] text-white flex items-center justify-center font-semibold text-sm max-md:text-xs flex-shrink-0 border border-[#026a0c]">
-                        {{ strtoupper(substr(auth()->user()->username, 0, 2)) }}
-                    </div>
+                    @if(auth()->user()->avatarUrl())
+                        <img src="{{ auth()->user()->avatarUrl() }}" alt="Profile picture" class="w-10 h-10 max-md:w-8 max-md:h-8 rounded-full object-cover flex-shrink-0 border border-[#026a0c]">
+                    @else
+                        <div class="w-10 h-10 max-md:w-8 max-md:h-8 bg-[#028a0f] text-white flex items-center justify-center font-semibold text-sm max-md:text-xs flex-shrink-0 border border-[#026a0c]">
+                            {{ auth()->user()->initials() }}
+                        </div>
+                    @endif
 
                     <!-- User Dropdown Menu -->
                     <div class="relative">

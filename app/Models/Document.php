@@ -87,6 +87,15 @@ class Document extends Model
         return $this->hasMany(DocumentComment::class, 'document_id', 'document_id');
     }
 
+    /**
+     * Full audit trail (view/download/upload/move/rename/version/delete/comment) for this document.
+     */
+    public function activityLogs()
+    {
+        return $this->hasMany(DashboardLog::class, 'document_id', 'document_id')
+            ->orderByDesc('log_date');
+    }
+
     public function favorites()
     {
         return $this->hasMany(DocumentFavorite::class, 'document_id', 'document_id');

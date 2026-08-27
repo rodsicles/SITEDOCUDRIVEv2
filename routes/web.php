@@ -17,6 +17,7 @@ use App\Http\Controllers\DocumentFilterController;
 use App\Http\Controllers\DocumentRecipientController;
 use App\Http\Controllers\DocumentListSearchController;
 use App\Http\Controllers\DocumentVersionController;
+use App\Http\Controllers\DocumentCommentController;
 use App\Http\Controllers\TaskAttachmentController;
 use App\Http\Controllers\SchoolYearController;
 use App\Http\Controllers\AnalyticsController;
@@ -76,6 +77,14 @@ Route::middleware(['auth', 'no.back'])->prefix('documents')->name('documents.ver
         ->middleware('throttle:60,1')->name('download');
     Route::post('/{id}/versions/{versionId}/restore', [DocumentVersionController::class, 'restore'])
         ->middleware('throttle:30,60')->name('restore');
+});
+
+// Document Comments (shared by all roles; permissions checked per document)
+Route::middleware(['auth', 'no.back'])->prefix('documents')->name('documents.comments.')->group(function () {
+    Route::post('/{id}/comments', [DocumentCommentController::class, 'store'])
+        ->middleware('throttle:30,60')->name('store');
+    Route::delete('/{id}/comments/{commentId}', [DocumentCommentController::class, 'destroy'])
+        ->middleware('throttle:30,60')->name('destroy');
 });
 
 // Profile Management (All authenticated users)

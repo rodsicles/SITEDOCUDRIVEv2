@@ -252,6 +252,7 @@ class FolderService
 
         DashboardLog::create([
             'user_id' => $userId,
+            'document_id' => $document->document_id,
             'activity' => "Moved document '{$document->document_title}' to folder '{$folderName}'",
             'activity_type' => 'document_moved',
             'visibility' => 'own',

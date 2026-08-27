@@ -144,4 +144,77 @@
         @endif
     </div>
     @endisset
+
+    @isset($commentDocument)
+    <div class="content-card mb-4">
+        <h3 class="card-title text-sm mb-2">
+            <i class="fas fa-comment-dots mr-2 text-[#028a0f]"></i>Comments
+        </h3>
+
+        <form action="{{ route('documents.comments.store', $commentDocument->document_id) }}" method="POST" class="mb-3">
+            @csrf
+            <div class="flex items-start gap-2">
+                <textarea name="comment" rows="2" maxlength="2000" required
+                          class="form-control text-xs flex-1" placeholder="Add a comment or note about this document..."></textarea>
+                <button type="submit" class="btn btn-primary text-xs">
+                    <i class="fas fa-paper-plane"></i> Post
+                </button>
+            </div>
+        </form>
+
+        @if($comments->count() > 0)
+            <ul class="space-y-3">
+                @foreach($comments as $comment)
+                    <li class="border border-gray-200 dark:border-gray-700 p-2">
+                        <div class="flex justify-between items-start gap-2">
+                            <div class="text-sm">
+                                <strong>{{ $comment->user->employee->full_name ?? $comment->user->username ?? 'Unknown user' }}</strong>
+                                <span class="text-gray-500 dark:text-gray-400 text-xs">— {{ $comment->created_at->format('M d, Y h:i A') }}</span>
+                                <p class="mb-0 mt-1 whitespace-pre-line">{{ $comment->comment }}</p>
+                            </div>
+                            @if((int) $comment->user_id === (int) auth()->id() || auth()->user()->isDeanOrSecretary())
+                            <form action="{{ route('documents.comments.destroy', [$commentDocument->document_id, $comment->comment_id]) }}"
+                                  method="POST" onsubmit="return confirm('Delete this comment?')">
+                                @csrf
+                                @method('DELETE')
+                                <button type="submit" class="text-gray-400 hover:text-red-500 text-xs" title="Delete comment">
+                                    <i class="fas fa-trash"></i>
+                                </button>
+                            </form>
+                            @endif
+                        </div>
+                    </li>
+                @endforeach
+            </ul>
+        @else
+            <p class="text-sm text-gray-500 dark:text-gray-400 mb-0">No comments yet. Be the first to leave a note.</p>
+        @endif
+    </div>
+    @endisset
+
+    @isset($activityLogs)
+    <div class="content-card mb-4">
+        <h3 class="card-title text-sm mb-2">
+            <i class="fas fa-clock-rotate-left mr-2 text-[#028a0f]"></i>Activity Log
+        </h3>
+        @if($activityLogs->count() > 0)
+            <ul class="text-sm space-y-2">
+                @foreach($activityLogs as $log)
+                    <li class="flex items-start gap-2">
+                        <i class="fas fa-circle text-[6px] text-[#028a0f] mt-1.5"></i>
+                        <div>
+                            <span>{{ $log->activity }}</span>
+                            <div class="text-gray-500 dark:text-gray-400 text-xs">
+                                {{ $log->user->employee->full_name ?? $log->user->username ?? 'Unknown user' }}
+                                — {{ \Carbon\Carbon::parse($log->log_date)->format('M d, Y h:i A') }}
+                            </div>
+                        </div>
+                    </li>
+                @endforeach
+            </ul>
+        @else
+            <p class="text-sm text-gray-500 dark:text-gray-400 mb-0">No activity recorded for this document yet.</p>
+        @endif
+    </div>
+    @endisset
 @endsection

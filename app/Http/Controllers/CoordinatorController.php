@@ -94,12 +94,14 @@ class CoordinatorController extends Controller
         $recentActivities = $this->dashboardService->getRecentActivities($user, 10);
         $announcements = $this->dashboardService->getAnnouncements($user, 5);
         $docAnalyticsData = $this->dashboardService->getCoordinatorDocumentAnalytics($user->id);
+        $growthOverview = $this->dashboardService->getCoordinatorGrowthOverview($user->id);
 
         return view('coordinator.dashboard', array_merge($stats, $docAnalyticsData, compact(
             'recentTasks',
             'facultyList',
             'recentActivities',
-            'announcements'
+            'announcements',
+            'growthOverview',
         )));
     }
 

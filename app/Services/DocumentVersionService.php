@@ -53,6 +53,7 @@ class DocumentVersionService
 
             DashboardLog::create([
                 'user_id' => $user->id,
+                'document_id' => $document->document_id,
                 'activity' => 'Uploaded new version of document: ' . $document->document_title,
                 'activity_type' => 'document_version_uploaded',
                 'visibility' => 'own',
@@ -92,6 +93,7 @@ class DocumentVersionService
 
             DashboardLog::create([
                 'user_id' => $user->id,
+                'document_id' => $document->document_id,
                 'activity' => "Restored version {$version->version_number} of document: " . $document->document_title,
                 'activity_type' => 'document_version_restored',
                 'visibility' => 'own',

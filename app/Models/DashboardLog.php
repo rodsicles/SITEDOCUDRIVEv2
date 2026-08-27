@@ -14,6 +14,7 @@ class DashboardLog extends Model
     protected $fillable = [
         'user_id',
         'target_user_id',
+        'document_id',
         'activity',
         'activity_type',
         'visibility',
@@ -46,6 +47,23 @@ class DashboardLog extends Model
     public function targetUser()
     {
         return $this->belongsTo(User::class, 'target_user_id');
+    }
+
+    public function document()
+    {
+        return $this->belongsTo(Document::class, 'document_id', 'document_id');
+    }
+
+    /**
+     * Scope logs to a single document's audit trail, newest first.
+     */
+    public static function forDocument(int $documentId, int $limit = 30)
+    {
+        return self::with(['user.employee'])
+            ->where('document_id', $documentId)
+            ->latest('log_date')
+            ->limit($limit)
+            ->get();
     }
 
     /**

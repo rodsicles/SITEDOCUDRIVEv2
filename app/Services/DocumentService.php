@@ -359,6 +359,9 @@ class DocumentService
             'versionDocument' => $document,
             'versions' => $document->versions()->with('uploader.employee')->get(),
             'canManageVersions' => $document->canManageVersions($user),
+            'commentDocument' => $document,
+            'comments' => $document->comments()->with('user.employee')->latest()->get(),
+            'activityLogs' => \App\Models\DashboardLog::forDocument($document->document_id, 30),
         ];
     }
 
@@ -384,6 +387,7 @@ class DocumentService
 
             DashboardLog::create([
                 'user_id' => $user->id,
+                'document_id' => $document->document_id,
                 'activity' => 'Viewed document: ' . $document->document_title,
                 'activity_type' => 'document_viewed',
                 'visibility' => 'own',
@@ -444,6 +448,7 @@ class DocumentService
 
         DashboardLog::create([
             'user_id' => $user->id,
+            'document_id' => $document->document_id,
             'activity' => 'Downloaded document: ' . $document->document_title,
             'activity_type' => 'document_downloaded',
             'visibility' => 'own',
@@ -586,6 +591,7 @@ class DocumentService
 
         DashboardLog::create([
             'user_id' => $userId,
+            'document_id' => $document->document_id ?? null,
             'activity' => $activity,
             'activity_type' => 'document_upload',
             'visibility' => 'own',
@@ -651,6 +657,7 @@ class DocumentService
 
         DashboardLog::create([
             'user_id' => $userId,
+            'document_id' => $document->document_id,
             'activity' => ($isFavorited ? 'Favorited' : 'Unfavorited') . ' document: ' . $document->document_title,
             'activity_type' => $isFavorited ? 'document_favorited' : 'document_unfavorited',
             'visibility' => 'own',
@@ -716,6 +723,7 @@ class DocumentService
 
         DashboardLog::create([
             'user_id' => $user->id,
+            'document_id' => $document->document_id,
             'activity' => "Renamed document from \"{$oldTitle}\" to \"{$title}\"",
             'activity_type' => 'document_renamed',
             'visibility' => $user->isDeanOrSecretary() ? 'dean' : 'own',
@@ -734,6 +742,7 @@ class DocumentService
 
         DashboardLog::create([
             'user_id' => $user->id,
+            'document_id' => $document->document_id,
             'activity' => 'Moved document to Recycle Bin: ' . $document->document_title,
             'activity_type' => 'document_deleted',
             'visibility' => $user->isDeanOrSecretary() ? 'dean' : 'own',

@@ -55,6 +55,7 @@ class RecycleBinService
 
         DashboardLog::create([
             'user_id' => $user->id,
+            'document_id' => $document->document_id,
             'activity' => 'Restored document from Recycle Bin: ' . $document->document_title,
             'activity_type' => 'document_restored',
             'visibility' => $user->isDeanOrSecretary() ? 'dean' : 'own',
@@ -78,6 +79,7 @@ class RecycleBinService
 
         DashboardLog::create([
             'user_id' => $user->id,
+            'document_id' => $document->document_id,
             'activity' => 'Permanently deleted document: ' . $document->document_title,
             'activity_type' => 'document_force_deleted',
             'visibility' => 'dean',

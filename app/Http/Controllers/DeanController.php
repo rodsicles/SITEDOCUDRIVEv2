@@ -58,6 +58,8 @@ class DeanController extends Controller
 
         $tasksInProgress = Task::where('status', 'In Progress')->count();
 
+        $growthOverview = $this->dashboardService->getDeanGrowthOverview();
+
         return view('dean.dashboard', array_merge($stats, compact(
             'recentTasks',
             'pendingTeachingGuidesCount',
@@ -65,6 +67,7 @@ class DeanController extends Controller
             'pendingApprovals',
             'docsThisSchoolYear',
             'tasksInProgress',
+            'growthOverview',
         )));
     }
 

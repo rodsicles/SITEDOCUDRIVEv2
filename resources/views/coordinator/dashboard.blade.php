@@ -40,6 +40,9 @@
         </div>
     </div>
 
+    {{-- Document Growth & Storage --}}
+    @include('partials.document-growth-widget')
+
     <!-- Document Analytics -->
     <div class="content-card">
         <div class="card-header">

@@ -49,6 +49,9 @@
         </div>
     </div>
 
+    {{-- Document Growth & Storage --}}
+    @include('partials.document-growth-widget')
+
     {{-- Pending Reviews --}}
     @include('partials.dean-pending-review-cards')
 

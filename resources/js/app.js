@@ -18,15 +18,10 @@ document.addEventListener('DOMContentLoaded', function() {
         });
     });
 
-    // Auto-hide alerts after 5 seconds
+    // Auto-hide alerts after 5 seconds (instant remove — no fade animation)
     const alerts = document.querySelectorAll('.alert');
     alerts.forEach(alert => {
-        setTimeout(() => {
-            alert.style.opacity = '0';
-            alert.style.transform = 'translateY(-20px)';
-            alert.style.transition = 'all 0.3s ease';
-            setTimeout(() => alert.remove(), 300);
-        }, 5000);
+        setTimeout(() => alert.remove(), 5000);
     });
 
     // Sidebar menu active state
@@ -37,6 +32,54 @@ document.addEventListener('DOMContentLoaded', function() {
             item.classList.add('active');
         }
     });
+
+    // ── Sidebar Accordion ──────────────────────────────────────────────
+    // Each .sidebar-section-label[data-target] toggles its .sidebar-group-items
+    // Only one group open at a time (accordion style).
+    // The section that contains the active .menu-item auto-opens on page load.
+
+    function openSidebarGroup(groupEl, toggleEl) {
+        groupEl.classList.add('open');
+        const chevron = toggleEl ? toggleEl.querySelector('.sidebar-chevron') : null;
+        if (chevron) {
+            chevron.classList.remove('fa-chevron-down');
+            chevron.classList.add('fa-chevron-up');
+        }
+    }
+
+    function closeAllSidebarGroups() {
+        document.querySelectorAll('.sidebar-group-items').forEach(g => g.classList.remove('open'));
+        document.querySelectorAll('.sidebar-chevron').forEach(c => {
+            c.classList.remove('fa-chevron-up');
+            c.classList.add('fa-chevron-down');
+        });
+    }
+
+    const sidebarToggles = document.querySelectorAll('.sidebar-section-label[data-target]');
+    sidebarToggles.forEach(function(toggle) {
+        toggle.addEventListener('click', function() {
+            const targetId = this.dataset.target;
+            const groupItems = document.getElementById(targetId);
+            if (!groupItems) return;
+
+            const isOpen = groupItems.classList.contains('open');
+            closeAllSidebarGroups();
+            if (!isOpen) {
+                openSidebarGroup(groupItems, this);
+            }
+        });
+    });
+
+    // Auto-open the group that has the currently active menu item
+    const activeMenuItem = document.querySelector('.sidebar-group-items .menu-item.active');
+    if (activeMenuItem) {
+        const parentGroup = activeMenuItem.closest('.sidebar-group-items');
+        if (parentGroup) {
+            const toggle = document.querySelector('.sidebar-section-label[data-target="' + parentGroup.id + '"]');
+            openSidebarGroup(parentGroup, toggle);
+        }
+    }
+    // ──────────────────────────────────────────────────────────────────
 
     // Form submit guard (skip forms with custom AJAX submit or data-request-guard)
     const forms = document.querySelectorAll('form:not([data-request-guard]):not([data-custom-submit])');

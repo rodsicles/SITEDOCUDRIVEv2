@@ -167,6 +167,26 @@
                     </select>
                 </div>
 
+                {{-- Course Assignment (loaded via AJAX when dept is chosen) --}}
+                <div class="form-group" id="coordCourseSection" style="display:none">
+                    <label class="form-label">Assigned Courses / Subjects</label>
+                    <small class="text-xs text-gray-500 dark:text-gray-400 block mb-2">Select the subjects this coordinator will handle.</small>
+                    <div class="course-picker-wrap">
+                        <div class="course-picker-toolbar">
+                            <input type="text" id="coordCourseSearch" class="course-search-input" placeholder="Search by code or title..." autocomplete="off">
+                            <span class="course-selected-count" id="coordSelectedCount">0 selected</span>
+                            <button type="button" class="course-picker-clear" id="coordCourseClear" title="Clear selection">Clear</button>
+                        </div>
+                        <div class="course-picker-body">
+                            <div id="coordCourseList" class="course-checkbox-grid">
+                                <span class="course-section-empty">Select a department first.</span>
+                            </div>
+                            <p class="course-no-results" id="coordNoResults">No matching courses.</p>
+                        </div>
+                    </div>
+                    <p id="coordCourseError" class="text-xs text-red-600 dark:text-red-400 mt-1 hidden"></p>
+                </div>
+
                 <div class="form-group">
                     <label class="form-label">Employee Number</label>
                     <input type="text" id="coordinatorEmployeeNo" class="form-control bg-gray-100 dark:bg-gray-800" value="" placeholder="Select department first" readonly disabled>
@@ -229,6 +249,26 @@
                         <option value="Engineering" {{ (old('_form') === 'faculty' && old('department') == 'Engineering') ? 'selected' : '' }}>Engineering</option>
                         <option value="Information Technology" {{ (old('_form') === 'faculty' && old('department') == 'Information Technology') ? 'selected' : '' }}>Information Technology</option>
                     </select>
+                </div>
+
+                {{-- Course Assignment (loaded via AJAX when dept is chosen) --}}
+                <div class="form-group" id="facultyCourseSection" style="display:none">
+                    <label class="form-label">Assigned Courses / Subjects *</label>
+                    <small class="text-xs text-gray-500 dark:text-gray-400 block mb-2">Select the subjects this faculty member will teach. At least one is required.</small>
+                    <div class="course-picker-wrap">
+                        <div class="course-picker-toolbar">
+                            <input type="text" id="facultyCourseSearch" class="course-search-input" placeholder="Search by code or title..." autocomplete="off">
+                            <span class="course-selected-count" id="facultySelectedCount">0 selected</span>
+                            <button type="button" class="course-picker-clear" id="facultyCourseClear" title="Clear selection">Clear</button>
+                        </div>
+                        <div class="course-picker-body">
+                            <div id="facultyCourseList" class="course-checkbox-grid">
+                                <span class="course-section-empty">Select a department first.</span>
+                            </div>
+                            <p class="course-no-results" id="facultyNoResults">No matching courses.</p>
+                        </div>
+                    </div>
+                    <p id="facultyCourseError" class="text-xs text-red-600 dark:text-red-400 mt-1 hidden"></p>
                 </div>
 
                 <div class="form-group">
@@ -356,5 +396,150 @@
                 }
             });
         });
+
+        // ── Course Assignment AJAX + Search (Dean create forms) ─────────────
+        const coursesByDeptUrl = @json(route('dean.courses.by-department'));
+
+        /**
+         * Attach live search + selected-count + clear-button to a course picker.
+         * @param {string} searchId  - id of the <input type="text"> search field
+         * @param {string} gridId    - id of the .course-checkbox-grid element
+         * @param {string} countId   - id of the .course-selected-count element
+         * @param {string} noResId   - id of the .course-no-results element
+         * @param {string} clearId   - id of the Clear button
+         */
+        function attachCourseSearch(searchId, gridId, countId, noResId, clearId) {
+            const searchEl = document.getElementById(searchId);
+            const gridEl   = document.getElementById(gridId);
+            const countEl  = document.getElementById(countId);
+            const noResEl  = document.getElementById(noResId);
+            const clearEl  = document.getElementById(clearId);
+            if (!searchEl || !gridEl) return;
+
+            function updateCount() {
+                if (!countEl) return;
+                const n = gridEl.querySelectorAll('input[type="checkbox"]:checked').length;
+                countEl.textContent = n + ' selected';
+            }
+
+            function filterItems() {
+                const q = searchEl.value.trim().toLowerCase();
+                let visible = 0;
+                gridEl.querySelectorAll('.course-checkbox-item').forEach(function(item) {
+                    const match = q === '' || item.textContent.toLowerCase().includes(q);
+                    item.classList.toggle('course-hidden', !match);
+                    if (match) visible++;
+                });
+                if (noResEl) {
+                    noResEl.classList.toggle('visible',
+                        visible === 0 && gridEl.querySelectorAll('.course-checkbox-item').length > 0
+                    );
+                }
+            }
+
+            searchEl.addEventListener('input', filterItems);
+
+            if (clearEl) {
+                clearEl.addEventListener('click', function() {
+                    gridEl.querySelectorAll('input[type="checkbox"]:checked').forEach(function(cb) {
+                        cb.checked = false;
+                        cb.closest('.course-checkbox-item').classList.remove('selected');
+                    });
+                    updateCount();
+                });
+            }
+
+            // Observe checkbox changes inside the grid (works for dynamically added items too)
+            gridEl.addEventListener('change', updateCount);
+
+            return { updateCount, filterItems };
+        }
+
+        function renderCourseCheckboxes(listEl, courses, selectedIds, searchId, countId, noResId, clearId) {
+            listEl.innerHTML = '';
+            if (!courses || courses.length === 0) {
+                listEl.innerHTML = '<span class="course-section-empty">No courses found for this department.</span>';
+                // Reset counter
+                const countEl = document.getElementById(countId);
+                if (countEl) countEl.textContent = '0 selected';
+                return;
+            }
+            courses.forEach(c => {
+                const isChecked = selectedIds && selectedIds.includes(c.id);
+                const item = document.createElement('label');
+                item.className = 'course-checkbox-item' + (isChecked ? ' selected' : '');
+                item.innerHTML =
+                    '<input type="checkbox" name="course_ids[]" value="' + c.id + '"' + (isChecked ? ' checked' : '') + '>' +
+                    '<span><strong>' + c.code + '</strong> &ndash; ' + c.title + '</span>';
+                item.querySelector('input').addEventListener('change', function() {
+                    item.classList.toggle('selected', this.checked);
+                });
+                listEl.appendChild(item);
+            });
+            // Re-attach search behaviour (items were just rebuilt)
+            const searcher = attachCourseSearch(searchId, listEl.id, countId, noResId, clearId);
+            if (searcher) {
+                // Clear search field and reset count
+                const sEl = document.getElementById(searchId);
+                if (sEl) { sEl.value = ''; }
+                searcher.updateCount();
+            }
+        }
+
+        async function loadCourses(dept, listEl, sectionEl, errorEl, searchId, countId, noResId, clearId) {
+            if (!dept) {
+                sectionEl.style.display = 'none';
+                listEl.innerHTML = '';
+                return;
+            }
+            listEl.innerHTML = '<span class="course-section-empty"><i class="fas fa-spinner fa-spin mr-1"></i>Loading courses...</span>';
+            sectionEl.style.display = '';
+            errorEl.classList.add('hidden');
+            try {
+                const res = await fetch(coursesByDeptUrl + '?dept=' + encodeURIComponent(dept));
+                const courses = await res.json();
+                renderCourseCheckboxes(listEl, courses, [], searchId, countId, noResId, clearId);
+            } catch (e) {
+                listEl.innerHTML = '<span class="course-section-empty" style="color:#dc2626">Failed to load courses. Please try again.</span>';
+            }
+        }
+
+        // Faculty form
+        document.getElementById('facultyDepartment')?.addEventListener('change', function() {
+            loadCourses(
+                this.value,
+                document.getElementById('facultyCourseList'),
+                document.getElementById('facultyCourseSection'),
+                document.getElementById('facultyCourseError'),
+                'facultyCourseSearch', 'facultySelectedCount', 'facultyNoResults', 'facultyCourseClear'
+            );
+        });
+
+        // Coordinator form
+        document.getElementById('coordinatorDepartment')?.addEventListener('change', function() {
+            loadCourses(
+                this.value,
+                document.getElementById('coordCourseList'),
+                document.getElementById('coordCourseSection'),
+                document.getElementById('coordCourseError'),
+                'coordCourseSearch', 'coordSelectedCount', 'coordNoResults', 'coordCourseClear'
+            );
+        });
+
+        // Validate at least 1 course on faculty form submit
+        document.querySelector('form[action*="store-faculty"]')?.addEventListener('submit', function(e) {
+            const section = document.getElementById('facultyCourseSection');
+            if (section && section.style.display !== 'none') {
+                const checked = section.querySelectorAll('input[type="checkbox"]:checked');
+                if (checked.length === 0) {
+                    e.preventDefault();
+                    const err = document.getElementById('facultyCourseError');
+                    err.textContent = 'Please assign at least one course to this faculty member.';
+                    err.classList.remove('hidden');
+                    section.scrollIntoView({ behavior: 'instant', block: 'center' });
+                }
+            }
+        });
+        // ─────────────────────────────────────────────────────────────────────
     </script>
 @endsection

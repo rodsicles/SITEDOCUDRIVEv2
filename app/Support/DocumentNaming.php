@@ -49,4 +49,48 @@ final class DocumentNaming
 
         return mb_substr($name, 0, 200);
     }
+
+    /**
+     * Strip a trailing version marker like " (v2)", " v3", or " - version 4".
+     */
+    public static function baseTitleWithoutVersion(string $title): string
+    {
+        $base = preg_replace('/\s*[\(-]?\s*v(?:ersion)?\s*\d+\s*\)?\s*$/i', '', trim($title)) ?? '';
+        $base = trim($base);
+
+        return $base !== '' ? $base : 'Untitled';
+    }
+
+    /**
+     * Rename for a live version, e.g. "GameDevPrelim" → "GameDevPrelim (v2)".
+     * Replaces any existing trailing version suffix so titles do not stack.
+     */
+    public static function titleWithVersion(string $title, int $version): string
+    {
+        $version = max(1, $version);
+        $suffix = ' (v'.$version.')';
+        $base = self::baseTitleWithoutVersion($title);
+        $maxBase = self::TITLE_MAX_LENGTH - mb_strlen($suffix);
+        if ($maxBase < 1) {
+            $maxBase = 1;
+        }
+
+        return mb_substr($base, 0, $maxBase).$suffix;
+    }
+
+    /**
+     * Build a document_title from an uploaded file's original name (no extension).
+     */
+    public static function titleFromUploadedFile(\Illuminate\Http\UploadedFile $file): string
+    {
+        $base = pathinfo($file->getClientOriginalName(), PATHINFO_FILENAME);
+        $base = preg_replace('/\s+/', ' ', trim((string) $base)) ?? '';
+        $base = str_replace(["\0", '"', '/', '\\', ':', '*', '?', '<', '>', '|'], '', $base);
+
+        if ($base === '' || $base === '.') {
+            $base = 'Untitled';
+        }
+
+        return mb_substr($base, 0, self::TITLE_MAX_LENGTH);
+    }
 }

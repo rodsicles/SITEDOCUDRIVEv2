@@ -3,10 +3,12 @@
 namespace App\Models;
 
 use Illuminate\Database\Eloquent\Model;
-use Illuminate\Database\Eloquent\Relations\BelongsTo;
 
 class DocumentVersion extends Model
 {
+    /** Versions are immutable — only created_at, never updated_at. */
+    public $timestamps = false;
+
     protected $fillable = [
         'document_id',
         'version_number',
@@ -16,31 +18,32 @@ class DocumentVersion extends Model
         'document_type',
         'uploaded_by',
         'note',
+        'created_at',
     ];
 
     protected $casts = [
-        'version_number' => 'integer',
-        'file_size' => 'integer',
+        'created_at' => 'datetime',
     ];
 
-    public function document(): BelongsTo
+    // ── Relationships ────────────────────────────────────────────────────
+
+    public function document()
     {
         return $this->belongsTo(Document::class, 'document_id', 'document_id');
     }
 
-    public function uploader(): BelongsTo
+    public function uploader()
     {
         return $this->belongsTo(User::class, 'uploaded_by');
     }
 
-    public function getUploaderNameAttribute(): string
+    // ── Helpers ──────────────────────────────────────────────────────────
+
+    public function fileSizeFormatted(): string
     {
-        $uploader = $this->uploader;
-
-        if (!$uploader) {
-            return 'Unknown user';
-        }
-
-        return optional($uploader->employee)->full_name ?: $uploader->username;
+        $bytes = (int) ($this->file_size ?? 0);
+        if ($bytes >= 1_048_576) return round($bytes / 1_048_576, 1) . ' MB';
+        if ($bytes >= 1_024)     return round($bytes / 1_024, 1)     . ' KB';
+        return $bytes . ' B';
     }
 }

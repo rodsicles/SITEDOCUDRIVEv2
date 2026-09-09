@@ -67,7 +67,8 @@ class CoordinatorDepartment
 
     /**
      * Limit TG/EQ semester subject folders to the viewer's department (IT or Engineering).
-     * Dean and Secretary see all subjects; faculty and coordinators see their department only.
+     * Faculty with assigned courses only see folders for those specific courses.
+     * Dean and Secretary see all subjects; coordinators see their department only.
      */
     public static function filterSubjectFolders(Collection $folders, ?User $viewer): Collection
     {
@@ -84,6 +85,28 @@ class CoordinatorDepartment
             return $folders;
         }
 
+        // Faculty with explicitly assigned courses → only show their assigned subject folders
+        if ($viewer->isFaculty()) {
+            $assignedCodes = $viewer->assignedCourses()
+                ->pluck('courses.code')
+                ->map(fn (string $c) => strtolower($c))
+                ->all();
+
+            if (!empty($assignedCodes)) {
+                return $folders
+                    ->filter(function (Folder $folder) use ($assignedCodes) {
+                        $slug = strtolower((string) ($folder->slug ?? ''));
+                        if (preg_match('/-(?:subject|course)-([a-z0-9]+)/', $slug, $matches)) {
+                            return in_array($matches[1], $assignedCodes, true);
+                        }
+                        $code = IteSubjects::codeFromLabel((string) $folder->folder_name);
+                        return $code && in_array(strtolower($code), $assignedCodes, true);
+                    })
+                    ->values();
+            }
+        }
+
+        // Everyone else: filter by department only
         return $folders
             ->filter(fn (Folder $folder) => self::folderMatchesDepartment($folder, $department))
             ->values();

@@ -31,30 +31,31 @@ trait ValidatesDocumentUpload
         $titleMax = DocumentNaming::TITLE_MAX_LENGTH;
 
         $rules = [
-            'document_type' => 'required|in:pdf,word',
+            'document_type' => 'required|in:pdf,word,image',
             'documents' => 'required|array|max:3',
             'documents.*' => match ($request->input('document_type')) {
-                'pdf' => 'required|file|max:10240|mimes:pdf|mimetypes:application/pdf',
-                'word' => 'required|file|max:10240|mimes:doc,docx',
+                'pdf'   => 'required|file|max:10240|mimes:pdf|mimetypes:application/pdf',
+                'word'  => 'required|file|max:10240|mimes:doc,docx',
+                'image' => 'required|file|max:10240|mimes:jpg,jpeg,png,gif,webp|mimetypes:image/jpeg,image/png,image/gif,image/webp',
                 default => 'required|file|max:10240|mimes:doc,docx',
             },
             'folder_id' => 'required|exists:folders,folder_id',
         ];
 
+        // Document Title is optional — blank falls back to each uploaded file's original name.
+        $rules['document_title'] = 'nullable|string|max:'.$titleMax;
+
         if ($useCourseSelect) {
             $rules['subject'] = ['required', 'string', Rule::in(IteSubjects::labelsForUser($user))];
-            $rules['document_title'] = 'required|string|max:'.$titleMax;
-        } elseif ($isTgUploadLeaf || $isEqUploadLeaf) {
-            $rules['document_title'] = 'required|string|max:'.$titleMax;
-        } elseif ($isCourseFolder) {
-            $rules['document_title'] = 'required|string|max:'.$titleMax;
-        } else {
-            $rules['document_title'] = 'required|string|max:'.$titleMax;
         }
 
         $isShareable = in_array($category, Document::SHAREABLE_CATEGORIES, true);
 
         if ($isShareable) {
+            // Teaching Guides / Exam Questionnaires: PDF & Word only
+            $rules['document_type'] = 'required|in:pdf,word';
+            $rules['documents.*'] = 'required|file|max:10240|mimes:pdf,doc,docx|mimetypes:application/pdf,application/msword,application/vnd.openxmlformats-officedocument.wordprocessingml.document';
+
             if ($user->canUploadSharedDocuments()) {
                 $rules['recipient_ids'] = 'required|array|min:1';
                 $rules['recipient_ids.*'] = 'integer|exists:users,id';
@@ -64,21 +65,23 @@ trait ValidatesDocumentUpload
                 $rules['subject'] = ['required', 'string', Rule::in(IteSubjects::labelsForUser($user))];
             }
 
-            if ($category === 'Teaching Guides' && $isTgUploadLeaf) {
-                $rules['documents.*'] = 'required|file|max:10240|mimes:pdf,doc,docx|mimetypes:application/pdf,application/msword,application/vnd.openxmlformats-officedocument.wordprocessingml.document';
-            }
-
-            if ($category === 'Exam Questionnaires' && $isEqUploadLeaf) {
-                $rules['documents.*'] = 'required|file|max:10240|mimes:pdf,doc,docx|mimetypes:application/pdf,application/msword,application/vnd.openxmlformats-officedocument.wordprocessingml.document';
-            } elseif ($category === 'Exam Questionnaires') {
+            if ($category === 'Exam Questionnaires' && !$isEqUploadLeaf) {
                 $rules['exam_type'] = 'required|in:Quiz,Prelim,Midterm,Pre-Final,Final';
-                $rules['documents.*'] = 'required|file|max:10240|mimes:pdf,doc,docx|mimetypes:application/pdf,application/msword,application/vnd.openxmlformats-officedocument.wordprocessingml.document';
             }
         } else {
             $rules['tags'] = 'nullable|string|max:15';
         }
 
-        $validated = $request->validate($rules);
+        $messages = [
+            'documents.*.mimes' => 'This folder only accepts PDF or Word files (.pdf, .doc, .docx). Images are not allowed here.',
+            'documents.*.mimetypes' => 'This folder only accepts PDF or Word files (.pdf, .doc, .docx). Images are not allowed here.',
+            'document_type.in' => 'Please choose PDF or Word for this folder.',
+            'documents.required' => 'Please choose at least one file to upload.',
+            'documents.max' => 'You can upload a maximum of 3 files at a time.',
+            'documents.*.max' => 'Each file must be 10 MB or smaller.',
+        ];
+
+        $validated = $request->validate($rules, $messages);
 
         if ($isCourseFolder && empty($validated['subject'] ?? null)) {
             $validated['subject'] = $folder->folder_name;

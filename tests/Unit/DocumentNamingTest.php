@@ -33,4 +33,11 @@ class DocumentNamingTest extends TestCase
 
         $this->assertSame('badnametest', $name);
     }
+
+    public function test_title_with_version_appends_and_replaces_suffix(): void
+    {
+        $this->assertSame('GameDevPrelim (v2)', DocumentNaming::titleWithVersion('GameDevPrelim', 2));
+        $this->assertSame('GameDevPrelim (v3)', DocumentNaming::titleWithVersion('GameDevPrelim (v2)', 3));
+        $this->assertSame('GameDevPrelim (v4)', DocumentNaming::titleWithVersion('GameDevPrelim v3', 4));
+    }
 }

@@ -81,8 +81,6 @@ class FacultyController extends Controller
             now()->endOfDay()
         );
 
-        $growthOverview = $this->dashboardService->getFacultyGrowthOverview($user->id);
-
         return view('faculty.dashboard', array_merge($stats, compact(
             'recentTasks',
             'unreadNotifications',
@@ -94,8 +92,7 @@ class FacultyController extends Controller
             'latestDocument',
             'upcomingDeadlines',
             'pendingItems',
-            'todayEvents',
-            'growthOverview',
+            'todayEvents'
         )));
     }
 

@@ -49,8 +49,41 @@
                        placeholder="Enter password (min 8 characters)" required minlength="8" maxlength="40">
             </div>
 
+            {{-- Course / Subject Assignment --}}
+            @if($courses->isNotEmpty())
+            <div class="form-group">
+                <label class="form-label">Assigned Courses / Subjects *</label>
+                <small class="text-xs text-gray-500 dark:text-gray-400 block mb-2">
+                    Select the subjects this faculty member will teach in <strong>{{ $dept }}</strong>.
+                    At least one course must be selected.
+                </small>
+                <div class="course-picker-wrap">
+                    <div class="course-picker-toolbar">
+                        <input type="text" id="createFacultyCourseSearch" class="course-search-input"
+                               placeholder="Search by code or title..." autocomplete="off">
+                        <span class="course-selected-count" id="createFacultySelectedCount">0 selected</span>
+                        <button type="button" class="course-picker-clear" id="createFacultyCourseClear">Clear</button>
+                    </div>
+                    <div class="course-picker-body">
+                        <div class="course-checkbox-grid" id="createFacultyCourseGrid">
+                            @foreach($courses as $course)
+                            @php $oldIds = old('course_ids', []); $isChecked = in_array($course->id, (array)$oldIds); @endphp
+                            <label class="course-checkbox-item {{ $isChecked ? 'selected' : '' }}">
+                                <input type="checkbox" name="course_ids[]" value="{{ $course->id }}"
+                                       {{ $isChecked ? 'checked' : '' }}>
+                                <span><strong>{{ $course->code }}</strong> &ndash; {{ $course->title }}</span>
+                            </label>
+                            @endforeach
+                        </div>
+                        <p class="course-no-results" id="createFacultyNoResults">No matching courses.</p>
+                    </div>
+                </div>
+                <p id="createFacultyCourseError" class="text-xs text-red-600 dark:text-red-400 mt-1 hidden"></p>
+            </div>
+            @endif
+
             <div class="flex gap-2.5">
-                <button type="submit" class="btn btn-success">
+                <button type="submit" class="btn btn-success" id="createFacultySubmitBtn">
                     <i class="fas fa-user-plus"></i> Create Faculty Account
                 </button>
                 <a href="{{ route('coordinator.faculty') }}" class="btn bg-gray-600 hover:bg-gray-700 text-white">
@@ -58,5 +91,72 @@
                 </a>
             </div>
         </form>
+
+        @if($courses->isNotEmpty())
+        <script>
+        (function() {
+            const gridEl    = document.getElementById('createFacultyCourseGrid');
+            const searchEl  = document.getElementById('createFacultyCourseSearch');
+            const countEl   = document.getElementById('createFacultySelectedCount');
+            const noResEl   = document.getElementById('createFacultyNoResults');
+            const clearEl   = document.getElementById('createFacultyCourseClear');
+
+            // Selected-count helper
+            function updateCount() {
+                const n = gridEl ? gridEl.querySelectorAll('input:checked').length : 0;
+                if (countEl) countEl.textContent = n + ' selected';
+            }
+
+            // Toggle .selected on each item + wire count
+            if (gridEl) {
+                gridEl.querySelectorAll('.course-checkbox-item').forEach(function(label) {
+                    label.querySelector('input').addEventListener('change', function() {
+                        label.classList.toggle('selected', this.checked);
+                        updateCount();
+                    });
+                });
+                updateCount();
+            }
+
+            // Live search / filter
+            if (searchEl && gridEl) {
+                searchEl.addEventListener('input', function() {
+                    const q = this.value.trim().toLowerCase();
+                    let visible = 0;
+                    gridEl.querySelectorAll('.course-checkbox-item').forEach(function(item) {
+                        const match = q === '' || item.textContent.toLowerCase().includes(q);
+                        item.classList.toggle('course-hidden', !match);
+                        if (match) visible++;
+                    });
+                    if (noResEl) noResEl.classList.toggle('visible', visible === 0);
+                });
+            }
+
+            // Clear button
+            if (clearEl && gridEl) {
+                clearEl.addEventListener('click', function() {
+                    gridEl.querySelectorAll('input:checked').forEach(function(cb) {
+                        cb.checked = false;
+                        cb.closest('.course-checkbox-item').classList.remove('selected');
+                    });
+                    updateCount();
+                });
+            }
+
+            // Require at least one course before submitting
+            document.querySelector('form[action="{{ route('coordinator.store-faculty') }}"]')
+                ?.addEventListener('submit', function(e) {
+                    const checked = gridEl ? gridEl.querySelectorAll('input:checked') : [];
+                    if (checked.length === 0) {
+                        e.preventDefault();
+                        const err = document.getElementById('createFacultyCourseError');
+                        err.textContent = 'Please assign at least one course to this faculty member.';
+                        err.classList.remove('hidden');
+                        err.scrollIntoView({ behavior: 'instant', block: 'center' });
+                    }
+                });
+        })();
+        </script>
+        @endif
     </div>
 @endsection

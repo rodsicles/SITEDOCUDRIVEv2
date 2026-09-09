@@ -96,6 +96,11 @@ class EmployeeService
                 'hire_date' => now(),
             ]);
 
+            // Sync assigned courses (subjects this faculty member will teach)
+            if (!empty($validated['course_ids'])) {
+                $user->assignedCourses()->sync($validated['course_ids']);
+            }
+
             DashboardLog::create([
                 'user_id' => $creatorUserId,
                 'target_user_id' => $user->id,
@@ -129,6 +134,9 @@ class EmployeeService
                 'name' => $validated['full_name'],
                 'email' => $validated['email'] ?? null,
             ]);
+
+            // Sync course assignments (replace all, empty array = clear)
+            $employee->user->assignedCourses()->sync($validated['course_ids'] ?? []);
 
             DashboardLog::create([
                 'user_id' => $updaterUserId,
@@ -189,6 +197,9 @@ class EmployeeService
                 'name' => $validated['full_name'],
                 'email' => $validated['email'] ?? null,
             ]);
+
+            // Sync course assignments for faculty/coordinator (replace all)
+            $employee->user->assignedCourses()->sync($validated['course_ids'] ?? []);
 
             DashboardLog::create([
                 'user_id' => $updaterUserId,

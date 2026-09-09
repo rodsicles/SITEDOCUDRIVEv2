@@ -491,28 +491,39 @@
             }
         });
 
-        // Toast Notification System
+        // Toast Notification System — instant show/hide (no slide animation)
         function showToast(message, type = 'success') {
+            if (type === 'error' && typeof Swal !== 'undefined') {
+                Swal.fire({
+                    icon: 'warning',
+                    title: 'Upload notice',
+                    text: message,
+                    confirmButtonText: 'OK',
+                    confirmButtonColor: '#028a0f',
+                    customClass: { popup: 'swal-flat' },
+                    showClass: { popup: '' },
+                    hideClass: { popup: '' },
+                });
+                return;
+            }
+
+            const container = document.getElementById('toastContainer');
+            if (!container) return;
+
             const toast = document.createElement('div');
             const colors = {
-                success: 'bg-green-500',
-                error: 'bg-red-500',
-                info: 'bg-blue-500'
+                success: 'bg-green-600',
+                error: 'bg-red-600',
+                info: 'bg-blue-600'
             };
             toast.className = `${colors[type] || colors.success} text-white px-6 py-4 mb-2 flex items-center gap-3 min-w-[300px]`;
-            
-            const icon = type === 'success' ? '✓' : type === 'error' ? '✕' : 'ℹ';
+            const icon = type === 'success' ? '✓' : type === 'error' ? '!' : 'ℹ';
             toast.innerHTML = `
                 <span class="text-xl font-bold">${icon}</span>
                 <span>${message}</span>
             `;
-            
-            document.getElementById('toastContainer').appendChild(toast);
-            
-            setTimeout(() => {
-                toast.style.animation = 'slideOut 0.3s ease';
-                setTimeout(() => toast.remove(), 300);
-            }, 4000);
+            container.appendChild(toast);
+            setTimeout(() => toast.remove(), 4000);
         }
 
         (function () {
@@ -840,6 +851,7 @@
                         if (item.tone === 'danger') row.classList.add('notification-dropdown-item--danger');
                         if (item.tone === 'success') row.classList.add('notification-dropdown-item--success');
                         row.dataset.id = item.id;
+                        if (item.action_url) row.dataset.actionUrl = item.action_url;
                         row.innerHTML = '<span class="notification-dropdown-item-msg">' + escapeHtml(item.message) + '</span>'
                             + '<span class="notification-dropdown-item-time">' + escapeHtml(item.time_ago) + '</span>';
                         listEl.appendChild(row);
@@ -887,11 +899,17 @@
                 }
 
                 if (listEl) {
-                    listEl.addEventListener('click', (e) => {
+                    listEl.addEventListener('click', async (e) => {
                         const row = e.target.closest('.notification-dropdown-item');
-                        if (!row || row.classList.contains('notification-dropdown-item--read-only')) return;
-                        if (!row.classList.contains('notification-dropdown-item--unread')) return;
-                        markRead(row.dataset.id, row);
+                        if (!row) return;
+                        const actionUrl = row.dataset.actionUrl || '';
+                        const isUnread = row.classList.contains('notification-dropdown-item--unread');
+                        if (isUnread) {
+                            await markRead(row.dataset.id, row);
+                        }
+                        if (actionUrl && actionUrl.charAt(0) === '/') {
+                            window.location.href = actionUrl;
+                        }
                     });
                 }
 
@@ -925,7 +943,7 @@
                         bellBtn.setAttribute('aria-expanded', isOpen ? 'false' : 'true');
                         document.getElementById('userMenu')?.classList.add('hidden');
                         document.getElementById('fontSizeMenu')?.classList.add('hidden');
-                        if (!isOpen) loadDropdown(false);
+                        if (!isOpen) loadDropdown(true);
                     });
                     dropdown.addEventListener('click', (e) => e.stopPropagation());
                 }

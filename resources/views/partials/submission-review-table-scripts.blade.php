@@ -1,16 +1,6 @@
 @once
 @push('scripts')
 <script>
-function closeSubmissionPopovers() {
-    document.querySelectorAll('.submission-review-popover').forEach(function (popover) {
-        popover.classList.remove('is-open');
-        popover.setAttribute('hidden', '');
-        var key = popover.dataset.popoverKey;
-        var btn = document.querySelector('.submission-actions-btn[data-popover-key="' + key + '"]');
-        if (btn) btn.setAttribute('aria-expanded', 'false');
-    });
-}
-
 function escapeSubmissionHtml(str) {
     var div = document.createElement('div');
     div.textContent = str ?? '';
@@ -24,7 +14,6 @@ function confirmSubmissionApprove(formId, submissionTitle) {
     var label = (submissionTitle || '').trim() || 'Untitled submission';
 
     var submit = function () {
-        closeSubmissionPopovers();
         form.submit();
     };
 
@@ -53,6 +42,8 @@ function confirmSubmissionApprove(formId, submissionTitle) {
                 cancelButton: 'swal-approval-cancel',
                 actions: 'swal-approval-actions',
             },
+            showClass: { popup: '' },
+            hideClass: { popup: '' },
         }).then(function (result) {
             if (result.isConfirmed) submit();
         });
@@ -63,41 +54,11 @@ function confirmSubmissionApprove(formId, submissionTitle) {
 }
 
 document.addEventListener('DOMContentLoaded', function () {
-    document.querySelectorAll('.submission-actions-btn').forEach(function (btn) {
-        btn.addEventListener('click', function (e) {
-            e.stopPropagation();
-            var key = btn.dataset.popoverKey;
-            var popover = document.getElementById('submission-popover-' + key);
-            if (!popover) return;
-            var isOpen = popover.classList.contains('is-open');
-            closeSubmissionPopovers();
-            if (!isOpen) {
-                popover.classList.add('is-open');
-                popover.removeAttribute('hidden');
-                btn.setAttribute('aria-expanded', 'true');
-            }
-        });
-    });
-
     document.querySelectorAll('.submission-approve-btn').forEach(function (btn) {
         btn.addEventListener('click', function (e) {
             e.stopPropagation();
             confirmSubmissionApprove(btn.dataset.approveForm, btn.dataset.submissionTitle);
         });
-    });
-
-    document.addEventListener('click', function () {
-        closeSubmissionPopovers();
-    });
-
-    document.querySelectorAll('.submission-review-popover').forEach(function (popover) {
-        popover.addEventListener('click', function (e) {
-            e.stopPropagation();
-        });
-    });
-
-    document.addEventListener('keydown', function (e) {
-        if (e.key === 'Escape') closeSubmissionPopovers();
     });
 });
 </script>

@@ -30,4 +30,8 @@ return [
     'ITE124' => 'Elective 3 (Hybrid Mobile Application)',
     'ITE125' => 'Free Elective 2 (Strategic Planning)',
     'ITE126' => 'Artificial Intelligence and Robotics',
+    'ITE127' => 'Capstone Project and Research 2 - Project Implementation',
+    'ITE128' => 'Systems Administration and Maintenance',
+    'ITE129' => 'Free Elective 3 (Project Management)',
+    'ITE131' => 'Certification Exam',
 ];

@@ -7,7 +7,7 @@
         default => 'coordinator',
     };
     $unreadCount = (int) ($unreadNotifications ?? app(DashboardService::class)->getUnreadNotificationCount(auth()->id()));
-    $showActionColumn = $unreadCount > 0 && $notifications->contains(fn ($n) => ! $n->is_read);
+    $showActionColumn = $notifications->contains(fn ($n) => ! $n->is_read || filled($n->action_url));
 @endphp
 
 <div class="content-card">
@@ -54,7 +54,7 @@
     </form>
 
     @if($showActionColumn)
-    <p class="text-xs text-gray-500 dark:text-gray-400 mb-3 px-4 hidden md:block notifications-table-tip">Tip: click an unread row to mark it as read</p>
+    <p class="text-xs text-gray-500 dark:text-gray-400 mb-3 px-4 hidden md:block notifications-table-tip">Tip: click a row to open the related page{{ $unreadCount > 0 ? ' (unread items are marked read first)' : '' }}</p>
     @endif
 
     <table class="data-table notifications-table {{ $showActionColumn ? '' : 'notifications-table--no-actions' }}" id="notifications-table">
@@ -74,9 +74,16 @@
                 $tone = $notification->tone ?? null;
                 $isDanger = $tone === \App\Models\Notification::TONE_DANGER;
                 $isSuccess = $tone === \App\Models\Notification::TONE_SUCCESS;
+                $resolvedActionUrl = app(\App\Services\NotificationService::class)
+                    ->resolvedActionUrl($notification, auth()->user());
+                $actionUrl = ($resolvedActionUrl && str_starts_with($resolvedActionUrl, '/'))
+                    ? $resolvedActionUrl
+                    : null;
                 $rowClasses = 'notification-row';
-                if (!$notification->is_read) {
+                if (!$notification->is_read || $actionUrl) {
                     $rowClasses .= ' cursor-pointer';
+                }
+                if (!$notification->is_read) {
                     $rowClasses .= $isDanger ? ' notification-row--danger' : ($isSuccess ? ' notification-row--success' : ' bg-[#028a0f]/5 dark:bg-[#028a0f]/10');
                 } elseif ($isDanger) {
                     $rowClasses .= ' notification-row--danger';
@@ -87,6 +94,11 @@
                     data-notification-id="{{ $notification->notification_id }}"
                     data-mark-url="{{ route($routePrefix . '.notifications.read-json', $notification->notification_id) }}"
                     data-tone="{{ $tone }}"
+                @endif
+                @if($actionUrl)
+                    data-action-url="{{ $actionUrl }}"
+                    title="Click to open"
+                @elseif(!$notification->is_read)
                     title="Click to mark as read"
                 @endif>
                 <td class="{{ !$notification->is_read ? 'font-semibold' : '' }}">
@@ -105,14 +117,22 @@
                 </td>
                 @if($showActionColumn)
                 <td class="notifications-table__action-col">
-                    @if(!$notification->is_read)
-                    <form action="{{ route($routePrefix . '.mark-notification-read', $notification->notification_id) }}" method="POST" onclick="event.stopPropagation();">
-                        @csrf
-                        <button type="submit" class="btn btn-primary py-1.5 px-4 text-xs border-0">
-                            Mark as Read
-                        </button>
-                    </form>
-                    @endif
+                    <div class="flex flex-wrap items-center gap-2" onclick="event.stopPropagation();">
+                        @if($actionUrl)
+                        <a href="{{ $actionUrl }}" class="btn btn-primary py-1.5 px-4 text-xs border-0 no-underline"
+                           @if(!$notification->is_read) data-open-and-read="{{ route($routePrefix . '.notifications.read-json', $notification->notification_id) }}" @endif>
+                            Open
+                        </a>
+                        @endif
+                        @if(!$notification->is_read)
+                        <form action="{{ route($routePrefix . '.mark-notification-read', $notification->notification_id) }}" method="POST" class="m-0">
+                            @csrf
+                            <button type="submit" class="btn bg-gray-200 dark:bg-gray-700 text-gray-700 dark:text-gray-300 py-1.5 px-4 text-xs border-0">
+                                Mark as Read
+                            </button>
+                        </form>
+                        @endif
+                    </div>
                 </td>
                 @endif
             </tr>
@@ -140,8 +160,8 @@
     function syncNotificationActionColumn() {
         const table = document.getElementById('notifications-table');
         if (!table) return;
-        const hasUnread = table.querySelector('.notification-row[data-mark-url]');
-        if (!hasUnread) {
+        const hasActions = table.querySelector('.notification-row[data-mark-url], .notification-row[data-action-url]');
+        if (!hasActions) {
             table.classList.add('notifications-table--no-actions');
             table.querySelectorAll('.notifications-table__action-col').forEach(function(el) {
                 el.remove();
@@ -151,22 +171,31 @@
         }
     }
 
-    document.querySelectorAll('.notification-row[data-mark-url]').forEach(function(row) {
+    async function markRead(url) {
+        if (!url) return;
+        await fetch(url, {
+            method: 'POST',
+            headers: {
+                'X-CSRF-TOKEN': csrf,
+                'Accept': 'application/json',
+                'X-Requested-With': 'XMLHttpRequest'
+            }
+        });
+    }
+
+    document.querySelectorAll('.notification-row[data-mark-url], .notification-row[data-action-url]').forEach(function(row) {
         row.addEventListener('click', function(e) {
             if (e.target.closest('form, button, a')) return;
-            const url = row.getAttribute('data-mark-url');
-            if (!url || row.dataset.busy === '1') return;
+            const markUrl = row.getAttribute('data-mark-url');
+            const actionUrl = row.getAttribute('data-action-url');
+            if (row.dataset.busy === '1') return;
             row.dataset.busy = '1';
-            fetch(url, {
-                method: 'POST',
-                headers: {
-                    'X-CSRF-TOKEN': csrf,
-                    'Accept': 'application/json',
-                    'X-Requested-With': 'XMLHttpRequest'
+
+            const go = function() {
+                if (actionUrl && actionUrl.charAt(0) === '/') {
+                    window.location.href = actionUrl;
+                    return;
                 }
-            })
-            .then(function(res) { return res.ok ? res.json() : Promise.reject(); })
-            .then(function() {
                 row.classList.remove('bg-[#028a0f]/5', 'dark:bg-[#028a0f]/10', 'cursor-pointer', 'notification-row--success', 'notification-row--danger');
                 row.removeAttribute('data-mark-url');
                 row.removeAttribute('data-tone');
@@ -184,13 +213,31 @@
                     statusBadge.textContent = 'Read';
                 }
                 const actionCell = row.querySelector('.notifications-table__action-col');
-                if (actionCell) actionCell.remove();
+                if (actionCell && !row.getAttribute('data-action-url')) actionCell.remove();
                 syncNotificationActionColumn();
                 if (typeof window.refreshNotificationBadge === 'function') {
                     window.refreshNotificationBadge();
                 }
-            })
-            .catch(function() { row.dataset.busy = ''; });
+                row.dataset.busy = '';
+            };
+
+            if (markUrl) {
+                markRead(markUrl).then(go).catch(function() { row.dataset.busy = ''; });
+            } else {
+                go();
+            }
+        });
+    });
+
+    document.querySelectorAll('a[data-open-and-read]').forEach(function(link) {
+        link.addEventListener('click', function(e) {
+            const markUrl = link.getAttribute('data-open-and-read');
+            if (!markUrl) return;
+            e.preventDefault();
+            const href = link.getAttribute('href');
+            markRead(markUrl).finally(function() {
+                window.location.href = href;
+            });
         });
     });
 

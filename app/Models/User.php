@@ -120,6 +120,16 @@ class User extends Authenticatable
         return $this->hasMany(ProfessionalDevelopment::class, 'user_id');
     }
 
+    /**
+     * Courses explicitly assigned to this user (Faculty or Coordinator).
+     * When a faculty member has assigned courses, only those subjects appear
+     * in document upload pickers (Teaching Guides / Exam Questionnaires).
+     */
+    public function assignedCourses()
+    {
+        return $this->belongsToMany(\App\Models\Course::class, 'faculty_courses', 'user_id', 'course_id');
+    }
+
     public function taskAttachments()
     {
         return $this->hasMany(TaskAttachment::class, 'uploaded_by');

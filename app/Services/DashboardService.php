@@ -11,17 +11,12 @@ use App\Models\DashboardLog;
 use App\Models\PerformanceReport;
 use App\Models\Announcement;
 use App\Models\Notification;
-use App\Services\StorageQuotaService;
 use Illuminate\Support\Facades\Cache;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Collection;
 
 class DashboardService
 {
-    public function __construct(
-        protected StorageQuotaService $storageQuota,
-    ) {}
-
     /**
      * Get Dean dashboard statistics.
      */
@@ -309,115 +304,6 @@ class DashboardService
                     'topUploaderCount' => $topUploader ? $topUploader->count : 0,
                     'myFolders' => $myFolders,
                 ],
-            ];
-        });
-    }
-
-    /**
-     * Monthly document upload counts for the last N months (oldest to newest),
-     * scoped by an optional query constraint callback.
-     *
-     * @return array{labels: array<int,string>, counts: array<int,int>, max: int}
-     */
-    protected function buildMonthlyGrowth(int $months, ?\Closure $scope = null): array
-    {
-        $start = now()->startOfMonth()->subMonths($months - 1);
-
-        $query = Document::query()->where('created_at', '>=', $start);
-        if ($scope) {
-            $scope($query);
-        }
-
-        $rows = $query
-            ->selectRaw('YEAR(created_at) as y, MONTH(created_at) as m, COUNT(*) as total')
-            ->groupBy('y', 'm')
-            ->get()
-            ->keyBy(fn ($row) => $row->y . '-' . $row->m);
-
-        $labels = [];
-        $counts = [];
-        for ($i = $months - 1; $i >= 0; $i--) {
-            $date = now()->subMonths($i);
-            $key = $date->year . '-' . $date->month;
-            $labels[] = $date->format('M');
-            $counts[] = (int) ($rows[$key]->total ?? 0);
-        }
-
-        return [
-            'labels' => $labels,
-            'counts' => $counts,
-            'max' => max(1, max($counts)),
-        ];
-    }
-
-    /**
-     * Dean dashboard: system-wide document growth (last 6 months) + total storage used.
-     */
-    public function getDeanGrowthOverview(int $months = 6): array
-    {
-        return Cache::remember("dean_growth_{$months}", now()->addMinutes(10), function () use ($months) {
-            $growth = $this->buildMonthlyGrowth($months);
-
-            $totalBytes = (int) DB::table('documents')->whereNull('deleted_at')->sum('file_size');
-
-            return [
-                'growth' => $growth,
-                'storageUsed' => $this->storageQuota->formatBytes($totalBytes),
-            ];
-        });
-    }
-
-    /**
-     * Coordinator dashboard: department-scoped document growth + department storage used.
-     */
-    public function getCoordinatorGrowthOverview(int $userId, int $months = 6): array
-    {
-        $user = User::with('employee')->find($userId);
-        $dept = optional($user->employee)->department;
-
-        return Cache::remember("coordinator_growth_{$userId}_{$dept}_{$months}", now()->addMinutes(10), function () use ($userId, $dept, $months) {
-            $scope = function ($query) use ($userId, $dept) {
-                $query->where(function ($q) use ($userId, $dept) {
-                    $q->where('uploaded_by', $userId);
-                    if ($dept) {
-                        $q->orWhereHas('uploader', function ($sq) use ($dept) {
-                            $sq->where('role_id', 3)
-                                ->whereHas('employee', fn ($eq) => $eq->where('department', $dept));
-                        });
-                    }
-                });
-            };
-
-            $growth = $this->buildMonthlyGrowth($months, $scope);
-
-            $bytesQuery = Document::query()->whereNull('deleted_at');
-            $scope($bytesQuery);
-            $totalBytes = (int) $bytesQuery->sum('file_size');
-
-            return [
-                'growth' => $growth,
-                'storageUsed' => $this->storageQuota->formatBytes($totalBytes),
-            ];
-        });
-    }
-
-    /**
-     * Faculty dashboard: own document growth + personal storage quota usage.
-     */
-    public function getFacultyGrowthOverview(int $userId, int $months = 6): array
-    {
-        return Cache::remember("faculty_growth_{$userId}_{$months}", now()->addMinutes(10), function () use ($userId, $months) {
-            $growth = $this->buildMonthlyGrowth($months, fn ($q) => $q->where('uploaded_by', $userId));
-
-            $usedBytes = $this->storageQuota->usedBytes($userId);
-            $quotaBytes = StorageQuotaService::DEFAULT_QUOTA_BYTES;
-            $percentUsed = $quotaBytes > 0 ? min(100, (int) round(($usedBytes / $quotaBytes) * 100)) : 0;
-
-            return [
-                'growth' => $growth,
-                'storageUsed' => $this->storageQuota->formatBytes($usedBytes),
-                'storageQuota' => $this->storageQuota->formatBytes($quotaBytes),
-                'storagePercent' => $percentUsed,
             ];
         });
     }

@@ -37,9 +37,6 @@
         </div>
     </div>
 
-    {{-- Document Growth & Storage --}}
-    @include('partials.document-growth-widget')
-
     <!-- Two-column row: Document Quick Stats + Upcoming Deadlines -->
     <div class="faculty-dashboard-row">
 

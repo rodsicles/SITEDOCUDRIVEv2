@@ -55,9 +55,9 @@
 
                 <div class="form-group">
                     <label class="form-label">Employee Number</label>
-                    <input type="text" name="employee_no" class="form-control" 
-                           value="{{ old('employee_no', $employee->employee_no) }}" 
-                           maxlength="15" pattern="[0-9]*" title="Numbers only" placeholder="e.g. FAC001">
+                    <input type="text" name="employee_no" class="form-control"
+                           value="{{ old('employee_no', $employee->employee_no) }}"
+                           maxlength="20" placeholder="e.g. SITE-IT-FAC001">
                 </div>
 
                 <div class="form-group">
@@ -87,6 +87,40 @@
                 <small class="text-gray-600 dark:text-gray-400 text-xs mt-1.5 block">Username cannot be changed</small>
             </div>
 
+            {{-- Course / Subject Assignment --}}
+            @if(isset($courses) && $courses->isNotEmpty())
+            <div class="form-group">
+                <label class="form-label">Assigned Courses / Subjects</label>
+                <small class="text-xs text-gray-500 dark:text-gray-400 block mb-2">
+                    Update the subjects this faculty member handles.
+                </small>
+                <div class="course-picker-wrap">
+                    <div class="course-picker-toolbar">
+                        <input type="text" id="editFacultyCourseSearch" class="course-search-input"
+                               placeholder="Search by code or title..." autocomplete="off">
+                        <span class="course-selected-count" id="editFacultySelectedCount">0 selected</span>
+                        <button type="button" class="course-picker-clear" id="editFacultyCourseClear">Clear</button>
+                    </div>
+                    <div class="course-picker-body">
+                        <div class="course-checkbox-grid" id="editFacultyCourseGrid">
+                            @foreach($courses as $course)
+                            @php
+                                $currentIds = old('course_ids', $assignedCourseIds ?? []);
+                                $checked    = in_array($course->id, (array)$currentIds);
+                            @endphp
+                            <label class="course-checkbox-item {{ $checked ? 'selected' : '' }}">
+                                <input type="checkbox" name="course_ids[]" value="{{ $course->id }}"
+                                       {{ $checked ? 'checked' : '' }}>
+                                <span><strong>{{ $course->code }}</strong> &ndash; {{ $course->title }}</span>
+                            </label>
+                            @endforeach
+                        </div>
+                        <p class="course-no-results" id="editFacultyNoResults">No matching courses.</p>
+                    </div>
+                </div>
+            </div>
+            @endif
+
             <div class="flex gap-4 mt-6">
                 <button type="submit" class="btn btn-primary">
                     <i class="fas fa-save"></i> Update Information
@@ -96,6 +130,56 @@
                 </a>
             </div>
         </form>
+
+        @if(isset($courses) && $courses->isNotEmpty())
+        <script>
+        (function() {
+            const gridEl   = document.getElementById('editFacultyCourseGrid');
+            const searchEl = document.getElementById('editFacultyCourseSearch');
+            const countEl  = document.getElementById('editFacultySelectedCount');
+            const noResEl  = document.getElementById('editFacultyNoResults');
+            const clearEl  = document.getElementById('editFacultyCourseClear');
+
+            function updateCount() {
+                const n = gridEl ? gridEl.querySelectorAll('input:checked').length : 0;
+                if (countEl) countEl.textContent = n + ' selected';
+            }
+
+            if (gridEl) {
+                gridEl.querySelectorAll('.course-checkbox-item').forEach(function(label) {
+                    label.querySelector('input').addEventListener('change', function() {
+                        label.classList.toggle('selected', this.checked);
+                        updateCount();
+                    });
+                });
+                updateCount();
+            }
+
+            if (searchEl && gridEl) {
+                searchEl.addEventListener('input', function() {
+                    const q = this.value.trim().toLowerCase();
+                    let visible = 0;
+                    gridEl.querySelectorAll('.course-checkbox-item').forEach(function(item) {
+                        const match = q === '' || item.textContent.toLowerCase().includes(q);
+                        item.classList.toggle('course-hidden', !match);
+                        if (match) visible++;
+                    });
+                    if (noResEl) noResEl.classList.toggle('visible', visible === 0);
+                });
+            }
+
+            if (clearEl && gridEl) {
+                clearEl.addEventListener('click', function() {
+                    gridEl.querySelectorAll('input:checked').forEach(function(cb) {
+                        cb.checked = false;
+                        cb.closest('.course-checkbox-item').classList.remove('selected');
+                    });
+                    updateCount();
+                });
+            }
+        })();
+        </script>
+        @endif
     </div>
 
 @endsection

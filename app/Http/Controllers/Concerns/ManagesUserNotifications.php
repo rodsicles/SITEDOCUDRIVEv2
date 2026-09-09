@@ -55,24 +55,32 @@ trait ManagesUserNotifications
     public function recentNotificationsJson()
     {
         $userId = auth()->id();
+        $notifier = app(NotificationService::class);
 
         $notifications = Notification::where('user_id', $userId)
             ->latest()
             ->limit(8)
-            ->get(['notification_id', 'message', 'tone', 'is_read', 'created_at']);
+            ->get(['notification_id', 'message', 'tone', 'action_url', 'is_read', 'created_at', 'user_id']);
 
         $unreadCount = Notification::where('user_id', $userId)
             ->where('is_read', false)
             ->count();
 
+        $user = auth()->user();
+
         return response()->json([
-            'notifications' => $notifications->map(fn (Notification $n) => [
-                'id' => $n->notification_id,
-                'message' => $n->message,
-                'tone' => $n->tone,
-                'is_read' => $n->is_read,
-                'time_ago' => $n->created_at->diffForHumans(),
-            ])->values(),
+            'notifications' => $notifications->map(function (Notification $n) use ($notifier, $user) {
+                $actionUrl = $notifier->resolvedActionUrl($n, $user);
+
+                return [
+                    'id' => $n->notification_id,
+                    'message' => $n->message,
+                    'tone' => $n->tone,
+                    'action_url' => ($actionUrl && str_starts_with($actionUrl, '/')) ? $actionUrl : null,
+                    'is_read' => $n->is_read,
+                    'time_ago' => $n->created_at->diffForHumans(),
+                ];
+            })->values(),
             'unread_count' => $unreadCount,
         ]);
     }

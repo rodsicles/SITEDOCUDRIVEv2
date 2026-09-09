@@ -348,20 +348,31 @@ class DocumentService
 
         $canSeeReceipts = (int) $document->uploaded_by === (int) $user->id || $user->canManageDocuments();
 
+        $fileMime = UploadStorage::mimeType($document->file_path) ?? '';
+        $isImage  = str_starts_with($fileMime, 'image/');
+
+        // Version data — faculty can version own files and shared TG/EQ; Dean always
+        $canVersion = $this->userCanVersionDocument($document, $user);
+        $versions   = $document->versions()->with('uploader.employee')->get();
+
         return [
-            'title' => $document->document_title,
-            'folderPath' => $folderPath,
-            'documentsUrl' => $documentsUrl,
-            'streamUrl' => route($routePrefix.'.view-document', ['id' => $documentId, 'stream' => 1]),
-            'downloadUrl' => route($routePrefix.'.download-document', $documentId),
-            'backUrl' => $backUrl,
-            'viewers' => $canSeeReceipts ? $document->viewReceipts() : null,
-            'versionDocument' => $document,
-            'versions' => $document->versions()->with('uploader.employee')->get(),
-            'canManageVersions' => $document->canManageVersions($user),
-            'commentDocument' => $document,
-            'comments' => $document->comments()->with('user.employee')->latest()->get(),
-            'activityLogs' => \App\Models\DashboardLog::forDocument($document->document_id, 30),
+            'title'              => $document->document_title,
+            'folderPath'         => $folderPath,
+            'documentsUrl'       => $documentsUrl,
+            'streamUrl'          => route($routePrefix.'.view-document', ['id' => $documentId, 'stream' => 1]),
+            'downloadUrl'        => route($routePrefix.'.download-document', $documentId),
+            'copyUrl'            => route($routePrefix.'.documents.copy', $documentId),
+            'versionUploadUrl'   => route($routePrefix.'.documents.version', $documentId),
+            'backUrl'            => $backUrl,
+            'viewers'            => $canSeeReceipts ? $document->viewReceipts() : null,
+            'isImage'            => $isImage,
+            'fileMime'           => $fileMime,
+            'document'           => $document,
+            'canVersion'         => $canVersion,
+            'currentVersion'     => $document->version ?? 1,
+            'versions'           => $versions,
+            'canCopy'            => $document->canView($user),
+            'foldersListUrl'     => route($routePrefix.'.folders.list'),
         ];
     }
 
@@ -387,7 +398,6 @@ class DocumentService
 
             DashboardLog::create([
                 'user_id' => $user->id,
-                'document_id' => $document->document_id,
                 'activity' => 'Viewed document: ' . $document->document_title,
                 'activity_type' => 'document_viewed',
                 'visibility' => 'own',
@@ -395,7 +405,7 @@ class DocumentService
         }
 
         $mimeType = UploadStorage::mimeType($document->file_path);
-        $allowedMimes = ['application/pdf', 'image/jpeg', 'image/png'];
+        $allowedMimes = ['application/pdf', 'image/jpeg', 'image/png', 'image/gif', 'image/webp'];
 
         // For Word docs: serve the sibling PDF for inline preview
         $serveFilePath = $document->file_path;
@@ -448,7 +458,6 @@ class DocumentService
 
         DashboardLog::create([
             'user_id' => $user->id,
-            'document_id' => $document->document_id,
             'activity' => 'Downloaded document: ' . $document->document_title,
             'activity_type' => 'document_downloaded',
             'visibility' => 'own',
@@ -485,9 +494,20 @@ class DocumentService
         $submittedForApproval = false;
 
         $uploadedCount = 0;
+        $lastDocumentId = null;
+        $customTitle = trim((string) ($validated['document_title'] ?? ''));
+        $resolvedTitles = [];
 
         foreach ($files as $index => $file) {
-            $title = $validated['document_title'] . ($uploadedCount > 0 ? ' (' . ($uploadedCount + 1) . ')' : '');
+            // Custom title (optional): use it for all files, with (2)/(3) suffixes.
+            // Blank title: each file uses its own original uploaded filename.
+            if ($customTitle !== '') {
+                $title = $customTitle . ($uploadedCount > 0 ? ' (' . ($uploadedCount + 1) . ')' : '');
+            } else {
+                $title = DocumentNaming::titleFromUploadedFile($file);
+            }
+            $resolvedTitles[] = $title;
+
             $extension = strtolower($file->getClientOriginalExtension());
             $fileType = $validated['document_type'] === 'pdf' || $extension === 'pdf' ? 'pdf' : 'word';
 
@@ -496,7 +516,7 @@ class DocumentService
                 $storedPath = UploadStorage::storeAs($file, 'exam-questionnaires', $filename);
                 $examType = $validated['exam_type'] ?? 'Quiz';
                 $status = $autoApprove ? 'approved' : 'pending';
-                $submissionTitle = $validated['document_title'];
+                $submissionTitle = $title;
 
                 $questionnaire = $this->examQuestionnaireSync->createFromFolderUpload(
                     $userId,
@@ -524,7 +544,7 @@ class DocumentService
                 $filename = time() . '_' . $index . '_' . $file->hashName();
                 $storedPath = UploadStorage::storeAs($file, 'teaching-guides', $filename);
                 $status = $autoApprove ? 'approved' : 'pending';
-                $guideTitle = $validated['document_title'];
+                $guideTitle = $title;
 
                 $guide = $this->teachingGuideSync->createFromFolderUpload(
                     $userId,
@@ -572,26 +592,40 @@ class DocumentService
                 $document->recipients()->sync($recipientIds);
             }
 
+            $lastDocumentId = (int) $document->document_id;
             $uploadedCount++;
         }
 
+        $primaryTitle = $customTitle !== ''
+            ? $customTitle
+            : ($resolvedTitles[0] ?? 'Untitled');
+
+        $linkDocumentId = ($uploadedCount === 1 && $lastDocumentId) ? $lastDocumentId : null;
+
         if (!empty($recipientIds) && $uploadedCount > 0 && !$submittedForApproval) {
             $label = $uploadedCount === 1
-                ? "\"{$validated['document_title']}\""
+                ? "\"{$primaryTitle}\""
                 : "{$uploadedCount} document(s)";
+            $categoryLabel = (string) ($category ?? 'Documents');
             $this->notificationService->notifyMany(
                 $recipientIds,
-                "New shared document: {$label} in {$category}. Check Documents or Teaching Guides."
+                "New shared document: {$label} in {$categoryLabel}. Click to open.",
+                null,
+                null,
+                fn (\App\Models\User $recipient) => $this->notificationService->documentsActionUrl(
+                    $recipient,
+                    $categoryLabel,
+                    $linkDocumentId,
+                ),
             );
         }
 
         $activity = $submittedForApproval
-            ? 'Submitted ' . $uploadedCount . ' file(s) for Dean approval: ' . $validated['document_title']
-            : 'Uploaded ' . $uploadedCount . ' document(s): ' . $validated['document_title'];
+            ? 'Submitted ' . $uploadedCount . ' file(s) for Dean approval: ' . $primaryTitle
+            : 'Uploaded ' . $uploadedCount . ' document(s): ' . $primaryTitle;
 
         DashboardLog::create([
             'user_id' => $userId,
-            'document_id' => $document->document_id ?? null,
             'activity' => $activity,
             'activity_type' => 'document_upload',
             'visibility' => 'own',
@@ -601,9 +635,10 @@ class DocumentService
             $this->notificationService->notifyDeanOnFileUpload(
                 $uploader,
                 $uploadedCount,
-                (string) ($validated['document_title'] ?? 'Untitled'),
+                $primaryTitle,
                 (string) ($category ?? 'Documents'),
                 $submittedForApproval,
+                $submittedForApproval ? null : $linkDocumentId,
             );
         }
 
@@ -657,7 +692,6 @@ class DocumentService
 
         DashboardLog::create([
             'user_id' => $userId,
-            'document_id' => $document->document_id,
             'activity' => ($isFavorited ? 'Favorited' : 'Unfavorited') . ' document: ' . $document->document_title,
             'activity_type' => $isFavorited ? 'document_favorited' : 'document_unfavorited',
             'visibility' => 'own',
@@ -700,6 +734,34 @@ class DocumentService
         return false;
     }
 
+    /**
+     * Whether the user may upload a new version of this document.
+     * Dean/Secretary: always. Owner: always.
+     * Faculty/Coordinator: own files, plus Teaching Guides / Exam Questionnaires they can view
+     * (so shared subject files can be updated from the faculty preview, not Dean-only).
+     */
+    public function userCanVersionDocument(Document $document, User $user): bool
+    {
+        if (!$document->canView($user)) {
+            return false;
+        }
+
+        if ($user->isDeanOrSecretary()) {
+            return true;
+        }
+
+        if ((int) $document->uploaded_by === (int) $user->id) {
+            return true;
+        }
+
+        if (($user->isFaculty() || $user->isProgramCoordinator())
+            && in_array($document->category, Document::SHAREABLE_CATEGORIES, true)) {
+            return true;
+        }
+
+        return false;
+    }
+
     public function renameDocument(int $documentId, User $user, string $title): Document
     {
         $document = Document::with(['teachingGuide', 'examQuestionnaire'])->findOrFail($documentId);
@@ -723,7 +785,6 @@ class DocumentService
 
         DashboardLog::create([
             'user_id' => $user->id,
-            'document_id' => $document->document_id,
             'activity' => "Renamed document from \"{$oldTitle}\" to \"{$title}\"",
             'activity_type' => 'document_renamed',
             'visibility' => $user->isDeanOrSecretary() ? 'dean' : 'own',
@@ -742,12 +803,128 @@ class DocumentService
 
         DashboardLog::create([
             'user_id' => $user->id,
-            'document_id' => $document->document_id,
             'activity' => 'Moved document to Recycle Bin: ' . $document->document_title,
             'activity_type' => 'document_deleted',
             'visibility' => $user->isDeanOrSecretary() ? 'dean' : 'own',
         ]);
 
         app(RecycleBinService::class)->moveToRecycleBin($document, $user);
+    }
+
+    // ── Copy / Duplicate ─────────────────────────────────────────────────────
+
+    /**
+     * Copy a document (physical file + DB record) to the given folder.
+     * The new record belongs to $actor and is titled "[original] (Copy)".
+     */
+    public function copyDocument(Document $source, ?int $destinationFolderId, User $actor): Document
+    {
+        if (!$source->canView($actor)) {
+            abort(403, 'Unauthorized to copy this document.');
+        }
+
+        $ext         = pathinfo($source->file_path, PATHINFO_EXTENSION);
+        $newRelPath  = 'documents/' . uniqid('copy_', true) . '.' . strtolower($ext);
+
+        // Copy file on the configured disk (works for both local and S3)
+        UploadStorage::disk()->copy($source->file_path, $newRelPath);
+
+        $destCategory = $this->resolveCategoryForFolder($destinationFolderId);
+
+        $copy = Document::create([
+            'uploaded_by'    => $actor->id,
+            'folder_id'      => $destinationFolderId,
+            'document_title' => $source->document_title . ' (Copy)',
+            'file_path'      => $newRelPath,
+            'file_size'      => $source->file_size,
+            'document_type'  => $source->document_type,
+            'category'       => $destCategory,
+            'category_id'    => $source->category_id,
+            'school_year_id' => $source->school_year_id,
+            'subject'        => $source->subject,
+            'tags'           => $source->tags,
+            'version'        => 1,
+        ]);
+
+        DashboardLog::create([
+            'user_id'       => $actor->id,
+            'activity'      => 'Copied document: ' . $source->document_title,
+            'activity_type' => 'document_copied',
+            'visibility'    => 'own',
+        ]);
+
+        return $copy;
+    }
+
+    // ── Versioning ───────────────────────────────────────────────────────────
+
+    /**
+     * Snapshot the current document file into document_versions,
+     * then replace the live file with the newly uploaded one and rename to (v2)/(v3)/…
+     */
+    public function uploadNewVersion(
+        Document $document,
+        \Illuminate\Http\UploadedFile $file,
+        User $actor,
+        ?string $notes = null
+    ): Document {
+        $document->loadMissing(['teachingGuide', 'examQuestionnaire']);
+
+        $currentVersion = (int) ($document->version ?? 1);
+        if ($currentVersion < 1) {
+            $currentVersion = 1;
+        }
+        $nextVersion = $currentVersion + 1;
+        $versionedTitle = DocumentNaming::titleWithVersion((string) $document->document_title, $nextVersion);
+
+        // Snapshot current state (archived as the previous version number)
+        \App\Models\DocumentVersion::create([
+            'document_id'    => $document->document_id,
+            'version_number' => $currentVersion,
+            'document_title' => $document->document_title,
+            'file_path'      => $document->file_path,
+            'file_size'      => $document->file_size,
+            'document_type'  => $document->document_type,
+            'uploaded_by'    => $actor->id,
+            'note'           => $notes ?: ('Archived as version '.$currentVersion),
+            'created_at'     => $document->updated_at ?? $document->created_at ?? now(),
+        ]);
+
+        // Store new file
+        $ext      = strtolower($file->getClientOriginalExtension());
+        $filename = uniqid('ver_', true) . '.' . $ext;
+        $newPath  = UploadStorage::putFileAs('documents', $file, $filename);
+
+        $newType = match (true) {
+            $ext === 'pdf'                          => 'pdf',
+            in_array($ext, ['doc', 'docx'], true)  => 'word',
+            in_array($ext, ['jpg', 'jpeg', 'png', 'gif', 'webp'], true) => 'image',
+            default                                 => $document->document_type,
+        };
+
+        $document->update([
+            'document_title' => $versionedTitle,
+            'file_path'      => $newPath,
+            'file_size'      => $file->getSize(),
+            'document_type'  => $newType,
+            'version'        => $nextVersion,
+        ]);
+
+        if ($document->teachingGuide) {
+            $document->teachingGuide->update(['title' => $versionedTitle]);
+        }
+
+        if ($document->examQuestionnaire) {
+            $document->examQuestionnaire->update(['title' => $versionedTitle]);
+        }
+
+        DashboardLog::create([
+            'user_id'       => $actor->id,
+            'activity'      => 'Uploaded new version (v'.$nextVersion.') renamed to: '.$versionedTitle,
+            'activity_type' => 'document_version_uploaded',
+            'visibility'    => 'own',
+        ]);
+
+        return $document->fresh(['teachingGuide', 'examQuestionnaire']);
     }
 }

@@ -5,7 +5,11 @@ namespace App\Http\Controllers;
 use App\Http\Requests\StoreFolderRequest;
 use App\Http\Requests\UpdateFolderRequest;
 use App\Http\Requests\MoveDocumentRequest;
+use App\Models\Document;
+use App\Models\Folder;
+use App\Services\DocumentService;
 use App\Services\FolderService;
+use Illuminate\Http\Request;
 use Symfony\Component\HttpKernel\Exception\HttpException;
 
 class FolderController extends Controller
@@ -96,6 +100,34 @@ class FolderController extends Controller
         return response()->json([
             'success' => true,
             'folders' => $folders,
+        ]);
+    }
+
+    /**
+     * Copy a document to another folder (creates a new physical file + DB record).
+     */
+    public function copyDocument(Request $request, $documentId)
+    {
+        $request->validate([
+            'folder_id' => 'nullable|exists:folders,folder_id',
+        ]);
+
+        $document = Document::findOrFail($documentId);
+        $user     = auth()->user();
+
+        $copy = app(DocumentService::class)->copyDocument(
+            $document,
+            $request->folder_id ? (int) $request->folder_id : null,
+            $user
+        );
+
+        $folderName = $request->folder_id
+            ? (Folder::find((int) $request->folder_id)?->folder_name ?? 'Destination')
+            : 'Documents';
+
+        return response()->json([
+            'success' => true,
+            'message' => "Document copied to \"{$folderName}\" successfully.",
         ]);
     }
 }

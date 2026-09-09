@@ -183,68 +183,13 @@
             <h3 class="card-title">Submitted Documents</h3>
             <span class="badge badge-info">{{ $documentStats['total'] }} Documents</span>
         </div>
-        
+
         @if($documentStats['total'] > 0)
-            <!-- Folder Filter Buttons -->
-            <!-- Document Stats by Category -->
-            <div class="flex flex-wrap gap-2.5 mb-5 p-2.5 bg-gray-100 dark:bg-gray-800">
-                @foreach(($documentStats['byCategory'] ?? []) as $category => $count)
-                    <div class="py-2 px-4 bg-[#028a0f] text-white text-sm">
-                        <i class="fas fa-folder"></i> {{ $category }}: <strong>{{ $count }}</strong>
-                    </div>
-                @endforeach
-            </div>
-            <div class="p-4">
-                @php $viewRoute = auth()->user()->isDean() ? 'dean.view-document' : 'coordinator.view-document'; @endphp
-                @include('partials.faculty-document-tree', ['documentTree' => $documentTree ?? [], 'viewRoute' => $viewRoute])
-            </div>
-            @if(false)<table class="data-table">
-                <thead>
-                    <tr>
-                        <th>Document Title</th>
-                        <th>Folder</th>
-                        <th>Type</th>
-                        <th>File Name</th>
-                        <th>Upload Date</th>
-                        <th>Actions</th>
-                    </tr>
-                </thead>
-                <tbody>
-                    @foreach($documents as $document)
-                    <tr class="document-row" data-folder="{{ $document->folder_id ?? 'uncategorized' }}">
-                        <td><strong>{{ $document->document_title }}</strong></td>
-                        <td>
-                            @if($document->folder)
-                                <span class="px-2 py-1 text-xs" style="background: {{ $document->folder->color }}20; color: {{ $document->folder->color }}; border: 1px solid {{ $document->folder->color }}">
-                                    <i class="fas fa-folder"></i> {{ $document->folder->folder_name }}
-                                </span>
-                            @else
-                                <span class="text-gray-500 text-xs">
-                                    <i class="fas fa-folder-open"></i> Uncategorized
-                                </span>
-                            @endif
-                        </td>
-                        <td>
-                            <span class="badge badge-info">
-                                {{ $document->document_type ?? 'N/A' }}
-                            </span>
-                        </td>
-                        <td class="font-mono text-xs">
-                            {{ basename($document->file_path) }}
-                        </td>
-                        <td>{{ $document->created_at->format('M d, Y h:i A') }}</td>
-                        <td>
-                            <a href="{{ asset($document->file_path) }}" target="_blank" class="btn btn-primary py-1 px-2.5 text-xs mr-1">
-                                <i class="fas fa-eye"></i> View
-                            </a>
-                            <a href="{{ asset($document->file_path) }}" download class="btn btn-success py-1 px-2.5 text-xs">
-                                <i class="fas fa-download"></i> Download
-                            </a>
-                        </td>
-                    </tr>
-                    @endforeach
-                </tbody>
-            </table>@endif
+            @include('partials.faculty-profile-documents', [
+                'documents' => $documents,
+                'documentStats' => $documentStats,
+                'documentTree' => $documentTree ?? [],
+            ])
         @else
             <div class="text-center py-10 text-gray-500 dark:text-gray-400">
                 <i class="fas fa-folder-open text-5xl mb-4 opacity-50"></i>
@@ -536,29 +481,6 @@ function confirmDeactivateAccount() {
     if (confirm(message)) {
         form.submit();
     }
-}
-
-function filterDocuments(folderId) {
-    const rows = document.querySelectorAll('.document-row');
-    const buttons = document.querySelectorAll('.folder-filter-btn');
-    
-    // Update active button
-    buttons.forEach(btn => btn.classList.remove('active'));
-    document.querySelector(`[data-folder="${folderId}"]`).classList.add('active');
-    
-    // Filter rows
-    rows.forEach(row => {
-        const rowFolder = row.getAttribute('data-folder');
-        if (folderId === 'all') {
-            row.style.display = '';
-        } else if (folderId === 'uncategorized' && rowFolder === 'uncategorized') {
-            row.style.display = '';
-        } else if (rowFolder == folderId) {
-            row.style.display = '';
-        } else {
-            row.style.display = 'none';
-        }
-    });
 }
 </script>
 @endpush

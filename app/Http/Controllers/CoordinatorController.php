@@ -94,14 +94,12 @@ class CoordinatorController extends Controller
         $recentActivities = $this->dashboardService->getRecentActivities($user, 10);
         $announcements = $this->dashboardService->getAnnouncements($user, 5);
         $docAnalyticsData = $this->dashboardService->getCoordinatorDocumentAnalytics($user->id);
-        $growthOverview = $this->dashboardService->getCoordinatorGrowthOverview($user->id);
 
         return view('coordinator.dashboard', array_merge($stats, $docAnalyticsData, compact(
             'recentTasks',
             'facultyList',
             'recentActivities',
-            'announcements',
-            'growthOverview',
+            'announcements'
         )));
     }
 
@@ -153,7 +151,11 @@ class CoordinatorController extends Controller
             ? app(\App\Support\EmployeeNumberGenerator::class)->next($dept, \App\Support\EmployeeNumberGenerator::ROLE_FACULTY)
             : '';
 
-        return view('coordinator.create-faculty', compact('nextFacultyNo', 'dept'));
+        $courses = $dept
+            ? \App\Models\Course::active()->forDepartment($dept)->ordered()->get()
+            : collect();
+
+        return view('coordinator.create-faculty', compact('nextFacultyNo', 'dept', 'courses'));
     }
 
     public function storeFaculty(Request $request)
@@ -161,16 +163,28 @@ class CoordinatorController extends Controller
         $coordDept = $this->requireCoordinatorDepartment();
 
         $validated = $request->validate([
-            'username' => 'required|string|unique:users,username|max:20',
-            'password' => 'required|string|min:8|max:40',
-            'full_name' => 'required|string|max:45',
-            'department' => 'required|in:Engineering,Information Technology',
+            'username'     => 'required|string|unique:users,username|max:20',
+            'password'     => 'required|string|min:8|max:40',
+            'full_name'    => 'required|string|max:45',
+            'department'   => 'required|in:Engineering,Information Technology',
+            'course_ids'   => 'nullable|array',
+            'course_ids.*' => 'integer|exists:courses,id',
         ]);
 
         // Enforce coordinator can only create faculty in their own department
         if ($coordDept && $validated['department'] !== $coordDept) {
             return back()->withErrors(['department' => 'You can only create faculty members in your department (' . $coordDept . ').'])
                 ->withInput();
+        }
+
+        // Enforce coordinator can only assign courses from their own department
+        if (!empty($validated['course_ids'])) {
+            $validCourseIds = \App\Models\Course::active()
+                ->forDepartment($coordDept)
+                ->whereIn('id', $validated['course_ids'])
+                ->pluck('id')
+                ->all();
+            $validated['course_ids'] = $validCourseIds;
         }
 
         try {
@@ -273,7 +287,7 @@ class CoordinatorController extends Controller
 
     public function editFaculty($id)
     {
-        $employee = Employee::with(['user.role'])
+        $employee = Employee::with(['user.role', 'user.assignedCourses'])
             ->where('employee_id', $id)
             ->firstOrFail();
 
@@ -283,7 +297,10 @@ class CoordinatorController extends Controller
 
         $this->verifyDepartmentAccess($employee);
 
-        return view('coordinator.edit-faculty', compact('employee'));
+        $courses           = \App\Models\Course::active()->forDepartment($employee->department)->ordered()->get();
+        $assignedCourseIds = $employee->user->assignedCourses->pluck('id')->all();
+
+        return view('coordinator.edit-faculty', compact('employee', 'courses', 'assignedCourseIds'));
     }
 
     public function updateFaculty(Request $request, $id)
@@ -301,16 +318,27 @@ class CoordinatorController extends Controller
         $coordDept = $this->getCoordinatorDepartment();
 
         $validated = $request->validate([
-            'full_name' => 'required|string|max:45',
-            'employee_no' => 'nullable|string|max:15|regex:/^[0-9]*$/|unique:employees,employee_no,' . $employee->employee_id . ',employee_id',
-            'department' => 'required|in:Information Technology,Engineering',
-            'email' => 'nullable|email|max:45',
+            'full_name'    => 'required|string|max:45',
+            'employee_no'  => 'nullable|string|max:20|unique:employees,employee_no,' . $employee->employee_id . ',employee_id',
+            'department'   => 'required|in:Information Technology,Engineering',
+            'email'        => 'nullable|email|max:45',
+            'course_ids'   => 'nullable|array',
+            'course_ids.*' => 'integer|exists:courses,id',
         ]);
 
         // Enforce coordinator can only set department to their own
         if ($coordDept && $validated['department'] !== $coordDept) {
             return back()->withErrors(['department' => 'You can only assign faculty to your department (' . $coordDept . ').'])
                 ->withInput();
+        }
+
+        // Ensure submitted courses belong to coordinator's department
+        if (!empty($validated['course_ids'])) {
+            $validated['course_ids'] = \App\Models\Course::active()
+                ->forDepartment($coordDept)
+                ->whereIn('id', $validated['course_ids'])
+                ->pluck('id')
+                ->all();
         }
 
         try {

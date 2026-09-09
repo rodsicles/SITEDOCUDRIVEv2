@@ -175,7 +175,14 @@ class TeachingGuideController extends Controller
                 : "{$uploadedCount} teaching guides in \"{$folder->folder_name}\"";
             $this->notificationService->notifyMany(
                 $recipientIds,
-                "New teaching guide uploaded: {$label}. Awaiting Dean approval."
+                "New teaching guide uploaded: {$label}. Awaiting Dean approval.",
+                null,
+                null,
+                function (\App\Models\User $recipient) {
+                    $prefix = $recipient->isProgramCoordinator() ? 'coordinator' : 'faculty';
+
+                    return route($prefix.'.teaching-guides.index');
+                },
             );
         }
 

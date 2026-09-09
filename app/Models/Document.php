@@ -26,6 +26,7 @@ class Document extends Model
         'category_id',
         'school_year_id',
         'tags',
+        'version',
     ];
 
     // Tags are stored as comma-separated string
@@ -87,15 +88,6 @@ class Document extends Model
         return $this->hasMany(DocumentComment::class, 'document_id', 'document_id');
     }
 
-    /**
-     * Full audit trail (view/download/upload/move/rename/version/delete/comment) for this document.
-     */
-    public function activityLogs()
-    {
-        return $this->hasMany(DashboardLog::class, 'document_id', 'document_id')
-            ->orderByDesc('log_date');
-    }
-
     public function favorites()
     {
         return $this->hasMany(DocumentFavorite::class, 'document_id', 'document_id');
@@ -104,23 +96,6 @@ class Document extends Model
     public function views()
     {
         return $this->hasMany(DocumentView::class, 'document_id', 'document_id');
-    }
-
-    /**
-     * Previous file versions, newest first.
-     */
-    public function versions()
-    {
-        return $this->hasMany(DocumentVersion::class, 'document_id', 'document_id')
-            ->orderByDesc('version_number');
-    }
-
-    /**
-     * Only the uploader and Dean/Secretary may replace or restore the file.
-     */
-    public function canManageVersions(User $user): bool
-    {
-        return (int) $this->uploaded_by === (int) $user->id || $user->isDeanOrSecretary();
     }
 
     /**
@@ -231,6 +206,15 @@ class Document extends Model
     public function examQuestionnaire()
     {
         return $this->hasOne(ExamQuestionnaire::class, 'document_id', 'document_id');
+    }
+
+    /**
+     * All past versions of this document (newest first).
+     */
+    public function versions()
+    {
+        return $this->hasMany(DocumentVersion::class, 'document_id', 'document_id')
+            ->orderByDesc('version_number');
     }
 
     /**

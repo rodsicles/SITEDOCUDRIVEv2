@@ -5,45 +5,42 @@
     $submissionLabel = trim((string) ($submission->title ?? '')) !== ''
         ? $submission->title
         : ($submission->subject ?? 'Untitled submission');
+    $isPending = $submission->isPending();
 @endphp
-<div class="submission-action-wrap">
-    <button type="button"
-            class="doc-actions-btn submission-actions-btn"
-            data-popover-key="{{ $popoverKey }}"
-            aria-label="Actions for {{ $submission->title }}"
-            aria-expanded="false"
-            aria-haspopup="true"
-            aria-controls="submission-popover-{{ $popoverKey }}">
-        <i class="fas fa-ellipsis-v" aria-hidden="true"></i>
-    </button>
-    <div id="submission-popover-{{ $popoverKey }}"
-         class="doc-list-popover submission-review-popover"
-         data-popover-key="{{ $popoverKey }}"
-         role="menu"
-         hidden>
-        <a href="{{ $viewUrl }}" target="_blank" class="doc-list-popover-item" role="menuitem">
-            <i class="fas fa-eye text-xs" aria-hidden="true"></i> View
-        </a>
-        <a href="{{ $downloadUrl }}" class="doc-list-popover-item" role="menuitem">
-            <i class="fas fa-download text-xs" aria-hidden="true"></i> Download
-        </a>
-        @if($submission->isPending())
-            <form id="{{ $approveFormId }}" action="{{ $approveUrl }}" method="POST">
-                @csrf
-                <button type="button"
-                        class="doc-list-popover-item submission-approve-btn"
-                        role="menuitem"
-                        data-approve-form="{{ $approveFormId }}"
-                        data-submission-title="{{ e($submissionLabel) }}">
-                    <i class="fas fa-check text-xs" aria-hidden="true"></i> Approve
-                </button>
-            </form>
+<div class="submission-review-actions archive-row-actions" role="group" aria-label="Submission actions">
+    <a href="{{ $viewUrl }}"
+       class="btn btn-sm btn-success border-0 archive-row-actions__btn"
+       target="_blank"
+       rel="noopener noreferrer"
+       title="View"
+       aria-label="View {{ $submissionLabel }}">
+        <i class="fas fa-eye" aria-hidden="true"></i>
+    </a>
+    <a href="{{ $downloadUrl }}"
+       class="btn btn-sm btn-success border-0 archive-row-actions__btn"
+       title="Download"
+       aria-label="Download {{ $submissionLabel }}">
+        <i class="fas fa-download" aria-hidden="true"></i>
+    </a>
+
+    @if($isPending)
+        <form id="{{ $approveFormId }}" action="{{ $approveUrl }}" method="POST" class="submission-review-actions__form">
+            @csrf
             <button type="button"
-                    class="doc-list-popover-item doc-list-popover-item--danger"
-                    role="menuitem"
-                    onclick="closeSubmissionPopovers(); {{ $rejectOnClick }}({{ $submission->id }})">
-                <i class="fas fa-times text-xs" aria-hidden="true"></i> Reject
+                    class="btn btn-sm btn-success border-0 archive-row-actions__btn submission-approve-btn"
+                    title="Approve"
+                    aria-label="Approve {{ $submissionLabel }}"
+                    data-approve-form="{{ $approveFormId }}"
+                    data-submission-title="{{ e($submissionLabel) }}">
+                <i class="fas fa-check" aria-hidden="true"></i>
             </button>
-        @endif
-    </div>
+        </form>
+        <button type="button"
+                class="btn btn-sm btn-danger border-0 archive-row-actions__btn"
+                title="Reject"
+                aria-label="Reject {{ $submissionLabel }}"
+                onclick="{{ $rejectOnClick }}({{ $submission->id }})">
+            <i class="fas fa-times" aria-hidden="true"></i>
+        </button>
+    @endif
 </div>

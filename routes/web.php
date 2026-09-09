@@ -16,8 +16,6 @@ use App\Http\Controllers\ExamQuestionnaireController;
 use App\Http\Controllers\DocumentFilterController;
 use App\Http\Controllers\DocumentRecipientController;
 use App\Http\Controllers\DocumentListSearchController;
-use App\Http\Controllers\DocumentVersionController;
-use App\Http\Controllers\DocumentCommentController;
 use App\Http\Controllers\TaskAttachmentController;
 use App\Http\Controllers\SchoolYearController;
 use App\Http\Controllers\AnalyticsController;
@@ -69,24 +67,6 @@ Route::post('/documents/open-eq-subject', [EqSubjectFolderController::class, 'st
     ->middleware(['auth', 'no.back', 'throttle:30,1'])
     ->name('documents.open-eq-subject');
 
-// Document Version History (shared by all roles; permissions checked per document)
-Route::middleware(['auth', 'no.back'])->prefix('documents')->name('documents.versions.')->group(function () {
-    Route::post('/{id}/versions', [DocumentVersionController::class, 'store'])
-        ->middleware('throttle:20,60')->name('store');
-    Route::get('/{id}/versions/{versionId}/download', [DocumentVersionController::class, 'download'])
-        ->middleware('throttle:60,1')->name('download');
-    Route::post('/{id}/versions/{versionId}/restore', [DocumentVersionController::class, 'restore'])
-        ->middleware('throttle:30,60')->name('restore');
-});
-
-// Document Comments (shared by all roles; permissions checked per document)
-Route::middleware(['auth', 'no.back'])->prefix('documents')->name('documents.comments.')->group(function () {
-    Route::post('/{id}/comments', [DocumentCommentController::class, 'store'])
-        ->middleware('throttle:30,60')->name('store');
-    Route::delete('/{id}/comments/{commentId}', [DocumentCommentController::class, 'destroy'])
-        ->middleware('throttle:30,60')->name('destroy');
-});
-
 // Profile Management (All authenticated users)
 Route::middleware(['auth', 'no.back'])->prefix('profile')->name('profile.')->group(function () {
     Route::get('/edit', [ProfileController::class, 'edit'])->name('edit');
@@ -102,6 +82,16 @@ Route::middleware(['auth', 'no.back'])->prefix('document-filters')->name('docume
 
 Route::middleware(['auth', 'no.back'])->prefix('task-attachments')->name('task-attachments.')->group(function () {
     Route::get('/{id}/download', [TaskAttachmentController::class, 'download'])->middleware('throttle:30,1')->name('download');
+});
+
+// Document version download/view — shared across all roles (auth + canView checked in controller)
+Route::middleware(['auth', 'no.back'])->prefix('document-versions')->name('document-versions.')->group(function () {
+    Route::get('/{id}/view', [\App\Http\Controllers\DocumentVersionController::class, 'viewVersion'])
+        ->middleware('throttle:60,1')
+        ->name('view');
+    Route::get('/{id}/download', [\App\Http\Controllers\DocumentVersionController::class, 'downloadVersion'])
+        ->middleware('throttle:30,1')
+        ->name('download');
 });
 
 // Announcements (All authenticated users can view, only Dean/Coordinator can create/edit/delete)
@@ -172,6 +162,7 @@ Route::middleware(['auth', 'no.back', 'role:Dean,Secretary'])->prefix('dean')->n
     Route::post('/accounts/{id}/permanent-delete', [DeanController::class, 'destroyEmployee'])->middleware('throttle:5,60')->name('destroy-employee');
     Route::post('/accounts/{id}/reset-password', [DeanController::class, 'resetEmployeePassword'])->middleware('throttle:5,1')->name('reset-password');
 
+    Route::get('/courses/by-department', [\App\Http\Controllers\DeanController::class, 'coursesByDepartment'])->name('courses.by-department');
     Route::get('/courses', [DeanCourseController::class, 'index'])->name('courses');
     Route::post('/courses', [DeanCourseController::class, 'store'])->name('courses.store');
     Route::patch('/courses/{course}', [DeanCourseController::class, 'update'])->name('courses.update');
@@ -222,6 +213,8 @@ Route::middleware(['auth', 'no.back', 'role:Dean,Secretary'])->prefix('dean')->n
     Route::delete('/folders/{folder}', [FolderController::class, 'destroy'])->middleware('throttle:30,60')->name('folders.destroy');
     Route::get('/folders/list', [FolderController::class, 'getUserFolders'])->name('folders.list');
     Route::post('/documents/{document}/move', [FolderController::class, 'moveDocument'])->name('documents.move');
+    Route::post('/documents/{document}/copy', [FolderController::class, 'copyDocument'])->middleware('throttle:30,1')->name('documents.copy');
+    Route::post('/documents/{document}/version', [\App\Http\Controllers\DocumentVersionController::class, 'store'])->middleware('throttle:10,60')->name('documents.version');
 
     // Backup & Restore - rate limited because operations are destructive / heavy
     Route::get('/backup', [BackupController::class, 'index'])->name('backup');
@@ -306,6 +299,8 @@ Route::middleware(['auth', 'no.back', 'role:Program Coordinator'])->prefix('coor
     Route::delete('/folders/{folder}', [FolderController::class, 'destroy'])->middleware('throttle:30,60')->name('folders.destroy');
     Route::get('/folders/list', [FolderController::class, 'getUserFolders'])->name('folders.list');
     Route::post('/documents/{document}/move', [FolderController::class, 'moveDocument'])->name('documents.move');
+    Route::post('/documents/{document}/copy', [FolderController::class, 'copyDocument'])->middleware('throttle:30,1')->name('documents.copy');
+    Route::post('/documents/{document}/version', [\App\Http\Controllers\DocumentVersionController::class, 'store'])->middleware('throttle:10,60')->name('documents.version');
 
     // Teaching Guides (Coordinator can also upload)
     Route::get('/teaching-guides', [TeachingGuideController::class, 'index'])->name('teaching-guides.index');
@@ -348,6 +343,8 @@ Route::middleware(['auth', 'no.back', 'role:Faculty Employee'])->prefix('faculty
     Route::delete('/folders/{folder}', [FolderController::class, 'destroy'])->middleware('throttle:30,60')->name('folders.destroy');
     Route::get('/folders/list', [FolderController::class, 'getUserFolders'])->name('folders.list');
     Route::post('/documents/{document}/move', [FolderController::class, 'moveDocument'])->name('documents.move');
+    Route::post('/documents/{document}/copy', [FolderController::class, 'copyDocument'])->middleware('throttle:30,1')->name('documents.copy');
+    Route::post('/documents/{document}/version', [\App\Http\Controllers\DocumentVersionController::class, 'store'])->middleware('throttle:10,60')->name('documents.version');
     Route::post('/notifications/{id}/read', [FacultyController::class, 'markNotificationRead'])->middleware('throttle:120,1')->name('mark-notification-read');
     Route::post('/notifications/mark-all-read', [FacultyController::class, 'markAllNotificationsRead'])->middleware('throttle:30,1')->name('notifications.mark-all-read');
     Route::post('/notifications/mark-all-read-json', [FacultyController::class, 'markAllNotificationsReadJson'])->middleware('throttle:30,1')->name('notifications.mark-all-read-json');

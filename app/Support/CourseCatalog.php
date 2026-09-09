@@ -62,6 +62,15 @@ class CourseCatalog
     {
         $query = Course::active()->ordered();
 
+        // Faculty with explicitly assigned courses → show ONLY those subjects
+        if ($user && $user->isFaculty()) {
+            $assignedIds = $user->assignedCourses()->pluck('courses.id');
+            if ($assignedIds->isNotEmpty()) {
+                return $query->whereIn('id', $assignedIds);
+            }
+        }
+
+        // Everyone else (Dean, Secretary, Coordinator): scope by department as before
         $dept = self::departmentForUser($user);
         if ($dept) {
             $query->forDepartment($dept);

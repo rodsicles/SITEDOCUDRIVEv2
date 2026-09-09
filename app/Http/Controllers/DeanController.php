@@ -58,8 +58,6 @@ class DeanController extends Controller
 
         $tasksInProgress = Task::where('status', 'In Progress')->count();
 
-        $growthOverview = $this->dashboardService->getDeanGrowthOverview();
-
         return view('dean.dashboard', array_merge($stats, compact(
             'recentTasks',
             'pendingTeachingGuidesCount',
@@ -67,7 +65,6 @@ class DeanController extends Controller
             'pendingApprovals',
             'docsThisSchoolYear',
             'tasksInProgress',
-            'growthOverview',
         )));
     }
 
@@ -408,10 +405,12 @@ class DeanController extends Controller
     public function storeCoordinator(Request $request)
     {
         $validated = $request->validate([
-            'username' => 'required|string|unique:users,username|max:20',
-            'password' => 'required|string|min:8|max:40',
-            'full_name' => 'required|string|max:45',
-            'department' => 'required|in:Engineering,Information Technology',
+            'username'     => 'required|string|unique:users,username|max:20',
+            'password'     => 'required|string|min:8|max:40',
+            'full_name'    => 'required|string|max:45',
+            'department'   => 'required|in:Engineering,Information Technology',
+            'course_ids'   => 'nullable|array',
+            'course_ids.*' => 'integer|exists:courses,id',
         ]);
 
         try {
@@ -426,10 +425,12 @@ class DeanController extends Controller
     public function storeFaculty(Request $request)
     {
         $validated = $request->validate([
-            'username' => 'required|string|unique:users,username|max:20',
-            'password' => 'required|string|min:8|max:40',
-            'full_name' => 'required|string|max:45',
-            'department' => 'required|in:Engineering,Information Technology',
+            'username'     => 'required|string|unique:users,username|max:20',
+            'password'     => 'required|string|min:8|max:40',
+            'full_name'    => 'required|string|max:45',
+            'department'   => 'required|in:Engineering,Information Technology',
+            'course_ids'   => 'nullable|array',
+            'course_ids.*' => 'integer|exists:courses,id',
         ]);
 
         try {
@@ -441,15 +442,34 @@ class DeanController extends Controller
         }
     }
 
+    /**
+     * Return active courses for a given department as JSON (used by create-account forms).
+     */
+    public function coursesByDepartment(\Illuminate\Http\Request $request)
+    {
+        $dept = $request->query('dept');
+        if (!in_array($dept, ['Engineering', 'Information Technology'], true)) {
+            return response()->json([]);
+        }
+        $courses = \App\Models\Course::active()
+            ->forDepartment($dept)
+            ->ordered()
+            ->get(['id', 'code', 'title']);
+        return response()->json($courses);
+    }
+
     public function editEmployee($id)
     {
-        $employee = Employee::with(['user.role'])->where('employee_id', $id)->firstOrFail();
+        $employee = Employee::with(['user.role', 'user.assignedCourses'])->where('employee_id', $id)->firstOrFail();
 
         if ($employee->user->role_id === 1) {
             abort(403, 'Cannot edit Dean accounts.');
         }
 
-        return view('dean.edit-employee', compact('employee'));
+        $allCourses       = \App\Models\Course::active()->forDepartment($employee->department)->ordered()->get();
+        $assignedCourseIds = $employee->user->assignedCourses->pluck('id')->all();
+
+        return view('dean.edit-employee', compact('employee', 'allCourses', 'assignedCourseIds'));
     }
 
     public function updateEmployee(Request $request, $id)
@@ -461,10 +481,12 @@ class DeanController extends Controller
         }
 
         $validated = $request->validate([
-            'full_name' => 'required|string|max:45',
-            'employee_no' => 'nullable|string|max:15|regex:/^[0-9]*$/|unique:employees,employee_no,' . $employee->employee_id . ',employee_id',
-            'department' => 'required|in:Engineering,Information Technology',
-            'email' => 'nullable|email|max:45',
+            'full_name'    => 'required|string|max:45',
+            'employee_no'  => 'nullable|string|max:20|unique:employees,employee_no,' . $employee->employee_id . ',employee_id',
+            'department'   => 'required|in:Engineering,Information Technology',
+            'email'        => 'nullable|email|max:45',
+            'course_ids'   => 'nullable|array',
+            'course_ids.*' => 'integer|exists:courses,id',
         ]);
 
         try {

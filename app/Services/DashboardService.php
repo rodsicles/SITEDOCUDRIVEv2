@@ -186,6 +186,143 @@ class DashboardService
     }
 
     /**
+     * Payload for the Dean ops command-center dashboard.
+     */
+    public function getDeanCommandCenter(User $user): array
+    {
+        $userId = (int) $user->id;
+
+        return Cache::remember("dean_command_center_{$userId}", now()->addMinutes(5), function () use ($user, $userId) {
+            $stats = $this->getDeanStats($userId);
+            $activeId = \App\Models\SchoolYear::activeId();
+
+            $pendingScope = fn ($q) => $q->where('status', 'pending')
+                ->where(function ($q2) use ($activeId) {
+                    $q2->where('school_year_id', $activeId)->orWhereNull('school_year_id');
+                });
+
+            $pendingTeachingGuidesCount = \App\Models\TeachingGuide::query()->where($pendingScope)->count();
+            $pendingExamQuestionnairesCount = \App\Models\ExamQuestionnaire::query()->where($pendingScope)->count();
+            $pendingApprovals = $pendingTeachingGuidesCount + $pendingExamQuestionnairesCount;
+
+            $passwordResetCount = \App\Models\PasswordResetRequest::pending()
+                ->notExpired()
+                ->count();
+
+            $docsThisSchoolYear = Document::where(function ($q) use ($activeId) {
+                $q->where('school_year_id', $activeId)->orWhereNull('school_year_id');
+            })->count();
+
+            $tasksInProgress = Task::where('status', 'In Progress')->count();
+
+            $attentionCount = $pendingApprovals + $passwordResetCount;
+
+            if ($pendingApprovals > 0) {
+                $bannerUrl = $pendingTeachingGuidesCount >= $pendingExamQuestionnairesCount
+                    ? route('dean.teaching-guides.index', ['status' => 'pending'])
+                    : route('dean.exam-questionnaires.index', ['status' => 'pending']);
+                $bannerCta = 'Review pending files';
+            } elseif ($passwordResetCount > 0) {
+                $bannerUrl = route('password-reset-requests.index', ['tab' => 'pending']);
+                $bannerCta = 'Review password resets';
+            } else {
+                $bannerUrl = route('dean.notifications');
+                $bannerCta = 'Open notifications';
+            }
+
+            $recentTasks = Task::with(['assignedTo.employee'])
+                ->latest()
+                ->take(5)
+                ->get();
+
+            $overdueTasks = Task::with(['assignedTo.employee'])
+                ->whereNotNull('due_date')
+                ->whereDate('due_date', '<', now()->toDateString())
+                ->where('status', '!=', 'Completed')
+                ->orderBy('due_date')
+                ->take(5)
+                ->get();
+
+            $unreadNotifications = Notification::where('user_id', $userId)
+                ->where('is_read', false)
+                ->latest()
+                ->take(5)
+                ->get();
+
+            $pendingPasswordResets = \App\Models\PasswordResetRequest::pending()
+                ->notExpired()
+                ->with(['user.employee'])
+                ->latest()
+                ->take(5)
+                ->get();
+
+            $recentDocuments = Document::with(['uploader.employee'])
+                ->latest()
+                ->take(5)
+                ->get();
+
+            $announcements = $this->getAnnouncements($user, 3);
+            $activityPulse = DashboardLog::with(['user.employee'])
+                ->latest('log_date')
+                ->limit(4)
+                ->get();
+            $analytics = $this->getAnalyticsData();
+
+            $uploadsLast7Days = Document::where('created_at', '>=', now()->subDays(6)->startOfDay())
+                ->select(DB::raw('DATE(created_at) as day'), DB::raw('COUNT(*) as aggregate'))
+                ->groupBy('day')
+                ->orderBy('day')
+                ->pluck('aggregate', 'day');
+
+            $uploadBars = [];
+            $uploadMax = 1;
+            for ($i = 6; $i >= 0; $i--) {
+                $day = now()->subDays($i)->toDateString();
+                $count = (int) ($uploadsLast7Days[$day] ?? 0);
+                $uploadBars[] = [
+                    'label' => now()->subDays($i)->format('D'),
+                    'count' => $count,
+                ];
+                $uploadMax = max($uploadMax, $count);
+            }
+
+            $taskStatusBars = [];
+            $taskMax = 1;
+            foreach ($analytics['taskStatusData'] as $row) {
+                $count = (int) $row->count;
+                $taskStatusBars[] = [
+                    'label' => (string) $row->status,
+                    'count' => $count,
+                ];
+                $taskMax = max($taskMax, $count);
+            }
+
+            return array_merge($stats, [
+                'recentTasks' => $recentTasks,
+                'pendingTeachingGuidesCount' => $pendingTeachingGuidesCount,
+                'pendingExamQuestionnairesCount' => $pendingExamQuestionnairesCount,
+                'pendingApprovals' => $pendingApprovals,
+                'docsThisSchoolYear' => $docsThisSchoolYear,
+                'tasksInProgress' => $tasksInProgress,
+                'passwordResetCount' => $passwordResetCount,
+                'attentionCount' => $attentionCount,
+                'bannerUrl' => $bannerUrl,
+                'bannerCta' => $bannerCta,
+                'overdueTasks' => $overdueTasks,
+                'unreadNotifications' => $unreadNotifications,
+                'pendingPasswordResets' => $pendingPasswordResets,
+                'recentDocuments' => $recentDocuments,
+                'announcements' => $announcements,
+                'activityPulse' => $activityPulse,
+                'uploadBars' => $uploadBars,
+                'uploadMax' => $uploadMax,
+                'taskStatusBars' => $taskStatusBars,
+                'taskMax' => $taskMax,
+            ]);
+        });
+    }
+
+    /**
      * Get document analytics for Dean dashboard (system-wide).
      */
     public function getDeanDocumentAnalytics(): array

@@ -36,36 +36,9 @@ class DeanController extends Controller
     public function dashboard()
     {
         $user = auth()->user();
-        $stats = $this->dashboardService->getDeanStats($user->id);
+        $payload = $this->dashboardService->getDeanCommandCenter($user);
 
-        $recentTasks = Task::with(['assignedTo.employee'])
-            ->latest()
-            ->take(5)
-            ->get();
-
-        $activeId = \App\Models\SchoolYear::activeId();
-        $pendingScope = fn ($q) => $q->where('status', 'pending')
-            ->where(function ($q2) use ($activeId) {
-                $q2->where('school_year_id', $activeId)->orWhereNull('school_year_id');
-            });
-        $pendingTeachingGuidesCount = \App\Models\TeachingGuide::query()->where($pendingScope)->count();
-        $pendingExamQuestionnairesCount = \App\Models\ExamQuestionnaire::query()->where($pendingScope)->count();
-        $pendingApprovals = $pendingTeachingGuidesCount + $pendingExamQuestionnairesCount;
-
-        $docsThisSchoolYear = \App\Models\Document::where(function ($q) use ($activeId) {
-            $q->where('school_year_id', $activeId)->orWhereNull('school_year_id');
-        })->count();
-
-        $tasksInProgress = Task::where('status', 'In Progress')->count();
-
-        return view('dean.dashboard', array_merge($stats, compact(
-            'recentTasks',
-            'pendingTeachingGuidesCount',
-            'pendingExamQuestionnairesCount',
-            'pendingApprovals',
-            'docsThisSchoolYear',
-            'tasksInProgress',
-        )));
+        return view('dean.dashboard', $payload);
     }
 
     public function activityLog()
@@ -80,6 +53,7 @@ class DeanController extends Controller
     public function refreshInsight(Request $request)
     {
         Cache::forget('weekly_insight_dean');
+        Cache::forget('dean_command_center_'.$request->user()->id);
         $this->weeklyInsightService->generateForDean();
 
         return redirect()->route('dean.dashboard')

@@ -3,7 +3,7 @@
     $tgCount = $pendingTeachingGuidesCount ?? 0;
     $eqCount = $pendingExamQuestionnairesCount ?? 0;
 @endphp
-<div class="dean-pending-review-grid mb-6">
+<div class="dean-pending-review-grid mb-3">
     <a href="{{ route('dean.teaching-guides.index', ['status' => 'pending']) }}"
        class="content-card dean-pending-review-card dean-pending-review-card--tg no-underline hover:shadow-md transition-shadow">
         <div class="p-4 flex items-start gap-4">

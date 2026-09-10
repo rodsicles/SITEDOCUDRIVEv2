@@ -18,7 +18,7 @@ return new class extends Migration
                 'employee' => [
                     'employee_no' => 'DEAN001',
                     'full_name'   => 'Dr. John Dean',
-                    'department'  => 'Engineering',
+                    'department'  => 'Information Technology',
                     'position'    => 'Dean',
                     'hire_date'   => now()->subYears(5)->toDateString(),
                 ],
@@ -60,7 +60,7 @@ return new class extends Migration
                 'employee' => [
                     'employee_no' => 'SEC001',
                     'full_name'   => 'Maria Secretary',
-                    'department'  => 'Engineering',
+                    'department'  => 'Information Technology',
                     'position'    => 'Secretary',
                     'hire_date'   => now()->subYears(1)->toDateString(),
                 ],

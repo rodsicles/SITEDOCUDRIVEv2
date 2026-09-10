@@ -6,15 +6,11 @@ use Illuminate\Support\Facades\DB;
 return new class extends Migration
 {
     /**
-     * Demo / placeholder accounts seeded for development (CEDR006 through SEC001).
+     * Only true demo placeholders — keep default role logins (dean/coordinator/faculty/secretary).
      */
     private const PLACEHOLDER_EMPLOYEE_NOS = [
         'CEDR006',
         'KARL005',
-        'DEAN001',
-        'COORD001',
-        'FAC001',
-        'SEC001',
     ];
 
     public function up(): void

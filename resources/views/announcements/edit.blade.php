@@ -14,85 +14,65 @@
 @endsection
 
 @section('content')
-    <div class="content-card" style="max-width: 800px;">
-        <div class="card-header">
-            <h3 class="card-title"><i class="fas fa-edit mr-2"></i> Edit Announcement</h3>
-            <a href="{{ route('announcements.index') }}" class="btn btn-primary">
+    <div class="content-card announcement-edit-card">
+        <div class="card-header announcements-page__header">
+            <h3 class="card-title announcements-page__title">
+                <i class="fas fa-edit mr-1.5"></i> Edit
+            </h3>
+            <a href="{{ route('announcements.index') }}" class="btn btn-primary btn-sm">
                 <i class="fas fa-arrow-left mr-1"></i> Back
             </a>
         </div>
 
-        <form action="{{ route('announcements.update', $announcement->announcement_id) }}" method="POST">
+        <form action="{{ route('announcements.update', $announcement->announcement_id) }}" method="POST" class="announcement-composer is-open">
             @csrf
             @method('PUT')
 
-            <div class="form-group">
-                <label class="form-label" for="title">Title <span class="text-red-500">*</span></label>
-                <input type="text" name="title" id="title" class="form-control" value="{{ old('title', $announcement->title) }}" placeholder="Enter announcement title..." required maxlength="255">
+            @if($errors->any())
+            <div class="announcement-composer__errors">
+                @foreach($errors->all() as $error)
+                    <p class="m-0">{{ $error }}</p>
+                @endforeach
+            </div>
+            @endif
+
+            <div class="announcement-composer__main">
+                <input type="text" name="title" class="announcement-composer__title" value="{{ old('title', $announcement->title) }}" placeholder="Announcement title" required maxlength="255">
+                <textarea name="body" id="body" class="announcement-composer__body" rows="4" placeholder="Write a short update…" required maxlength="5000">{{ old('body', $announcement->body) }}</textarea>
             </div>
 
-            <div class="form-group">
-                <label class="form-label" for="body">Content <span class="text-red-500">*</span></label>
-                <textarea name="body" id="body" class="form-control" rows="8" placeholder="Write your announcement here..." required maxlength="5000">{{ old('body', $announcement->body) }}</textarea>
-                <small class="text-gray-500 dark:text-gray-400 mt-1 block">
-                    <span id="charCount">0</span>/5000 characters
-                </small>
-            </div>
-
-            <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
-                <div class="form-group">
-                    <label class="form-label" for="visibility">Visible To <span class="text-red-500">*</span></label>
-                    <select name="visibility" id="visibility" class="form-control">
-                        <option value="All" {{ old('visibility', $announcement->visibility) === 'All' ? 'selected' : '' }}>All Users</option>
-                        <option value="Dean" {{ old('visibility', $announcement->visibility) === 'Dean' ? 'selected' : '' }}>Dean Only</option>
-                        <option value="Program Coordinator" {{ old('visibility', $announcement->visibility) === 'Program Coordinator' ? 'selected' : '' }}>Program Coordinators</option>
-                        <option value="Faculty Employee" {{ old('visibility', $announcement->visibility) === 'Faculty Employee' ? 'selected' : '' }}>Faculty Employees</option>
+            <div class="announcement-composer__toolbar">
+                <label class="announcement-composer__audience-wrap">
+                    <span class="sr-only">Audience</span>
+                    <select name="audience" class="announcement-composer__audience" required>
+                        @foreach($audienceOptions as $value => $label)
+                            <option value="{{ $value }}" @selected($selectedAudience === $value)>{{ $label }}</option>
+                        @endforeach
                     </select>
-                </div>
-
-                <div class="form-group">
-                    <label class="form-label" for="department">Department <span class="text-red-500">*</span></label>
-                    <select name="department" id="department" class="form-control">
-                        <option value="All" {{ old('department', $announcement->department) === 'All' ? 'selected' : '' }}>All Departments</option>
-                        <option value="Engineering" {{ old('department', $announcement->department) === 'Engineering' ? 'selected' : '' }}>Engineering</option>
-                        <option value="Information Technology" {{ old('department', $announcement->department) === 'Information Technology' ? 'selected' : '' }}>Information Technology</option>
-                    </select>
-                </div>
+                </label>
+                <button type="submit" class="btn btn-primary btn-sm">
+                    <i class="fas fa-save mr-1"></i> Save
+                </button>
             </div>
 
-            <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
-                <div class="form-group">
-                    <label class="form-label" for="expires_at">Expires At <small class="text-gray-400 font-normal">(optional)</small></label>
-                    <input type="datetime-local" name="expires_at" id="expires_at" class="form-control" value="{{ old('expires_at', $announcement->expires_at ? $announcement->expires_at->format('Y-m-d\TH:i') : '') }}" min="{{ now()->format('Y-m-d') }}T00:00" max="{{ date('Y') . '-12-31T23:59' }}">
-                    <small class="text-gray-500 dark:text-gray-400 mt-1 block">Leave empty for no expiration</small>
-                </div>
-
-                <div class="form-group flex items-end pb-2">
-                    <label class="flex items-center gap-3 cursor-pointer select-none">
+            <div class="announcement-composer__advanced">
+                <div class="announcement-composer__advanced-row">
+                    <label class="announcement-composer__field">
+                        <span>Expires (optional)</span>
+                        <input type="datetime-local"
+                               name="expires_at"
+                               class="form-control announcement-composer__control"
+                               value="{{ old('expires_at', $announcement->expires_at ? $announcement->expires_at->format('Y-m-d\TH:i') : '') }}"
+                               min="{{ now()->format('Y-m-d') }}T00:00"
+                               max="{{ date('Y') . '-12-31T23:59' }}">
+                    </label>
+                    <label class="announcement-composer__pin">
                         <input type="hidden" name="is_pinned" value="0">
-                        <input type="checkbox" name="is_pinned" value="1" class="w-5 h-5 border-gray-300 dark:border-gray-600 text-[#028a0f] focus:ring-[#028a0f]" {{ old('is_pinned', $announcement->is_pinned) ? 'checked' : '' }}>
-                        <span class="form-label mb-0">
-                            <i class="fas fa-thumbtack mr-1 text-[#028a0f]"></i> Pin this announcement
-                        </span>
+                        <input type="checkbox" name="is_pinned" value="1" {{ old('is_pinned', $announcement->is_pinned) ? 'checked' : '' }}>
+                        <span><i class="fas fa-thumbtack text-[#028a0f]"></i> Pin to top</span>
                     </label>
                 </div>
             </div>
-
-            <div class="flex justify-end gap-3 mt-4 pt-4 border-t border-gray-200 dark:border-gray-700">
-                <a href="{{ route('announcements.index') }}" class="btn btn-secondary border-0">Cancel</a>
-                <button type="submit" class="btn btn-primary">
-                    <i class="fas fa-save mr-1"></i> Update Announcement
-                </button>
-            </div>
         </form>
     </div>
-
-    <script>
-        const bodyField = document.getElementById('body');
-        const charCount = document.getElementById('charCount');
-        bodyField.addEventListener('input', () => {
-            charCount.textContent = bodyField.value.length;
-        });
-        charCount.textContent = bodyField.value.length;
-    </script>
 @endsection

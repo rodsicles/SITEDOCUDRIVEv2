@@ -1,22 +1,5 @@
 @extends('layouts.dashboard')
 
-@section('title', 'User Guide')
-@section('page-title', 'User Guide')
-@section('page-subtitle', 'Step-by-step guide for using the Employee Dashboard')
-
-@section('sidebar')
-    @if(auth()->user()->isFaculty())
-        @include('partials.faculty-sidebar')
-    @elseif(auth()->user()->isProgramCoordinator())
-        @include('partials.coordinator-sidebar')
-    @elseif(auth()->user()->isSecretary())
-        @include('partials.secretary-sidebar')
-    @else
-        @include('partials.dean-sidebar')
-    @endif
-@endsection
-
-@section('content')
 @php
     $user = auth()->user();
     $isFaculty = $user->isFaculty();
@@ -24,14 +7,49 @@
     $isDean = $user->isDean();
     $isSecretary = $user->isSecretary();
     $isDeanOrSecretary = $user->isDeanOrSecretary();
+    $guideSubtitle = $isDean
+        ? 'Step-by-step guide for the Dean Dashboard'
+        : ($isCoordinator
+            ? 'Step-by-step guide for the Program Coordinator Dashboard'
+            : ($isSecretary
+                ? 'Step-by-step guide for the Secretary Dashboard'
+                : 'Step-by-step guide for the Faculty Dashboard'));
 @endphp
+
+@section('title', 'User Guide')
+@section('page-title', 'User Guide')
+@section('page-subtitle', $guideSubtitle)
+
+@section('sidebar')
+    @if($isFaculty)
+        @include('partials.faculty-sidebar')
+    @elseif($isCoordinator)
+        @include('partials.coordinator-sidebar')
+    @elseif($isSecretary)
+        @include('partials.secretary-sidebar')
+    @else
+        @include('partials.dean-sidebar')
+    @endif
+@endsection
+
+@section('content')
 
 {{-- Welcome Banner --}}
 <div class="guide-welcome-banner">
     <div class="guide-welcome-icon"><i class="fas fa-book-open"></i></div>
     <div>
         <div class="guide-welcome-title">Welcome, {{ $user->role->role_name }}</div>
-        <div class="guide-welcome-sub">This guide covers the features available to your role. Follow the steps below to use the Employee Dashboard effectively.</div>
+        <div class="guide-welcome-sub">
+            @if($isDean)
+                This guide covers Dean tools: approvals, faculty oversight, documents, announcements, analytics, and archives. Follow the steps below for your dashboard.
+            @elseif($isCoordinator)
+                This guide covers Program Coordinator features for your department. Follow the steps below to use your dashboard effectively.
+            @elseif($isSecretary)
+                This guide covers Secretary features that support Dean office operations. Follow the steps below to use your dashboard effectively.
+            @else
+                This guide covers Faculty features for tasks, uploads, and approvals. Follow the steps below to use your dashboard effectively.
+            @endif
+        </div>
     </div>
 </div>
 
@@ -191,11 +209,17 @@
         <li>Click <strong>Mark as read</strong> to clear an item immediately.</li>
         <li>Read <strong>pinned</strong> announcements first — they stay at the top with a pin icon and highlighted border.</li>
         @if($isDean || $isCoordinator)
-        <li>Click <strong>Post Announcement</strong> to publish a new item. Set the title, body, visibility (all roles or a specific role), and optional expiry.</li>
+        <li>Use the <strong>composer</strong> at the top of the feed (or <strong>Post Announcement</strong>) to publish. Choose audience, write the message, set optional expiry, then post.</li>
         <li>Use the <strong>three-dot menu (⋮)</strong> on your own posts to edit or delete them.</li>
         @endif
     </ol>
-    <div class="guide-tip"><i class="fas fa-lightbulb mr-1"></i> <strong>Tip:</strong> Faculty and Secretary users can read announcements but cannot post them unless your role includes that button.</div>
+    <div class="guide-tip"><i class="fas fa-lightbulb mr-1"></i> <strong>Tip:</strong>
+        @if($isDean || $isCoordinator)
+            Pin important Dean or department notices so they stay at the top of the feed.
+        @else
+            Faculty and Secretary users can read announcements but cannot post them unless your role includes that button.
+        @endif
+    </div>
 </div>
 
 {{-- ===== NOTIFICATIONS ===== --}}
@@ -214,9 +238,17 @@
         <li>Mark individual notifications as read, or use <strong>Mark all as read</strong> to clear the list.</li>
         @if($isFaculty)
         <li>You receive notifications when teaching guides or exam questionnaires are <strong>approved</strong> or <strong>rejected</strong> by the Dean.</li>
+        @elseif($isDeanOrSecretary)
+        <li>You receive alerts when faculty submit teaching guides or exam questionnaires that need review, plus task and account events.</li>
         @endif
     </ol>
-    <div class="guide-tip"><i class="fas fa-lightbulb mr-1"></i> <strong>Tip:</strong> Check notifications after uploading submissions so you catch approval results quickly.</div>
+    <div class="guide-tip"><i class="fas fa-lightbulb mr-1"></i> <strong>Tip:</strong>
+        @if($isDeanOrSecretary)
+            Clear pending-review badges from the sidebar by finishing Approve/Reject actions on the pending pages.
+        @else
+            Check notifications after uploading submissions so you catch approval results quickly.
+        @endif
+    </div>
 </div>
 @endif
 
@@ -226,12 +258,19 @@
     <div class="card-header">
         <h3 class="card-title"><i class="fas fa-users mr-2"></i> 6. Faculty Members</h3>
     </div>
-    <p class="guide-intro">Faculty Members lists employee accounts in your department.</p>
+    <p class="guide-intro">
+        @if($isDean)
+            Faculty Members is your directory of department instructors. Open a profile to review details and browse that faculty member's document tree.
+        @else
+            Faculty Members lists employee accounts in your department.
+        @endif
+    </p>
     <ol class="guide-steps">
         <li>Click <strong>Faculty Members</strong> in the sidebar.</li>
         <li>Browse the directory for employee number, name, email, department, and status.</li>
         <li>Click <strong>View Profile</strong> to open a faculty member's full record.</li>
         @if($isDean)
+        <li>On the profile, use <strong>Browse by Folder</strong> (Expand all / Collapse all) to inspect Teaching Guides and Exam Questionnaires. Each file shows its <strong>file name</strong>, status, folder path, and date.</li>
         <li>Click <strong>Edit</strong> on a profile to update employee information.</li>
         <li>Use <strong>search or filters</strong> to find someone by name or department.</li>
         @elseif($isCoordinator)
@@ -240,7 +279,13 @@
         <li>Secretary users can view profiles to support office operations; account edits are handled by the Dean.</li>
         @endif
     </ol>
-    <div class="guide-tip"><i class="fas fa-lightbulb mr-1"></i> <strong>Tip:</strong> Accurate faculty records help with analytics and document ownership.</div>
+    <div class="guide-tip"><i class="fas fa-lightbulb mr-1"></i> <strong>Tip:</strong>
+        @if($isDean)
+            Use Expand all on a faculty profile when you need the exact uploaded file name, not only the folder path.
+        @else
+            Accurate faculty records help with analytics and document ownership.
+        @endif
+    </div>
 </div>
 @endif
 
@@ -314,6 +359,10 @@
         @if($isFaculty)
         <li>For <strong>Teaching Guides</strong> and <strong>Exam Questionnaires</strong>, navigate to the correct school year → semester → subject (and assessment type for exams), then upload. Submissions stay <strong>pending</strong> until the Dean approves them.</li>
         <li>For personal or department files, use <strong>Academics</strong> or <strong>Custom Folders</strong> as appropriate.</li>
+        @elseif($isDean)
+        <li>Review shared Teaching Guides and Exam Questionnaires folders, upload department files when needed, and assign recipients when prompted.</li>
+        <li>Use <strong>Recent</strong>, <strong>Favorites</strong>, and filters (uploader/date) to find files quickly across the library.</li>
+        <li>Use <strong>Custom Folders</strong> for general Dean office files.</li>
         @else
         <li>Coordinators and Dean office roles can upload shared documents in Teaching Guides and Exam Questionnaires folders and assign recipients when prompted.</li>
         <li>Use <strong>Custom Folders</strong> to create your own subfolders for general files.</li>
@@ -322,7 +371,13 @@
         <li>Click a file name to <strong>view</strong> or use <strong>Download</strong>. Delete moves the file to the Recycle Bin (not permanent until removed from there).</li>
         <li>Use the <strong>filter panel and search</strong> below the tabs to find files by name, category, or uploader.</li>
     </ol>
-    <div class="guide-tip"><i class="fas fa-lightbulb mr-1"></i> <strong>Tip:</strong> Follow the folder path shown on Teaching Guides and Exam Questionnaires pages to jump back to the upload location.</div>
+    <div class="guide-tip"><i class="fas fa-lightbulb mr-1"></i> <strong>Tip:</strong>
+        @if($isDean)
+            To inspect one instructor's uploads by file name, open <strong>Faculty Members → View Profile → Browse by Folder</strong>.
+        @else
+            Follow the folder path shown on Teaching Guides and Exam Questionnaires pages to jump back to the upload location.
+        @endif
+    </div>
 </div>
 
 {{-- ===== RECYCLE BIN ===== --}}
@@ -407,7 +462,7 @@
     <p class="guide-intro">Review exam questionnaire submissions (TOQ, MCQ, and related types) before they are published.</p>
     <ol class="guide-steps">
         <li>Click <strong>Pending Exam Questionnaires</strong> in the sidebar. The badge shows pending items.</li>
-        <li>Filter by status, semester, or search by subject, type, or faculty.</li>
+        <li>Use the compact toolbar: filter by <strong>Status</strong> and <strong>Exam Type</strong>, then search by title, subject, or faculty name beside those filters.</li>
         <li><strong>View</strong> or <strong>Download</strong> each file, then <strong>Approve</strong> or <strong>Reject</strong> with remarks.</li>
         <li>Approved questionnaires become available in the shared library; rejected ones return to the uploader for correction.</li>
     </ol>

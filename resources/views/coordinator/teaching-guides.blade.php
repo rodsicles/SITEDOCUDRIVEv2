@@ -23,33 +23,33 @@
             You only see submissions from faculty in your department. Upload new files from <strong>Documents → Teaching Guides</strong>.
         </p>
 
-        <div class="px-4 pb-4 flex items-center gap-4 flex-wrap pt-3">
-            <div class="flex items-center gap-2">
-                <label class="text-sm font-medium whitespace-nowrap text-gray-700 dark:text-gray-300">Status:</label>
-                <select onchange="window.location.href=this.value" class="form-control text-sm">
+        <div class="submission-toolbar pt-3">
+            <div class="submission-toolbar__group">
+                <label class="submission-toolbar__label">Status</label>
+                <select onchange="window.location.href=this.value" class="form-control submission-toolbar__select">
                     <option value="{{ route('coordinator.teaching-guides.index') }}">All</option>
                     @foreach(['pending','approved','rejected'] as $s)
                         <option value="{{ route('coordinator.teaching-guides.index', ['status' => $s]) }}" {{ ($statusFilter ?? '') === $s ? 'selected' : '' }}>{{ ucfirst($s) }}</option>
                     @endforeach
                 </select>
             </div>
-            <div class="flex items-center gap-2">
-                <label class="text-sm font-medium whitespace-nowrap text-gray-700 dark:text-gray-300">Semester:</label>
-                <select onchange="window.location.href=this.value" class="form-control text-sm">
+            <div class="submission-toolbar__group">
+                <label class="submission-toolbar__label">Semester</label>
+                <select onchange="window.location.href=this.value" class="form-control submission-toolbar__select">
                     <option value="{{ route('coordinator.teaching-guides.index', array_filter(['status' => $statusFilter ?? null])) }}">All</option>
                     @foreach(['1st','2nd'] as $sem)
                         <option value="{{ route('coordinator.teaching-guides.index', array_filter(['status' => $statusFilter ?? null, 'semester' => $sem])) }}" {{ ($semesterFilter ?? '') === $sem ? 'selected' : '' }}>{{ $sem }} Semester</option>
                     @endforeach
                 </select>
             </div>
-            <form action="{{ route('coordinator.teaching-guides.index') }}" method="GET" class="flex items-center gap-2 ml-auto flex-wrap">
+            <form action="{{ route('coordinator.teaching-guides.index') }}" method="GET" class="submission-toolbar__search submission-toolbar__search--wide">
                 @if($statusFilter ?? false)<input type="hidden" name="status" value="{{ $statusFilter }}">@endif
                 @if($semesterFilter ?? false)<input type="hidden" name="semester" value="{{ $semesterFilter }}">@endif
                 @include('partials.school-year-filter', ['selected' => $academicYearStart ?? ''])
-                <input type="text" name="search" value="{{ $search }}" class="form-control text-sm" placeholder="Search title, subject, or faculty..." style="min-width:220px">
-                <button type="submit" class="btn btn-primary text-sm"><i class="fas fa-search"></i></button>
+                <input type="text" name="search" value="{{ $search }}" class="form-control" placeholder="Search title, subject, faculty…">
+                <button type="submit" class="btn btn-primary text-sm" title="Search" aria-label="Search"><i class="fas fa-search"></i></button>
                 @if($search || $semesterFilter || ($statusFilter ?? false) || ($academicYearStart ?? ''))
-                    <a href="{{ route('coordinator.teaching-guides.index') }}" class="btn bg-gray-200 dark:bg-gray-700 text-gray-700 dark:text-gray-300 text-sm"><i class="fas fa-times"></i></a>
+                    <a href="{{ route('coordinator.teaching-guides.index') }}" class="btn bg-gray-200 dark:bg-gray-700 text-gray-700 dark:text-gray-300 text-sm" title="Clear filters"><i class="fas fa-times"></i></a>
                 @endif
             </form>
         </div>

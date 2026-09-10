@@ -33,26 +33,18 @@ document.addEventListener('DOMContentLoaded', function() {
         }
     });
 
-    // ── Sidebar Accordion ──────────────────────────────────────────────
-    // Each .sidebar-section-label[data-target] toggles its .sidebar-group-items
-    // Only one group open at a time (accordion style).
+    // ── Sidebar section toggles ────────────────────────────────────────
+    // Each .sidebar-section-label[data-target] toggles only its own group.
+    // Other open sections stay open until their header is clicked again.
     // The section that contains the active .menu-item auto-opens on page load.
 
-    function openSidebarGroup(groupEl, toggleEl) {
-        groupEl.classList.add('open');
+    function setSidebarGroupOpen(groupEl, toggleEl, open) {
+        groupEl.classList.toggle('open', open);
         const chevron = toggleEl ? toggleEl.querySelector('.sidebar-chevron') : null;
         if (chevron) {
-            chevron.classList.remove('fa-chevron-down');
-            chevron.classList.add('fa-chevron-up');
+            chevron.classList.toggle('fa-chevron-down', !open);
+            chevron.classList.toggle('fa-chevron-up', open);
         }
-    }
-
-    function closeAllSidebarGroups() {
-        document.querySelectorAll('.sidebar-group-items').forEach(g => g.classList.remove('open'));
-        document.querySelectorAll('.sidebar-chevron').forEach(c => {
-            c.classList.remove('fa-chevron-up');
-            c.classList.add('fa-chevron-down');
-        });
     }
 
     const sidebarToggles = document.querySelectorAll('.sidebar-section-label[data-target]');
@@ -62,11 +54,7 @@ document.addEventListener('DOMContentLoaded', function() {
             const groupItems = document.getElementById(targetId);
             if (!groupItems) return;
 
-            const isOpen = groupItems.classList.contains('open');
-            closeAllSidebarGroups();
-            if (!isOpen) {
-                openSidebarGroup(groupItems, this);
-            }
+            setSidebarGroupOpen(groupItems, this, !groupItems.classList.contains('open'));
         });
     });
 
@@ -76,7 +64,7 @@ document.addEventListener('DOMContentLoaded', function() {
         const parentGroup = activeMenuItem.closest('.sidebar-group-items');
         if (parentGroup) {
             const toggle = document.querySelector('.sidebar-section-label[data-target="' + parentGroup.id + '"]');
-            openSidebarGroup(parentGroup, toggle);
+            setSidebarGroupOpen(parentGroup, toggle, true);
         }
     }
     // ──────────────────────────────────────────────────────────────────

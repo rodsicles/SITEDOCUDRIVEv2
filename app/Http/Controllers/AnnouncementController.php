@@ -37,10 +37,7 @@ class AnnouncementController extends Controller
 
     public function create()
     {
-        $rolePrefix = $this->getRolePrefix();
-        $sidebar = $this->getSidebarData();
-
-        return view('announcements.create', compact('rolePrefix', 'sidebar'));
+        return redirect()->route('announcements.index', ['compose' => 1]);
     }
 
     public function store(Request $request)
@@ -48,12 +45,13 @@ class AnnouncementController extends Controller
         $validated = $request->validate([
             'title' => 'required|string|max:255',
             'body' => 'required|string|max:5000',
+            'audience' => 'required|in:everyone,faculty,coordinators,dean,it,engineering',
             'is_pinned' => 'boolean',
-            'visibility' => 'required|in:All,Dean,Program Coordinator,Faculty Employee',
-            'department' => 'required|in:All,Engineering,Information Technology',
             'expires_at' => 'nullable|date|after:now',
         ]);
 
+        $validated = array_merge($validated, $this->mapAudience($validated['audience']));
+        unset($validated['audience']);
         $validated['is_pinned'] = $request->boolean('is_pinned');
 
         $this->announcementService->createAnnouncement($validated, auth()->user());
@@ -70,8 +68,19 @@ class AnnouncementController extends Controller
 
         $rolePrefix = $this->getRolePrefix();
         $sidebar = $this->getSidebarData();
+        $audienceOptions = self::audienceOptions();
+        $selectedAudience = old('audience', $this->audienceFromFilters(
+            $announcement->visibility,
+            $announcement->department
+        ));
 
-        return view('announcements.edit', compact('announcement', 'rolePrefix', 'sidebar'));
+        return view('announcements.edit', compact(
+            'announcement',
+            'rolePrefix',
+            'sidebar',
+            'audienceOptions',
+            'selectedAudience'
+        ));
     }
 
     public function update(Request $request, $id)
@@ -83,12 +92,13 @@ class AnnouncementController extends Controller
         $validated = $request->validate([
             'title' => 'required|string|max:255',
             'body' => 'required|string|max:5000',
+            'audience' => 'required|in:everyone,faculty,coordinators,dean,it,engineering',
             'is_pinned' => 'boolean',
-            'visibility' => 'required|in:All,Dean,Program Coordinator,Faculty Employee',
-            'department' => 'required|in:All,Engineering,Information Technology',
             'expires_at' => 'nullable|date|after:now',
         ]);
 
+        $validated = array_merge($validated, $this->mapAudience($validated['audience']));
+        unset($validated['audience']);
         $validated['is_pinned'] = $request->boolean('is_pinned');
 
         $this->announcementService->updateAnnouncement($announcement, $validated, auth()->id());
@@ -244,5 +254,61 @@ class AnnouncementController extends Controller
             'rolePrefix' => $this->getRolePrefix(),
             'unreadNotifications' => $unreadNotifications,
         ];
+    }
+
+    /**
+     * Single audience control labels (maps to visibility + department).
+     *
+     * @return array<string, string>
+     */
+    public static function audienceOptions(): array
+    {
+        return [
+            'everyone' => 'Everyone',
+            'faculty' => 'Faculty only',
+            'coordinators' => 'Coordinators only',
+            'dean' => 'Dean only',
+            'it' => 'IT department',
+            'engineering' => 'Engineering department',
+        ];
+    }
+
+    /**
+     * @return array{visibility: string, department: string}
+     */
+    private function mapAudience(string $audience): array
+    {
+        return match ($audience) {
+            'faculty' => ['visibility' => 'Faculty Employee', 'department' => 'All'],
+            'coordinators' => ['visibility' => 'Program Coordinator', 'department' => 'All'],
+            'dean' => ['visibility' => 'Dean', 'department' => 'All'],
+            'it' => ['visibility' => 'All', 'department' => 'Information Technology'],
+            'engineering' => ['visibility' => 'All', 'department' => 'Engineering'],
+            default => ['visibility' => 'All', 'department' => 'All'],
+        };
+    }
+
+    private function audienceFromFilters(?string $visibility, ?string $department): string
+    {
+        $visibility = $visibility ?: 'All';
+        $department = $department ?: 'All';
+
+        if ($department === 'Information Technology' && $visibility === 'All') {
+            return 'it';
+        }
+        if ($department === 'Engineering' && $visibility === 'All') {
+            return 'engineering';
+        }
+        if ($visibility === 'Faculty Employee') {
+            return 'faculty';
+        }
+        if ($visibility === 'Program Coordinator') {
+            return 'coordinators';
+        }
+        if ($visibility === 'Dean') {
+            return 'dean';
+        }
+
+        return 'everyone';
     }
 }

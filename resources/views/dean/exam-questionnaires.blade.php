@@ -23,32 +23,32 @@
             @endif
         </div>
 
-        <div class="px-4 pb-4 flex items-center gap-4 flex-wrap">
-            <div class="flex items-center gap-2">
-                <label class="text-sm font-medium whitespace-nowrap text-gray-700 dark:text-gray-300">Status:</label>
-                <select onchange="window.location.href=this.value" class="form-control text-sm">
+        <div class="submission-toolbar">
+            <div class="submission-toolbar__group">
+                <label class="submission-toolbar__label">Status</label>
+                <select onchange="window.location.href=this.value" class="form-control submission-toolbar__select">
                     <option value="{{ route('dean.exam-questionnaires.index') }}">All</option>
                     @foreach(['pending','approved','rejected'] as $s)
                         <option value="{{ route('dean.exam-questionnaires.index', ['status' => $s]) }}" {{ $statusFilter === $s ? 'selected' : '' }}>{{ ucfirst($s) }}</option>
                     @endforeach
                 </select>
             </div>
-            <div class="flex items-center gap-2">
-                <label class="text-sm font-medium whitespace-nowrap text-gray-700 dark:text-gray-300">Exam Type:</label>
-                <select onchange="window.location.href=this.value" class="form-control text-sm">
-                    <option value="{{ route('dean.exam-questionnaires.index') }}">All</option>
+            <div class="submission-toolbar__group">
+                <label class="submission-toolbar__label">Exam Type</label>
+                <select onchange="window.location.href=this.value" class="form-control submission-toolbar__select">
+                    <option value="{{ route('dean.exam-questionnaires.index', array_filter(['status' => $statusFilter ?: null])) }}">All</option>
                     @foreach(['Quiz','Prelim','Midterm','Pre-Final','Final'] as $type)
-                        <option value="{{ route('dean.exam-questionnaires.index', ['exam_type' => $type]) }}" {{ $examTypeFilter === $type ? 'selected' : '' }}>{{ $type }}</option>
+                        <option value="{{ route('dean.exam-questionnaires.index', array_filter(['status' => $statusFilter ?: null, 'exam_type' => $type])) }}" {{ $examTypeFilter === $type ? 'selected' : '' }}>{{ $type }}</option>
                     @endforeach
                 </select>
             </div>
-            <form action="{{ route('dean.exam-questionnaires.index') }}" method="GET" class="flex items-center gap-2 ml-auto">
+            <form action="{{ route('dean.exam-questionnaires.index') }}" method="GET" class="submission-toolbar__search">
                 @if($statusFilter)<input type="hidden" name="status" value="{{ $statusFilter }}">@endif
                 @if($examTypeFilter)<input type="hidden" name="exam_type" value="{{ $examTypeFilter }}">@endif
-                <input type="text" name="search" value="{{ $search }}" class="form-control text-sm" placeholder="Search title, subject, or faculty..." style="min-width:220px">
-                <button type="submit" class="btn btn-primary text-sm"><i class="fas fa-search"></i></button>
+                <input type="text" name="search" value="{{ $search }}" class="form-control" placeholder="Search title, subject, faculty…">
+                <button type="submit" class="btn btn-primary text-sm" title="Search" aria-label="Search"><i class="fas fa-search"></i></button>
                 @if($search)
-                    <a href="{{ route('dean.exam-questionnaires.index') }}" class="btn bg-gray-200 dark:bg-gray-700 text-gray-700 dark:text-gray-300 text-sm"><i class="fas fa-times"></i></a>
+                    <a href="{{ route('dean.exam-questionnaires.index', array_filter(['status' => $statusFilter ?: null, 'exam_type' => $examTypeFilter ?: null])) }}" class="btn bg-gray-200 dark:bg-gray-700 text-gray-700 dark:text-gray-300 text-sm" title="Clear search"><i class="fas fa-times"></i></a>
                 @endif
             </form>
         </div>

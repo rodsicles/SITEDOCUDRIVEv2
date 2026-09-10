@@ -30,8 +30,11 @@
                         {{ ucfirst($doc['status']) }}
                     </span>
                 @endif
+                @if(!empty($doc['file_name']) && strcasecmp($doc['file_name'], $doc['title'] ?? '') !== 0)
+                    <span class="doc-tree-file-item__filename" title="{{ $doc['file_name'] }}">{{ $doc['file_name'] }}</span>
+                @endif
                 @if(!empty($doc['folder_path']))
-                    <span class="doc-tree-file-item__path">{{ $doc['folder_path'] }}</span>
+                    <span class="doc-tree-file-item__path" title="{{ $doc['folder_path'] }}">{{ $doc['folder_path'] }}</span>
                 @endif
                 <span>{{ isset($doc['created_at']) ? $doc['created_at']->format('M d, Y') : '' }}</span>
             </div>

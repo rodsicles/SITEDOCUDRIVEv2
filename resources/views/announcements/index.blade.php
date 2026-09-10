@@ -29,11 +29,17 @@
                 <span class="badge badge-info ml-1.5">{{ $announcementTotal }}</span>
             </h3>
             @if($canPostAnnouncement)
-            <a href="{{ route('announcements.create') }}" class="btn btn-primary btn-sm announcements-page__post-btn">
+            <button type="button"
+                    class="btn btn-primary btn-sm announcements-page__post-btn"
+                    id="focusComposerBtn">
                 <i class="fas fa-plus mr-1"></i> Post
-            </a>
+            </button>
             @endif
         </div>
+
+        @if($canPostAnnouncement)
+            @include('partials.announcement-composer')
+        @endif
 
         @forelse ($announcements as $announcement)
         {{-- Announcement Card --}}
@@ -210,9 +216,9 @@
                 Official updates from Dean and Program Coordinators will appear here.
             </p>
             @if($canPostAnnouncement)
-            <a href="{{ route('announcements.create') }}" class="btn btn-primary btn-sm mt-2">
+            <button type="button" class="btn btn-primary btn-sm mt-2" id="emptyComposeBtn">
                 <i class="fas fa-plus mr-1"></i> Post the first announcement
-            </a>
+            </button>
             @else
             <p class="announcements-empty__hint">Check back later for new posts.</p>
             @endif
@@ -227,6 +233,36 @@
     </div>
 
     <script>
+        (function () {
+            var moreBtn = document.getElementById('composerMoreBtn');
+            var advanced = document.getElementById('composerAdvanced');
+            var composer = document.getElementById('announcementComposer');
+            var title = document.getElementById('composerTitle');
+
+            function focusComposer() {
+                if (!composer || !title) return;
+                composer.classList.add('is-open');
+                title.focus();
+                composer.scrollIntoView({ behavior: 'smooth', block: 'start' });
+            }
+
+            if (moreBtn && advanced) {
+                moreBtn.addEventListener('click', function () {
+                    var collapsed = advanced.classList.toggle('is-collapsed');
+                    moreBtn.setAttribute('aria-expanded', collapsed ? 'false' : 'true');
+                });
+            }
+
+            var focusBtn = document.getElementById('focusComposerBtn');
+            var emptyBtn = document.getElementById('emptyComposeBtn');
+            if (focusBtn) focusBtn.addEventListener('click', focusComposer);
+            if (emptyBtn) emptyBtn.addEventListener('click', focusComposer);
+
+            if (new URLSearchParams(window.location.search).get('compose') === '1') {
+                focusComposer();
+            }
+        })();
+
         // Mark as read
         function markAsRead(id) {
             fetch(`/announcements/${id}/read`, {

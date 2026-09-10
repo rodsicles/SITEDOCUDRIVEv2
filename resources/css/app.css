@@ -4417,6 +4417,171 @@ a.doc-sort-item:hover,
     margin-top: 0.65rem;
 }
 
+/* Announcement feed composer */
+.announcement-composer {
+    margin-bottom: 0.75rem;
+    padding: 0.65rem 0.75rem;
+    border: 1px solid #d1d5db;
+    background: #fff;
+}
+
+.dark .announcement-composer {
+    border-color: #4b5563;
+    background: #1e1e1e;
+}
+
+.announcement-composer__errors {
+    margin-bottom: 0.5rem;
+    padding: 0.4rem 0.55rem;
+    font-size: 0.75rem;
+    color: #b91c1c;
+    background: #fef2f2;
+    border-left: 3px solid #dc2626;
+}
+
+.dark .announcement-composer__errors {
+    color: #fecaca;
+    background: rgba(127, 29, 29, 0.25);
+}
+
+.announcement-composer__main {
+    display: flex;
+    flex-direction: column;
+    gap: 0.4rem;
+}
+
+.announcement-composer__title,
+.announcement-composer__body,
+.announcement-composer__audience,
+.announcement-composer__control {
+    width: 100%;
+    font-size: 0.8125rem;
+    color: #1f2937;
+    background: #fff;
+    border: 1px solid #d1d5db;
+    padding: 0.4rem 0.55rem;
+    outline: none;
+}
+
+.dark .announcement-composer__title,
+.dark .announcement-composer__body,
+.dark .announcement-composer__audience,
+.dark .announcement-composer__control {
+    color: #e5e7eb;
+    background: #2a2a2a;
+    border-color: #4b5563;
+}
+
+.announcement-composer__title:focus,
+.announcement-composer__body:focus,
+.announcement-composer__audience:focus,
+.announcement-composer__control:focus {
+    border-color: #028a0f;
+}
+
+.announcement-composer__body {
+    resize: vertical;
+    min-height: 4.5rem;
+    line-height: 1.4;
+}
+
+.announcement-composer__toolbar {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    gap: 0.4rem;
+    margin-top: 0.5rem;
+}
+
+.announcement-composer__audience-wrap {
+    flex: 1 1 10rem;
+    min-width: 9rem;
+    margin: 0;
+}
+
+.announcement-composer__audience {
+    width: 100%;
+}
+
+.announcement-composer__more {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.35rem;
+    padding: 0.35rem 0.55rem;
+    font-size: 0.75rem;
+    color: #028a0f;
+    background: transparent;
+    border: 1px solid #028a0f;
+    cursor: pointer;
+}
+
+.announcement-composer__more:hover {
+    background: rgba(2, 138, 15, 0.08);
+}
+
+.announcement-composer__submit {
+    margin-left: auto;
+}
+
+.announcement-composer__advanced {
+    margin-top: 0.55rem;
+    padding-top: 0.55rem;
+    border-top: 1px dashed #e5e7eb;
+}
+
+.dark .announcement-composer__advanced {
+    border-top-color: #404040;
+}
+
+.announcement-composer__advanced.is-collapsed {
+    display: none;
+}
+
+.announcement-composer__advanced-row {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 0.65rem;
+    align-items: flex-end;
+}
+
+.announcement-composer__field {
+    display: flex;
+    flex-direction: column;
+    gap: 0.2rem;
+    flex: 1 1 12rem;
+    margin: 0;
+    font-size: 0.7rem;
+    font-weight: 600;
+    color: #6b7280;
+    text-transform: uppercase;
+    letter-spacing: 0.02em;
+}
+
+.announcement-composer__pin {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.4rem;
+    margin: 0;
+    font-size: 0.8125rem;
+    color: #374151;
+    cursor: pointer;
+}
+
+.dark .announcement-composer__pin {
+    color: #e5e7eb;
+}
+
+.announcement-composer__hint {
+    margin: 0.4rem 0 0;
+    font-size: 0.7rem;
+    color: #9ca3af;
+}
+
+.announcement-edit-card.content-card {
+    max-width: 40rem;
+    padding: 0.75rem 1rem 1rem;
+}
+
 /* Notifications toolbar */
 .notifications-toolbar {
     @apply flex flex-wrap gap-2 items-center;
@@ -7998,11 +8163,80 @@ a.doc-sort-item:hover,
     color: #6b7280;
 }
 
+.doc-tree-file-item__filename {
+    font-weight: 600;
+    color: #374151;
+    max-width: 14rem;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+}
+
+.dark .doc-tree-file-item__filename {
+    color: #d1d5db;
+}
+
 .doc-tree-file-item__path {
     max-width: 18rem;
     white-space: nowrap;
     overflow: hidden;
     text-overflow: ellipsis;
+}
+
+/* Compact filters: Status / Exam Type / Search stay left-aligned */
+.submission-toolbar {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: flex-end;
+    gap: 0.5rem 0.65rem;
+    padding: 0 1rem 0.85rem;
+}
+
+.submission-toolbar__group {
+    display: flex;
+    flex-direction: column;
+    gap: 0.2rem;
+}
+
+.submission-toolbar__label {
+    font-size: 0.7rem;
+    font-weight: 600;
+    letter-spacing: 0.02em;
+    text-transform: uppercase;
+    color: #6b7280;
+}
+
+.dark .submission-toolbar__label {
+    color: #9ca3af;
+}
+
+.submission-toolbar__select {
+    width: auto;
+    min-width: 7.5rem;
+    max-width: 11rem;
+    font-size: 0.8125rem;
+    padding: 0.35rem 0.55rem;
+}
+
+.submission-toolbar__search {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    gap: 0.35rem;
+    flex: 1 1 14rem;
+    max-width: 22rem;
+    min-width: 12rem;
+}
+
+.submission-toolbar__search--wide {
+    max-width: 32rem;
+}
+
+.submission-toolbar__search .form-control {
+    min-width: 0;
+    flex: 1 1 auto;
+    font-size: 0.8125rem;
+    padding: 0.35rem 0.55rem;
 }
 
 .doc-tree-hidden {

@@ -92,10 +92,11 @@ class FacultyDocumentTreeService
 
             $node = [
                 'id' => 'tg-' . $guide->id,
-                'title' => $this->courseLabel($guide->subject, $guide->title),
+                'title' => $this->submissionLeafTitle($guide->title, $guide->file_path ?? null, $guide->subject),
                 'type' => $guide->file_type,
                 'status' => $guide->status,
                 'created_at' => $guide->created_at,
+                'file_name' => basename((string) ($guide->file_path ?? '')),
                 'view_url' => null,
                 'download_url' => null,
                 'is_pending_submission' => true,
@@ -120,10 +121,11 @@ class FacultyDocumentTreeService
 
             $node = [
                 'id' => 'eq-' . $eq->id,
-                'title' => $this->courseLabel($eq->subject, $eq->title),
+                'title' => $this->submissionLeafTitle($eq->title, $eq->file_path ?? null, $eq->subject),
                 'type' => $eq->file_type,
                 'status' => $eq->status,
                 'created_at' => $eq->created_at,
+                'file_name' => basename((string) ($eq->file_path ?? '')),
                 'view_url' => null,
                 'download_url' => null,
                 'is_questionnaire' => true,
@@ -171,21 +173,59 @@ class FacultyDocumentTreeService
         $eq = $examQuestionnaires->get($document->document_id);
         $tg = $teachingGuides->get($document->document_id);
 
+        $fileName = basename((string) ($document->file_path ?? ''));
+
         return [
             'id' => $document->document_id,
-            'title' => $this->courseLabel(
-                $document->subject,
-                $document->document_title,
-            ),
+            'title' => $this->documentLeafTitle($document, $fileName),
             'subject' => $document->subject,
             'type' => $document->document_type,
             'created_at' => $document->created_at,
-            'file_name' => basename($document->file_path ?? ''),
+            'file_name' => $fileName,
             'folder_path' => $this->folderBreadcrumb($document->folder),
             'view_url' => null,
             'download_url' => null,
             'status' => $eq?->status ?? $tg?->status,
         ];
+    }
+
+    /**
+     * Prefer the uploaded document/file name over the course subject so tree leaves are distinguishable.
+     */
+    protected function documentLeafTitle(Document $document, string $fileName = ''): string
+    {
+        return $this->submissionLeafTitle(
+            $document->document_title,
+            $document->file_path,
+            $document->subject,
+            $fileName,
+        );
+    }
+
+    protected function submissionLeafTitle(
+        ?string $title,
+        ?string $filePath,
+        ?string $subject = null,
+        ?string $fileName = null,
+    ): string {
+        $named = trim((string) ($title ?? ''));
+        $file = trim((string) ($fileName ?? '')) ?: basename((string) ($filePath ?? ''));
+        $course = trim((string) ($subject ?? ''));
+
+        // If the stored title is only the course/subject label, prefer the real file name.
+        if ($named !== '' && ($course === '' || strcasecmp($named, $course) !== 0)) {
+            return $named;
+        }
+
+        if ($file !== '') {
+            return $file;
+        }
+
+        if ($named !== '') {
+            return $named;
+        }
+
+        return $this->courseLabel($subject, 'Untitled');
     }
 
     /**

@@ -169,8 +169,8 @@
         <!-- Main Content -->
         <main class="ml-64 flex-1 p-8 w-[calc(100%-16rem)] main-content">
             <!-- Top Bar -->
-            <div class="bg-white dark:bg-[#2a2a2a] p-4 px-6 border border-gray-200 dark:border-gray-700 mb-4 flex justify-between items-center top-bar sticky top-0 z-[300] shadow-sm">
-                <div class="flex items-center gap-3 min-w-0">
+            <div class="bg-white dark:bg-[#2a2a2a] p-4 px-6 border border-gray-200 dark:border-gray-700 mb-4 flex justify-between items-center gap-4 top-bar sticky top-0 z-[300] shadow-sm">
+                <div class="flex items-center gap-3 min-w-0 flex-shrink-0">
                     <!-- Mobile Hamburger Menu -->
                     <button id="mobileMenuToggle" class="hidden max-md:block text-xl text-gray-800 dark:text-gray-200 bg-transparent border-none cursor-pointer flex-shrink-0 p-1">
                         <i class="fas fa-bars"></i>
@@ -180,6 +180,11 @@
                         <p class="text-gray-600 dark:text-gray-400 text-xs max-md:text-xs truncate">@yield('page-subtitle', 'Welcome back!')</p>
                     </div>
                 </div>
+                @hasSection('page-header-extra')
+                    <div class="page-header-extra min-w-0 flex-1 max-md:hidden">
+                        @yield('page-header-extra')
+                    </div>
+                @endif
                 <div class="flex items-center gap-3 max-md:gap-2 flex-shrink-0">
                     @php
                         $notificationsPageUrl = match (true) {
@@ -287,13 +292,13 @@
     </div>
 
     <!-- Global Search Modal -->
-    <div id="searchModal" class="hidden fixed inset-0 bg-black/60 z-[9999] items-start justify-center pt-16">
-        <div class="bg-white dark:bg-[#2a2a2a] w-[90%] max-w-2xl border border-gray-200 dark:border-gray-700">
-            <div class="p-3 border-b border-gray-200 dark:border-gray-700">
-                <input type="text" id="globalSearchInput" placeholder="Search files, announcements, users..." autocomplete="off" maxlength="80" class="w-full p-2 border border-gray-300 dark:border-gray-600 text-xs focus:outline-none focus:border-[#028a0f] dark:focus:border-[#028a0f] bg-white dark:bg-[#1e1e1e] text-gray-800 dark:text-gray-200">
+    <div id="searchModal" class="hidden fixed inset-0 bg-black/60 z-[9999] items-start justify-center pt-14">
+        <div class="bg-white dark:bg-[#2a2a2a] w-[92%] max-w-3xl border border-gray-200 dark:border-gray-700">
+            <div class="p-4 border-b border-gray-200 dark:border-gray-700">
+                <input type="text" id="globalSearchInput" placeholder="Search files, announcements, users..." autocomplete="off" maxlength="80" class="w-full px-3 py-3 border-2 border-gray-300 dark:border-gray-600 text-[1.05rem] leading-snug focus:outline-none focus:border-[#028a0f] dark:focus:border-[#028a0f] bg-white dark:bg-[#1e1e1e] text-gray-800 dark:text-gray-200">
             </div>
-            <div id="searchResults" class="max-h-72 overflow-y-auto p-2">
-                <p class="text-center text-gray-600 dark:text-gray-400 p-3 text-xs">Type to search...</p>
+            <div id="searchResults" class="max-h-80 overflow-y-auto p-3">
+                <p class="text-center text-gray-600 dark:text-gray-400 p-5 text-sm">Type to search...</p>
             </div>
         </div>
     </div>
@@ -393,7 +398,7 @@
                 searchModal.classList.add('hidden');
                 searchModal.classList.remove('flex');
                 searchInput.value = '';
-                searchResults.innerHTML = '<p class="text-center text-gray-600 dark:text-gray-400 p-5">Type to search...</p>';
+                searchResults.innerHTML = '<p class="text-center text-gray-600 dark:text-gray-400 p-5 text-sm">Type to search...</p>';
             }
         });
         
@@ -413,11 +418,11 @@
             const query = e.target.value.trim();
             
             if (query.length < 3) {
-                searchResults.innerHTML = '<p class="text-center text-gray-600 dark:text-gray-400 p-5">Type at least 3 characters...</p>';
+                searchResults.innerHTML = '<p class="text-center text-gray-600 dark:text-gray-400 p-5 text-sm">Type at least 3 characters...</p>';
                 return;
             }
             
-            searchResults.innerHTML = '<p class="text-center text-gray-600 dark:text-gray-400 p-5"><i class="fas fa-spinner fa-spin"></i> Searching...</p>';
+            searchResults.innerHTML = '<p class="text-center text-gray-600 dark:text-gray-400 p-5 text-sm"><i class="fas fa-spinner fa-spin"></i> Searching...</p>';
             
             searchTimeout = setTimeout(() => {
                 performSearch(query);
@@ -435,7 +440,7 @@
                 displaySearchResults(data);
             })
             .catch(error => {
-                searchResults.innerHTML = '<p class="text-center text-gray-600 dark:text-gray-400 p-5">No results found</p>';
+                searchResults.innerHTML = '<p class="text-center text-gray-600 dark:text-gray-400 p-5 text-sm">No results found</p>';
             });
         }
         
@@ -447,24 +452,24 @@
 
         function displaySearchResults(results) {
             if (results.length === 0) {
-                searchResults.innerHTML = '<p class="text-center text-gray-600 dark:text-gray-400 p-5">No results found</p>';
+                searchResults.innerHTML = '<p class="text-center text-gray-600 dark:text-gray-400 p-5 text-sm">No results found</p>';
                 return;
             }
 
             searchResults.innerHTML = '';
             results.forEach(result => {
                 const item = document.createElement('div');
-                item.className = 'p-3 mb-2 cursor-pointer hover:bg-[rgba(2,138,15,0.1)]';
+                item.className = 'p-3.5 mb-2 cursor-pointer hover:bg-[rgba(2,138,15,0.1)]';
                 item.addEventListener('click', () => {
                     window.location.href = result.url;
                 });
 
                 const title = document.createElement('div');
-                title.className = 'font-semibold text-gray-800 dark:text-gray-200 mb-1';
+                title.className = 'font-semibold text-[0.98rem] text-gray-800 dark:text-gray-200 mb-1';
                 title.textContent = result.title;
 
                 const type = document.createElement('div');
-                type.className = 'text-[10px] uppercase tracking-wide text-[#028a0f] dark:text-[#34d399] font-semibold mb-0.5';
+                type.className = 'text-[11px] uppercase tracking-wide text-[#028a0f] dark:text-[#34d399] font-semibold mb-0.5';
                 type.textContent = result.type || 'Result';
 
                 item.appendChild(title);
@@ -472,7 +477,7 @@
 
                 if (result.subtitle) {
                     const subtitle = document.createElement('div');
-                    subtitle.className = 'text-xs text-gray-600 dark:text-gray-400';
+                    subtitle.className = 'text-sm text-gray-600 dark:text-gray-400';
                     subtitle.textContent = result.subtitle;
                     item.appendChild(subtitle);
                 }

@@ -20,6 +20,26 @@
 @section('page-title', 'User Guide')
 @section('page-subtitle', $guideSubtitle)
 
+@php
+    $guideWelcomeSub = $isDean
+        ? 'This guide covers Dean tools: approvals, faculty oversight, documents, announcements, analytics, and archives. Follow the steps below for your dashboard.'
+        : ($isCoordinator
+            ? 'This guide covers Program Coordinator features for your department. Follow the steps below to use your dashboard effectively.'
+            : ($isSecretary
+                ? 'This guide covers Secretary features that support Dean office operations. Follow the steps below to use your dashboard effectively.'
+                : 'This guide covers Faculty features for tasks, uploads, and approvals. Follow the steps below to use your dashboard effectively.'));
+@endphp
+
+@section('page-header-extra')
+    <div class="guide-header-welcome">
+        <div class="guide-header-welcome__icon" aria-hidden="true"><i class="fas fa-book-open"></i></div>
+        <div class="guide-header-welcome__body min-w-0">
+            <div class="guide-header-welcome__title">Welcome, {{ $user->role->role_name }}</div>
+            <div class="guide-header-welcome__sub">{{ $guideWelcomeSub }}</div>
+        </div>
+    </div>
+@endsection
+
 @section('sidebar')
     @if($isFaculty)
         @include('partials.faculty-sidebar')
@@ -34,22 +54,34 @@
 
 @section('content')
 
-{{-- Welcome Banner --}}
-<div class="guide-welcome-banner">
+{{-- Mobile-only welcome (top-bar extra is hidden on small screens) --}}
+<div class="guide-welcome-banner guide-welcome-banner--mobile-only">
     <div class="guide-welcome-icon"><i class="fas fa-book-open"></i></div>
     <div>
         <div class="guide-welcome-title">Welcome, {{ $user->role->role_name }}</div>
-        <div class="guide-welcome-sub">
-            @if($isDean)
-                This guide covers Dean tools: approvals, faculty oversight, documents, announcements, analytics, and archives. Follow the steps below for your dashboard.
-            @elseif($isCoordinator)
-                This guide covers Program Coordinator features for your department. Follow the steps below to use your dashboard effectively.
-            @elseif($isSecretary)
-                This guide covers Secretary features that support Dean office operations. Follow the steps below to use your dashboard effectively.
-            @else
-                This guide covers Faculty features for tasks, uploads, and approvals. Follow the steps below to use your dashboard effectively.
-            @endif
+        <div class="guide-welcome-sub">{{ $guideWelcomeSub }}</div>
+    </div>
+</div>
+
+{{-- Guide search with autosuggest --}}
+<div class="guide-search-wrap">
+    <div class="guide-search" id="guide-search">
+        <label class="sr-only" for="guide-search-input">Search user guide topics</label>
+        <div class="guide-search__field">
+            <i class="fas fa-search" aria-hidden="true"></i>
+            <input
+                type="search"
+                id="guide-search-input"
+                class="guide-search__input"
+                placeholder="Search guide topics…"
+                autocomplete="off"
+                aria-autocomplete="list"
+                aria-controls="guide-search-suggestions"
+                aria-expanded="false"
+                role="combobox"
+            >
         </div>
+        <ul id="guide-search-suggestions" class="guide-search__suggestions" role="listbox" hidden></ul>
     </div>
 </div>
 
@@ -538,5 +570,139 @@
 <div class="guide-back-top">
     <a href="#" onclick="event.preventDefault(); window.scrollTo({top:0, behavior:'smooth'});" class="btn btn-secondary border-0"><i class="fas fa-arrow-up mr-1"></i> Back to Top</a>
 </div>
+
+<script>
+(function () {
+    const input = document.getElementById('guide-search-input');
+    const list = document.getElementById('guide-search-suggestions');
+    if (!input || !list) return;
+
+    const topics = Array.from(document.querySelectorAll('.guide-toc-item')).map(function (link) {
+        const numEl = link.querySelector('.guide-toc-num');
+        const label = link.textContent.replace(/^\s*\d+\s*/, '').trim();
+        return {
+            href: link.getAttribute('href') || '',
+            label: label,
+            num: numEl ? numEl.textContent.trim() : '',
+            search: (label + ' ' + (numEl ? numEl.textContent.trim() : '')).toLowerCase(),
+        };
+    }).filter(function (t) { return t.href && t.label; });
+
+    let activeIndex = -1;
+    let visible = [];
+
+    function hideSuggestions() {
+        list.hidden = true;
+        list.innerHTML = '';
+        activeIndex = -1;
+        input.setAttribute('aria-expanded', 'false');
+    }
+
+    function goToTopic(topic) {
+        hideSuggestions();
+        input.value = topic.label;
+        const target = document.querySelector(topic.href);
+        if (!target) return;
+        target.scrollIntoView({ behavior: 'smooth', block: 'start' });
+        target.classList.add('guide-section-highlight');
+        window.setTimeout(function () {
+            target.classList.remove('guide-section-highlight');
+        }, 1600);
+    }
+
+    function renderSuggestions(query) {
+        const q = query.trim().toLowerCase();
+        if (!q) {
+            hideSuggestions();
+            return;
+        }
+
+        visible = topics.filter(function (t) {
+            return t.search.indexOf(q) !== -1;
+        }).slice(0, 8);
+
+        list.innerHTML = '';
+        if (!visible.length) {
+            const empty = document.createElement('li');
+            empty.className = 'guide-search__empty';
+            empty.textContent = 'No matching topics';
+            list.appendChild(empty);
+            list.hidden = false;
+            input.setAttribute('aria-expanded', 'true');
+            activeIndex = -1;
+            return;
+        }
+
+        visible.forEach(function (topic, index) {
+            const li = document.createElement('li');
+            li.setAttribute('role', 'option');
+            const btn = document.createElement('button');
+            btn.type = 'button';
+            btn.className = 'guide-search__suggestion';
+            btn.dataset.index = String(index);
+            if (topic.num) {
+                const num = document.createElement('span');
+                num.className = 'guide-search__suggestion-num';
+                num.textContent = topic.num;
+                btn.appendChild(num);
+            }
+            const text = document.createElement('span');
+            text.textContent = topic.label;
+            btn.appendChild(text);
+            btn.addEventListener('mousedown', function (e) {
+                e.preventDefault();
+                goToTopic(topic);
+            });
+            li.appendChild(btn);
+            list.appendChild(li);
+        });
+
+        list.hidden = false;
+        input.setAttribute('aria-expanded', 'true');
+        activeIndex = -1;
+    }
+
+    function setActive(index) {
+        const buttons = list.querySelectorAll('.guide-search__suggestion');
+        buttons.forEach(function (btn) { btn.classList.remove('is-active'); });
+        if (index < 0 || index >= buttons.length) {
+            activeIndex = -1;
+            return;
+        }
+        activeIndex = index;
+        buttons[index].classList.add('is-active');
+        buttons[index].scrollIntoView({ block: 'nearest' });
+    }
+
+    input.addEventListener('input', function () {
+        renderSuggestions(input.value);
+    });
+
+    input.addEventListener('keydown', function (e) {
+        if (list.hidden) return;
+        if (e.key === 'ArrowDown') {
+            e.preventDefault();
+            setActive(activeIndex + 1 >= visible.length ? 0 : activeIndex + 1);
+        } else if (e.key === 'ArrowUp') {
+            e.preventDefault();
+            setActive(activeIndex <= 0 ? visible.length - 1 : activeIndex - 1);
+        } else if (e.key === 'Enter') {
+            if (activeIndex >= 0 && visible[activeIndex]) {
+                e.preventDefault();
+                goToTopic(visible[activeIndex]);
+            } else if (visible.length === 1) {
+                e.preventDefault();
+                goToTopic(visible[0]);
+            }
+        } else if (e.key === 'Escape') {
+            hideSuggestions();
+        }
+    });
+
+    input.addEventListener('blur', function () {
+        window.setTimeout(hideSuggestions, 120);
+    });
+})();
+</script>
 
 @endsection

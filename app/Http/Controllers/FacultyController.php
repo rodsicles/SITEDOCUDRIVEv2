@@ -29,71 +29,9 @@ class FacultyController extends Controller
     public function dashboard()
     {
         $user = auth()->user();
-        $employee = $user->employee;
-        $stats = $this->dashboardService->getFacultyStats($user->id);
+        $payload = $this->dashboardService->getFacultyCommandCenter($user);
 
-        $recentTasks = Task::with('assignedBy')
-            ->where('assigned_to', $user->id)
-            ->latest()
-            ->take(5)
-            ->get();
-
-        $unreadNotifications = $this->dashboardService->getUnreadNotificationCount($user->id);
-        $recentNotifications = $this->dashboardService->getRecentNotifications($user->id, 5);
-
-        $performanceReports = PerformanceReport::with('evaluator')
-            ->where('employee_id', $employee->employee_id)
-            ->latest('report_date')
-            ->take(5)
-            ->get();
-
-        $recentActivities = $this->dashboardService->getRecentActivities($user, 10);
-        $announcements = $this->dashboardService->getAnnouncements($user, 5);
-
-        // Document Quick Stats: folders with doc counts + most recent upload
-        $folderStats = $this->folderService->getUserFolders($user->id);
-        $latestDocument = \App\Models\Document::where('uploaded_by', $user->id)
-            ->latest()
-            ->first();
-
-        // Upcoming deadlines: pending/in-progress tasks due within 7 days (incl. overdue)
-        $upcomingDeadlines = Task::with('assignedBy')
-            ->where('assigned_to', $user->id)
-            ->whereIn('status', ['Pending', 'In Progress'])
-            ->whereNotNull('due_date')
-            ->where('due_date', '<=', now()->addDays(7))
-            ->orderBy('due_date')
-            ->take(5)
-            ->get();
-
-        // Pending items snapshot (for the new "My Pending Items" widget)
-        $pendingItems = [
-            'tasks'     => Task::where('assigned_to', $user->id)->whereIn('status', ['Pending', 'In Progress'])->count(),
-            'overdue'   => Task::where('assigned_to', $user->id)->whereIn('status', ['Pending', 'In Progress'])->whereDate('due_date', '<', today())->count(),
-            'unread'    => $unreadNotifications,
-            'leaves'    => \App\Models\LeaveRequest::where('user_id', $user->id)->where('status', 'Pending')->count(),
-        ];
-
-        // Today's calendar events (visible to this user)
-        $todayEvents = \App\Models\CalendarEvent::getEventsForUser(
-            $user->id,
-            now()->startOfDay(),
-            now()->endOfDay()
-        );
-
-        return view('faculty.dashboard', array_merge($stats, compact(
-            'recentTasks',
-            'unreadNotifications',
-            'recentNotifications',
-            'performanceReports',
-            'recentActivities',
-            'announcements',
-            'folderStats',
-            'latestDocument',
-            'upcomingDeadlines',
-            'pendingItems',
-            'todayEvents'
-        )));
+        return view('faculty.dashboard', $payload);
     }
 
     public function tasks(Request $request)

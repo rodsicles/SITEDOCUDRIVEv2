@@ -201,6 +201,7 @@ Route::middleware(['auth', 'no.back', 'role:Dean,Secretary'])->prefix('dean')->n
     Route::get('/documents/{id}/download', [DeanController::class, 'downloadDocument'])->name('download-document');
     Route::delete('/documents/{id}', [DeanController::class, 'deleteDocument'])->name('delete-document');
     Route::patch('/documents/{id}/rename', [DeanController::class, 'renameDocument'])->middleware('throttle:60,1')->name('rename-document');
+    Route::post('/documents/{id}/favorite', [DeanController::class, 'toggleFavorite'])->middleware('throttle:60,1')->name('toggle-favorite');
 
     Route::get('/recycle-bin', [RecycleBinController::class, 'index'])->name('recycle-bin.index');
     Route::post('/recycle-bin/{id}/restore', [RecycleBinController::class, 'restore'])->middleware('throttle:60,1')->name('recycle-bin.restore');

@@ -184,7 +184,13 @@ class User extends Authenticatable
             return null;
         }
 
-        return \Illuminate\Support\Facades\Storage::disk('public')->url($this->avatar_path);
+        if (!\Illuminate\Support\Facades\Storage::disk('public')->exists($this->avatar_path)) {
+            return null;
+        }
+
+        // asset() follows the current request host/port; Storage::url() uses APP_URL
+        // and breaks when the app is served on a different port (e.g. artisan serve :8000).
+        return asset('storage/'.$this->avatar_path).'?v='.substr(sha1($this->avatar_path), 0, 8);
     }
 
     public function initials(): string

@@ -10,6 +10,7 @@
 @endsection
 
 @section('content')
+    @include('partials.documents-quick-access', ['routePrefix' => 'dean'])
     @include('partials.folder-tree')
 
     @php

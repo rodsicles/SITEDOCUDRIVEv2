@@ -177,6 +177,7 @@ class FolderService
 
     /**
      * Replace documents_count with total visible files in folder + all descendants.
+     * Also attaches last_document_at and pending_count for richer folder cards.
      */
     public function attachSubtreeDocumentCounts(Collection $folders, ?User $viewer): Collection
     {
@@ -192,7 +193,21 @@ class FolderService
                 $query->visibleTo($viewer);
             }
 
-            $folder->setAttribute('documents_count', $query->count());
+            $folder->setAttribute('documents_count', (clone $query)->count());
+            $folder->setAttribute('last_document_at', (clone $query)->max('created_at'));
+
+            $pendingQuery = Document::query()
+                ->whereIn('folder_id', $folderIds)
+                ->where(function ($q) {
+                    $q->whereHas('teachingGuide', fn ($tg) => $tg->where('status', 'pending'))
+                        ->orWhereHas('examQuestionnaire', fn ($eq) => $eq->where('status', 'pending'));
+                });
+
+            if ($viewer && ! $viewer->isDeanOrSecretary()) {
+                $pendingQuery->where('uploaded_by', $viewer->id);
+            }
+
+            $folder->setAttribute('pending_count', $pendingQuery->count());
 
             return $folder;
         });

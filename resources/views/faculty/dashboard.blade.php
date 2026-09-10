@@ -2,210 +2,348 @@
 
 @section('title', 'Faculty Dashboard')
 
-@section('page-title', 'Data Analytics Dashboard')
-@section('page-subtitle', 'Track your performance metrics and activities')
+@section('page-title', 'Faculty Dashboard')
+@section('page-subtitle', 'Your action queue and work overview')
 
 @section('sidebar')
     @include('partials.faculty-sidebar')
 @endsection
 
 @section('content')
-    {{-- My Pending Items snapshot --}}
-    @include('partials.pending-items-widget')
+    @php
+        $attentionCount = (int) ($attentionCount ?? 0);
+        $openTasksCount = (int) ($openTasksCount ?? 0);
+        $totalDocuments = (int) ($totalDocuments ?? 0);
+        $completedTasks = (int) ($completedTasks ?? 0);
+        $overdueCount = (int) ($overdueCount ?? 0);
+        $unreadCount = (int) ($unreadCount ?? 0);
+        $awaitingApproval = (int) ($awaitingApproval ?? 0);
+        $bannerUrl = $bannerUrl ?? route('faculty.documents');
+        $bannerCta = $bannerCta ?? 'Open documents';
+        $uploadMax = max(1, (int) ($uploadMax ?? 1));
+        $taskMax = max(1, (int) ($taskMax ?? 1));
+    @endphp
 
-    {{-- Today's Schedule --}}
-    <!-- Minimalist Horizontal Stats -->
-    <div class="stats-grid-horizontal">
-        <div class="stat-item-horizontal">
-            <div class="stat-icon-horizontal">
-                <i class="fas fa-file-alt"></i>
-            </div>
-            <div class="stat-content-horizontal">
-                <div class="stat-number-label"><strong>{{ $totalDocuments }}</strong> Total Documents</div>
-                <div class="stat-description">Submitted by you</div>
-            </div>
-        </div>
-
-        <div class="stat-item-horizontal">
-            <div class="stat-icon-horizontal">
-                <i class="fas fa-check-circle"></i>
-            </div>
-            <div class="stat-content-horizontal">
-                <div class="stat-number-label"><strong>{{ $completedTasks }}</strong> Task Completed</div>
-                <div class="stat-description">All time</div>
-            </div>
-        </div>
-    </div>
-
-    <!-- Two-column row: Document Quick Stats + Upcoming Deadlines -->
-    <div class="faculty-dashboard-row">
-
-        <!-- Document Quick Stats -->
-        <div class="content-card faculty-dashboard-col">
-            <div class="card-header">
-                <h3 class="card-title"><i class="fas fa-folder-open mr-2"></i> Document Quick Stats</h3>
-                <a href="{{ route('faculty.documents') }}" class="badge badge-info no-underline cursor-pointer">View All</a>
-            </div>
-            <div class="faculty-doc-stats">
-                @if($latestDocument)
-                <div class="faculty-doc-last-upload">
-                    <i class="fas fa-clock text-[#028a0f] dark:text-[#34d399]"></i>
-                    <span>Last upload: <strong>{{ $latestDocument->created_at->format('M d, Y') }}</strong></span>
-                </div>
-                @endif
-                @if($folderStats->isEmpty())
-                <div class="faculty-doc-empty">
-                    <i class="fas fa-folder text-gray-300 dark:text-gray-600 text-2xl block mb-1"></i>
-                    No folders yet.
-                </div>
-                @else
-                <div class="faculty-folder-list">
-                    @foreach($folderStats as $folder)
-                    <div class="faculty-folder-row">
-                        <div class="faculty-folder-name">
-                            <i class="fas fa-folder text-[#028a0f] dark:text-[#34d399] mr-1.5"></i>
-                            <span>{{ $folder->folder_name }}</span>
-                        </div>
-                        <span class="faculty-folder-count">{{ $folder->documents_count }} {{ Str::plural('file', $folder->documents_count) }}</span>
-                    </div>
-                    @endforeach
-                </div>
-                @endif
-            </div>
-        </div>
-
-        <!-- Upcoming Deadlines -->
-        <div class="content-card faculty-dashboard-col">
-            <div class="card-header">
-                <h3 class="card-title"><i class="fas fa-calendar-alt mr-2"></i> Upcoming Deadlines</h3>
-                <a href="{{ route('faculty.tasks') }}" class="badge badge-info no-underline cursor-pointer">View All</a>
-            </div>
-            @if($upcomingDeadlines->isEmpty())
-            <div class="faculty-deadline-empty">
-                <i class="fas fa-check-circle text-green-400 dark:text-green-500 text-2xl block mb-1"></i>
-                No upcoming deadlines.
-            </div>
+    {{-- Status banner + hero metric --}}
+    <a href="{{ $bannerUrl }}" class="dean-status-banner {{ $attentionCount > 0 ? 'dean-status-banner--attention' : 'dean-status-banner--clear' }} no-underline mb-3">
+        <div class="dean-status-banner__status">
+            <span class="dean-status-banner__eyebrow">My status</span>
+            @if($attentionCount > 0)
+                <span class="dean-status-banner__title">{{ $attentionCount }} {{ $attentionCount === 1 ? 'item needs' : 'items need' }} attention</span>
+                <span class="dean-status-banner__hint">{{ $bannerCta }} · click to open</span>
             @else
-            <div class="faculty-deadline-list">
-                @foreach($upcomingDeadlines as $task)
-                @php
-                    $daysLeft = now()->startOfDay()->diffInDays($task->due_date->startOfDay(), false);
-                    if ($daysLeft < 0) {
-                        $urgency = 'overdue';
-                        $label = 'Overdue by ' . abs($daysLeft) . 'd';
-                    } elseif ($daysLeft === 0) {
-                        $urgency = 'today';
-                        $label = 'Due Today';
-                    } elseif ($daysLeft <= 2) {
-                        $urgency = 'soon';
-                        $label = 'Due in ' . $daysLeft . 'd';
-                    } else {
-                        $urgency = 'ok';
-                        $label = 'Due in ' . $daysLeft . 'd';
-                    }
-                @endphp
-                <div class="faculty-deadline-row">
-                    <div class="faculty-deadline-info">
-                        <span class="faculty-deadline-title">{{ Str::limit($task->task_title, 35) }}</span>
-                        <span class="faculty-deadline-by">{{ $task->assignedBy->employee->full_name ?? $task->assignedBy->username }}</span>
-                    </div>
-                    <span class="faculty-deadline-badge faculty-deadline-{{ $urgency }}">{{ $label }}</span>
-                </div>
-                @endforeach
-            </div>
+                <span class="dean-status-banner__title">All clear</span>
+                <span class="dean-status-banner__hint">No overdue tasks, unread alerts, or waiting submissions</span>
             @endif
         </div>
+        <div class="dean-status-banner__hero">
+            <span class="dean-status-banner__hero-label">Open tasks</span>
+            <span class="dean-status-banner__hero-value">{{ $openTasksCount }}</span>
+            <span class="dean-status-banner__meta">
+                {{ $totalDocuments }} docs · {{ $completedTasks }} completed · {{ $overdueCount }} overdue · {{ $unreadCount }} unread
+            </span>
+        </div>
+    </a>
 
+    {{-- Quick pending cards --}}
+    <div class="dean-pending-review-grid mb-3">
+        <a href="{{ route('faculty.tasks', ['filter' => 'pending']) }}"
+           class="content-card dean-pending-review-card dean-pending-review-card--tg no-underline">
+            <div class="p-3 flex items-start gap-3">
+                <div class="dean-pending-review-card__icon">
+                    <i class="fas fa-tasks"></i>
+                </div>
+                <div class="min-w-0 flex-1">
+                    <h3 class="card-title text-base mb-1">Open Tasks</h3>
+                    <p class="text-sm text-gray-500 dark:text-gray-400 mb-0">Pending and in-progress work assigned to you.</p>
+                </div>
+                <span class="badge {{ $openTasksCount > 0 ? 'badge-warning' : 'badge-info' }} shrink-0">{{ $openTasksCount }}</span>
+            </div>
+        </a>
+
+        <a href="{{ route('faculty.tasks', ['filter' => 'overdue']) }}"
+           class="content-card dean-pending-review-card dean-pending-review-card--eq no-underline">
+            <div class="p-3 flex items-start gap-3">
+                <div class="dean-pending-review-card__icon">
+                    <i class="fas fa-triangle-exclamation"></i>
+                </div>
+                <div class="min-w-0 flex-1">
+                    <h3 class="card-title text-base mb-1">Overdue Tasks</h3>
+                    <p class="text-sm text-gray-500 dark:text-gray-400 mb-0">Past due — finish these first.</p>
+                </div>
+                <span class="badge {{ $overdueCount > 0 ? 'badge-danger' : 'badge-info' }} shrink-0">{{ $overdueCount }}</span>
+            </div>
+        </a>
     </div>
 
-    <!-- Announcements Feed Widget -->
-    @include('partials.announcement-widget')
+    @if($awaitingApproval > 0)
+    <div class="dean-pending-review-grid mb-3">
+        <a href="{{ route('faculty.teaching-guides.index') }}"
+           class="content-card dean-pending-review-card dean-pending-review-card--tg no-underline">
+            <div class="p-3 flex items-start gap-3">
+                <div class="dean-pending-review-card__icon"><i class="fas fa-book-open"></i></div>
+                <div class="min-w-0 flex-1">
+                    <h3 class="card-title text-base mb-1">TG Awaiting Approval</h3>
+                    <p class="text-sm text-gray-500 dark:text-gray-400 mb-0">Teaching guides still pending Dean review.</p>
+                </div>
+                <span class="badge badge-warning shrink-0">{{ $pendingTeachingGuidesCount }}</span>
+            </div>
+        </a>
+        <a href="{{ route('faculty.exam-questionnaires.index') }}"
+           class="content-card dean-pending-review-card dean-pending-review-card--eq no-underline">
+            <div class="p-3 flex items-start gap-3">
+                <div class="dean-pending-review-card__icon"><i class="fas fa-file-alt"></i></div>
+                <div class="min-w-0 flex-1">
+                    <h3 class="card-title text-base mb-1">EQ Awaiting Approval</h3>
+                    <p class="text-sm text-gray-500 dark:text-gray-400 mb-0">Exam questionnaires still pending Dean review.</p>
+                </div>
+                <span class="badge badge-warning shrink-0">{{ $pendingExamQuestionnairesCount }}</span>
+            </div>
+        </a>
+    </div>
+    @endif
 
-    <!-- Recent Tasks -->
-    <div class="bg-white dark:bg-[#2a2a2a] p-6 mb-6 border border-gray-200 dark:border-gray-700">
-        <div class="flex justify-between items-center mb-5 pb-4 border-b-2 border-gray-200 dark:border-gray-700">
-            <h3 class="text-lg font-semibold text-gray-800 dark:text-gray-200 m-0">My Recent Tasks</h3>
-            <div class="flex gap-3 items-center">
-                <a href="{{ route('faculty.tasks') }}" class="px-5 py-2 bg-[#028a0f] dark:bg-[#02b815] text-white text-sm font-medium no-underline inline-block">View All Tasks</a>
-                <button type="button" onclick="toggleRecentTasks()" class="bg-gray-200 dark:bg-gray-700 text-gray-700 dark:text-gray-300 px-4 py-2 text-sm font-medium cursor-pointer border-0">
-                    <i id="recentTasksIcon" class="fas fa-chevron-up"></i>
-                    <span id="recentTasksText">Hide</span>
-                </button>
+    {{-- Feature preview stacks --}}
+    <div class="dean-preview-grid mb-3">
+        <div class="dean-preview-col">
+            <div class="content-card dean-preview-card">
+                <div class="card-header">
+                    <h3 class="card-title text-sm mb-0">
+                        <i class="fas fa-exclamation-circle mr-2 text-[#028a0f]"></i>Needs attention
+                    </h3>
+                    <a href="{{ route('faculty.notifications') }}" class="text-xs font-semibold text-[#028a0f] dark:text-[#34d399] no-underline">Notifications</a>
+                </div>
+                <ul class="dean-preview-list">
+                    @forelse($unreadNotifications as $n)
+                        <li>
+                            <span class="dean-preview-list__primary">{{ \Illuminate\Support\Str::limit($n->message, 72) }}</span>
+                            <span class="dean-preview-list__meta">{{ $n->created_at?->diffForHumans() }}</span>
+                        </li>
+                    @empty
+                        <li class="dean-preview-empty">No unread notifications</li>
+                    @endforelse
+                </ul>
+                @if(isset($overdueTasks) && $overdueTasks->count() > 0)
+                    <div class="dean-preview-subhead">Overdue tasks</div>
+                    <ul class="dean-preview-list">
+                        @foreach($overdueTasks as $task)
+                            <li>
+                                <span class="dean-preview-list__primary">{{ $task->task_title }}</span>
+                                <span class="dean-preview-list__meta">Due {{ $task->due_date?->format('M d, Y') }}</span>
+                            </li>
+                        @endforeach
+                    </ul>
+                @endif
+            </div>
+
+            <div class="content-card dean-preview-card">
+                <div class="card-header">
+                    <h3 class="card-title text-sm mb-0">
+                        <i class="fas fa-bullhorn mr-2 text-[#028a0f]"></i>Announcements
+                    </h3>
+                    <a href="{{ route('announcements.index') }}" class="text-xs font-semibold text-[#028a0f] dark:text-[#34d399] no-underline">View all</a>
+                </div>
+                <ul class="dean-preview-list">
+                    @forelse($announcements as $announcement)
+                        <li>
+                            <span class="dean-preview-list__primary">
+                                @if($announcement->is_pinned)<i class="fas fa-thumbtack text-[#028a0f] text-xs mr-1"></i>@endif
+                                {{ $announcement->title }}
+                            </span>
+                            <span class="dean-preview-list__meta">{{ $announcement->created_at?->diffForHumans() }}</span>
+                        </li>
+                    @empty
+                        <li class="dean-preview-empty">No announcements yet</li>
+                    @endforelse
+                </ul>
+            </div>
+
+            <div class="content-card dean-preview-card">
+                <div class="card-header">
+                    <h3 class="card-title text-sm mb-0">
+                        <i class="fas fa-chart-bar mr-2 text-[#028a0f]"></i>Mini analytics
+                    </h3>
+                    <a href="{{ route('faculty.analytics') }}" class="text-xs font-semibold text-[#028a0f] dark:text-[#34d399] no-underline">Open Analytics</a>
+                </div>
+                <div class="dean-mini-analytics">
+                    <p class="dean-mini-analytics__summary">
+                        {{ (int) ($loginTotal ?? 0) }} {{ ((int) ($loginTotal ?? 0)) === 1 ? 'login' : 'logins' }}
+                        · {{ (int) ($usageTotal ?? 0) }} {{ ((int) ($usageTotal ?? 0)) === 1 ? 'action' : 'actions' }}
+                        · {{ (int) ($activeDays ?? 0) }}/7 active days
+                    </p>
+                    <div class="dean-mini-analytics__block">
+                        <div class="dean-mini-analytics__label">Logins · last 7 days</div>
+                        <div class="dean-mini-bars" aria-hidden="true">
+                            @foreach(($loginBars ?? []) as $bar)
+                                <div class="dean-mini-bar">
+                                    <div class="dean-mini-bar__fill" style="height: {{ max(8, (int) round(($bar['count'] / max(1, (int) ($loginMax ?? 1))) * 100)) }}%"></div>
+                                    <span class="dean-mini-bar__label">{{ $bar['label'] }}</span>
+                                </div>
+                            @endforeach
+                        </div>
+                    </div>
+                    <div class="dean-mini-analytics__block">
+                        <div class="dean-mini-analytics__label">System usage · last 7 days</div>
+                        <div class="dean-mini-bars" aria-hidden="true">
+                            @foreach(($usageBars ?? []) as $bar)
+                                <div class="dean-mini-bar">
+                                    <div class="dean-mini-bar__fill" style="height: {{ max(8, (int) round(($bar['count'] / max(1, (int) ($usageMax ?? 1))) * 100)) }}%"></div>
+                                    <span class="dean-mini-bar__label">{{ $bar['label'] }}</span>
+                                </div>
+                            @endforeach
+                        </div>
+                        <p class="dean-preview-empty mb-0 mt-2" style="font-size:0.72rem;">
+                            Usage = logins, views, uploads, and other actions you made in DocuDrive.
+                        </p>
+                    </div>
+                </div>
             </div>
         </div>
-        <div id="recentTasksContent" class="overflow-x-auto">
-            <table class="w-full border-separate border-spacing-0">
-                <thead>
-                    <tr>
-                        <th class="bg-transparent text-gray-600 dark:text-gray-400 font-semibold text-xs uppercase tracking-wide px-3 py-3 text-left border-b border-gray-200 dark:border-gray-700">Task Title</th>
-                        <th class="bg-transparent text-gray-600 dark:text-gray-400 font-semibold text-xs uppercase tracking-wide px-3 py-3 text-left border-b border-gray-200 dark:border-gray-700">Assigned By</th>
-                        <th class="bg-transparent text-gray-600 dark:text-gray-400 font-semibold text-xs uppercase tracking-wide px-3 py-3 text-left border-b border-gray-200 dark:border-gray-700">Due Date</th>
-                        <th class="bg-transparent text-gray-600 dark:text-gray-400 font-semibold text-xs uppercase tracking-wide px-3 py-3 text-left border-b border-gray-200 dark:border-gray-700">Status</th>
-                        <th class="bg-transparent text-gray-600 dark:text-gray-400 font-semibold text-xs uppercase tracking-wide px-3 py-3 text-left border-b border-gray-200 dark:border-gray-700">Action</th>
-                    </tr>
-                </thead>
-                <tbody>
-                    @forelse($recentTasks as $task)
-                    <tr class="hover:bg-gray-50 dark:hover:bg-gray-800">
-                        <td class="px-3 py-4 border-b border-gray-200 dark:border-gray-700 text-gray-800 dark:text-gray-200 text-sm"><strong>{{ $task->task_title }}</strong></td>
-                        <td class="px-3 py-4 border-b border-gray-200 dark:border-gray-700 text-gray-800 dark:text-gray-200 text-sm">{{ $task->assignedBy->employee->full_name ?? $task->assignedBy->username }}</td>
-                        <td class="px-3 py-4 border-b border-gray-200 dark:border-gray-700 text-gray-800 dark:text-gray-200 text-sm">{{ $task->due_date ? $task->due_date->format('M d, Y') : 'N/A' }}</td>
-                        <td class="px-3 py-4 border-b border-gray-200 dark:border-gray-700 text-sm">
-                            @if($task->status === 'Completed')
-                                <span class="inline-block px-3 py-1 text-xs font-semibold bg-green-100 dark:bg-green-900/30 text-green-800 dark:text-green-300">Completed</span>
-                            @elseif($task->status === 'In Progress')
-                                <span class="inline-block px-3 py-1 text-xs font-semibold bg-orange-100 dark:bg-orange-900/30 text-orange-800 dark:text-orange-300">In Progress</span>
-                            @else
-                                <span class="inline-block px-3 py-1 text-xs font-semibold bg-red-100 dark:bg-red-900/30 text-red-800 dark:text-red-300">Pending</span>
-                            @endif
-                        </td>
-                        <td class="px-3 py-4 border-b border-gray-200 dark:border-gray-700 text-sm">
-                            @if($task->status !== 'Completed')
-                            <form action="{{ route('faculty.update-task-status', $task->task_id) }}" method="POST" class="inline">
-                                @csrf
-                                @method('PATCH')
-                                <select name="status" onchange="this.form.submit()" class="px-2 py-1 border border-gray-200 dark:border-gray-700 text-sm bg-white dark:bg-[#1e1e1e] text-gray-800 dark:text-gray-200 cursor-pointer hover:border-[#028a0f] dark:hover:border-[#02b815] focus:outline-none focus:border-[#028a0f] dark:focus:border-[#02b815] focus:shadow-[0_0_0_3px_rgba(2,138,15,0.1)]">
-                                    <option value="Pending" {{ $task->status === 'Pending' ? 'selected' : '' }}>Pending</option>
-                                    <option value="In Progress" {{ $task->status === 'In Progress' ? 'selected' : '' }}>In Progress</option>
-                                    <option value="Completed" {{ $task->status === 'Completed' ? 'selected' : '' }}>Completed</option>
-                                </select>
-                            </form>
-                            @endif
-                        </td>
-                    </tr>
+
+        <div class="dean-preview-col">
+            <div class="content-card dean-preview-card">
+                <div class="card-header">
+                    <h3 class="card-title text-sm mb-0">
+                        <i class="fas fa-file-alt mr-2 text-[#028a0f]"></i>Recent documents
+                    </h3>
+                    <a href="{{ route('faculty.documents') }}" class="text-xs font-semibold text-[#028a0f] dark:text-[#34d399] no-underline">Documents</a>
+                </div>
+                <ul class="dean-preview-list">
+                    @forelse($recentDocuments as $doc)
+                        <li>
+                            <a href="{{ route('faculty.view-document', $doc->document_id) }}" class="dean-preview-list__link no-underline">
+                                <span class="dean-preview-list__primary">{{ $doc->document_title }}</span>
+                                <span class="dean-preview-list__meta">
+                                    {{ $doc->category ?: 'Documents' }} · {{ $doc->created_at?->diffForHumans() }}
+                                </span>
+                            </a>
+                        </li>
                     @empty
-                    <tr>
-                        <td colspan="5" class="px-3 py-8 text-center text-gray-600 dark:text-gray-400">
-                            No tasks assigned yet
-                        </td>
-                    </tr>
+                        <li class="dean-preview-empty">No recent documents</li>
                     @endforelse
-                </tbody>
-            </table>
+                </ul>
+            </div>
+
+            <div class="content-card dean-preview-card">
+                <div class="card-header">
+                    <h3 class="card-title text-sm mb-0">
+                        <i class="fas fa-calendar-alt mr-2 text-[#028a0f]"></i>Upcoming deadlines
+                    </h3>
+                    <a href="{{ route('faculty.tasks') }}" class="text-xs font-semibold text-[#028a0f] dark:text-[#34d399] no-underline">Tasks</a>
+                </div>
+                <ul class="dean-preview-list">
+                    @forelse($upcomingDeadlines as $task)
+                        @php
+                            $daysLeft = now()->startOfDay()->diffInDays($task->due_date->copy()->startOfDay(), false);
+                            $dueLabel = $daysLeft < 0
+                                ? 'Overdue by '.abs($daysLeft).'d'
+                                : ($daysLeft === 0 ? 'Due today' : 'Due in '.$daysLeft.'d');
+                        @endphp
+                        <li>
+                            <span class="dean-preview-list__primary">{{ \Illuminate\Support\Str::limit($task->task_title, 40) }}</span>
+                            <span class="dean-preview-list__meta">
+                                {{ $task->assignedBy->employee->full_name ?? $task->assignedBy->username ?? 'Assigned' }}
+                                · {{ $dueLabel }}
+                            </span>
+                        </li>
+                    @empty
+                        <li class="dean-preview-empty">No upcoming deadlines</li>
+                    @endforelse
+                </ul>
+            </div>
+
+            <div class="content-card dean-preview-card">
+                <div class="card-header">
+                    <h3 class="card-title text-sm mb-0">
+                        <i class="fas fa-stream mr-2 text-[#028a0f]"></i>Activity pulse
+                    </h3>
+                    <a href="{{ route('faculty.activity-log') }}" class="text-xs font-semibold text-[#028a0f] dark:text-[#34d399] no-underline">Activity log</a>
+                </div>
+                <ul class="dean-preview-list">
+                    @forelse($activityPulse as $log)
+                        <li>
+                            <span class="dean-preview-list__primary">{{ \Illuminate\Support\Str::limit($log->activity, 80) }}</span>
+                            <span class="dean-preview-list__meta">{{ optional($log->log_date ?? $log->created_at)->diffForHumans() }}</span>
+                        </li>
+                    @empty
+                        <li class="dean-preview-empty">No recent activity</li>
+                    @endforelse
+                </ul>
+            </div>
+
+            <div class="content-card dean-preview-card">
+                <div class="card-header">
+                    <h3 class="card-title text-sm mb-0">
+                        <i class="fas fa-compass mr-2 text-[#028a0f]"></i>Quick links
+                    </h3>
+                </div>
+                <div class="dean-quick-links">
+                    <a href="{{ route('faculty.documents') }}" class="dean-quick-link no-underline"><i class="fas fa-folder"></i> Documents</a>
+                    <a href="{{ route('faculty.teaching-guides.index') }}" class="dean-quick-link no-underline"><i class="fas fa-book-open"></i> Teaching Guides</a>
+                    <a href="{{ route('faculty.exam-questionnaires.index') }}" class="dean-quick-link no-underline"><i class="fas fa-file-alt"></i> Exam Questionnaires</a>
+                    <a href="{{ route('faculty.tasks') }}" class="dean-quick-link no-underline"><i class="fas fa-tasks"></i> My Tasks</a>
+                    <a href="{{ route('faculty.recycle-bin.index') }}" class="dean-quick-link no-underline"><i class="fas fa-trash-alt"></i> Recycle Bin</a>
+                    <a href="{{ route('faculty.archives.list') }}" class="dean-quick-link no-underline"><i class="fas fa-archive"></i> Archives</a>
+                </div>
+            </div>
         </div>
     </div>
 
+    {{-- Recent Tasks --}}
+    <div class="content-card">
+        <div class="card-header">
+            <div class="flex justify-between items-center w-full">
+                <h3 class="card-title">My Recent Tasks</h3>
+                <a href="{{ route('faculty.tasks') }}" class="badge badge-info no-underline cursor-pointer">View All</a>
+            </div>
+        </div>
+        <table class="data-table">
+            <thead>
+                <tr>
+                    <th>Task Title</th>
+                    <th>Assigned By</th>
+                    <th>Due Date</th>
+                    <th>Status</th>
+                    <th>Action</th>
+                </tr>
+            </thead>
+            <tbody>
+                @forelse($recentTasks as $task)
+                <tr>
+                    <td><strong>{{ $task->task_title }}</strong></td>
+                    <td>{{ $task->assignedBy->employee->full_name ?? $task->assignedBy->username ?? 'N/A' }}</td>
+                    <td>{{ $task->due_date ? $task->due_date->format('M d, Y') : 'N/A' }}</td>
+                    <td>
+                        @if($task->status === 'Completed')
+                            <span class="badge badge-success">Completed</span>
+                        @elseif($task->status === 'In Progress')
+                            <span class="badge badge-warning">In Progress</span>
+                        @else
+                            <span class="badge badge-danger">Pending</span>
+                        @endif
+                    </td>
+                    <td>
+                        @if($task->status !== 'Completed')
+                        <form action="{{ route('faculty.update-task-status', $task->task_id) }}" method="POST" class="inline">
+                            @csrf
+                            @method('PATCH')
+                            <select name="status" onchange="this.form.submit()" class="form-control text-xs py-1">
+                                <option value="Pending" @selected($task->status === 'Pending')>Pending</option>
+                                <option value="In Progress" @selected($task->status === 'In Progress')>In Progress</option>
+                                <option value="Completed" @selected($task->status === 'Completed')>Completed</option>
+                            </select>
+                        </form>
+                        @else
+                            —
+                        @endif
+                    </td>
+                </tr>
+                @empty
+                <tr>
+                    <td colspan="5" class="text-center text-gray-600 dark:text-gray-400">No tasks assigned yet</td>
+                </tr>
+                @endforelse
+            </tbody>
+        </table>
+    </div>
 @endsection
-
-@push('scripts')
-<script>
-    // Toggle Recent Tasks visibility
-    function toggleRecentTasks() {
-        const content = document.getElementById('recentTasksContent');
-        const icon = document.getElementById('recentTasksIcon');
-        const text = document.getElementById('recentTasksText');
-
-        if (content.style.display === 'none') {
-            content.style.display = 'block';
-            icon.classList.remove('fa-chevron-down');
-            icon.classList.add('fa-chevron-up');
-            text.textContent = 'Hide';
-        } else {
-            content.style.display = 'none';
-            icon.classList.remove('fa-chevron-up');
-            icon.classList.add('fa-chevron-down');
-            text.textContent = 'Show';
-        }
-    }
-</script>
-@endpush

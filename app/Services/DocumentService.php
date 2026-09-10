@@ -310,7 +310,12 @@ class DocumentService
      */
     public function getFavoriteDocuments(User $user): Collection
     {
-        return $user->documentFavorites()->with('document')->get()->pluck('document');
+        return $user->documentFavorites()
+            ->with('document')
+            ->get()
+            ->pluck('document')
+            ->filter()
+            ->values();
     }
 
     /**

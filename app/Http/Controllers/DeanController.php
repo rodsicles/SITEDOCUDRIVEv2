@@ -270,14 +270,28 @@ class DeanController extends Controller
         $documents = $this->documentService->getFilteredDocuments(
             auth()->user(), $effectiveCategory, $folderFilter, $request->query()
         );
+        $recentDocuments = $this->documentService->getRecentDocuments(auth()->id(), 5);
+        $favoriteDocuments = $this->documentService->getFavoriteDocuments(auth()->user());
         $categories = $this->documentService->getCategories();
         $uploaders = $this->documentService->getAvailableUploaders(auth()->user());
         $savedFilters = auth()->user()->documentFilters()->latest()->get();
 
         return view('dean.documents', compact(
-            'documents', 'categories', 'categoryFilter', 'folderFilter',
-            'folderTree', 'currentFolder', 'breadcrumbs', 'tab', 'uploaders', 'savedFilters'
+            'documents', 'recentDocuments', 'favoriteDocuments', 'categories',
+            'categoryFilter', 'folderFilter', 'folderTree', 'currentFolder',
+            'breadcrumbs', 'tab', 'uploaders', 'savedFilters'
         ));
+    }
+
+    public function toggleFavorite($id)
+    {
+        $result = $this->documentService->toggleFavorite($id, auth()->id());
+
+        return response()->json([
+            'success' => true,
+            'favorited' => $result['favorited'],
+            'message' => $result['message'],
+        ]);
     }
 
     public function viewEmployeeProfile($id)

@@ -79,6 +79,12 @@ class DocumentListSortUrls
             if ($search) {
                 $params['search'] = $search;
             }
+            foreach (['uploaded_by', 'date_from', 'date_to'] as $key) {
+                $value = $request->input($key);
+                if ($value !== null && $value !== '') {
+                    $params[$key] = $value;
+                }
+            }
         }
 
         return route($routeName, self::filterParams($params));

@@ -149,6 +149,8 @@
         }
     @endphp
 
+    @include('partials.documents-command-strip')
+
     @if($isTgSemesterFolder)
         {{-- TG: Semester → pick subject → auto-create Subject/TG/LB --}}
         <div class="px-6 py-4">
@@ -166,9 +168,9 @@
                         <div class="folder-icon-new" style="background-color: #028a0f; color: white;">
                             <i class="fas fa-folder"></i>
                         </div>
-                        <div class="folder-info-new">
+                                                <div class="folder-info-new">
                             <div class="folder-name-new">{{ $folder->folder_name }}</div>
-                            <div class="folder-count-new">{{ $folder->documents_count }} Files</div>
+                            @include('partials.folder-card-meta', ['folder' => $folder])
                         </div>
                     </a>
                 </div>
@@ -192,9 +194,9 @@
                         <div class="folder-icon-new" style="background-color: #028a0f; color: white;">
                             <i class="fas fa-folder"></i>
                         </div>
-                        <div class="folder-info-new">
+                                                <div class="folder-info-new">
                             <div class="folder-name-new">{{ $folder->folder_name }}</div>
-                            <div class="folder-count-new">{{ $folder->documents_count }} Files</div>
+                            @include('partials.folder-card-meta', ['folder' => $folder])
                         </div>
                     </a>
                 </div>
@@ -215,9 +217,9 @@
                 <div class="folder-card-new">
                     <a href="{{ route($docsRoute, ['tab' => $tab, 'folder' => $folder->folder_id]) }}" class="folder-card-link-new">
                         <div class="folder-icon-new" style="background-color: #028a0f; color: white;"><i class="fas fa-folder"></i></div>
-                        <div class="folder-info-new">
+                                                <div class="folder-info-new">
                             <div class="folder-name-new">{{ $folder->folder_name }}</div>
-                            <div class="folder-count-new">{{ $folder->documents_count }} Files</div>
+                            @include('partials.folder-card-meta', ['folder' => $folder])
                         </div>
                     </a>
                 </div>
@@ -236,9 +238,9 @@
                 <div class="folder-card-new">
                     <a href="{{ route($docsRoute, ['tab' => $tab, 'folder' => $folder->folder_id]) }}" class="folder-card-link-new">
                         <div class="folder-icon-new" style="background-color: #028a0f; color: white;"><i class="fas fa-folder"></i></div>
-                        <div class="folder-info-new">
+                                                <div class="folder-info-new">
                             <div class="folder-name-new">{{ $folder->folder_name }}</div>
-                            <div class="folder-count-new">{{ $folder->documents_count }} Files</div>
+                            @include('partials.folder-card-meta', ['folder' => $folder])
                         </div>
                     </a>
                 </div>
@@ -257,9 +259,9 @@
                 <div class="folder-card-new">
                     <a href="{{ route($docsRoute, ['tab' => $tab, 'folder' => $folder->folder_id]) }}" class="folder-card-link-new">
                         <div class="folder-icon-new" style="background-color: #028a0f; color: white;"><i class="fas fa-folder"></i></div>
-                        <div class="folder-info-new">
+                                                <div class="folder-info-new">
                             <div class="folder-name-new">{{ $folder->folder_name }}</div>
-                            <div class="folder-count-new">{{ $folder->documents_count }} Files</div>
+                            @include('partials.folder-card-meta', ['folder' => $folder])
                         </div>
                     </a>
                 </div>
@@ -295,9 +297,9 @@
                         <div class="folder-icon-new" style="background-color: #028a0f; color: white;">
                             <i class="fas fa-folder"></i>
                         </div>
-                        <div class="folder-info-new">
+                                                <div class="folder-info-new">
                             <div class="folder-name-new">{{ $folder->folder_name }}</div>
-                            <div class="folder-count-new">{{ $folder->documents_count }} Files</div>
+                            @include('partials.folder-card-meta', ['folder' => $folder])
                         </div>
                     </a>
                 </div>
@@ -496,12 +498,7 @@
                     </div>
                     <div class="folder-info-new">
                         <div class="folder-name-new">{{ $folder->folder_name }}</div>
-                        <div class="folder-count-new">
-                            {{ $folder->documents_count }} Files
-                            @if($folder->children->count() > 0)
-                                <i class="fas fa-chevron-right ml-1" style="font-size: 0.65rem;"></i>
-                            @endif
-                        </div>
+                        @include('partials.folder-card-meta', ['folder' => $folder])
                     </div>
                 </a>
                 @if($ownsCustomFolder)

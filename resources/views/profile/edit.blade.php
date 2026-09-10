@@ -27,23 +27,31 @@
                 @csrf
                 <div class="relative w-14 h-14 flex-shrink-0">
                     @if($user->avatarUrl())
-                        <img src="{{ $user->avatarUrl() }}" alt="Profile picture" class="w-14 h-14 rounded-full object-cover border-2 border-[#026a0c]">
+                        <img src="{{ $user->avatarUrl() }}" alt="Profile picture" class="w-14 h-14 object-cover border-2 border-[#026a0c]" id="avatarPreview"
+                             onerror="this.classList.add('hidden'); document.getElementById('avatarFallback')?.classList.remove('hidden');">
+                        <div id="avatarFallback" class="hidden w-14 h-14 bg-[#028a0f] text-white flex items-center justify-center font-semibold text-lg border-2 border-[#026a0c]">
+                            {{ $user->initials() }}
+                        </div>
                     @else
-                        <div class="w-14 h-14 rounded-full bg-[#028a0f] text-white flex items-center justify-center font-semibold text-lg border-2 border-[#026a0c]">
+                        <div class="w-14 h-14 bg-[#028a0f] text-white flex items-center justify-center font-semibold text-lg border-2 border-[#026a0c]">
                             {{ $user->initials() }}
                         </div>
                     @endif
-                    <label for="avatarInput" class="absolute -bottom-1 -right-1 w-5 h-5 rounded-full bg-white dark:bg-[#2a2a2a] border border-gray-300 dark:border-gray-600 flex items-center justify-center cursor-pointer" title="Change photo">
-                        <i class="fas fa-camera text-[10px] text-gray-600 dark:text-gray-300"></i>
+                    <label for="avatarInput" class="absolute -bottom-1 -right-1 w-6 h-6 bg-white dark:bg-[#2a2a2a] border border-gray-300 dark:border-gray-600 flex items-center justify-center cursor-pointer hover:bg-gray-50" title="Change photo">
+                        <i class="fas fa-camera text-[11px] text-gray-600 dark:text-gray-300"></i>
                     </label>
-                    <input type="file" name="avatar" id="avatarInput" accept="image/png,image/jpeg,image/webp" class="hidden" onchange="document.getElementById('avatarForm').submit()">
+                    <input type="file" name="avatar" id="avatarInput" accept="image/png,image/jpeg,image/webp,.png,.jpg,.jpeg,.webp" class="hidden" onchange="if (this.files?.length) document.getElementById('avatarForm').submit()">
                 </div>
             </form>
             <div>
                 <p class="text-sm font-semibold text-gray-800 dark:text-gray-200 m-0">{{ optional($employee)->full_name ?? $user->username }}</p>
                 <p class="text-xs text-gray-500 dark:text-gray-400 m-0">{{ $user->role->role_name ?? '' }}</p>
+                <p class="text-[11px] text-gray-400 m-0 mt-0.5">Click the camera to upload a photo (JPG, PNG, or WebP, max 2MB)</p>
             </div>
         </div>
+        @error('avatar')
+            <p class="text-sm text-red-600 dark:text-red-400 px-4 pt-2 m-0">{{ $message }}</p>
+        @enderror
 
         <form action="{{ route('profile.update') }}" method="POST" class="profile-edit-form">
             @csrf

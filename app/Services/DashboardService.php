@@ -71,6 +71,170 @@ class DashboardService
     }
 
     /**
+     * Payload for the Faculty ops command-center dashboard.
+     */
+    public function getFacultyCommandCenter(User $user): array
+    {
+        $userId = (int) $user->id;
+
+        return Cache::remember("faculty_command_center_{$userId}", now()->addMinutes(5), function () use ($user, $userId) {
+            $stats = $this->getFacultyStats($userId);
+
+            $openTasksCount = Task::where('assigned_to', $userId)
+                ->whereIn('status', ['Pending', 'In Progress'])
+                ->count();
+
+            $overdueCount = Task::where('assigned_to', $userId)
+                ->whereIn('status', ['Pending', 'In Progress'])
+                ->whereNotNull('due_date')
+                ->whereDate('due_date', '<', today())
+                ->count();
+
+            $unreadCount = $this->getUnreadNotificationCount($userId);
+
+            $pendingTeachingGuidesCount = \App\Models\TeachingGuide::query()
+                ->where('user_id', $userId)
+                ->where('status', 'pending')
+                ->count();
+
+            $pendingExamQuestionnairesCount = \App\Models\ExamQuestionnaire::query()
+                ->where('submitted_by', $userId)
+                ->where('status', 'pending')
+                ->count();
+
+            $awaitingApproval = $pendingTeachingGuidesCount + $pendingExamQuestionnairesCount;
+            $attentionCount = $overdueCount + $unreadCount + $awaitingApproval;
+
+            if ($overdueCount > 0) {
+                $bannerUrl = route('faculty.tasks', ['filter' => 'overdue']);
+                $bannerCta = 'Review overdue tasks';
+            } elseif ($awaitingApproval > 0) {
+                $bannerUrl = $pendingTeachingGuidesCount >= $pendingExamQuestionnairesCount
+                    ? route('faculty.teaching-guides.index')
+                    : route('faculty.exam-questionnaires.index');
+                $bannerCta = 'Check submissions awaiting approval';
+            } elseif ($unreadCount > 0) {
+                $bannerUrl = route('faculty.notifications');
+                $bannerCta = 'Open notifications';
+            } elseif ($openTasksCount > 0) {
+                $bannerUrl = route('faculty.tasks', ['filter' => 'pending']);
+                $bannerCta = 'Continue open tasks';
+            } else {
+                $bannerUrl = route('faculty.documents');
+                $bannerCta = 'Open documents';
+            }
+
+            $recentTasks = Task::with(['assignedBy.employee'])
+                ->where('assigned_to', $userId)
+                ->latest()
+                ->take(5)
+                ->get();
+
+            $upcomingDeadlines = Task::with(['assignedBy.employee'])
+                ->where('assigned_to', $userId)
+                ->whereIn('status', ['Pending', 'In Progress'])
+                ->whereNotNull('due_date')
+                ->where('due_date', '<=', now()->addDays(7))
+                ->orderBy('due_date')
+                ->take(5)
+                ->get();
+
+            $overdueTasks = Task::with(['assignedBy.employee'])
+                ->where('assigned_to', $userId)
+                ->whereIn('status', ['Pending', 'In Progress'])
+                ->whereNotNull('due_date')
+                ->whereDate('due_date', '<', today())
+                ->orderBy('due_date')
+                ->take(5)
+                ->get();
+
+            $unreadNotifications = Notification::where('user_id', $userId)
+                ->where('is_read', false)
+                ->latest()
+                ->take(5)
+                ->get();
+
+            $recentDocuments = Document::with(['uploader.employee'])
+                ->where('uploaded_by', $userId)
+                ->latest()
+                ->take(5)
+                ->get();
+
+            $announcements = $this->getAnnouncements($user, 3);
+            $activityPulse = $this->getRecentActivities($user, 4);
+
+            $rangeStart = now()->subDays(6)->startOfDay();
+
+            $loginsByDay = DashboardLog::where('user_id', $userId)
+                ->where('activity_type', 'login')
+                ->where('log_date', '>=', $rangeStart)
+                ->select(DB::raw('DATE(log_date) as day'), DB::raw('COUNT(*) as aggregate'))
+                ->groupBy('day')
+                ->orderBy('day')
+                ->pluck('aggregate', 'day');
+
+            $usageByDay = DashboardLog::where('user_id', $userId)
+                ->where('log_date', '>=', $rangeStart)
+                ->whereNotIn('activity_type', ['login_failed', 'login_throttled'])
+                ->select(DB::raw('DATE(log_date) as day'), DB::raw('COUNT(*) as aggregate'))
+                ->groupBy('day')
+                ->orderBy('day')
+                ->pluck('aggregate', 'day');
+
+            $loginBars = [];
+            $usageBars = [];
+            $loginMax = 1;
+            $usageMax = 1;
+            $loginTotal = 0;
+            $usageTotal = 0;
+            $activeDays = 0;
+
+            for ($i = 6; $i >= 0; $i--) {
+                $day = now()->subDays($i)->toDateString();
+                $loginCount = (int) ($loginsByDay[$day] ?? 0);
+                $usageCount = (int) ($usageByDay[$day] ?? 0);
+                $label = now()->subDays($i)->format('D');
+
+                $loginBars[] = ['label' => $label, 'count' => $loginCount];
+                $usageBars[] = ['label' => $label, 'count' => $usageCount];
+                $loginMax = max($loginMax, $loginCount);
+                $usageMax = max($usageMax, $usageCount);
+                $loginTotal += $loginCount;
+                $usageTotal += $usageCount;
+                if ($usageCount > 0 || $loginCount > 0) {
+                    $activeDays++;
+                }
+            }
+
+            return array_merge($stats, [
+                'openTasksCount' => $openTasksCount,
+                'overdueCount' => $overdueCount,
+                'unreadCount' => $unreadCount,
+                'pendingTeachingGuidesCount' => $pendingTeachingGuidesCount,
+                'pendingExamQuestionnairesCount' => $pendingExamQuestionnairesCount,
+                'awaitingApproval' => $awaitingApproval,
+                'attentionCount' => $attentionCount,
+                'bannerUrl' => $bannerUrl,
+                'bannerCta' => $bannerCta,
+                'recentTasks' => $recentTasks,
+                'upcomingDeadlines' => $upcomingDeadlines,
+                'overdueTasks' => $overdueTasks,
+                'unreadNotifications' => $unreadNotifications,
+                'recentDocuments' => $recentDocuments,
+                'announcements' => $announcements,
+                'activityPulse' => $activityPulse,
+                'loginBars' => $loginBars,
+                'loginMax' => $loginMax,
+                'loginTotal' => $loginTotal,
+                'usageBars' => $usageBars,
+                'usageMax' => $usageMax,
+                'usageTotal' => $usageTotal,
+                'activeDays' => $activeDays,
+            ]);
+        });
+    }
+
+    /**
      * Get monthly system usage data for a given year.
      */
     public function getMonthlyUsage(int $year): array

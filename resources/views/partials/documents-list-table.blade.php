@@ -3,6 +3,14 @@
     $user = auth()->user();
     $documentService = app(\App\Services\DocumentService::class);
     $foldersListUrl = route($routePrefix . '.folders.list');
+    $favoriteRoute = $routePrefix . '.toggle-favorite';
+    $canFavorite = \Illuminate\Support\Facades\Route::has($favoriteRoute);
+    $docsListRoute = $routePrefix . '.documents';
+    $hasListFilters = request()->filled('search')
+        || request()->filled('uploaded_by')
+        || request()->filled('date_from')
+        || request()->filled('date_to')
+        || request()->filled('file_type');
 @endphp
 
 <div class="documents-list-table-wrap">
@@ -24,6 +32,7 @@
             $canRename = $documentService->userCanRenameDocument($document, $user);
             $canDelete = $user->isDean() || $user->isSecretary() || (int) $document->uploaded_by === (int) $user->id;
             $canCopy   = $document->canView($user);
+            $isFavorited = $canFavorite && $document->isFavoritedBy($user->id);
         @endphp
         <tr>
             <td>
@@ -59,6 +68,16 @@
             <td>{{ $document->created_at->format('M d, Y g:i A') }}</td>
             <td class="doc-action-cell">
                 <div class="doc-action-btns archive-row-actions" role="group" aria-label="Document actions">
+                    @if($canFavorite)
+                    <button type="button"
+                            class="btn btn-sm border-0 archive-row-actions__btn doc-favorite-btn {{ $isFavorited ? 'is-favorited' : '' }}"
+                            title="{{ $isFavorited ? 'Remove from favorites' : 'Add to favorites' }}"
+                            aria-label="{{ $isFavorited ? 'Unfavorite' : 'Favorite' }} {{ $document->document_title }}"
+                            data-favorite-url="{{ route($favoriteRoute, $document->document_id) }}"
+                            data-favorited="{{ $isFavorited ? '1' : '0' }}">
+                        <i class="{{ $isFavorited ? 'fas' : 'far' }} fa-star" aria-hidden="true"></i>
+                    </button>
+                    @endif
                     @include('partials.archive-row-actions', [
                         'viewUrl' => route($routePrefix . '.view-document', $document->document_id),
                         'downloadUrl' => route($routePrefix . '.download-document', $document->document_id),
@@ -103,8 +122,22 @@
         </tr>
         @empty
         <tr>
-            <td colspan="6" class="text-center text-gray-500 dark:text-gray-400 py-8">
-                No documents available
+            <td colspan="6" class="py-10">
+                <div class="docs-empty-state">
+                    <div class="docs-empty-state__icon"><i class="fas fa-folder-open" aria-hidden="true"></i></div>
+                    <p class="docs-empty-state__title">No documents in this view</p>
+                    @if($hasListFilters)
+                        <p class="docs-empty-state__text">Nothing matches your current filters or search.</p>
+                        <a href="{{ route($docsListRoute, array_filter(['tab' => request('tab', 'accreditation'), 'folder' => request('folder')])) }}"
+                           class="btn btn-primary text-sm mt-3">
+                            <i class="fas fa-rotate-left mr-1" aria-hidden="true"></i> Clear filters
+                        </a>
+                    @elseif(request('folder'))
+                        <p class="docs-empty-state__text">This folder is empty. Upload a file here, or open another folder above.</p>
+                    @else
+                        <p class="docs-empty-state__text">Open a folder above to browse files, or upload once you are inside a folder.</p>
+                    @endif
+                </div>
             </td>
         </tr>
         @endforelse
@@ -165,6 +198,41 @@ function confirmDelete(id) {
     });
 }
 
+document.addEventListener('click', function (e) {
+    var btn = e.target.closest('.doc-favorite-btn');
+    if (!btn) return;
+    e.preventDefault();
+    var url = btn.getAttribute('data-favorite-url');
+    if (!url) return;
+    btn.disabled = true;
+    fetch(url, {
+        method: 'POST',
+        headers: {
+            'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]')?.content || '',
+            'Accept': 'application/json',
+            'X-Requested-With': 'XMLHttpRequest',
+        },
+    })
+    .then(function (r) { return r.json(); })
+    .then(function (data) {
+        if (!data || !data.success) return;
+        var on = !!data.favorited;
+        btn.dataset.favorited = on ? '1' : '0';
+        btn.classList.toggle('is-favorited', on);
+        btn.title = on ? 'Remove from favorites' : 'Add to favorites';
+        var icon = btn.querySelector('i');
+        if (icon) {
+            icon.classList.toggle('fas', on);
+            icon.classList.toggle('far', !on);
+        }
+        if (typeof showToast === 'function') {
+            showToast(data.message || (on ? 'Added to favorites' : 'Removed from favorites'), 'success');
+        }
+    })
+    .catch(function () {})
+    .finally(function () { btn.disabled = false; });
+});
+
 // ── Copy Document Modal ─────────────────────────────────────────────────
 (function () {
     var _copyUrl = '';
@@ -177,13 +245,11 @@ function confirmDelete(id) {
         var status   = document.getElementById('copyDocumentStatus');
         if (!backdrop || !select) return;
 
-        // Reset UI
         select.innerHTML = '<option value="">— Root Documents (no folder) —</option>';
         status.classList.add('hidden');
         status.textContent = '';
         backdrop.classList.add('open');
 
-        // Load folders via AJAX
         fetch(_foldersUrl)
             .then(r => r.json())
             .then(function (data) {
@@ -255,7 +321,6 @@ function confirmDelete(id) {
         });
     });
 })();
-// ───────────────────────────────────────────────────────────────────────
 
 document.addEventListener('DOMContentLoaded', function () {
     function closeDocPopover(popover, toggleBtn) {

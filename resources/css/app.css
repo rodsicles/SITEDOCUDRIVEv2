@@ -4019,6 +4019,320 @@ a.doc-sort-item:hover,
     color: #028a0f;
 }
 
+.doc-saved-preset-chip.is-active {
+    border-color: #028a0f;
+    color: #028a0f;
+    background: rgba(2, 138, 15, 0.08);
+}
+
+.doc-saved-preset-chip-wrap {
+    display: inline-flex;
+    align-items: center;
+    gap: 0;
+}
+
+.doc-saved-preset-remove {
+    margin-left: 0.15rem;
+    padding: 0.15rem 0.35rem;
+    font-size: 0.85rem;
+    line-height: 1;
+    color: #6b7280;
+    background: #f3f4f6;
+    border: 1px solid #e5e7eb;
+    cursor: pointer;
+}
+
+.dark .doc-saved-preset-remove {
+    color: #9ca3af;
+    background: #2a2a2a;
+    border-color: #404040;
+}
+
+.doc-saved-preset-remove:hover {
+    color: #dc2626;
+    border-color: #dc2626;
+}
+
+/* Documents command strip + quick access + filters (additive) */
+.docs-command-strip {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    justify-content: space-between;
+    gap: 0.75rem;
+    padding: 0.65rem 1.5rem;
+    border-bottom: 1px solid #e5e7eb;
+    background: #fafafa;
+}
+
+.dark .docs-command-strip {
+    border-bottom-color: #404040;
+    background: #1f1f1f;
+}
+
+.docs-command-strip__stats {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    gap: 0.35rem;
+    font-size: 0.8125rem;
+    color: #374151;
+}
+
+.dark .docs-command-strip__stats {
+    color: #d1d5db;
+}
+
+.docs-command-strip__dot {
+    color: #9ca3af;
+}
+
+.docs-command-strip__muted {
+    color: #6b7280;
+}
+
+.dark .docs-command-strip__muted {
+    color: #9ca3af;
+}
+
+.docs-command-strip__pending {
+    color: #b45309;
+    font-weight: 600;
+}
+
+.docs-command-strip__actions {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 0.5rem;
+    align-items: center;
+}
+
+.docs-command-strip__link {
+    display: inline-flex;
+    align-items: center;
+    font-size: 0.75rem;
+    color: #028a0f;
+    text-decoration: none;
+    background: transparent;
+    border: 1px solid #028a0f;
+    padding: 0.25rem 0.55rem;
+    cursor: pointer;
+}
+
+.docs-command-strip__link:hover {
+    background: rgba(2, 138, 15, 0.08);
+}
+
+.folder-meta-new {
+    font-size: 0.7rem;
+    color: #9ca3af;
+    line-height: 1.2;
+}
+
+.folder-pending-new {
+    font-size: 0.7rem;
+    color: #b45309;
+    font-weight: 600;
+    margin-top: 0.1rem;
+}
+
+.docs-quick-access__grid {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 0;
+}
+
+@media (max-width: 768px) {
+    .docs-quick-access__grid {
+        grid-template-columns: 1fr;
+    }
+}
+
+.docs-quick-access__col {
+    padding: 0.85rem 1.25rem;
+}
+
+.docs-quick-access__col + .docs-quick-access__col {
+    border-left: 1px solid #e5e7eb;
+}
+
+.dark .docs-quick-access__col + .docs-quick-access__col {
+    border-left-color: #404040;
+}
+
+@media (max-width: 768px) {
+    .docs-quick-access__col + .docs-quick-access__col {
+        border-left: none;
+        border-top: 1px solid #e5e7eb;
+    }
+    .dark .docs-quick-access__col + .docs-quick-access__col {
+        border-top-color: #404040;
+    }
+}
+
+.docs-quick-access__title {
+    margin: 0 0 0.5rem;
+    font-size: 0.8125rem;
+    font-weight: 700;
+    color: #028a0f;
+}
+
+.docs-quick-access__item {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 0.75rem;
+    padding: 0.35rem 0;
+    text-decoration: none;
+    border-bottom: 1px solid #f3f4f6;
+    color: #374151;
+    font-size: 0.8125rem;
+}
+
+.dark .docs-quick-access__item {
+    color: #e5e7eb;
+    border-bottom-color: #333;
+}
+
+.docs-quick-access__item:last-child {
+    border-bottom: none;
+}
+
+.docs-quick-access__name {
+    min-width: 0;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+}
+
+.docs-quick-access__meta {
+    flex-shrink: 0;
+    font-size: 0.7rem;
+    color: #9ca3af;
+}
+
+.docs-quick-access__empty {
+    margin: 0;
+    font-size: 0.75rem;
+    color: #9ca3af;
+}
+
+.doc-advanced-filters {
+    padding: 0.75rem 1rem;
+    border-bottom: 1px solid #e5e7eb;
+    background: #fafafa;
+}
+
+.dark .doc-advanced-filters {
+    border-bottom-color: #404040;
+    background: #1f1f1f;
+}
+
+.doc-advanced-filters.is-collapsed {
+    display: none;
+}
+
+.doc-advanced-filters__form {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 0.75rem;
+    align-items: flex-end;
+}
+
+.doc-advanced-filters__field {
+    display: flex;
+    flex-direction: column;
+    gap: 0.25rem;
+    min-width: 10rem;
+}
+
+.doc-advanced-filters__label {
+    font-size: 0.7rem;
+    font-weight: 600;
+    color: #6b7280;
+    text-transform: uppercase;
+    letter-spacing: 0.02em;
+}
+
+.doc-advanced-filters__control {
+    font-size: 0.8125rem !important;
+    padding: 0.35rem 0.5rem !important;
+    min-height: 2rem;
+}
+
+.doc-advanced-filters__actions {
+    display: flex;
+    gap: 0.4rem;
+    align-items: center;
+}
+
+.doc-save-filter-form {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 0.4rem;
+    align-items: center;
+    margin-top: 0.65rem;
+    padding-top: 0.65rem;
+    border-top: 1px dashed #e5e7eb;
+}
+
+.dark .doc-save-filter-form {
+    border-top-color: #404040;
+}
+
+.doc-save-filter-form__name {
+    max-width: 14rem;
+    font-size: 0.8125rem !important;
+    padding: 0.35rem 0.5rem !important;
+}
+
+.docs-empty-state {
+    text-align: center;
+    max-width: 28rem;
+    margin: 0 auto;
+}
+
+.docs-empty-state__icon {
+    font-size: 2rem;
+    color: #d1d5db;
+    margin-bottom: 0.5rem;
+}
+
+.dark .docs-empty-state__icon {
+    color: #4b5563;
+}
+
+.docs-empty-state__title {
+    margin: 0 0 0.35rem;
+    font-size: 0.95rem;
+    font-weight: 700;
+    color: #374151;
+}
+
+.dark .docs-empty-state__title {
+    color: #e5e7eb;
+}
+
+.docs-empty-state__text {
+    margin: 0;
+    font-size: 0.8125rem;
+    color: #6b7280;
+}
+
+.doc-favorite-btn {
+    background: #f3f4f6 !important;
+    color: #9ca3af !important;
+}
+
+.doc-favorite-btn.is-favorited,
+.doc-favorite-btn.is-favorited i {
+    color: #028a0f !important;
+}
+
+.dark .doc-favorite-btn {
+    background: #2a2a2a !important;
+}
+
 /* Notifications toolbar */
 .notifications-toolbar {
     @apply flex flex-wrap gap-2 items-center;
@@ -7923,6 +8237,15 @@ a.doc-sort-item:hover,
     display: flex;
     flex-direction: column;
     gap: 1rem;
+}
+.dean-mini-analytics__summary {
+    margin: 0;
+    font-size: 0.78rem;
+    font-weight: 600;
+    color: #374151;
+}
+.dark .dean-mini-analytics__summary {
+    color: #d1d5db;
 }
 .dean-mini-analytics__label {
     font-size: 0.72rem;

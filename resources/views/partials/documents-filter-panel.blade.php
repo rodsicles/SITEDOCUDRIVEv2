@@ -5,12 +5,15 @@
     $folderFilter = $folderFilter ?? null;
     $tab = $tab ?? request('tab', 'accreditation');
     $savedFilters = $savedFilters ?? collect();
+    $uploaders = $uploaders ?? collect();
 
     $currentSort = request('sort', 'date');
     $currentType = request('file_type', '');
+    $currentUploader = request('uploaded_by', '');
+    $currentDateFrom = request('date_from', '');
+    $currentDateTo = request('date_to', '');
 
-    $hasActiveFilters = $currentType !== ''
-        || ($currentSort !== '' && $currentSort !== 'date');
+    $hasAdvancedFilters = $currentUploader !== '' || $currentDateFrom !== '' || $currentDateTo !== '';
 
     $sortButtonLabel = 'Sort';
     if ($currentType === 'pdf') {
@@ -31,6 +34,9 @@
         'sort' => request('sort'),
         'file_type' => request('file_type'),
         'category' => request('category'),
+        'uploaded_by' => $currentUploader,
+        'date_from' => $currentDateFrom,
+        'date_to' => $currentDateTo,
     ], fn ($v) => $v !== null && $v !== '');
 
     $documentsListSearchRoute = $documentsListSearchRoute ?? (
@@ -38,6 +44,14 @@
             ? substr($documentsRoute, 0, -strlen('.documents')).'.documents.list-search'
             : $documentsRoute.'.list-search'
     );
+
+    $clearAdvancedParams = array_filter([
+        'folder' => $folderFilter,
+        'tab' => $tab,
+        'search' => $currentSearch !== '' ? $currentSearch : null,
+        'sort' => request('sort'),
+        'file_type' => request('file_type'),
+    ], fn ($v) => $v !== null && $v !== '');
 @endphp
 
 <div class="card-header card-header--documents">
@@ -48,8 +62,19 @@
             <div class="doc-search-wrap" id="docListSearchWrap">
                 <form action="{{ route($documentsRoute) }}" method="GET" class="doc-search-form" id="docListSearchForm" role="search">
                     @foreach($searchPreserve as $key => $value)
+                        @if(!in_array($key, ['uploaded_by', 'date_from', 'date_to'], true))
                         <input type="hidden" name="{{ $key }}" value="{{ $value }}">
+                        @endif
                     @endforeach
+                    @if($currentUploader !== '')
+                        <input type="hidden" name="uploaded_by" value="{{ $currentUploader }}">
+                    @endif
+                    @if($currentDateFrom !== '')
+                        <input type="hidden" name="date_from" value="{{ $currentDateFrom }}">
+                    @endif
+                    @if($currentDateTo !== '')
+                        <input type="hidden" name="date_to" value="{{ $currentDateTo }}">
+                    @endif
                     <label class="sr-only" for="docListSearchInput">Search documents</label>
                     <input type="search"
                            id="docListSearchInput"
@@ -66,7 +91,15 @@
                         <i class="fas fa-search" aria-hidden="true"></i>
                     </button>
                     @if($currentSearch !== '')
-                    <a href="{{ route($documentsRoute, $searchPreserve) }}"
+                    <a href="{{ route($documentsRoute, array_filter([
+                        'folder' => $folderFilter,
+                        'tab' => $tab,
+                        'sort' => request('sort'),
+                        'file_type' => request('file_type'),
+                        'uploaded_by' => $currentUploader ?: null,
+                        'date_from' => $currentDateFrom ?: null,
+                        'date_to' => $currentDateTo ?: null,
+                    ])) }}"
                        class="doc-search-clear"
                        aria-label="Clear search"
                        title="Clear search">
@@ -77,9 +110,18 @@
                 <div id="docListSearchSuggest" class="doc-search-suggest" role="listbox" hidden></div>
             </div>
 
+            <button type="button"
+                    class="doc-sort-trigger {{ $hasAdvancedFilters ? 'is-active' : '' }}"
+                    id="docFilterToggle"
+                    aria-expanded="{{ $hasAdvancedFilters ? 'true' : 'false' }}"
+                    aria-controls="docAdvancedFilters">
+                <i class="fas fa-filter" aria-hidden="true"></i>
+                <span>Filters</span>
+            </button>
+
             <div class="doc-sort-wrap" id="docSortWrap">
             <button type="button"
-                    class="doc-sort-trigger {{ $hasActiveFilters ? 'is-active' : '' }}"
+                    class="doc-sort-trigger {{ ($currentType !== '' || ($currentSort !== '' && $currentSort !== 'date')) ? 'is-active' : '' }}"
                     id="docSortBtn"
                     aria-haspopup="true"
                     aria-expanded="false"
@@ -127,7 +169,7 @@
                     </div>
                 </div>
 
-                @if($hasActiveFilters)
+                @if($currentType !== '' || ($currentSort !== '' && $currentSort !== 'date'))
                 <div class="doc-sort-menu-footer" role="none">
                     <a href="{{ DocumentListSortUrls::resetHref($documentsRoute, $folderFilter, $tab, $req) }}" class="doc-sort-reset" role="menuitem">
                         <i class="fas fa-rotate-left" aria-hidden="true"></i> Reset sort &amp; type
@@ -142,17 +184,118 @@
     <span class="badge badge-info">{{ $documents->total() }} Files</span>
 </div>
 
-@if($savedFilters->isNotEmpty())
+<div id="docAdvancedFilters" class="doc-advanced-filters {{ $hasAdvancedFilters ? '' : 'is-collapsed' }}">
+    <form action="{{ route($documentsRoute) }}" method="GET" class="doc-advanced-filters__form">
+        <input type="hidden" name="tab" value="{{ $tab }}">
+        @if($folderFilter)
+            <input type="hidden" name="folder" value="{{ $folderFilter }}">
+        @endif
+        @if($currentSearch !== '')
+            <input type="hidden" name="search" value="{{ $currentSearch }}">
+        @endif
+        @if(request('sort'))
+            <input type="hidden" name="sort" value="{{ request('sort') }}">
+        @endif
+        @if(request('file_type'))
+            <input type="hidden" name="file_type" value="{{ request('file_type') }}">
+        @endif
+
+        <div class="doc-advanced-filters__field">
+            <label class="doc-advanced-filters__label" for="docFilterUploader">Uploaded by</label>
+            <select name="uploaded_by" id="docFilterUploader" class="form-control doc-advanced-filters__control">
+                <option value="">Anyone</option>
+                @foreach($uploaders as $uploader)
+                    <option value="{{ $uploader->id }}" @selected((string) $currentUploader === (string) $uploader->id)>
+                        {{ $uploader->employee->full_name ?? $uploader->username }}
+                    </option>
+                @endforeach
+            </select>
+        </div>
+
+        <div class="doc-advanced-filters__field">
+            <label class="doc-advanced-filters__label" for="docFilterDateFrom">From</label>
+            <input type="date" name="date_from" id="docFilterDateFrom" value="{{ $currentDateFrom }}" class="form-control doc-advanced-filters__control">
+        </div>
+
+        <div class="doc-advanced-filters__field">
+            <label class="doc-advanced-filters__label" for="docFilterDateTo">To</label>
+            <input type="date" name="date_to" id="docFilterDateTo" value="{{ $currentDateTo }}" class="form-control doc-advanced-filters__control">
+        </div>
+
+        <div class="doc-advanced-filters__actions">
+            <button type="submit" class="btn btn-primary text-xs">
+                <i class="fas fa-check mr-1" aria-hidden="true"></i> Apply
+            </button>
+            @if($hasAdvancedFilters)
+            <a href="{{ route($documentsRoute, $clearAdvancedParams) }}" class="btn bg-gray-200 dark:bg-gray-700 text-gray-700 dark:text-gray-300 text-xs">
+                Clear
+            </a>
+            @endif
+        </div>
+    </form>
+
+    @if($hasAdvancedFilters || $currentSearch !== '' || $currentType !== '')
+    <form action="{{ route('document-filters.store') }}" method="POST" class="doc-save-filter-form">
+        @csrf
+        <input type="hidden" name="tab" value="{{ $tab }}">
+        @if($folderFilter)<input type="hidden" name="folder" value="{{ $folderFilter }}">@endif
+        @if($currentSearch !== '')<input type="hidden" name="search" value="{{ $currentSearch }}">@endif
+        @if(request('sort'))<input type="hidden" name="sort" value="{{ request('sort') }}">@endif
+        @if(request('file_type'))<input type="hidden" name="file_type" value="{{ request('file_type') }}">@endif
+        @if($currentUploader !== '')<input type="hidden" name="uploaded_by" value="{{ $currentUploader }}">@endif
+        @if($currentDateFrom !== '')<input type="hidden" name="date_from" value="{{ $currentDateFrom }}">@endif
+        @if($currentDateTo !== '')<input type="hidden" name="date_to" value="{{ $currentDateTo }}">@endif
+        <input type="text" name="name" class="form-control doc-save-filter-form__name" placeholder="Save filter as…" maxlength="50" required>
+        <button type="submit" class="btn btn-sm btn-success border-0">
+            <i class="fas fa-bookmark mr-1" aria-hidden="true"></i> Save
+        </button>
+    </form>
+    @endif
+</div>
+
+@if($hasAdvancedFilters || $savedFilters->isNotEmpty())
 <div class="doc-saved-presets px-4 pb-2">
+    @if($currentUploader !== '')
+        @php
+            $uploaderUser = $uploaders->firstWhere('id', (int) $currentUploader);
+            $uploaderLabel = optional(optional($uploaderUser)->employee)->full_name
+                ?? optional($uploaderUser)->username
+                ?? 'Uploader';
+        @endphp
+        <span class="doc-saved-preset-chip is-active">By: {{ $uploaderLabel }}</span>
+    @endif
+    @if($currentDateFrom !== '' || $currentDateTo !== '')
+        <span class="doc-saved-preset-chip is-active">
+            Dates: {{ $currentDateFrom !== '' ? $currentDateFrom : '…' }} → {{ $currentDateTo !== '' ? $currentDateTo : '…' }}
+        </span>
+    @endif
     @foreach($savedFilters as $savedFilter)
-    <a href="{{ route($documentsRoute, array_merge($savedFilter->toQueryParams(), ['saved_filter' => $savedFilter->document_filter_id, 'folder' => $folderFilter, 'tab' => $tab])) }}"
-       class="doc-saved-preset-chip">{{ $savedFilter->name }}</a>
+    <span class="doc-saved-preset-chip-wrap">
+        <a href="{{ route($documentsRoute, array_merge($savedFilter->toQueryParams(), ['saved_filter' => $savedFilter->document_filter_id, 'folder' => $folderFilter, 'tab' => $tab])) }}"
+           class="doc-saved-preset-chip">{{ $savedFilter->name }}</a>
+        <form action="{{ route('document-filters.destroy', $savedFilter->document_filter_id) }}" method="POST" class="inline" onsubmit="return confirm('Delete this saved filter?')">
+            @csrf
+            @method('DELETE')
+            <button type="submit" class="doc-saved-preset-remove" title="Delete saved filter" aria-label="Delete {{ $savedFilter->name }}">&times;</button>
+        </form>
+    </span>
     @endforeach
 </div>
 @endif
 
 @push('scripts')
 <script>
+(function () {
+    var toggle = document.getElementById('docFilterToggle');
+    var panel = document.getElementById('docAdvancedFilters');
+    if (toggle && panel) {
+        toggle.addEventListener('click', function () {
+            var collapsed = panel.classList.toggle('is-collapsed');
+            toggle.setAttribute('aria-expanded', collapsed ? 'false' : 'true');
+        });
+    }
+})();
+
 (function () {
     var wrap = document.getElementById('docSortWrap');
     var btn = document.getElementById('docSortBtn');
@@ -209,7 +352,7 @@
 
 (function () {
     var params = new URLSearchParams(window.location.search);
-    if (params.has('sort') || params.has('file_type')) {
+    if (params.has('sort') || params.has('file_type') || params.has('uploaded_by') || params.has('date_from') || params.has('date_to')) {
         var table = document.getElementById('documentsListTable');
         if (table) {
             setTimeout(function () {

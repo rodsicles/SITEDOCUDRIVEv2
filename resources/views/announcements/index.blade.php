@@ -3,7 +3,7 @@
 @section('title', 'Announcements')
 
 @section('page-title', 'Announcements')
-@section('page-subtitle', 'Stay updated with the latest news and updates')
+@section('page-subtitle', 'Latest news and updates')
 
 @section('sidebar')
     @if(auth()->user()->isFaculty())
@@ -16,17 +16,21 @@
 @endsection
 
 @section('content')
+@php
+    $canPostAnnouncement = auth()->user()->isDean() || auth()->user()->isProgramCoordinator();
+    $announcementTotal = $announcements->total();
+@endphp
 
-    <div class="content-card">
-        <div class="card-header">
-            <h3 class="card-title">
-                <i class="fas fa-bullhorn mr-2 text-[#028a0f] dark:text-[#02b815]"></i>
-                Announcements
-                <span class="badge badge-info ml-2">{{ $announcements->total() }}</span>
+    <div class="content-card announcements-page {{ $announcementTotal === 0 ? 'announcements-page--empty' : '' }}">
+        <div class="card-header announcements-page__header">
+            <h3 class="card-title announcements-page__title">
+                <i class="fas fa-bullhorn mr-1.5 text-[#028a0f] dark:text-[#02b815]"></i>
+                Feed
+                <span class="badge badge-info ml-1.5">{{ $announcementTotal }}</span>
             </h3>
-            @if(auth()->user()->isDean() || auth()->user()->isProgramCoordinator())
-            <a href="{{ route('announcements.create') }}" class="btn btn-primary">
-                <i class="fas fa-plus mr-1"></i> Post Announcement
+            @if($canPostAnnouncement)
+            <a href="{{ route('announcements.create') }}" class="btn btn-primary btn-sm announcements-page__post-btn">
+                <i class="fas fa-plus mr-1"></i> Post
             </a>
             @endif
         </div>
@@ -36,7 +40,7 @@
         <div id="announcement-{{ $announcement->announcement_id }}"
              data-id="{{ $announcement->announcement_id }}"
              data-unread="{{ $announcement->isReadBy(auth()->user()) ? '0' : '1' }}"
-             class="mb-4 border
+             class="announcement-item mb-2 border
                 {{ $announcement->is_pinned
                     ? 'border-l-4 border-[#028a0f] dark:border-[#02b815] bg-green-50 dark:bg-[#1a2a1a]'
                     : 'border-gray-200 dark:border-gray-700 bg-white dark:bg-[#1e1e1e]' }}
@@ -44,19 +48,18 @@
 
             {{-- Pinned indicator --}}
             @if($announcement->is_pinned)
-            <div class="flex items-center gap-1.5 px-5 pt-3 text-[#028a0f] dark:text-[#02b815]">
-                <i class="fas fa-thumbtack text-xs"></i>
-                <span class="text-[0.68rem] font-bold uppercase tracking-widest">Pinned</span>
+            <div class="flex items-center gap-1 px-3 pt-2 text-[#028a0f] dark:text-[#02b815]">
+                <i class="fas fa-thumbtack text-[0.65rem]"></i>
+                <span class="text-[0.65rem] font-bold uppercase tracking-wide">Pinned</span>
             </div>
             @endif
 
-            <div class="p-5">
+            <div class="announcement-item__body">
                 {{-- Author row --}}
-                <div class="flex items-start justify-between gap-3 mb-3">
-                    <div class="flex items-center gap-3 min-w-0">
+                <div class="flex items-start justify-between gap-2 mb-2">
+                    <div class="flex items-center gap-2 min-w-0">
                         {{-- Avatar --}}
-                        <div class="w-10 h-10 flex items-center justify-center text-white text-sm font-bold flex-shrink-0"
-                             style="background:linear-gradient(135deg,#028a0f,#026a0c);">
+                        <div class="w-8 h-8 flex items-center justify-center text-white text-xs font-bold flex-shrink-0 bg-[#028a0f]">
                             {{ strtoupper(substr($announcement->author?->username ?? 'A', 0, 2)) }}
                         </div>
                         <div class="min-w-0">
@@ -125,17 +128,17 @@
                 </div>
 
                 {{-- Title --}}
-                <h4 class="text-base font-bold text-gray-800 dark:text-gray-200 mb-2 mt-0">
+                <h4 class="text-sm font-bold text-gray-800 dark:text-gray-200 mb-1 mt-0">
                     {{ $announcement->title }}
                 </h4>
 
                 {{-- Body --}}
-                <p class="text-sm text-gray-600 dark:text-gray-400 leading-relaxed mb-4 break-words">
+                <p class="text-sm text-gray-600 dark:text-gray-400 leading-snug mb-2 break-words">
                     {!! nl2br(e($announcement->body)) !!}
                 </p>
 
                 {{-- Footer --}}
-                <div class="flex items-center justify-between pt-3 border-t border-gray-200 dark:border-gray-700 flex-wrap gap-2">
+                <div class="flex items-center justify-between pt-2 border-t border-gray-200 dark:border-gray-700 flex-wrap gap-2">
 
                     {{-- Reaction bar --}}
                     @php
@@ -198,18 +201,29 @@
         </div>
 
         @empty
-        <div class="empty-state">
-            <div class="empty-state-icon"><i class="fas fa-bullhorn"></i></div>
-            <div class="empty-state-text">No announcements yet.</div>
-            @if(auth()->user()->isDean() || auth()->user()->isProgramCoordinator())
-            <a href="{{ route('announcements.create') }}" class="btn btn-primary mt-4">Post the first announcement</a>
+        <div class="announcements-empty">
+            <div class="announcements-empty__icon" aria-hidden="true">
+                <i class="fas fa-bullhorn"></i>
+            </div>
+            <p class="announcements-empty__title">No announcements yet</p>
+            <p class="announcements-empty__text">
+                Official updates from Dean and Program Coordinators will appear here.
+            </p>
+            @if($canPostAnnouncement)
+            <a href="{{ route('announcements.create') }}" class="btn btn-primary btn-sm mt-2">
+                <i class="fas fa-plus mr-1"></i> Post the first announcement
+            </a>
+            @else
+            <p class="announcements-empty__hint">Check back later for new posts.</p>
             @endif
         </div>
         @endforelse
 
-        <div class="mt-4 px-2 pb-2">
+        @if($announcementTotal > 0)
+        <div class="announcements-page__pagination">
             {{ $announcements->links('partials.pagination') }}
         </div>
+        @endif
     </div>
 
     <script>

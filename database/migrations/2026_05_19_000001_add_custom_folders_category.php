@@ -1,7 +1,6 @@
 <?php
 
 use App\Models\Folder;
-use App\Models\User;
 use Illuminate\Database\Migrations\Migration;
 use Illuminate\Support\Facades\DB;
 
@@ -13,11 +12,13 @@ return new class extends Migration
             return;
         }
 
-        $ownerId = User::query()->orderBy('id')->value('id') ?? 1;
+        // System category: no owning user. Never fall back to user_id=1 —
+        // fresh DBs (e.g. Laravel Cloud) have an empty users table and would
+        // fail the folders_user_id_foreign constraint.
         $maxSort = (int) Folder::query()->whereNull('parent_id')->max('sort_order');
 
         DB::table('folders')->insert([
-            'user_id' => $ownerId,
+            'user_id' => null,
             'folder_name' => 'Custom Folders',
             'slug' => Folder::CUSTOM_FOLDERS_SLUG,
             'color' => '#028a0f',

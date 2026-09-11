@@ -66,6 +66,7 @@ class FacultyDocumentTreeService
             'Teaching Guides' => [],
             'Exam Questionnaires' => [],
             'Accreditation and Certifications' => [],
+            'Event Letters' => [],
             'Academics' => [],
             'Other' => [],
         ];
@@ -152,6 +153,7 @@ class FacultyDocumentTreeService
             'Teaching Guides',
             'Exam Questionnaires',
             'Accreditation and Certifications',
+            'Event Letters',
             'Academics',
         ];
 

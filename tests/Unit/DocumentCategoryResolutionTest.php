@@ -14,6 +14,7 @@ class DocumentCategoryResolutionTest extends TestCase
 
         $this->assertContains('Teaching Guides', $allowed);
         $this->assertContains('Exam Questionnaires', $allowed);
+        $this->assertContains('Event Letters', $allowed);
         $this->assertContains('Other', $allowed);
     }
 

@@ -400,6 +400,7 @@ class NotificationService
         $tab = match ($category) {
             'Academics' => 'academics',
             'Accreditation and Certifications' => 'accreditation-and-certifications',
+            'Event Letters' => 'event-letters',
             'Teaching Guides' => 'teaching-guides',
             'Exam Questionnaires' => 'exam-questionnaires',
             'Custom Folders' => 'custom-folders',
@@ -523,7 +524,7 @@ class NotificationService
         }
 
         if (str_contains($lower, 'check documents') || str_contains($lower, 'uploaded')) {
-            if (preg_match('/\((Academics|Accreditation and Certifications|Teaching Guides|Exam Questionnaires|Custom Folders|Other)\)/i', $message, $m)) {
+            if (preg_match('/\((Academics|Accreditation and Certifications|Event Letters|Teaching Guides|Exam Questionnaires|Custom Folders|Other)\)/i', $message, $m)) {
                 return $this->documentsUrlFor($user, $m[1]);
             }
 

@@ -32,6 +32,7 @@ class DocumentService
      */
     const CATEGORIES = [
         'Accreditation and Certifications',
+        'Event Letters',
         'Academics',
         'Teaching Guides',
         'Exam Questionnaires',

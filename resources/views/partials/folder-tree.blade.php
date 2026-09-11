@@ -29,6 +29,7 @@
                 $tabSlug = \Illuminate\Support\Str::slug($category->folder_name);
                 $tabIcon = match ($tabSlug) {
                     'academics' => 'fa-book',
+                    'event-letters' => 'fa-envelope-open-text',
                     'custom-folders' => 'fa-folder-plus',
                     default => 'fa-certificate',
                 };

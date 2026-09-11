@@ -27,6 +27,11 @@ return new class extends Migration
                 ],
             ],
             [
+                'name' => 'Event Letters',
+                'slug' => 'event-letters',
+                'children' => [],
+            ],
+            [
                 'name' => 'Academics',
                 'slug' => 'academics',
                 'children' => [

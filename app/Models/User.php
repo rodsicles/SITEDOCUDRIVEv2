@@ -110,6 +110,21 @@ class User extends Authenticatable
         return $this->hasMany(DocumentFilter::class, 'user_id');
     }
 
+    public function documentRequestsCreated()
+    {
+        return $this->hasMany(DocumentRequest::class, 'requested_by');
+    }
+
+    public function documentRequestsReceived()
+    {
+        return $this->hasMany(DocumentRequestRecipient::class, 'user_id');
+    }
+
+    public function savedDocumentSearches()
+    {
+        return $this->hasMany(SavedDocumentSearch::class);
+    }
+
     public function announcements()
     {
         return $this->hasMany(Announcement::class, 'author_id');

@@ -49,3 +49,4 @@ Artisan::command('storage:verify-uploads', function () {
 // e.g. Aug 10, 2026 → creates AY 2026-2027 folders under Teaching Guides & Exam Questionnaires
 Schedule::command('folders:create-school-year')->yearlyOn(8, 10, '00:05');
 Schedule::command('recycle-bin:purge --days=30')->dailyAt('02:00');
+Schedule::command('documents:index-content')->hourly()->withoutOverlapping();

@@ -50,6 +50,11 @@ class Document extends Model
         return $this->belongsTo(Folder::class, 'folder_id', 'folder_id');
     }
 
+    public function schoolYear()
+    {
+        return $this->belongsTo(SchoolYear::class, 'school_year_id');
+    }
+
     public function trashedFolder()
     {
         return $this->belongsTo(Folder::class, 'trashed_folder_id', 'folder_id');
@@ -215,6 +220,16 @@ class Document extends Model
     {
         return $this->hasMany(DocumentVersion::class, 'document_id', 'document_id')
             ->orderByDesc('version_number');
+    }
+
+    public function searchIndex()
+    {
+        return $this->hasOne(DocumentSearchIndex::class, 'document_id', 'document_id');
+    }
+
+    public function requestSubmissions()
+    {
+        return $this->hasMany(DocumentRequestRecipient::class, 'submitted_document_id', 'document_id');
     }
 
     /**

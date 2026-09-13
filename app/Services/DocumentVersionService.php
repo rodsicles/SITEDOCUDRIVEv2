@@ -10,6 +10,8 @@ use App\Support\DocumentNaming;
 use App\Support\UploadStorage;
 use Illuminate\Http\UploadedFile;
 use Illuminate\Support\Facades\DB;
+use App\Jobs\IndexDocumentContentJob;
+use App\Models\DocumentSearchIndex;
 
 /**
  * Keeps a full history of a document's files.
@@ -42,7 +44,7 @@ class DocumentVersionService
         $filename = time() . '_v' . $this->nextVersionNumber($document) . '_' . $file->hashName();
         $storedPath = UploadStorage::storeAs($file, $directory, $filename);
 
-        return DB::transaction(function () use ($document, $user, $note, $storedPath, $extension, $file) {
+        $archived = DB::transaction(function () use ($document, $user, $note, $storedPath, $extension, $file) {
             $archived = $this->archiveCurrentFile($document, $user, $note);
 
             $document->update([
@@ -61,6 +63,15 @@ class DocumentVersionService
 
             return $archived;
         });
+
+        $realPath = $file->getRealPath();
+        DocumentSearchIndex::updateOrCreate(
+            ['document_id' => $document->document_id],
+            ['file_hash' => $realPath ? (hash_file('sha256', $realPath) ?: null) : null, 'index_status' => 'pending', 'content_text' => null]
+        );
+        IndexDocumentContentJob::dispatch($document->document_id)->afterResponse();
+
+        return $archived;
     }
 
     /**
@@ -82,7 +93,7 @@ class DocumentVersionService
             abort(404, 'The file for this version is no longer available in storage.');
         }
 
-        return DB::transaction(function () use ($document, $version, $user) {
+        $restored = DB::transaction(function () use ($document, $version, $user) {
             $this->archiveCurrentFile($document, $user, 'Replaced by restore of v' . $version->version_number);
 
             $document->update([
@@ -101,6 +112,14 @@ class DocumentVersionService
 
             return $version;
         });
+
+        DocumentSearchIndex::updateOrCreate(
+            ['document_id' => $document->document_id],
+            ['index_status' => 'pending', 'content_text' => null]
+        );
+        IndexDocumentContentJob::dispatch($document->document_id)->afterResponse();
+
+        return $restored;
     }
 
     /**

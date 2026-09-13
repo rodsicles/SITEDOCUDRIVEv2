@@ -19,6 +19,8 @@ use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Support\Collection;
 use Illuminate\Support\Str;
 use Illuminate\Pagination\LengthAwarePaginator;
+use App\Jobs\IndexDocumentContentJob;
+use App\Models\DocumentSearchIndex;
 
 class DocumentService
 {
@@ -597,6 +599,13 @@ class DocumentService
             if (!empty($recipientIds)) {
                 $document->recipients()->sync($recipientIds);
             }
+
+            $realPath = $file->getRealPath();
+            DocumentSearchIndex::updateOrCreate(
+                ['document_id' => $document->document_id],
+                ['file_hash' => $realPath ? (hash_file('sha256', $realPath) ?: null) : null, 'index_status' => 'pending']
+            );
+            IndexDocumentContentJob::dispatch($document->document_id)->afterResponse();
 
             $lastDocumentId = (int) $document->document_id;
             $uploadedCount++;

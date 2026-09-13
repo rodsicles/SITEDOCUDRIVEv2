@@ -27,6 +27,8 @@ use App\Http\Controllers\RecycleBinController;
 use App\Http\Controllers\ForgotPasswordController;
 use App\Http\Controllers\PasswordResetRequestController;
 use App\Http\Controllers\ReportController;
+use App\Http\Controllers\DocumentRequestController;
+use App\Http\Controllers\DocumentSearchController;
 
 // Authentication Routes
 Route::get('/', [AuthController::class, 'showLogin'])->name('login');
@@ -58,6 +60,18 @@ Route::middleware('auth')->group(function () {
 
 // Global Search (All authenticated users)
 Route::get('/search', [SearchController::class, 'search'])->middleware(['auth', 'no.back', 'throttle:20,1'])->name('search');
+
+Route::middleware(['auth', 'no.back'])->group(function () {
+    Route::get('/document-requests', [DocumentRequestController::class, 'index'])->name('document-requests.index');
+    Route::post('/document-requests', [DocumentRequestController::class, 'store'])->middleware('throttle:30,60')->name('document-requests.store');
+    Route::post('/document-request-recipients/{recipient}/submit', [DocumentRequestController::class, 'submit'])->middleware('throttle:10,60')->name('document-requests.submit');
+    Route::post('/document-request-recipients/{recipient}/review', [DocumentRequestController::class, 'review'])->middleware('throttle:30,1')->name('document-requests.review');
+
+    Route::get('/document-search', [DocumentSearchController::class, 'index'])->name('document-search.index');
+    Route::post('/document-search/saved', [DocumentSearchController::class, 'save'])->middleware('throttle:20,60')->name('document-search.saved.store');
+    Route::delete('/document-search/saved/{savedSearch}', [DocumentSearchController::class, 'destroy'])->name('document-search.saved.destroy');
+    Route::post('/document-search/duplicate', [DocumentSearchController::class, 'duplicate'])->middleware('throttle:60,1')->name('document-search.duplicate');
+});
 
 // Teaching Guides: open or create subject folder (TG/LB) from semester picker
 Route::post('/documents/open-tg-subject', [TgSubjectFolderController::class, 'store'])

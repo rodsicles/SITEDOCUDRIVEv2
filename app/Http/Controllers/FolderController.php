@@ -103,6 +103,25 @@ class FolderController extends Controller
         ]);
     }
 
+    public function privacy(Request $request, Folder $folder)
+    {
+        $validated = $request->validate(['private' => ['required', 'boolean']]);
+
+        try {
+            $folder = $this->folderService->setPrivacy($folder, $request->user(), (bool) $validated['private']);
+
+            return response()->json([
+                'success' => true,
+                'private' => $folder->is_private,
+                'message' => $folder->is_private
+                    ? 'Folder is now private. Only you can access its contents.'
+                    : 'Folder privacy removed.',
+            ]);
+        } catch (HttpException $e) {
+            return response()->json(['success' => false, 'message' => $e->getMessage()], $e->getStatusCode());
+        }
+    }
+
     /**
      * Copy a document to another folder (creates a new physical file + DB record).
      */
@@ -114,6 +133,11 @@ class FolderController extends Controller
 
         $document = Document::findOrFail($documentId);
         $user     = auth()->user();
+
+        abort_unless($document->canView($user), 404);
+        if ($request->folder_id) {
+            Folder::visibleTo($user)->findOrFail((int) $request->folder_id);
+        }
 
         $copy = app(DocumentService::class)->copyDocument(
             $document,

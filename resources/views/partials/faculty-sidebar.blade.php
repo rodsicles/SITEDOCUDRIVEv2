@@ -13,9 +13,6 @@
         <a href="{{ route('document-requests.index') }}" class="menu-item {{ request()->routeIs('document-requests.*') ? 'active' : '' }}">
             <i class="fas fa-file-circle-question"></i> Document Requests
         </a>
-        <a href="{{ route('document-search.index') }}" class="menu-item {{ request()->routeIs('document-search.*') ? 'active' : '' }}">
-            <i class="fas fa-file-magnifying-glass"></i> Document Search
-        </a>
         <a href="{{ route('faculty.archives.list') }}" class="menu-item {{ request()->routeIs('faculty.archives.*') ? 'active' : '' }}">
             <i class="fas fa-box-archive"></i> Archives
         </a>

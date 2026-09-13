@@ -28,6 +28,10 @@ trait ValidatesDocumentUpload
         $useCourseSelect = $isTypeLeafFolder;
         $user = auth()->user();
 
+        if ($folder && ! $folder->canBeViewedBy($user)) {
+            abort(404);
+        }
+
         $titleMax = DocumentNaming::TITLE_MAX_LENGTH;
 
         $rules = [

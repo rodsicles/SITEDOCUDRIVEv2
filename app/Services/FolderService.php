@@ -9,12 +9,18 @@ use App\Models\SchoolYear;
 use App\Models\User;
 use App\Support\CoordinatorDepartment;
 use Illuminate\Support\Collection;
+use Illuminate\Support\Facades\DB;
 
 class FolderService
 {
     public function __construct(
         protected RecycleBinService $recycleBinService,
     ) {}
+
+    public function visibleFolderOrFail(int $folderId, User $viewer): Folder
+    {
+        return Folder::with('parent.parent')->visibleTo($viewer)->findOrFail($folderId);
+    }
     /**
      * Get the system folder tree: top-level categories with children eager-loaded.
      */
@@ -86,6 +92,10 @@ class FolderService
             ->where('is_system', false)
             ->orderBy('folder_name');
 
+        if ($viewer) {
+            $query->visibleTo($viewer);
+        }
+
         if ($viewer?->isFaculty()) {
             $query->where('user_id', $viewer->id);
         } elseif ($viewer?->isProgramCoordinator()) {
@@ -105,6 +115,9 @@ class FolderService
      */
     public function getDisplayFolders(Folder $parent, ?User $viewer = null): Collection
     {
+        if ($viewer && ! $parent->canBeViewedBy($viewer)) {
+            abort(404);
+        }
         if ($parent->isCustomFoldersCategory()) {
             return $this->attachSubtreeDocumentCounts($this->getCustomFoldersForViewer($viewer), $viewer);
         }
@@ -122,6 +135,10 @@ class FolderService
 
         $query = $parent->children()->system()->orderBy('sort_order')
             ->withCount(['documents' => $documentCount]);
+
+        if ($viewer) {
+            $query->visibleTo($viewer);
+        }
 
         $activeSchoolYearId = SchoolYear::activeId();
         $hierarchy = app(AcademicHierarchyService::class);
@@ -246,12 +263,15 @@ class FolderService
     {
         $document = Document::findOrFail($documentId);
 
+        abort_unless($document->canView(User::findOrFail($userId)), 404);
+
         if ($document->uploaded_by !== $userId) {
             abort(403, 'Unauthorized action.');
         }
 
         if ($folderId) {
-            Folder::findOrFail($folderId);
+            $destination = Folder::visibleTo(User::findOrFail($userId))->findOrFail($folderId);
+            abort_if($destination->is_private && (int) $destination->privacy_owner_id !== $userId, 403);
         }
 
         // Keep documents.category in sync with the destination folder's root
@@ -348,6 +368,47 @@ class FolderService
     public function userOwnsCustomFolder(Folder $folder, User $user): bool
     {
         return $folder->isCustomSubfolder() && (int) $folder->user_id === (int) $user->id;
+    }
+
+    public function setPrivacy(Folder $folder, User $actor, bool $private): Folder
+    {
+        abort_unless($actor->isFaculty() && $this->userOwnsCustomFolder($folder, $actor), 403);
+
+        if ($private) {
+            $hasPendingRequest = Document::query()
+                ->where('folder_id', $folder->folder_id)
+                ->whereHas('requestSubmissions', fn ($q) => $q->whereIn('status', ['pending', 'submitted', 'changes_requested']))
+                ->exists();
+
+            if ($hasPendingRequest) {
+                abort(422, 'This folder contains an unresolved requested submission and cannot be made private.');
+            }
+        }
+
+        return DB::transaction(function () use ($folder, $actor, $private) {
+            $folderIds = array_merge([$folder->folder_id], $folder->getDescendantIds());
+
+            Folder::whereIn('folder_id', $folderIds)->update([
+                'is_private' => $private,
+                'privacy_owner_id' => $private ? $actor->id : null,
+                'locked_at' => $private ? now() : null,
+            ]);
+
+            if ($private) {
+                Document::whereIn('folder_id', $folderIds)->each(
+                    fn (Document $document) => $document->recipients()->detach()
+                );
+            }
+
+            DashboardLog::create([
+                'user_id' => $actor->id,
+                'activity' => ($private ? 'Locked' : 'Unlocked').' a private folder (ID '.$folder->folder_id.')',
+                'activity_type' => $private ? 'folder_locked' : 'folder_unlocked',
+                'visibility' => 'own',
+            ]);
+
+            return $folder->fresh();
+        });
     }
 
     /**

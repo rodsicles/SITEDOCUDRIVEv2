@@ -21,6 +21,7 @@ use Illuminate\Support\Str;
 use Illuminate\Pagination\LengthAwarePaginator;
 use App\Jobs\IndexDocumentContentJob;
 use App\Models\DocumentSearchIndex;
+use App\Models\Course;
 
 class DocumentService
 {
@@ -117,7 +118,19 @@ class DocumentService
             default => $query->latest('created_at'),
         };
 
-        return $query->paginate($perPage)->withQueryString();
+        $term = trim((string) ($queryParams['search'] ?? $queryParams['name'] ?? ''));
+        $page = $query->paginate($perPage)->withQueryString();
+        $page->getCollection()->transform(function (Document $document) use ($term) {
+            $content = (string) $document->searchIndex?->content_text;
+            $position = $term !== '' ? mb_stripos($content, $term) : false;
+            $start = $position === false ? 0 : max(0, $position - 90);
+            $document->search_excerpt = $term !== '' && $content !== ''
+                ? ($start > 0 ? '…' : '').Str::limit(mb_substr($content, $start, 240), 240)
+                : '';
+            return $document;
+        });
+
+        return $page;
     }
 
     /**
@@ -162,6 +175,7 @@ class DocumentService
         bool $applyTextSearch = true,
     ): Builder {
         $query = Document::getFilteredDocuments($user, $categoryFilter)
+            ->with('searchIndex')
             ->onlyApprovedShareable();
 
         if ($folderFilter !== null) {
@@ -184,7 +198,9 @@ class DocumentService
             if ($name) {
                 $query->where(function ($q) use ($name) {
                     $q->where('document_title', 'like', "%{$name}%")
-                        ->orWhere('tags', 'like', "%{$name}%");
+                        ->orWhere('subject', 'like', "%{$name}%")
+                        ->orWhere('tags', 'like', "%{$name}%")
+                        ->orWhereHas('searchIndex', fn ($index) => $index->where('content_text', 'like', "%{$name}%"));
                 });
             }
 
@@ -207,6 +223,15 @@ class DocumentService
                         ->orWhere('file_path', 'like', '%.docx');
                 })->orWhere('document_type', 'like', '%doc%');
             });
+        } elseif ($fileType === 'image') {
+            $query->where(function ($q) {
+                $q->whereIn('document_type', ['image', 'jpg', 'jpeg', 'png', 'gif', 'webp'])
+                    ->orWhere('file_path', 'like', '%.jpg')
+                    ->orWhere('file_path', 'like', '%.jpeg')
+                    ->orWhere('file_path', 'like', '%.png')
+                    ->orWhere('file_path', 'like', '%.gif')
+                    ->orWhere('file_path', 'like', '%.webp');
+            });
         }
 
         $sizeRange = $queryParams['size_range'] ?? null;
@@ -226,6 +251,26 @@ class DocumentService
         $uploadedBy = $queryParams['uploaded_by'] ?? null;
         if ($uploadedBy) {
             $query->where('uploaded_by', $uploadedBy);
+        }
+
+        if (!empty($queryParams['department'])) {
+            $query->whereHas('uploader.employee', fn ($q) => $q->where('department', $queryParams['department']));
+        }
+
+        if (!empty($queryParams['course_id']) && ($course = Course::find($queryParams['course_id']))) {
+            $query->where('subject', 'like', '%'.$course->code.'%');
+        }
+
+        if (!empty($queryParams['school_year_id'])) {
+            $query->where('school_year_id', $queryParams['school_year_id']);
+        }
+
+        if (!empty($queryParams['semester'])) {
+            $query->whereHas('folder', fn ($q) => $q->where('folder_name', 'like', $queryParams['semester'].'%'));
+        }
+
+        if (!empty($queryParams['status'])) {
+            $query->whereHas('requestSubmissions', fn ($q) => $q->where('status', $queryParams['status']));
         }
 
         $dateFrom = $queryParams['date_from'] ?? null;
@@ -289,6 +334,25 @@ class DocumentService
             ->values();
     }
 
+    public function getSearchFilterOptions(User $user): array
+    {
+        $department = optional($user->employee)->department;
+        $departments = $user->isDean() || $user->isSecretary()
+            ? \App\Models\Employee::query()->whereNotNull('department')->distinct()->orderBy('department')->pluck('department')
+            : collect([$department])->filter();
+
+        $courses = Course::active()->ordered();
+        if ($user->isProgramCoordinator() || $user->isFaculty()) {
+            $courses->forDepartment($department);
+        }
+
+        return [
+            'searchDepartments' => $departments,
+            'searchCourses' => $courses->get(),
+            'searchSchoolYears' => SchoolYear::orderByDesc('start_year')->get(),
+        ];
+    }
+
     /**
      * Get user's folders with document counts.
      */
@@ -305,7 +369,10 @@ class DocumentService
      */
     public function getRecentDocuments(int $userId, int $limit = 5): Collection
     {
-        return DocumentView::getRecentDocuments($userId, $limit);
+        $user = User::findOrFail($userId);
+        return DocumentView::getRecentDocuments($userId, $limit)
+            ->filter(fn (Document $document) => $document->canView($user))
+            ->values();
     }
 
     /**
@@ -317,7 +384,7 @@ class DocumentService
             ->with('document')
             ->get()
             ->pluck('document')
-            ->filter()
+            ->filter(fn ($document) => $document && $document->canView($user))
             ->values();
     }
 
@@ -703,6 +770,7 @@ class DocumentService
     public function toggleFavorite(int $documentId, int $userId): array
     {
         $document = Document::findOrFail($documentId);
+        abort_unless($document->canView(User::findOrFail($userId)), 404);
         $isFavorited = $document->toggleFavorite($userId);
 
         DashboardLog::create([
@@ -731,6 +799,10 @@ class DocumentService
      */
     public function userCanRenameDocument(Document $document, User $user): bool
     {
+        if (!$document->canView($user)) {
+            return false;
+        }
+
         if ($user->isDean() || $user->isSecretary()) {
             return true;
         }
@@ -811,6 +883,8 @@ class DocumentService
     public function deleteDocument(int $documentId, User $user): void
     {
         $document = Document::findOrFail($documentId);
+
+        abort_unless($document->canView($user), 404);
 
         if (!($user->isDean() || $user->isSecretary() || $document->uploaded_by === $user->id)) {
             abort(403, 'Unauthorized');

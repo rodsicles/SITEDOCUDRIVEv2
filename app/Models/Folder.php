@@ -19,6 +19,9 @@ class Folder extends Model
         'color',
         'parent_id',
         'is_system',
+        'is_private',
+        'privacy_owner_id',
+        'locked_at',
         'level',
         'sort_order',
         'slug',
@@ -27,6 +30,8 @@ class Folder extends Model
 
     protected $casts = [
         'is_system' => 'boolean',
+        'is_private' => 'boolean',
+        'locked_at' => 'datetime',
     ];
 
     /**
@@ -35,6 +40,30 @@ class Folder extends Model
     public function user(): BelongsTo
     {
         return $this->belongsTo(User::class);
+    }
+
+    public function privacyOwner(): BelongsTo
+    {
+        return $this->belongsTo(User::class, 'privacy_owner_id');
+    }
+
+    public function scopeVisibleTo($query, User $user)
+    {
+        return $query->where(function ($q) use ($user) {
+            $q->where('is_private', false)
+                ->orWhereNull('is_private')
+                ->orWhere('privacy_owner_id', $user->id);
+        });
+    }
+
+    public function isPrivateFor(User $user): bool
+    {
+        return (bool) $this->is_private && (int) $this->privacy_owner_id === (int) $user->id;
+    }
+
+    public function canBeViewedBy(User $user): bool
+    {
+        return ! $this->is_private || $this->isPrivateFor($user);
     }
 
     /**

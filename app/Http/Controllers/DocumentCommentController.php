@@ -11,6 +11,7 @@ class DocumentCommentController extends Controller
     public function store(Request $request, int $id)
     {
         $document = Document::findOrFail($id);
+        abort_unless($document->canView($request->user()), 404);
         $user = auth()->user();
 
         if (!$document->canView($user)) {
@@ -41,6 +42,7 @@ class DocumentCommentController extends Controller
     {
         $document = Document::findOrFail($id);
         $user = auth()->user();
+        abort_unless($document->canView($user), 404);
 
         $comment = $document->comments()->where('comment_id', $commentId)->firstOrFail();
 

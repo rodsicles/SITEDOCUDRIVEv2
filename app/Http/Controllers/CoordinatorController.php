@@ -218,30 +218,32 @@ class CoordinatorController extends Controller
         $folderTree = $this->folderService->getSystemFolderTree(auth()->user());
         $uploadableFolders = $this->folderService->getUploadableFolders();
         $currentFolder = $folderFilter && $folderFilter !== 'uncategorized'
-            ? \App\Models\Folder::with('parent.parent')->find($folderFilter)
+            ? $this->folderService->visibleFolderOrFail((int) $folderFilter, auth()->user())
             : null;
         $breadcrumbs = $currentFolder ? $currentFolder->getAncestors() : [];
 
         // Scope the list to the active tab so each tab only shows its own files.
-        $effectiveCategory = $categoryFilter;
-        if ($effectiveCategory === null && $folderFilter === null) {
+        $globalSearch = $request->query('scope') === 'all';
+        $effectiveCategory = $globalSearch ? null : $categoryFilter;
+        if (!$globalSearch && $effectiveCategory === null && $folderFilter === null) {
             $effectiveCategory = $this->documentService->categoryForTab($tab, $folderTree);
         }
 
         $documents = $this->documentService->getFilteredDocuments(
-            auth()->user(), $effectiveCategory, $folderFilter, $request->query()
+            auth()->user(), $effectiveCategory, $globalSearch ? null : $folderFilter, $request->query()
         );
         $recentDocuments = $this->documentService->getRecentDocuments(auth()->id(), 5);
         $favoriteDocuments = $this->documentService->getFavoriteDocuments(auth()->user());
         $categories = $this->documentService->getCategories();
         $uploaders = $this->documentService->getAvailableUploaders(auth()->user());
         $savedFilters = auth()->user()->documentFilters()->latest()->get();
+        $searchOptions = $this->documentService->getSearchFilterOptions(auth()->user());
 
         return view('coordinator.documents', compact(
             'documents', 'recentDocuments', 'favoriteDocuments', 'categories',
             'categoryFilter', 'folderFilter', 'folderTree', 'uploadableFolders',
             'currentFolder', 'breadcrumbs', 'tab', 'uploaders', 'savedFilters'
-        ));
+        ), $searchOptions);
     }
 
     public function uploadDocument(Request $request)

@@ -157,6 +157,11 @@ class Document extends Model
      */
     public function canView(User $user): bool
     {
+        $folder = $this->relationLoaded('folder') ? $this->folder : $this->folder()->first();
+        if ($folder && ! $folder->canBeViewedBy($user)) {
+            return false;
+        }
+
         if ($user->isDean() || $user->isSecretary()) {
             return true;
         }
@@ -253,6 +258,11 @@ class Document extends Model
 
     public function scopeVisibleTo($query, User $user)
     {
+        $query->where(function ($folders) use ($user) {
+            $folders->whereNull('folder_id')
+                ->orWhereHas('folder', fn ($folder) => $folder->visibleTo($user));
+        });
+
         if ($user->isDean() || $user->isSecretary()) {
             return $query;
         }

@@ -2,12 +2,8 @@
 
 namespace App\Http\Controllers;
 
-use App\Models\Course;
-use App\Models\Document;
 use App\Models\DocumentSearchIndex;
 use App\Models\SavedDocumentSearch;
-use App\Models\SchoolYear;
-use App\Models\User;
 use Illuminate\Http\Request;
 use Illuminate\Support\Str;
 
@@ -35,55 +31,24 @@ class DocumentSearchController extends Controller
             $filters = array_merge($saved->filters, ['saved' => $saved->id]);
         }
 
-        $query = Document::query()->visibleTo($user)->with(['uploader.employee', 'folder', 'schoolYear', 'searchIndex']);
-        $term = trim((string) ($filters['q'] ?? ''));
-        if ($term !== '') {
-            $query->where(function ($q) use ($term) {
-                $q->where('document_title', 'like', "%{$term}%")
-                    ->orWhere('subject', 'like', "%{$term}%")
-                    ->orWhere('tags', 'like', "%{$term}%")
-                    ->orWhereHas('searchIndex', fn ($index) => $index->where('content_text', 'like', "%{$term}%"));
-            });
-        }
-        if (!empty($filters['employee_id'])) $query->where('uploaded_by', $filters['employee_id']);
-        if (!empty($filters['department'])) $query->whereHas('uploader.employee', fn ($q) => $q->where('department', $filters['department']));
-        if (!empty($filters['school_year_id'])) $query->where('school_year_id', $filters['school_year_id']);
-        if (!empty($filters['semester'])) $query->whereHas('folder', fn ($q) => $q->where('folder_name', 'like', $filters['semester'].'%'));
-        if (!empty($filters['type'])) {
-            if ($filters['type'] === 'image') {
-                $query->whereIn('document_type', ['jpg', 'jpeg', 'png', 'gif', 'webp', 'image']);
-            } elseif ($filters['type'] === 'doc') {
-                $query->where(function ($q) {
-                    $q->where('document_type', 'like', '%doc%')->orWhere('document_type', 'like', '%word%');
-                });
-            } else {
-                $query->where('document_type', 'like', '%'.$filters['type'].'%');
-            }
-        }
-        if (!empty($filters['date_from'])) $query->whereDate('created_at', '>=', $filters['date_from']);
-        if (!empty($filters['date_to'])) $query->whereDate('created_at', '<=', $filters['date_to']);
-        if (!empty($filters['course_id'])) {
-            $course = Course::find($filters['course_id']);
-            if ($course) $query->where('subject', 'like', '%'.$course->code.'%');
-        }
-        if (!empty($filters['status'])) {
-            $query->whereHas('requestSubmissions', fn ($q) => $q->where('status', $filters['status']));
-        }
+        $route = $user->isDean() || $user->isSecretary()
+            ? 'dean.documents'
+            : ($user->isProgramCoordinator() ? 'coordinator.documents' : 'faculty.documents');
 
-        $documents = $query->latest()->paginate(20)->withQueryString();
-        $documents->getCollection()->transform(function (Document $document) use ($term) {
-            $document->search_excerpt = $this->excerpt((string) $document->searchIndex?->content_text, $term);
-            return $document;
-        });
+        return redirect()->route($route, array_filter([
+            'search' => $filters['q'] ?? null,
+            'uploaded_by' => $filters['employee_id'] ?? null,
+            'department' => $filters['department'] ?? null,
+            'course_id' => $filters['course_id'] ?? null,
+            'school_year_id' => $filters['school_year_id'] ?? null,
+            'semester' => $filters['semester'] ?? null,
+            'status' => $filters['status'] ?? null,
+            'file_type' => ($filters['type'] ?? null) === 'doc' ? 'word' : ($filters['type'] ?? null),
+            'date_from' => $filters['date_from'] ?? null,
+            'date_to' => $filters['date_to'] ?? null,
+            'scope' => 'all',
+        ], fn ($value) => $value !== null && $value !== ''));
 
-        return view('document-search.index', [
-            'documents' => $documents,
-            'filters' => $filters,
-            'employees' => User::with('employee')->where('status', 'Active')->whereHas('employee')->orderBy('username')->get(),
-            'courses' => Course::active()->ordered()->get(),
-            'schoolYears' => SchoolYear::orderByDesc('start_year')->get(),
-            'savedSearches' => SavedDocumentSearch::where('user_id', $user->id)->latest()->get(),
-        ]);
     }
 
     public function save(Request $request)

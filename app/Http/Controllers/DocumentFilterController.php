@@ -16,7 +16,7 @@ class DocumentFilterController extends Controller
             'folder' => 'nullable',
             'tab' => 'nullable|string|max:50',
             'search' => 'nullable|string|max:100',
-            'file_type' => 'nullable|in:pdf,word',
+            'file_type' => 'nullable|in:pdf,word,image',
             'size_range' => 'nullable|in:small,medium,large',
             'sort' => 'nullable|in:size,date,title,author,category',
             'sort_dir' => 'nullable|in:asc,desc',
@@ -25,6 +25,12 @@ class DocumentFilterController extends Controller
             'uploaded_by' => 'nullable|integer|exists:users,id',
             'date_from' => 'nullable|date',
             'date_to' => 'nullable|date|after_or_equal:date_from',
+            'scope' => 'nullable|in:folder,all',
+            'department' => 'nullable|string|max:100',
+            'course_id' => 'nullable|integer|exists:courses,id',
+            'school_year_id' => 'nullable|integer|exists:school_years,id',
+            'semester' => 'nullable|in:1st Semester,2nd Semester',
+            'status' => 'nullable|in:pending,submitted,approved,changes_requested',
         ]);
 
         $filters = collect([
@@ -41,6 +47,12 @@ class DocumentFilterController extends Controller
             'uploaded_by' => $validated['uploaded_by'] ?? null,
             'date_from' => $validated['date_from'] ?? null,
             'date_to' => $validated['date_to'] ?? null,
+            'scope' => $validated['scope'] ?? null,
+            'department' => $validated['department'] ?? null,
+            'course_id' => $validated['course_id'] ?? null,
+            'school_year_id' => $validated['school_year_id'] ?? null,
+            'semester' => $validated['semester'] ?? null,
+            'status' => $validated['status'] ?? null,
         ])->filter(static fn ($value) => $value !== null && $value !== '')->all();
 
         DocumentFilter::updateOrCreate(

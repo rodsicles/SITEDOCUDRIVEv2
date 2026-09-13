@@ -331,16 +331,20 @@
         {{-- LEAF FOLDER: Show upload button + documents --}}
         <div class="doc-folder-head doc-folder-head--toolbar">
             <div class="doc-folder-head__identity">
-                <h2>{{ $currentFolder->folder_name }}</h2>
+                <h2>@if($currentFolder->is_private)<i class="fas fa-lock" aria-hidden="true"></i> @endif{{ $currentFolder->folder_name }}</h2>
+                @if($currentFolder->is_private)<p class="private-folder-label">Private — only you can access this folder</p>@endif
                 <p>{{ $documents->total() }} {{ $documents->total() === 1 ? 'document' : 'documents' }}</p>
             </div>
-            @include('partials.documents-filter-panel', [
-                'documentsRoute' => $docsRoute,
-                'toolbarOnly' => true,
-            ])
             @if($canUpload)
             <div class="doc-folder-head__actions">
                 @if(($isCustomSubfolder ?? false) && isset($currentFolder) && (int) $currentFolder->user_id === (int) auth()->id())
+                @if(auth()->user()->isFaculty())
+                <button type="button" class="btn btn-sm {{ $currentFolder->is_private ? 'btn-success' : 'bg-gray-200 text-gray-700' }}"
+                        onclick="setFolderPrivacy({{ $currentFolder->folder_id }}, {{ $currentFolder->is_private ? 'false' : 'true' }}, @js($currentFolder->folder_name))">
+                    <i class="fas {{ $currentFolder->is_private ? 'fa-lock-open' : 'fa-lock' }} mr-1"></i>
+                    {{ $currentFolder->is_private ? 'Unlock Folder' : 'Make Private' }}
+                </button>
+                @endif
                 <button type="button"
                         class="btn btn-sm bg-gray-200 dark:bg-gray-700 text-gray-700 dark:text-gray-300"
                         onclick="openRenameFolderModal({{ $currentFolder->folder_id }}, @js($currentFolder->folder_name), @js($currentFolder->color ?? '#028a0f'))">
@@ -497,15 +501,22 @@
             <div class="folder-card-new {{ $ownsCustomFolder ? 'folder-card-new--with-actions' : '' }} {{ (isset($folderFilter) && $folderFilter == $folder->folder_id) ? 'folder-card-active' : '' }}">
                 <a href="{{ route($docsRoute, ['tab' => $tab, 'folder' => $folder->folder_id]) }}" class="folder-card-link-new">
                     <div class="folder-icon-new" style="background-color: #028a0f; color: white;">
-                        <i class="fas fa-folder"></i>
+                        <i class="fas {{ $folder->is_private ? 'fa-lock' : 'fa-folder' }}"></i>
                     </div>
                     <div class="folder-info-new">
                         <div class="folder-name-new">{{ $folder->folder_name }}</div>
+                        @if($folder->is_private)<div class="private-folder-label">Private · only you</div>@endif
                         @include('partials.folder-card-meta', ['folder' => $folder])
                     </div>
                 </a>
                 @if($ownsCustomFolder)
                 <div class="folder-actions-new">
+                    @if(auth()->user()->isFaculty())
+                    <button type="button" class="folder-action-btn custom-folder-action-btn" title="{{ $folder->is_private ? 'Unlock folder' : 'Make folder private' }}"
+                            onclick="event.preventDefault();event.stopPropagation();setFolderPrivacy({{ $folder->folder_id }},{{ $folder->is_private ? 'false' : 'true' }},@js($folder->folder_name))">
+                        <i class="fas {{ $folder->is_private ? 'fa-lock-open' : 'fa-lock' }}"></i>
+                    </button>
+                    @endif
                     <button type="button"
                             class="folder-action-btn custom-folder-action-btn"
                             title="Rename folder"
@@ -537,6 +548,7 @@
 
         @if($isLeafFolder)
             <section class="doc-current-files" aria-label="Documents in this folder">
+                @include('partials.documents-filter-panel', ['documentsRoute' => $docsRoute])
                 @include('partials.documents-list-table', ['routePrefix' => $role, 'compactEmpty' => true])
             </section>
         @elseif(!($hideDocumentsList ?? false))
@@ -982,4 +994,26 @@
 
 @if($canUpload)
 @include('partials.folder-modals')
+@endif
+
+@if(auth()->user()->isFaculty())
+@push('scripts')
+<script>
+async function setFolderPrivacy(folderId, makePrivate, folderName) {
+    const warning = makePrivate
+        ? 'Make "' + folderName + '" private? Existing shares will be removed. Dean, coordinators, and other employees will not be able to find or open it.'
+        : 'Unlock "' + folderName + '"? Its contents will return to normal access rules.';
+    if (!confirm(warning)) return;
+    const response = await fetch(@json(url('/folders')) + '/' + folderId + '/privacy', {
+        method: 'PATCH',
+        headers: {'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]').content, 'Accept':'application/json', 'Content-Type':'application/json'},
+        body: JSON.stringify({private: makePrivate})
+    });
+    const data = await response.json();
+    if (!response.ok) { showToast(data.message || 'Folder privacy could not be changed.', 'error'); return; }
+    showToast(data.message, 'success');
+    setTimeout(() => window.location.reload(), 700);
+}
+</script>
+@endpush
 @endif

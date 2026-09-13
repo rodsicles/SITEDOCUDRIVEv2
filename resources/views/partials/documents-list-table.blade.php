@@ -47,6 +47,11 @@
                 <div class="doc-title-block">
                     <strong class="doc-title-text" id="doc-title-text-{{ $document->document_id }}">{{ $document->document_title }}</strong>
                     <span class="doc-title-meta">{{ $typeLabel }} · {{ $sizeLabel }}</span>
+                    @if(!empty($document->search_excerpt))
+                    <span class="doc-search-excerpt">{!! preg_replace('/('.preg_quote(request('search'), '/').')/iu', '<mark>$1</mark>', e($document->search_excerpt)) !!}</span>
+                    @elseif(request('search') && optional($document->searchIndex)->index_status === 'pending')
+                    <span class="doc-index-state"><i class="fas fa-spinner fa-spin"></i> Content indexing in progress</span>
+                    @endif
                 </div>
             </td>
             <td data-label="Uploaded by">{{ $document->uploader ? ($document->uploader->employee->full_name ?? $document->uploader->username) : 'Unknown' }}</td>

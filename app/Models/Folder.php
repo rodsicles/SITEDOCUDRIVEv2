@@ -6,6 +6,7 @@ use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Relations\HasMany;
 use App\Models\SchoolYear;
+use Illuminate\Support\Facades\Schema;
 
 class Folder extends Model
 {
@@ -49,6 +50,12 @@ class Folder extends Model
 
     public function scopeVisibleTo($query, User $user)
     {
+        // Deployments may briefly serve new code before migrations complete.
+        // Keep Documents available during that window; privacy actions remain disabled.
+        if (! Schema::hasColumn($this->getTable(), 'is_private')) {
+            return $query;
+        }
+
         return $query->where(function ($q) use ($user) {
             $q->where('is_private', false)
                 ->orWhereNull('is_private')
@@ -63,6 +70,10 @@ class Folder extends Model
 
     public function canBeViewedBy(User $user): bool
     {
+        if (! Schema::hasColumn($this->getTable(), 'is_private')) {
+            return true;
+        }
+
         return ! $this->is_private || $this->isPrivateFor($user);
     }
 

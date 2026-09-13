@@ -10,6 +10,7 @@ use App\Models\User;
 use App\Support\CoordinatorDepartment;
 use Illuminate\Support\Collection;
 use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\Schema;
 
 class FolderService
 {
@@ -372,6 +373,7 @@ class FolderService
 
     public function setPrivacy(Folder $folder, User $actor, bool $private): Folder
     {
+        abort_unless(Schema::hasColumns('folders', ['is_private', 'privacy_owner_id', 'locked_at']), 503, 'Folder privacy is temporarily unavailable while the database update completes.');
         abort_unless($actor->isFaculty() && $this->userOwnsCustomFolder($folder, $actor), 403);
 
         if ($private) {

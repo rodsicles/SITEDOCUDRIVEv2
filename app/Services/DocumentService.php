@@ -371,7 +371,7 @@ class DocumentService
     {
         $user = User::findOrFail($userId);
         return DocumentView::getRecentDocuments($userId, $limit)
-            ->filter(fn (Document $document) => $document->canView($user))
+            ->filter(fn ($document) => $document instanceof Document && $document->canView($user))
             ->values();
     }
 

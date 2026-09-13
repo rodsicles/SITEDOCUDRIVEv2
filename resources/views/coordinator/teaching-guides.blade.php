@@ -24,15 +24,16 @@
         </p>
 
         <div class="submission-toolbar pt-3">
-            <div class="submission-toolbar__group">
-                <label class="submission-toolbar__label">Status</label>
-                <select onchange="window.location.href=this.value" class="form-control submission-toolbar__select">
-                    <option value="{{ route('coordinator.teaching-guides.index') }}">All</option>
-                    @foreach(['pending','approved','rejected'] as $s)
-                        <option value="{{ route('coordinator.teaching-guides.index', ['status' => $s]) }}" {{ ($statusFilter ?? '') === $s ? 'selected' : '' }}>{{ ucfirst($s) }}</option>
-                    @endforeach
-                </select>
-            </div>
+            <nav class="ui-segmented" aria-label="Submission status">
+                <a href="{{ route('coordinator.teaching-guides.index', array_filter(['semester' => $semesterFilter ?? null, 'search' => $search ?: null])) }}"
+                   class="{{ ($statusFilter ?? '') === '' ? 'is-active' : '' }}">All</a>
+                <a href="{{ route('coordinator.teaching-guides.index', array_filter(['status' => 'pending', 'semester' => $semesterFilter ?? null, 'search' => $search ?: null])) }}"
+                   class="{{ ($statusFilter ?? '') === 'pending' ? 'is-active' : '' }}">Pending{{ ($pendingCount ?? 0) > 0 ? ' · '.$pendingCount : '' }}</a>
+                <a href="{{ route('coordinator.teaching-guides.index', array_filter(['status' => 'approved', 'semester' => $semesterFilter ?? null, 'search' => $search ?: null])) }}"
+                   class="{{ ($statusFilter ?? '') === 'approved' ? 'is-active' : '' }}">Approved</a>
+                <a href="{{ route('coordinator.teaching-guides.index', array_filter(['status' => 'rejected', 'semester' => $semesterFilter ?? null, 'search' => $search ?: null])) }}"
+                   class="{{ ($statusFilter ?? '') === 'rejected' ? 'is-active' : '' }}">Rejected</a>
+            </nav>
             <div class="submission-toolbar__group">
                 <label class="submission-toolbar__label">Semester</label>
                 <select onchange="window.location.href=this.value" class="form-control submission-toolbar__select">

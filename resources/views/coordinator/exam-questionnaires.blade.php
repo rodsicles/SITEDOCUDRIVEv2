@@ -24,15 +24,16 @@
         </p>
 
         <div class="submission-toolbar">
-            <div class="submission-toolbar__group">
-                <label class="submission-toolbar__label">Status</label>
-                <select onchange="window.location.href=this.value" class="form-control submission-toolbar__select">
-                    <option value="{{ route('coordinator.exam-questionnaires.index') }}">All</option>
-                    @foreach(['pending','approved','rejected'] as $s)
-                        <option value="{{ route('coordinator.exam-questionnaires.index', ['status' => $s]) }}" {{ $statusFilter === $s ? 'selected' : '' }}>{{ ucfirst($s) }}</option>
-                    @endforeach
-                </select>
-            </div>
+            <nav class="ui-segmented" aria-label="Submission status">
+                <a href="{{ route('coordinator.exam-questionnaires.index', array_filter(['exam_type' => $examTypeFilter ?: null, 'search' => $search ?: null])) }}"
+                   class="{{ ($statusFilter ?? '') === '' ? 'is-active' : '' }}">All</a>
+                <a href="{{ route('coordinator.exam-questionnaires.index', array_filter(['status' => 'pending', 'exam_type' => $examTypeFilter ?: null, 'search' => $search ?: null])) }}"
+                   class="{{ ($statusFilter ?? '') === 'pending' ? 'is-active' : '' }}">Pending{{ ($pendingCount ?? 0) > 0 ? ' · '.$pendingCount : '' }}</a>
+                <a href="{{ route('coordinator.exam-questionnaires.index', array_filter(['status' => 'approved', 'exam_type' => $examTypeFilter ?: null, 'search' => $search ?: null])) }}"
+                   class="{{ ($statusFilter ?? '') === 'approved' ? 'is-active' : '' }}">Approved</a>
+                <a href="{{ route('coordinator.exam-questionnaires.index', array_filter(['status' => 'rejected', 'exam_type' => $examTypeFilter ?: null, 'search' => $search ?: null])) }}"
+                   class="{{ ($statusFilter ?? '') === 'rejected' ? 'is-active' : '' }}">Rejected</a>
+            </nav>
             <div class="submission-toolbar__group">
                 <label class="submission-toolbar__label">Exam Type</label>
                 <select onchange="window.location.href=this.value" class="form-control submission-toolbar__select">

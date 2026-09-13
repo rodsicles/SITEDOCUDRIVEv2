@@ -1,10 +1,30 @@
 @php
     $docTitleMax = \App\Support\DocumentNaming::TITLE_MAX_LENGTH;
 @endphp
-<form action="{{ route($role . '.upload-document') }}" method="POST" enctype="multipart/form-data" id="folderUploadForm" data-custom-submit class="hidden mb-4 overflow-visible" style="border: 1px solid #e0e0e0; padding: 16px; background: #f9fafb;">
+<div id="folderUploadModal"
+     class="modal-overlay site-upload-modal"
+     role="dialog"
+     aria-modal="true"
+     aria-hidden="true"
+     aria-labelledby="folderUploadModalTitle">
+<div class="modal-card modal-card--wide" role="document">
+<form action="{{ route($role . '.upload-document') }}" method="POST" enctype="multipart/form-data" id="folderUploadForm" data-custom-submit>
     @csrf
     <input type="hidden" name="folder_id" value="{{ $currentFolder->folder_id }}">
-    <div class="grid grid-cols-1 md:grid-cols-2 gap-4 mb-4">
+    <div class="modal-header">
+        <div class="site-upload-modal__heading">
+            <span class="site-upload-modal__icon" aria-hidden="true"><i class="fas fa-upload"></i></span>
+            <div>
+                <h2 class="modal-title" id="folderUploadModalTitle">Upload to {{ $currentFolder->folder_name }}</h2>
+                <p class="site-upload-modal__subtitle">Add up to 3 documents to this folder.</p>
+            </div>
+        </div>
+        <button type="button" class="modal-close" onclick="toggleFolderUpload(false)" aria-label="Close upload dialog">
+            <i class="fas fa-times" aria-hidden="true"></i>
+        </button>
+    </div>
+    <div class="modal-body">
+    <div class="site-upload-grid">
         @if($useCourseSelect ?? false)
             @include('partials.ite-subject-picker', [
                 'pickerId' => 'folderCoursePicker',
@@ -105,12 +125,19 @@
             <p id="folderFileError" class="text-xs text-red-600 dark:text-red-400 mt-1 hidden" role="alert"></p>
         </div>
     </div>
-    <div class="flex gap-2">
-        <button type="submit" class="btn btn-primary">
-            <i class="fas fa-upload"></i> Upload
-        </button>
-        <button type="button" onclick="toggleFolderUpload()" class="btn btn-sm bg-gray-200 dark:bg-gray-700 text-gray-700 dark:text-gray-300">
+    <div class="site-upload-note">
+        <i class="fas fa-info-circle" aria-hidden="true"></i>
+        <span>Files are uploaded to <strong>{{ $currentFolder->folder_name }}</strong> and recorded in your activity log.</span>
+    </div>
+    </div>
+    <div class="modal-footer">
+        <button type="button" onclick="toggleFolderUpload(false)" class="btn btn-secondary">
             Cancel
+        </button>
+        <button type="submit" class="btn btn-primary">
+            <i class="fas fa-upload" aria-hidden="true"></i> <span>Upload Files</span>
         </button>
     </div>
 </form>
+</div>
+</div>

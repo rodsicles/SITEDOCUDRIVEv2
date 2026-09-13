@@ -3,36 +3,14 @@
 @section('title', 'Documents - Faculty')
 
 @section('page-title', 'Documents')
-@section('page-subtitle', 'Access shared documents')
+@section('page-subtitle', 'Open assigned folders and submit files')
 
 @section('sidebar')
     @include('partials.faculty-sidebar')
 @endsection
 
 @section('content')
-    @include('partials.documents-quick-access', ['routePrefix' => 'faculty'])
+<div class="documents-page" data-page="documents">
     @include('partials.folder-tree')
-
-    @php
-        $hierarchy = app(\App\Services\AcademicHierarchyService::class);
-        $hideDocumentsList = isset($currentFolder)
-            && $currentFolder
-            && (
-                $hierarchy->isSemesterTypeLeafFolder($currentFolder)
-                || $hierarchy->isTgSemesterFolder($currentFolder)
-                || $hierarchy->isTgSubjectFolder($currentFolder)
-                || $hierarchy->isEqSemesterFolder($currentFolder)
-                || $hierarchy->isEqSubjectFolder($currentFolder)
-                || $hierarchy->isEqAssessmentFolder($currentFolder)
-            );
-    @endphp
-
-    @if(!$hideDocumentsList)
-    <div class="content-card">
-        @include('partials.documents-filter-panel', [
-            'documentsRoute' => 'faculty.documents',
-        ])
-        @include('partials.documents-list-table', ['routePrefix' => 'faculty'])
-    </div>
-    @endif
+</div>
 @endsection

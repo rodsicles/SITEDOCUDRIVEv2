@@ -5,19 +5,6 @@ window.Swal = Swal;
 
 // Page ready - instant load, no slide-down animations
 document.addEventListener('DOMContentLoaded', function() {
-
-    // Table row hover effect
-    const tableRows = document.querySelectorAll('.data-table tbody tr');
-    tableRows.forEach(row => {
-        row.addEventListener('mouseenter', function() {
-            this.style.transform = 'scale(1.01)';
-            this.style.transition = 'all 0.2s ease';
-        });
-        row.addEventListener('mouseleave', function() {
-            this.style.transform = 'scale(1)';
-        });
-    });
-
     // Auto-hide alerts after 5 seconds (instant remove — no fade animation)
     const alerts = document.querySelectorAll('.alert');
     alerts.forEach(alert => {
@@ -31,6 +18,9 @@ document.addEventListener('DOMContentLoaded', function() {
         if (item.getAttribute('href') === currentPath) {
             item.classList.add('active');
         }
+        if (item.classList.contains('active')) {
+            item.setAttribute('aria-current', 'page');
+        }
     });
 
     // ── Sidebar section toggles ────────────────────────────────────────
@@ -40,6 +30,10 @@ document.addEventListener('DOMContentLoaded', function() {
 
     function setSidebarGroupOpen(groupEl, toggleEl, open) {
         groupEl.classList.toggle('open', open);
+        if (toggleEl) {
+            toggleEl.setAttribute('aria-expanded', open ? 'true' : 'false');
+            toggleEl.setAttribute('aria-controls', groupEl.id);
+        }
         const chevron = toggleEl ? toggleEl.querySelector('.sidebar-chevron') : null;
         if (chevron) {
             chevron.classList.toggle('fa-chevron-down', !open);
@@ -48,6 +42,21 @@ document.addEventListener('DOMContentLoaded', function() {
     }
 
     const sidebarToggles = document.querySelectorAll('.sidebar-section-label[data-target]');
+    const sidebarStateKey = 'docudrive-sidebar-open:' + (document.body.dataset.userRole || 'user');
+    let storedOpen = [];
+    try {
+        storedOpen = JSON.parse(sessionStorage.getItem(sidebarStateKey) || '[]');
+    } catch (e) {
+        storedOpen = [];
+    }
+
+    function persistSidebarState() {
+        const openIds = Array.from(document.querySelectorAll('.sidebar-group-items.open')).map((el) => el.id);
+        try {
+            sessionStorage.setItem(sidebarStateKey, JSON.stringify(openIds));
+        } catch (e) { /* ignore */ }
+    }
+
     sidebarToggles.forEach(function(toggle) {
         toggle.addEventListener('click', function() {
             const targetId = this.dataset.target;
@@ -55,7 +64,16 @@ document.addEventListener('DOMContentLoaded', function() {
             if (!groupItems) return;
 
             setSidebarGroupOpen(groupItems, this, !groupItems.classList.contains('open'));
+            persistSidebarState();
         });
+    });
+
+    storedOpen.forEach(function (id) {
+        const groupItems = document.getElementById(id);
+        const toggle = document.querySelector('.sidebar-section-label[data-target="' + id + '"]');
+        if (groupItems && toggle) {
+            setSidebarGroupOpen(groupItems, toggle, true);
+        }
     });
 
     // Auto-open the group that has the currently active menu item
@@ -65,6 +83,7 @@ document.addEventListener('DOMContentLoaded', function() {
         if (parentGroup) {
             const toggle = document.querySelector('.sidebar-section-label[data-target="' + parentGroup.id + '"]');
             setSidebarGroupOpen(parentGroup, toggle, true);
+            persistSidebarState();
         }
     }
     // ──────────────────────────────────────────────────────────────────
@@ -87,67 +106,23 @@ document.addEventListener('DOMContentLoaded', function() {
         });
     });
 
-    // Number counter animation for stats
-    const animateValue = (element, start, end, duration) => {
-        let startTimestamp = null;
-        const step = (timestamp) => {
-            if (!startTimestamp) startTimestamp = timestamp;
-            const progress = Math.min((timestamp - startTimestamp) / duration, 1);
-            element.textContent = Math.floor(progress * (end - start) + start);
-            if (progress < 1) {
-                window.requestAnimationFrame(step);
-            }
-        };
-        window.requestAnimationFrame(step);
-    };
+    // Keep document navigation grounded in the current folder after a normal,
+    // server-rendered navigation. This preserves Laravel's existing routing and
+    // authorization while making deep folder navigation feel continuous.
+    const currentFolderSection = document.getElementById('folder-current-section');
+    if (currentFolderSection && sessionStorage.getItem('docudrive-focus-folder') === '1') {
+        sessionStorage.removeItem('docudrive-focus-folder');
+        currentFolderSection.scrollIntoView({ block: 'start' });
+        currentFolderSection.focus({ preventScroll: true });
+    }
 
-    const statValues = document.querySelectorAll('.stat-value');
-    statValues.forEach(stat => {
-        const value = parseInt(stat.textContent);
-        if (!isNaN(value)) {
-            stat.textContent = '0';
-            setTimeout(() => {
-                animateValue(stat, 0, value, 1000);
-            }, 500);
+    document.addEventListener('click', function (event) {
+        const link = event.target.closest('.folder-card-link-new, .breadcrumb-link');
+        if (link && link.href) {
+            sessionStorage.setItem('docudrive-focus-folder', '1');
         }
     });
-
-    // Notification badge pulse
-    const notifBadge = document.querySelector('.notification-badge');
-    if (notifBadge) {
-        setInterval(() => {
-            notifBadge.style.animation = 'pulse 0.5s ease';
-            setTimeout(() => {
-                notifBadge.style.animation = '';
-            }, 500);
-        }, 3000);
-    }
 });
-
-// Add CSS animations dynamically
-const style = document.createElement('style');
-style.textContent = `
-    @keyframes pulse {
-        0%, 100% { transform: scale(1); }
-        50% { transform: scale(1.2); }
-    }
-
-    .stat-card, .content-card {
-        opacity: 1 !important;
-        transform: translateY(0) !important;
-    }
-
-    /* Smooth transitions */
-    * {
-        transition: background-color 0.3s ease, color 0.3s ease;
-    }
-
-    /* Loading spinner */
-    @keyframes spin {
-        to { transform: rotate(360deg); }
-    }
-`;
-document.head.appendChild(style);
 
 // ============================================
 // Lazy Loading for Heavy Libraries

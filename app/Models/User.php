@@ -120,6 +120,11 @@ class User extends Authenticatable
         return $this->hasMany(ProfessionalDevelopment::class, 'user_id');
     }
 
+    public function reports()
+    {
+        return $this->hasMany(Report::class, 'submitted_by');
+    }
+
     /**
      * Courses explicitly assigned to this user (Faculty or Coordinator).
      * When a faculty member has assigned courses, only those subjects appear

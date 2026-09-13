@@ -78,7 +78,7 @@
             <label class="announcement-composer__pin">
                 <input type="hidden" name="is_pinned" value="0">
                 <input type="checkbox" name="is_pinned" value="1" {{ old('is_pinned') ? 'checked' : '' }}>
-                <span><i class="fas fa-thumbtack text-[#028a0f]" aria-hidden="true"></i> Pin to top</span>
+                <span><i class="fas fa-thumbtack" aria-hidden="true"></i> Pin to top</span>
             </label>
         </div>
         <p class="announcement-composer__hint">Defaults: everyone · no expiration · not pinned</p>

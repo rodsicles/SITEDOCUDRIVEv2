@@ -39,7 +39,7 @@
     <div class="faculty-profile-docs__section">
         <div class="faculty-profile-docs__section-head">
             <h4 class="faculty-profile-docs__section-title">
-                <i class="fas fa-clock mr-1 text-[#028a0f]"></i> Recent Uploads
+                <i class="fas fa-clock" aria-hidden="true"></i> Recent Uploads
             </h4>
             <span class="text-xs text-gray-500 dark:text-gray-400">Latest {{ $recentDocuments->count() }} of {{ $documentStats['total'] ?? 0 }}</span>
         </div>
@@ -91,7 +91,7 @@
     <div class="faculty-profile-docs__section">
         <div class="faculty-profile-docs__section-head">
             <h4 class="faculty-profile-docs__section-title">
-                <i class="fas fa-search mr-1 text-[#028a0f]"></i> Find a Document
+                <i class="fas fa-search" aria-hidden="true"></i> Find a Document
             </h4>
         </div>
         <div class="faculty-profile-docs__search-wrap">
@@ -113,7 +113,7 @@
     <div class="faculty-profile-docs__section">
         <div class="faculty-profile-docs__section-head">
             <h4 class="faculty-profile-docs__section-title">
-                <i class="fas fa-sitemap mr-1 text-[#028a0f]"></i> Browse by Folder
+                <i class="fas fa-sitemap" aria-hidden="true"></i> Browse by Folder
             </h4>
             <div class="faculty-profile-docs__tree-tools">
                 <button type="button" class="btn bg-gray-200 dark:bg-gray-700 text-gray-700 dark:text-gray-200 text-xs" id="facultyDocTreeExpand">

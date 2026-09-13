@@ -7,7 +7,7 @@
 @endphp
 
 @if($hasQuickAccess)
-<div class="content-card mb-6 docs-quick-access">
+<nav class="docs-quick-access" aria-label="Document shortcuts">
     <div class="docs-quick-access__grid">
         <div class="docs-quick-access__col">
             <h4 class="docs-quick-access__title">
@@ -40,5 +40,5 @@
             @endforelse
         </div>
     </div>
-</div>
+</nav>
 @endif

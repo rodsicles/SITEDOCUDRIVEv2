@@ -26,6 +26,7 @@ use App\Http\Controllers\EqSubjectFolderController;
 use App\Http\Controllers\RecycleBinController;
 use App\Http\Controllers\ForgotPasswordController;
 use App\Http\Controllers\PasswordResetRequestController;
+use App\Http\Controllers\ReportController;
 
 // Authentication Routes
 Route::get('/', [AuthController::class, 'showLogin'])->name('login');
@@ -129,6 +130,12 @@ Route::middleware(['auth', 'no.back'])->prefix('professional-development')->name
 Route::middleware(['auth', 'no.back'])->get('/user-guide', function () {
     return view('user-guide');
 })->name('user-guide');
+
+// Faculty report files (owner, Dean/Secretary, Coordinator)
+Route::middleware(['auth', 'no.back'])->prefix('reports')->name('reports.')->group(function () {
+    Route::get('/{id}/view', [ReportController::class, 'view'])->middleware('throttle:60,1')->name('view');
+    Route::get('/{id}/download', [ReportController::class, 'download'])->middleware('throttle:30,1')->name('download');
+});
 
 // Password Reset Requests (Dean + Secretary review queue). Kept outside the
 // dean.* group so the URL stays generic (/password-reset-requests) and can be
@@ -379,6 +386,9 @@ Route::middleware(['auth', 'no.back', 'role:Faculty Employee'])->prefix('faculty
     Route::patch('/exam-questionnaires/{id}/rename', [ExamQuestionnaireController::class, 'rename'])->middleware('throttle:60,1')->name('exam-questionnaires.rename');
     Route::delete('/exam-questionnaires/{id}', [ExamQuestionnaireController::class, 'destroy'])->name('exam-questionnaires.destroy');
     Route::get('/activity-log', [FacultyController::class, 'activityLog'])->name('activity-log');
+
+    Route::get('/reports', [ReportController::class, 'index'])->name('reports');
+    Route::post('/reports', [ReportController::class, 'store'])->middleware('throttle:10,60')->name('store-report');
 
     // Archives (browse only)
     Route::get('/archives', [SchoolYearController::class, 'list'])->name('archives.list');

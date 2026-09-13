@@ -53,8 +53,7 @@
 @endsection
 
 @section('content')
-
-{{-- Mobile-only welcome (top-bar extra is hidden on small screens) --}}
+<div class="guide-page">
 <div class="guide-welcome-banner guide-welcome-banner--mobile-only">
     <div class="guide-welcome-icon"><i class="fas fa-book-open"></i></div>
     <div>
@@ -86,16 +85,17 @@
 </div>
 
 {{-- Table of Contents --}}
-<div class="content-card">
+<div class="guide-layout">
+<nav class="guide-toc-panel" aria-label="User guide topics">
     <div class="card-header">
-        <h3 class="card-title"><i class="fas fa-list mr-2"></i> Table of Contents</h3>
+        <h3 class="card-title">Contents</h3>
     </div>
     <div class="guide-toc">
         @if($isFaculty)
             <a href="#guide-dashboard" class="guide-toc-item"><span class="guide-toc-num">1</span> Dashboard</a>
             <a href="#guide-tasks" class="guide-toc-item"><span class="guide-toc-num">2</span> My Tasks</a>
             <a href="#guide-activity-log" class="guide-toc-item"><span class="guide-toc-num">3</span> Activity Log</a>
-            <a href="#guide-analytics" class="guide-toc-item"><span class="guide-toc-num">4</span> Performance Analytics</a>
+            <a href="#guide-performance-analytics" class="guide-toc-item"><span class="guide-toc-num">4</span> Performance Analytics</a>
             <a href="#guide-announcements" class="guide-toc-item"><span class="guide-toc-num">5</span> Announcements</a>
             <a href="#guide-notifications" class="guide-toc-item"><span class="guide-toc-num">6</span> Notifications</a>
             <a href="#guide-documents" class="guide-toc-item"><span class="guide-toc-num">7</span> Documents</a>
@@ -146,7 +146,8 @@
             <a href="#guide-archives" class="guide-toc-item"><span class="guide-toc-num">13</span> Archives</a>
         @endif
     </div>
-</div>
+</nav>
+<article class="guide-article">
 
 {{-- ===== DASHBOARD ===== --}}
 <div id="guide-dashboard" class="content-card">
@@ -212,7 +213,7 @@
 
 {{-- ===== PERFORMANCE ANALYTICS (Faculty) ===== --}}
 @if($isFaculty)
-<div id="guide-analytics" class="content-card">
+<div id="guide-performance-analytics" class="content-card">
     <div class="card-header">
         <h3 class="card-title"><i class="fas fa-chart-pie mr-2"></i> 4. Performance Analytics</h3>
     </div>
@@ -566,9 +567,13 @@
 </div>
 @endif
 
+</article>
+</div>
+
 {{-- Back to Top --}}
 <div class="guide-back-top">
     <a href="#" onclick="event.preventDefault(); window.scrollTo({top:0, behavior:'smooth'});" class="btn btn-secondary border-0"><i class="fas fa-arrow-up mr-1"></i> Back to Top</a>
+</div>
 </div>
 
 <script>
@@ -704,5 +709,4 @@
     });
 })();
 </script>
-
 @endsection

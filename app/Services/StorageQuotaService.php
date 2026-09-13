@@ -6,6 +6,7 @@ use App\Models\Document;
 use App\Models\TaskAttachment;
 use App\Models\TeachingGuide;
 use App\Models\ExamQuestionnaire;
+use App\Models\Report;
 use Illuminate\Support\Facades\Schema;
 use App\Support\UploadStorage;
 
@@ -37,8 +38,9 @@ class StorageQuotaService
 
         $teachingGuideBytes = $this->estimateModelBytes(TeachingGuide::class, 'user_id', $userId);
         $examQuestionnaireBytes = $this->estimateModelBytes(ExamQuestionnaire::class, 'submitted_by', $userId);
+        $reportBytes = $this->estimateModelBytes(Report::class, 'submitted_by', $userId);
 
-        return $taskAttachmentBytes + $documentBytes + $teachingGuideBytes + $examQuestionnaireBytes;
+        return $taskAttachmentBytes + $documentBytes + $teachingGuideBytes + $examQuestionnaireBytes + $reportBytes;
     }
 
     /**

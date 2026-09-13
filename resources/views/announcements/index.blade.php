@@ -24,8 +24,7 @@
     <div class="content-card announcements-page {{ $announcementTotal === 0 ? 'announcements-page--empty' : '' }}">
         <div class="card-header announcements-page__header">
             <h3 class="card-title announcements-page__title">
-                <i class="fas fa-bullhorn mr-1.5 text-[#028a0f] dark:text-[#02b815]"></i>
-                Feed
+                Announcements
                 <span class="badge badge-info ml-1.5">{{ $announcementTotal }}</span>
             </h3>
             @if($canPostAnnouncement)
@@ -46,17 +45,12 @@
         <div id="announcement-{{ $announcement->announcement_id }}"
              data-id="{{ $announcement->announcement_id }}"
              data-unread="{{ $announcement->isReadBy(auth()->user()) ? '0' : '1' }}"
-             class="announcement-item mb-2 border
-                {{ $announcement->is_pinned
-                    ? 'border-l-4 border-[#028a0f] dark:border-[#02b815] bg-green-50 dark:bg-[#1a2a1a]'
-                    : 'border-gray-200 dark:border-gray-700 bg-white dark:bg-[#1e1e1e]' }}
-                {{ !$announcement->isReadBy(auth()->user()) ? 'shadow-[0_0_0_2px_rgba(59,130,246,0.3)]' : '' }}">
+             class="announcement-item{{ $announcement->is_pinned ? ' is-pinned' : '' }}{{ !$announcement->isReadBy(auth()->user()) ? ' is-unread' : '' }}">
 
-            {{-- Pinned indicator --}}
             @if($announcement->is_pinned)
-            <div class="flex items-center gap-1 px-3 pt-2 text-[#028a0f] dark:text-[#02b815]">
-                <i class="fas fa-thumbtack text-[0.65rem]"></i>
-                <span class="text-[0.65rem] font-bold uppercase tracking-wide">Pinned</span>
+            <div class="announcement-item__pin">
+                <i class="fas fa-thumbtack"></i>
+                Pinned
             </div>
             @endif
 
@@ -65,7 +59,7 @@
                 <div class="flex items-start justify-between gap-2 mb-2">
                     <div class="flex items-center gap-2 min-w-0">
                         {{-- Avatar --}}
-                        <div class="w-8 h-8 flex items-center justify-center text-white text-xs font-bold flex-shrink-0 bg-[#028a0f]">
+                        <div class="w-8 h-8 flex items-center justify-center text-white text-xs font-bold flex-shrink-0 bg-[var(--site-primary)]">
                             {{ strtoupper(substr($announcement->author?->username ?? 'A', 0, 2)) }}
                         </div>
                         <div class="min-w-0">
@@ -134,7 +128,7 @@
                 </div>
 
                 {{-- Title --}}
-                <h4 class="text-sm font-bold text-gray-800 dark:text-gray-200 mb-1 mt-0">
+                <h4 class="announcement-item__title">
                     {{ $announcement->title }}
                 </h4>
 
@@ -166,10 +160,7 @@
                                 data-reaction-btn="{{ $likeEmoji }}"
                                 data-announcement="{{ $announcement->announcement_id }}"
                                 aria-pressed="{{ $iLiked ? 'true' : 'false' }}"
-                                class="reaction-btn inline-flex items-center gap-1.5 px-3 py-1.5 text-xs font-semibold border rounded-full transition-colors cursor-pointer
-                                    {{ $iLiked
-                                        ? 'border-[#028a0f] bg-[#028a0f] text-white dark:bg-[#026a0c] dark:border-[#026a0c]'
-                                        : 'border-gray-300 dark:border-gray-600 bg-white dark:bg-[#2a2a2a] text-gray-600 dark:text-gray-300 hover:border-[#028a0f] hover:text-[#028a0f] dark:hover:border-[#02b815] dark:hover:text-[#02b815]' }}">
+                                class="reaction-btn">
                             <span class="text-sm leading-none">{{ $likeEmoji }}</span>
                             <span>Like</span>
                             <span data-reaction-count="{{ $likeEmoji }}"
@@ -278,9 +269,7 @@
                 const card = document.getElementById('announcement-' + id);
                 if (card) {
                     card.dataset.unread = '0';
-                    card.style.boxShadow = '';
-                    card.classList.remove('shadow-[0_0_0_2px_rgba(59,130,246,0.3)]');
-                    // remove blue dot
+                    card.classList.remove('is-unread');
                     const dot = card.querySelector('.bg-blue-500');
                     if (dot) dot.remove();
                 }
@@ -359,17 +348,6 @@
                     }
 
                     b.setAttribute('aria-pressed', mine ? 'true' : 'false');
-
-                    const activeClasses   = ['border-[#028a0f]','bg-[#028a0f]','text-white','dark:bg-[#026a0c]','dark:border-[#026a0c]'];
-                    const inactiveClasses = ['border-gray-300','dark:border-gray-600','bg-white','dark:bg-[#2a2a2a]','text-gray-600','dark:text-gray-300','hover:border-[#028a0f]','hover:text-[#028a0f]','dark:hover:border-[#02b815]','dark:hover:text-[#02b815]'];
-
-                    if (mine) {
-                        b.classList.remove(...inactiveClasses);
-                        b.classList.add(...activeClasses);
-                    } else {
-                        b.classList.remove(...activeClasses);
-                        b.classList.add(...inactiveClasses);
-                    }
                 });
             })
             .catch(() => { /* silently ignore; user can retry */ })

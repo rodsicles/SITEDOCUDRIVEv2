@@ -15,43 +15,51 @@
             <h3 class="card-title">Faculty Account Information</h3>
         </div>
         
-        <form action="{{ route('coordinator.store-faculty') }}" method="POST">
+        <form action="{{ route('coordinator.store-faculty') }}" method="POST" class="account-form">
             @csrf
-            
-            <div class="form-group">
-                <label class="form-label">Full Name</label>
-                <input type="text" name="full_name" class="form-control" 
-                       placeholder="Enter full name" required maxlength="45" value="{{ old('full_name') }}">
-            </div>
 
-            <div class="form-group">
-                <label class="form-label">Department</label>
-                <input type="text" class="form-control" value="{{ $dept ?? auth()->user()->employee->department ?? 'N/A' }}" disabled>
-                <input type="hidden" name="department" value="{{ $dept ?? auth()->user()->employee->department }}">
-                <small class="text-xs text-gray-500 dark:text-gray-400 mt-1">Auto-assigned to your department</small>
-            </div>
-
-            <div class="form-group">
-                <label class="form-label">Employee Number</label>
-                <input type="text" class="form-control bg-gray-100 dark:bg-gray-800" value="{{ $nextFacultyNo }}" readonly>
-                <small class="text-xs text-gray-500 dark:text-gray-400 mt-1">Auto-generated for your department (e.g. SITE-IT-FAC001, SITE-ENGR-FAC001).</small>
-            </div>
-
-            <div class="form-group">
-                <label class="form-label">Username</label>
-                <input type="text" name="username" class="form-control" 
-                       placeholder="Enter username" required maxlength="20" value="{{ old('username') }}">
-            </div>
-
-            <div class="form-group">
-                <label class="form-label">Password</label>
-                <input type="password" name="password" class="form-control" 
-                       placeholder="Enter password (min 8 characters)" required minlength="8" maxlength="40">
+            <div class="account-form__grid">
+                <div class="account-form__col">
+                    <div class="ui-form-section">
+                        <h4 class="ui-form-section__title">Identity</h4>
+                        <div class="form-group">
+                            <label class="form-label">Full Name</label>
+                            <input type="text" name="full_name" class="form-control"
+                                   placeholder="Enter full name" required maxlength="45" value="{{ old('full_name') }}">
+                        </div>
+                        <div class="form-group">
+                            <label class="form-label">Department</label>
+                            <input type="text" class="form-control" value="{{ $dept ?? auth()->user()->employee->department ?? 'N/A' }}" disabled>
+                            <input type="hidden" name="department" value="{{ $dept ?? auth()->user()->employee->department }}">
+                            <small class="text-xs text-gray-500 dark:text-gray-400 mt-1">Auto-assigned to your department</small>
+                        </div>
+                        <div class="form-group">
+                            <label class="form-label">Employee Number</label>
+                            <input type="text" class="form-control bg-gray-100 dark:bg-gray-800" value="{{ $nextFacultyNo }}" readonly>
+                            <small class="text-xs text-gray-500 dark:text-gray-400 mt-1">Auto-generated for your department.</small>
+                        </div>
+                    </div>
+                </div>
+                <div class="account-form__col">
+                    <div class="ui-form-section">
+                        <h4 class="ui-form-section__title">Credentials</h4>
+                        <div class="form-group">
+                            <label class="form-label">Username</label>
+                            <input type="text" name="username" class="form-control"
+                                   placeholder="Enter username" required maxlength="20" value="{{ old('username') }}">
+                        </div>
+                        <div class="form-group">
+                            <label class="form-label">Password</label>
+                            <input type="password" name="password" class="form-control"
+                                   placeholder="Minimum 8 characters" required minlength="8" maxlength="40">
+                        </div>
+                    </div>
+                </div>
             </div>
 
             {{-- Course / Subject Assignment --}}
             @if($courses->isNotEmpty())
-            <div class="form-group">
+            <div class="account-form__courses form-group">
                 <label class="form-label">Assigned Courses / Subjects *</label>
                 <small class="text-xs text-gray-500 dark:text-gray-400 block mb-2">
                     Select the subjects this faculty member will teach in <strong>{{ $dept }}</strong>.
@@ -82,11 +90,11 @@
             </div>
             @endif
 
-            <div class="flex gap-2.5">
+            <div class="account-form__actions">
                 <button type="submit" class="btn btn-success" id="createFacultySubmitBtn">
                     <i class="fas fa-user-plus"></i> Create Faculty Account
                 </button>
-                <a href="{{ route('coordinator.faculty') }}" class="btn bg-gray-600 hover:bg-gray-700 text-white">
+                <a href="{{ route('coordinator.faculty') }}" class="btn btn-secondary">
                     <i class="fas fa-times"></i> Cancel
                 </a>
             </div>

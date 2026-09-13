@@ -7,9 +7,13 @@
     $docsRoute = $role . '.documents';
     $canUpload = in_array($role, ['faculty', 'coordinator', 'dean']);
     $documentViewer = auth()->user();
+    $browseMode = request('browse', 'folder');
+    if (!in_array($browseMode, ['folder', 'recent', 'favorites'], true)) {
+        $browseMode = 'folder';
+    }
 @endphp
 
-<div class="content-card mb-6">
+<section id="folder-current-section" class="folder-current-section doc-workspace" tabindex="-1" aria-label="Document workspace">
     {{-- Category Tabs --}}
     @php
         $validTabs = $folderTree->pluck('folder_name')->map(fn($n) => \Illuminate\Support\Str::slug($n))->toArray();
@@ -23,7 +27,7 @@
         $customFoldersCategory = $folderTree->firstWhere('slug', \App\Models\Folder::CUSTOM_FOLDERS_SLUG);
         $isCustomFoldersTab = $activeTab === 'custom-folders';
     @endphp
-    <div class="category-tabs">
+    <nav class="category-tabs" aria-label="Document categories">
         @foreach($folderTree as $category)
             @php
                 $tabSlug = \Illuminate\Support\Str::slug($category->folder_name);
@@ -31,32 +35,37 @@
                     'academics' => 'fa-book',
                     'event-letters' => 'fa-envelope-open-text',
                     'custom-folders' => 'fa-folder-plus',
+                    'teaching-guides' => 'fa-book-open',
+                    'exam-questionnaires' => 'fa-file-alt',
                     default => 'fa-certificate',
                 };
             @endphp
             <a href="{{ route($docsRoute, ['tab' => $tabSlug]) }}"
-               class="category-tab {{ $activeTab === $tabSlug ? 'active' : '' }}">
-                <i class="fas {{ $tabIcon }} mr-2"></i>
+               class="category-tab {{ $activeTab === $tabSlug ? 'active' : '' }}"
+               @if($activeTab === $tabSlug) aria-current="page" @endif>
+                <i class="fas {{ $tabIcon }} mr-2" aria-hidden="true"></i>
                 {{ $category->folder_name }}
             </a>
         @endforeach
-    </div>
+    </nav>
+
+    @include('partials.documents-scopes')
 
     {{-- Breadcrumb Navigation (shown when inside a folder) --}}
-    @if(isset($currentFolder) && $currentFolder)
-    <div class="breadcrumb-nav">
+    @if(($browseMode ?? 'folder') === 'folder' && isset($currentFolder) && $currentFolder)
+    <nav class="breadcrumb-nav" aria-label="Folder path">
         <a href="{{ route($docsRoute, ['tab' => $tab]) }}" class="breadcrumb-link">
-            <i class="fas fa-home"></i> All
+            <i class="fas fa-home" aria-hidden="true"></i> All
         </a>
         @foreach($breadcrumbs as $ancestor)
-            <span class="breadcrumb-separator"><i class="fas fa-chevron-right"></i></span>
+            <span class="breadcrumb-separator" aria-hidden="true"><i class="fas fa-chevron-right"></i></span>
             <a href="{{ route($docsRoute, ['tab' => $tab, 'folder' => $ancestor->folder_id]) }}" class="breadcrumb-link">
                 {{ $ancestor->folder_name }}
             </a>
         @endforeach
-        <span class="breadcrumb-separator"><i class="fas fa-chevron-right"></i></span>
-        <span class="breadcrumb-current">{{ $currentFolder->folder_name }}</span>
-    </div>
+        <span class="breadcrumb-separator" aria-hidden="true"><i class="fas fa-chevron-right"></i></span>
+        <span class="breadcrumb-current" aria-current="location">{{ $currentFolder->folder_name }}</span>
+    </nav>
     @endif
 
     {{-- Folder Cards OR Leaf Folder Content --}}
@@ -148,9 +157,72 @@
             $isLeafFolder = true;
             $displayFolders = collect();
         }
+
+        $hideDocumentsList = isset($currentFolder)
+            && $currentFolder
+            && (
+                $academicHierarchy->isSemesterTypeLeafFolder($currentFolder)
+                || $isTgSemesterFolder
+                || $isTgSubjectFolder
+                || $isEqSemesterFolder
+                || $isEqSubjectFolder
+                || $isEqAssessmentFolder
+            );
+
+        $selectedCategory = $folderTree->first(function ($category) use ($activeTab) {
+            return \Illuminate\Support\Str::slug($category->folder_name) === $activeTab;
+        });
+
+        $explorerLevels = [];
+        $skipExplorer = $isCustomFoldersTab && !(isset($currentFolder) && $currentFolder);
+        if ($browseMode === 'folder' && $selectedCategory && ! $skipExplorer) {
+            $inFolder = isset($currentFolder) && $currentFolder
+                && (int) $currentFolder->folder_id !== (int) $selectedCategory->folder_id;
+
+            if (! $inFolder) {
+                $explorerRow = $folderService->getDisplayFolders($selectedCategory, $documentViewer);
+                $explorerSelectedId = null;
+            } elseif ($displayFolders->isNotEmpty()) {
+                $explorerRow = $displayFolders;
+                $explorerSelectedId = null;
+            } else {
+                $explorerParent = collect($breadcrumbs ?? [])->last() ?: $selectedCategory;
+                $explorerRow = $folderService->getDisplayFolders($explorerParent, $documentViewer);
+                $explorerSelectedId = $currentFolder->folder_id;
+            }
+
+            if ($explorerRow->isNotEmpty()) {
+                $explorerLevels[] = [
+                    'heading' => '',
+                    'folders' => $explorerRow,
+                    'selected_id' => $explorerSelectedId,
+                ];
+            }
+        }
+
+        $showScopedDocuments = in_array($browseMode, ['recent', 'favorites'], true);
+        $scopedDocuments = $browseMode === 'favorites'
+            ? collect($favoriteDocuments ?? [])->filter()
+            : collect($recentDocuments ?? [])->filter();
     @endphp
 
+    @if($showScopedDocuments)
+        <section class="doc-current-files" aria-label="{{ $browseMode === 'favorites' ? 'Favorite documents' : 'Recent documents' }}">
+            <div class="doc-folder-head">
+                <div>
+                    <h2>{{ $browseMode === 'favorites' ? 'Favorites' : 'Recent files' }}</h2>
+                    <p>{{ $scopedDocuments->count() }} {{ $scopedDocuments->count() === 1 ? 'document' : 'documents' }}</p>
+                </div>
+            </div>
+            @include('partials.documents-list-table', [
+                'routePrefix' => $role,
+                'documents' => $scopedDocuments,
+                'isScopedList' => true,
+            ])
+        </section>
+    @else
     @include('partials.documents-command-strip')
+    @include('partials.folder-explorer')
 
     @if($isTgSemesterFolder)
         {{-- TG: Semester → pick subject → auto-create Subject/TG/LB --}}
@@ -162,6 +234,7 @@
 
             @include('partials.tg-semester-subject-form')
 
+            @if(empty($explorerLevels))
             <div class="folder-container-new flex gap-3 flex-wrap mt-4">
                 @forelse($displayFolders as $folder)
                 <div class="folder-card-new">
@@ -181,31 +254,14 @@
                 </p>
                 @endforelse
             </div>
+            @endif
         </div>
     @elseif($isTgSubjectFolder)
-        {{-- TG: Subject folder → TG and LB only --}}
+        @if(empty($explorerLevels))
         <div class="px-6 py-4">
-            <div class="text-sm text-gray-600 dark:text-gray-400 mb-4">
-                <i class="fas fa-book mr-1"></i> {{ $currentFolder->folder_name }} — open <strong>TG</strong> or <strong>LB</strong> to upload files.
-            </div>
-            <div class="folder-container-new flex gap-3 flex-wrap">
-                @forelse($displayFolders as $folder)
-                <div class="folder-card-new">
-                    <a href="{{ route($docsRoute, ['tab' => $tab, 'folder' => $folder->folder_id]) }}" class="folder-card-link-new">
-                        <div class="folder-icon-new" style="background-color: #028a0f; color: white;">
-                            <i class="fas fa-folder"></i>
-                        </div>
-                                                <div class="folder-info-new">
-                            <div class="folder-name-new">{{ $folder->folder_name }}</div>
-                            @include('partials.folder-card-meta', ['folder' => $folder])
-                        </div>
-                    </a>
-                </div>
-                @empty
-                <p class="text-sm text-gray-500 dark:text-gray-400 w-full py-4 text-center">TG and LB folders are being prepared.</p>
-                @endforelse
-            </div>
+            <p class="text-sm text-gray-500 dark:text-gray-400">TG and LB folders are being prepared.</p>
         </div>
+        @endif
     @elseif($isEqSemesterFolder)
         <div class="px-6 py-4">
             <div class="text-sm text-gray-600 dark:text-gray-400 mb-4">
@@ -213,70 +269,28 @@
                 Select a subject to open its folder (Prelims, Midterms, Finals, and TOS/TOQ are created automatically).
             </div>
             @include('partials.eq-semester-subject-form')
-            <div class="folder-container-new flex gap-3 flex-wrap mt-4">
-                @forelse($displayFolders as $folder)
-                <div class="folder-card-new">
-                    <a href="{{ route($docsRoute, ['tab' => $tab, 'folder' => $folder->folder_id]) }}" class="folder-card-link-new">
-                        <div class="folder-icon-new" style="background-color: #028a0f; color: white;"><i class="fas fa-folder"></i></div>
-                                                <div class="folder-info-new">
-                            <div class="folder-name-new">{{ $folder->folder_name }}</div>
-                            @include('partials.folder-card-meta', ['folder' => $folder])
-                        </div>
-                    </a>
-                </div>
-                @empty
-                <p class="text-sm text-gray-500 dark:text-gray-400 w-full py-4 text-center">No subject folders yet. Choose a subject above to get started.</p>
-                @endforelse
-            </div>
+            @if(empty($explorerLevels))
+            <p class="text-sm text-gray-500 dark:text-gray-400 mt-4">No subject folders yet. Choose a subject above to get started.</p>
+            @endif
         </div>
     @elseif($isEqSubjectFolder)
+        @if(empty($explorerLevels))
         <div class="px-6 py-4">
-            <div class="text-sm text-gray-600 dark:text-gray-400 mb-4">
-                <i class="fas fa-book mr-1"></i> {{ $currentFolder->folder_name }} — open <strong>Prelims</strong>, <strong>Midterms</strong>, or <strong>Finals</strong>.
-            </div>
-            <div class="folder-container-new flex gap-3 flex-wrap">
-                @forelse($displayFolders as $folder)
-                <div class="folder-card-new">
-                    <a href="{{ route($docsRoute, ['tab' => $tab, 'folder' => $folder->folder_id]) }}" class="folder-card-link-new">
-                        <div class="folder-icon-new" style="background-color: #028a0f; color: white;"><i class="fas fa-folder"></i></div>
-                                                <div class="folder-info-new">
-                            <div class="folder-name-new">{{ $folder->folder_name }}</div>
-                            @include('partials.folder-card-meta', ['folder' => $folder])
-                        </div>
-                    </a>
-                </div>
-                @empty
-                <p class="text-sm text-gray-500 dark:text-gray-400 w-full py-4 text-center">Assessment folders are being prepared.</p>
-                @endforelse
-            </div>
+            <p class="text-sm text-gray-500 dark:text-gray-400">Assessment folders are being prepared.</p>
         </div>
+        @endif
     @elseif($isEqAssessmentFolder)
+        @if(empty($explorerLevels))
         <div class="px-6 py-4">
-            <div class="text-sm text-gray-600 dark:text-gray-400 mb-4">
-                <i class="fas fa-layer-group mr-1"></i> {{ $currentFolder->folder_name }} — open <strong>TOS</strong> or <strong>TOQ</strong> to upload files.
-            </div>
-            <div class="folder-container-new flex gap-3 flex-wrap">
-                @forelse($displayFolders as $folder)
-                <div class="folder-card-new">
-                    <a href="{{ route($docsRoute, ['tab' => $tab, 'folder' => $folder->folder_id]) }}" class="folder-card-link-new">
-                        <div class="folder-icon-new" style="background-color: #028a0f; color: white;"><i class="fas fa-folder"></i></div>
-                                                <div class="folder-info-new">
-                            <div class="folder-name-new">{{ $folder->folder_name }}</div>
-                            @include('partials.folder-card-meta', ['folder' => $folder])
-                        </div>
-                    </a>
-                </div>
-                @empty
-                <p class="text-sm text-gray-500 dark:text-gray-400 w-full py-4 text-center">TOS and TOQ folders are being prepared.</p>
-                @endforelse
-            </div>
+            <p class="text-sm text-gray-500 dark:text-gray-400">TOS and TOQ folders are being prepared.</p>
         </div>
+        @endif
     @elseif($isTypeLeafFolder)
         {{-- Legacy type leaf: course folders + upload with course picker --}}
         <div class="px-6 py-4">
             <div class="flex items-center justify-between mb-4">
                 <div class="text-sm text-gray-600 dark:text-gray-400">
-                    <i class="fas fa-layer-group mr-1"></i> Select a course folder below, or upload to create one
+                    <i class="fas fa-layer-group mr-1"></i> Open a course folder, or upload to create one
                 </div>
                 @if($canUpload)
                 <div class="flex gap-2">
@@ -291,6 +305,7 @@
             @include('partials.folder-tree-upload-form')
             @endif
 
+            @if(empty($explorerLevels))
             <div class="folder-container-new flex gap-3 flex-wrap mt-4">
                 @forelse($displayFolders as $folder)
                 <div class="folder-card-new">
@@ -310,59 +325,45 @@
                 </p>
                 @endforelse
             </div>
+            @endif
         </div>
     @elseif($isLeafFolder)
         {{-- LEAF FOLDER: Show upload button + documents --}}
-        <div class="px-6 py-4">
-            <div class="flex items-center justify-between mb-4">
-                <div class="text-sm text-gray-600 dark:text-gray-400">
-                    <i class="fas fa-folder-open mr-1"></i> {{ $documents->total() }} document(s) in this folder
-                </div>
-                @if($canUpload)
-                <div class="flex gap-2 flex-wrap justify-end">
-                    @if(($isCustomSubfolder ?? false) && isset($currentFolder) && (int) $currentFolder->user_id === (int) auth()->id())
-                    <button type="button"
-                            class="btn btn-sm bg-gray-200 dark:bg-gray-700 text-gray-700 dark:text-gray-300"
-                            onclick="openRenameFolderModal({{ $currentFolder->folder_id }}, @js($currentFolder->folder_name), @js($currentFolder->color ?? '#028a0f'))">
-                        <i class="fas fa-pen mr-1"></i> Rename Folder
-                    </button>
-                    <button type="button"
-                            class="btn btn-sm btn-danger"
-                            onclick="deleteFolder({{ $currentFolder->folder_id }}, @js($currentFolder->folder_name))">
-                        <i class="fas fa-trash mr-1"></i> Delete Folder
-                    </button>
-                    @endif
-                    @if(!($isCustomSubfolder ?? false) && !($isTypeLeafFolder ?? false) && !($useCourseFolderUpload ?? false) && !($isTgUploadLeaf ?? false) && !($isTgSemesterFolder ?? false) && !($isTgSubjectFolder ?? false) && !($isEqUploadLeaf ?? false) && !($isEqSemesterFolder ?? false) && !($isEqSubjectFolder ?? false) && !($isEqAssessmentFolder ?? false))
-                    <button type="button" id="btnCreateFolder" onclick="toggleCreateSubfolder()" class="btn btn-primary doc-action-btn" aria-pressed="false">
-                        <i class="fas fa-folder-plus mr-1"></i> Create Folder
-                    </button>
-                    @endif
-                    <button type="button" id="btnFolderUpload" onclick="toggleFolderUpload()" class="btn btn-success doc-action-btn" aria-pressed="false">
-                        <i class="fas fa-upload mr-1"></i> Upload to this Folder
-                    </button>
-                </div>
+        <div class="doc-folder-head doc-folder-head--toolbar">
+            <div class="doc-folder-head__identity">
+                <h2>{{ $currentFolder->folder_name }}</h2>
+                <p>{{ $documents->total() }} {{ $documents->total() === 1 ? 'document' : 'documents' }}</p>
+            </div>
+            @include('partials.documents-filter-panel', [
+                'documentsRoute' => $docsRoute,
+                'toolbarOnly' => true,
+            ])
+            @if($canUpload)
+            <div class="doc-folder-head__actions">
+                @if(($isCustomSubfolder ?? false) && isset($currentFolder) && (int) $currentFolder->user_id === (int) auth()->id())
+                <button type="button"
+                        class="btn btn-sm bg-gray-200 dark:bg-gray-700 text-gray-700 dark:text-gray-300"
+                        onclick="openRenameFolderModal({{ $currentFolder->folder_id }}, @js($currentFolder->folder_name), @js($currentFolder->color ?? '#028a0f'))">
+                    <i class="fas fa-pen mr-1"></i> Rename Folder
+                </button>
+                <button type="button"
+                        class="btn btn-sm btn-danger"
+                        onclick="deleteFolder({{ $currentFolder->folder_id }}, @js($currentFolder->folder_name))">
+                    <i class="fas fa-trash mr-1"></i> Delete Folder
+                </button>
                 @endif
+                @if(!($isCustomSubfolder ?? false) && !($isTypeLeafFolder ?? false) && !($useCourseFolderUpload ?? false) && !($isTgUploadLeaf ?? false) && !($isTgSemesterFolder ?? false) && !($isTgSubjectFolder ?? false) && !($isEqUploadLeaf ?? false) && !($isEqSemesterFolder ?? false) && !($isEqSubjectFolder ?? false) && !($isEqAssessmentFolder ?? false))
+                <button type="button" id="btnCreateFolder" onclick="toggleCreateSubfolder()" class="btn btn-primary doc-action-btn" aria-pressed="false">
+                    <i class="fas fa-folder-plus mr-1"></i> Create Folder
+                </button>
+                @endif
+                <button type="button" id="btnFolderUpload" onclick="toggleFolderUpload()" class="btn btn-success doc-action-btn" aria-pressed="false">
+                    <i class="fas fa-upload mr-1"></i> Upload to this Folder
+                </button>
             </div>
-
-            {{-- Search inside folder --}}
-            <div class="mb-4">
-                <form action="{{ route($docsRoute) }}" method="GET" class="flex gap-2 items-center">
-                    <input type="hidden" name="tab" value="{{ $tab }}">
-                    <input type="hidden" name="folder" value="{{ $currentFolder->folder_id }}">
-                    <div class="folder-doc-search flex-1">
-                        <i class="fas fa-search folder-doc-search-icon" aria-hidden="true"></i>
-                        <input type="text" name="search" value="{{ request('search') }}" class="form-control text-sm" placeholder="Search documents in this folder...">
-                    </div>
-                    <button type="submit" class="btn btn-primary text-sm">
-                        <i class="fas fa-search"></i> Search
-                    </button>
-                    @if(request('search'))
-                    <a href="{{ route($docsRoute, ['tab' => $tab, 'folder' => $currentFolder->folder_id]) }}" class="btn bg-gray-200 dark:bg-gray-700 text-gray-700 dark:text-gray-300 text-sm">
-                        <i class="fas fa-times"></i> Clear
-                    </a>
-                    @endif
-                </form>
-            </div>
+            @endif
+        </div>
+        <div class="px-6 py-4">
 
             {{-- Create Subfolder Form --}}
             @if($canUpload)
@@ -485,6 +486,7 @@
             </form>
         </div>
         @endif
+        @if($isCustomFoldersTab || empty($explorerLevels))
         <div class="folder-container-new px-6 py-4 flex gap-3 flex-wrap">
             @forelse($displayFolders as $folder)
             @php
@@ -530,27 +532,64 @@
             </div>
             @endforelse
         </div>
+        @endif
     @endif
-</div>
+
+        @if($isLeafFolder)
+            <section class="doc-current-files" aria-label="Documents in this folder">
+                @include('partials.documents-list-table', ['routePrefix' => $role, 'compactEmpty' => true])
+            </section>
+        @elseif(!($hideDocumentsList ?? false))
+            <section class="doc-current-files" aria-label="Documents in this location">
+                @include('partials.documents-filter-panel', [
+                    'documentsRoute' => $docsRoute,
+                ])
+                @include('partials.documents-list-table', ['routePrefix' => $role])
+            </section>
+        @endif
+    @endif
+</section>
 
 @if($canUpload && (($isLeafFolder ?? false) || ($isTypeLeafFolder ?? false)))
 @push('scripts')
 <script>
-    function syncDocActionBtn(btnId, formId) {
+    function syncDocActionBtn(btnId, panelId) {
         const btn = document.getElementById(btnId);
-        const form = document.getElementById(formId);
-        if (!btn || !form) return;
-        const isOpen = !form.classList.contains('hidden');
+        const panel = document.getElementById(panelId);
+        if (!btn || !panel) return;
+        const isOpen = panel.classList.contains('modal-overlay')
+            ? panel.classList.contains('active')
+            : !panel.classList.contains('hidden');
         btn.classList.toggle('is-active', isOpen);
         btn.setAttribute('aria-pressed', isOpen ? 'true' : 'false');
     }
 
-    function toggleFolderUpload() {
-        const form = document.getElementById('folderUploadForm');
-        if (!form) return;
-        form.classList.toggle('hidden');
-        syncDocActionBtn('btnFolderUpload', 'folderUploadForm');
+    function toggleFolderUpload(forceOpen) {
+        const modal = document.getElementById('folderUploadModal');
+        if (!modal) return;
+        const shouldOpen = typeof forceOpen === 'boolean'
+            ? forceOpen
+            : !modal.classList.contains('active');
+        modal.classList.toggle('active', shouldOpen);
+        modal.setAttribute('aria-hidden', shouldOpen ? 'false' : 'true');
+        document.body.style.overflow = shouldOpen ? 'hidden' : '';
+        syncDocActionBtn('btnFolderUpload', 'folderUploadModal');
+        if (shouldOpen) {
+            window.setTimeout(() => modal.querySelector('input:not([type="hidden"]), select, button')?.focus(), 0);
+        } else {
+            document.getElementById('btnFolderUpload')?.focus();
+        }
     }
+
+    document.getElementById('folderUploadModal')?.addEventListener('click', function (event) {
+        if (event.target === this) toggleFolderUpload(false);
+    });
+
+    document.addEventListener('keydown', function (event) {
+        if (event.key === 'Escape' && document.getElementById('folderUploadModal')?.classList.contains('active')) {
+            toggleFolderUpload(false);
+        }
+    });
 
     function toggleCreateSubfolder() {
         const form = document.getElementById('createSubfolderForm');

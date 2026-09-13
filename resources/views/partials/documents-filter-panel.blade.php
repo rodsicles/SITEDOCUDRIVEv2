@@ -37,6 +37,7 @@
         'uploaded_by' => $currentUploader,
         'date_from' => $currentDateFrom,
         'date_to' => $currentDateTo,
+        'browse' => request('browse'),
     ], fn ($v) => $v !== null && $v !== '');
 
     $documentsListSearchRoute = $documentsListSearchRoute ?? (
@@ -52,17 +53,24 @@
         'sort' => request('sort'),
         'file_type' => request('file_type'),
     ], fn ($v) => $v !== null && $v !== '');
+
+    $toolbarOnly = $toolbarOnly ?? false;
+    $showLocationTitle = $showLocationTitle ?? ! $toolbarOnly;
 @endphp
 
-<div class="card-header card-header--documents">
+<div class="card-header card-header--documents {{ $toolbarOnly ? 'card-header--documents-tools' : '' }}">
     <div class="card-header-documents-left">
-        <h3 class="card-title mb-0">Available Documents</h3>
+        @if($showLocationTitle)
+        <div>
+            <h3 class="card-title mb-0">{{ isset($currentFolder) && $currentFolder ? $currentFolder->folder_name : 'Documents' }}</h3>
+        </div>
+        @endif
 
         <div class="doc-header-toolbar">
             <div class="doc-search-wrap" id="docListSearchWrap">
                 <form action="{{ route($documentsRoute) }}" method="GET" class="doc-search-form" id="docListSearchForm" role="search">
                     @foreach($searchPreserve as $key => $value)
-                        @if(!in_array($key, ['uploaded_by', 'date_from', 'date_to'], true))
+                        @if(!in_array($key, ['uploaded_by', 'date_from', 'date_to', 'browse'], true))
                         <input type="hidden" name="{{ $key }}" value="{{ $value }}">
                         @endif
                     @endforeach
@@ -181,7 +189,9 @@
         </div>
     </div>
 
+    @unless($toolbarOnly)
     <span class="badge badge-info">{{ $documents->total() }} Files</span>
+    @endunless
 </div>
 
 <div id="docAdvancedFilters" class="doc-advanced-filters {{ $hasAdvancedFilters ? '' : 'is-collapsed' }}">

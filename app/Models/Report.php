@@ -12,6 +12,14 @@ class Report extends Model
     protected $table = 'reports';
     protected $primaryKey = 'report_id';
 
+    public const CATEGORIES = [
+        'Accomplishment Report',
+        'Incident Report',
+        'Inventory Report',
+        'Research Report',
+        'Other',
+    ];
+
     protected $fillable = [
         'submitted_by',
         'report_title',
@@ -28,5 +36,19 @@ class Report extends Model
     public function submitter()
     {
         return $this->belongsTo(User::class, 'submitted_by');
+    }
+
+    public function displayFilename(): string
+    {
+        return basename((string) $this->file_path) ?: 'Report file';
+    }
+
+    public function canBeAccessedBy(User $user): bool
+    {
+        if ((int) $this->submitted_by === (int) $user->id) {
+            return true;
+        }
+
+        return $user->isDeanOrSecretary() || $user->isProgramCoordinator();
     }
 }

@@ -14,11 +14,17 @@
 @endsection
 
 @section('content')
-    <!-- Back Button -->
-    <div class="mb-5">
+@php
+    $assignedCourses = optional($employee->user)->assignedCourses ?? collect();
+    $isInactive = $employee->user->status === 'Inactive';
+    $viewerIsDeanOffice = auth()->user()->isDeanOrSecretary();
+@endphp
+
+<div class="employee-record">
+    <div class="mb-0">
         @if(auth()->user()->isDean())
-            <a href="{{ route('dean.employees', $employee->user->status === 'Inactive' ? ['tab' => 'deactivated'] : []) }}" class="btn btn-secondary">
-                <i class="fas fa-arrow-left"></i> {{ $employee->user->status === 'Inactive' ? 'Back to Deactivated Accounts' : 'Back to Faculty Members' }}
+            <a href="{{ route('dean.employees', $isInactive ? ['tab' => 'deactivated'] : []) }}" class="btn btn-secondary">
+                <i class="fas fa-arrow-left"></i> {{ $isInactive ? 'Back to Deactivated Accounts' : 'Back to Faculty Members' }}
             </a>
         @else
             <a href="{{ route('coordinator.faculty') }}" class="btn btn-secondary">
@@ -27,79 +33,105 @@
         @endif
     </div>
 
-    <!-- Employee Basic Information -->
-    <div class="content-card">
-        <div class="card-header">
-            <h3 class="card-title">Basic Information</h3>
-            <div class="flex flex-wrap gap-2.5 items-center">
-                @if(auth()->user()->isDeanOrSecretary() && $employee->user->role_id !== 1)
-                    <a href="{{ route('dean.edit-employee', $employee->employee_id) }}" class="btn btn-primary py-2 px-5 text-sm">
-                        <i class="fas fa-edit"></i> Edit Information
-                    </a>
-                    @if($employee->user->status === 'Active' && (int) $employee->user_id !== (int) auth()->id())
-                    <form action="{{ route('dean.deactivate-employee', $employee->employee_id) }}" method="POST" class="m-0" id="deactivateAccountForm">
-                        @csrf
-                        <button type="button" class="btn btn-danger py-2 px-5 text-sm" onclick="confirmDeactivateAccount()">
-                            <i class="fas fa-user-slash"></i> Deactivate Account
-                        </button>
-                    </form>
-                    @elseif($employee->user->status === 'Inactive')
-                    <form action="{{ route('dean.reactivate-employee', $employee->employee_id) }}" method="POST" class="m-0">
-                        @csrf
-                        <button type="submit" class="btn btn-primary py-2 px-5 text-sm" style="background:#028a0f;border-color:#028a0f;">
-                            <i class="fas fa-user-check"></i> Reactivate Account
-                        </button>
-                    </form>
-                    @endif
-                @elseif(auth()->user()->role_id === 2)
-                    <a href="{{ route('coordinator.edit-faculty', $employee->employee_id) }}" class="btn btn-primary py-2 px-5 text-sm">
-                        <i class="fas fa-edit"></i> Edit Information
-                    </a>
+    <header class="employee-record__head">
+        <div>
+            <h2 class="employee-record__name">{{ $employee->full_name }}</h2>
+            <div class="employee-record__meta">
+                <span>{{ $employee->employee_no ?? 'No employee number' }}</span>
+                <span>{{ $employee->department ?? 'N/A' }}</span>
+                <span>{{ $employee->user->role->role_name }}</span>
+                <span>{{ $employee->position }}</span>
+            </div>
+        </div>
+        <div class="employee-record__actions">
+            <span class="badge {{ $employee->user->status === 'Active' ? 'badge-success' : 'badge-danger' }}">
+                {{ $employee->user->status }}
+            </span>
+            @if($viewerIsDeanOffice && $employee->user->role_id !== 1)
+                <a href="{{ route('dean.edit-employee', $employee->employee_id) }}" class="btn btn-primary text-sm">
+                    <i class="fas fa-edit"></i> Edit
+                </a>
+                @if($employee->user->status === 'Inactive')
+                <form action="{{ route('dean.reactivate-employee', $employee->employee_id) }}" method="POST" class="m-0">
+                    @csrf
+                    <button type="submit" class="btn btn-primary text-sm">
+                        <i class="fas fa-user-check"></i> Reactivate Account
+                    </button>
+                </form>
                 @endif
-                <span class="badge {{ $employee->user->status === 'Active' ? 'badge-success' : 'badge-danger' }}">
-                    {{ $employee->user->status }}
-                </span>
-            </div>
+            @elseif(auth()->user()->role_id === 2)
+                <a href="{{ route('coordinator.edit-faculty', $employee->employee_id) }}" class="btn btn-primary text-sm">
+                    <i class="fas fa-edit"></i> Edit
+                </a>
+            @endif
         </div>
-        @if(auth()->user()->isDeanOrSecretary() && $employee->user->status === 'Inactive')
-        <div class="mx-0 mb-0 mt-0 px-5 pb-4">
-            <div class="bg-amber-50 dark:bg-amber-900/20 border-l-4 border-amber-500 p-4 text-sm text-amber-900 dark:text-amber-200">
-                <i class="fas fa-info-circle mr-1"></i>
-                This account is <strong>inactive</strong>. The user cannot sign in or appear in task assignment and user search.
-                Their uploaded documents and folders remain in the system for archiving and records.
-            </div>
+    </header>
+
+    @if($viewerIsDeanOffice && $isInactive)
+    <div class="ui-notice ui-notice--warning">
+        <div>
+            This account is inactive. The user cannot sign in or appear in task assignment and user search.
+            Uploaded documents and folders remain in the system for records.
         </div>
-        @endif
-        <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 py-2.5">
-            <div>
-                <p class="text-gray-500 dark:text-gray-400 mb-1 text-sm">Employee Number</p>
-                <p class="font-semibold text-base">{{ $employee->employee_no ?? 'N/A' }}</p>
+    </div>
+    @endif
+
+    <div class="employee-record__stats">
+        <div class="employee-record__stat">
+            <div class="employee-record__stat-value">{{ $taskStats['total'] }}</div>
+            <div class="employee-record__stat-label">Tasks</div>
+        </div>
+        <div class="employee-record__stat">
+            <div class="employee-record__stat-value">{{ $taskStats['completed'] }}</div>
+            <div class="employee-record__stat-label">Completed</div>
+        </div>
+        <div class="employee-record__stat">
+            <div class="employee-record__stat-value">{{ $documentStats['total'] }}</div>
+            <div class="employee-record__stat-label">Documents</div>
+        </div>
+        <div class="employee-record__stat">
+            @if(auth()->user()->isDean() && $performanceReports->count() > 0)
+                <div class="employee-record__stat-value">{{ number_format($performanceReports->avg('rating'), 1) }}</div>
+                <div class="employee-record__stat-label">Average rating</div>
+            @else
+                <div class="employee-record__stat-value">{{ $reportStats['total'] ?? 0 }}</div>
+                <div class="employee-record__stat-label">Reports</div>
+            @endif
+        </div>
+    </div>
+
+    <section class="employee-record__panel">
+        <div class="employee-record__panel-head">
+            <h3>Identity and account</h3>
+        </div>
+        <dl class="employee-record__fields">
+            <div class="employee-record__field">
+                <dt>Employee number</dt>
+                <dd>{{ $employee->employee_no ?? 'N/A' }}</dd>
             </div>
-            <div>
-                <p class="text-gray-500 dark:text-gray-400 mb-1 text-sm">Full Name</p>
-                <p class="font-semibold text-base">{{ $employee->full_name }}</p>
+            <div class="employee-record__field">
+                <dt>Full name</dt>
+                <dd>{{ $employee->full_name }}</dd>
             </div>
-            <div>
-                <p class="text-gray-500 dark:text-gray-400 mb-1 text-sm">Department</p>
-                <p class="font-semibold text-base">{{ $employee->department ?? 'N/A' }}</p>
+            <div class="employee-record__field">
+                <dt>Department</dt>
+                <dd>{{ $employee->department ?? 'N/A' }}</dd>
             </div>
-            <div>
-                <p class="text-gray-500 dark:text-gray-400 mb-1 text-sm">Position</p>
-                <p class="font-semibold text-base">{{ $employee->position }}</p>
+            <div class="employee-record__field">
+                <dt>Position</dt>
+                <dd>{{ $employee->position }}</dd>
             </div>
-            <div>
-                <p class="text-gray-500 dark:text-gray-400 mb-1 text-sm">Role</p>
-                <p class="font-semibold text-base">
-                    <span class="badge badge-info">{{ $employee->user->role->role_name }}</span>
-                </p>
+            <div class="employee-record__field">
+                <dt>Role</dt>
+                <dd>{{ $employee->user->role->role_name }}</dd>
             </div>
-            <div>
-                <p class="text-gray-500 dark:text-gray-400 mb-1 text-sm">Hire Date</p>
-                <p class="font-semibold text-base">{{ $employee->hire_date ? $employee->hire_date->format('M d, Y') : 'N/A' }}</p>
+            <div class="employee-record__field">
+                <dt>Hire date</dt>
+                <dd>{{ $employee->hire_date ? $employee->hire_date->format('M d, Y') : 'N/A' }}</dd>
             </div>
-            <div>
-                <p class="text-gray-500 dark:text-gray-400 mb-1 text-sm">Years of Service</p>
-                <p class="font-semibold text-base">
+            <div class="employee-record__field">
+                <dt>Years of service</dt>
+                <dd>
                     @if($employee->getYearsOfService() !== null)
                         {{ $employee->getYearsOfService() }} year(s)
                         @if($employee->getServiceMilestone())
@@ -110,37 +142,43 @@
                     @else
                         N/A
                     @endif
-                </p>
+                </dd>
             </div>
-        </div>
-    </div>
+            <div class="employee-record__field">
+                <dt>Username</dt>
+                <dd>{{ $employee->user->username }}</dd>
+            </div>
+            <div class="employee-record__field">
+                <dt>Email</dt>
+                <dd>{{ $employee->user->email ?: '—' }}</dd>
+            </div>
+            <div class="employee-record__field">
+                <dt>Account created</dt>
+                <dd>{{ $employee->user->created_at->format('M d, Y h:i A') }}</dd>
+            </div>
+        </dl>
+    </section>
 
-    <!-- Account Information -->
-    <div class="content-card">
-        <div class="card-header">
-            <h3 class="card-title">Account Information</h3>
+    <section class="employee-record__panel">
+        <div class="employee-record__panel-head">
+            <h3>Assigned courses</h3>
+            <span class="badge badge-info">{{ $assignedCourses->count() }}</span>
         </div>
-        <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 py-2.5">
-            <div>
-                <p class="text-gray-500 dark:text-gray-400 mb-1 text-sm">Username</p>
-                <p class="font-semibold text-base">{{ $employee->user->username }}</p>
+        @if($assignedCourses->count() > 0)
+            <div class="employee-record__courses">
+                @foreach($assignedCourses as $course)
+                    <span class="employee-record__course">{{ $course->code }} — {{ $course->title }}</span>
+                @endforeach
             </div>
-            <div>
-                <p class="text-gray-500 dark:text-gray-400 mb-1 text-sm">Email</p>
-                <p class="font-semibold text-base">{{ $employee->user->email }}</p>
-            </div>
-            <div>
-                <p class="text-gray-500 dark:text-gray-400 mb-1 text-sm">Account Created</p>
-                <p class="font-semibold text-base">{{ $employee->user->created_at->format('M d, Y h:i A') }}</p>
-            </div>
-        </div>
-    </div>
+        @else
+            @include('partials.ui.empty-state', ['title' => 'No assigned courses', 'text' => 'This account has no subjects on file.'])
+        @endif
+    </section>
 
     @if(auth()->user()->isDean())
-    <!-- Performance Reports -->
-    <div class="content-card">
-        <div class="card-header">
-            <h3 class="card-title">Performance History</h3>
+    <section class="employee-record__panel">
+        <div class="employee-record__panel-head">
+            <h3>Performance history</h3>
             <span class="badge badge-info">{{ $performanceReports->count() }} Reviews</span>
         </div>
         @if($performanceReports->count() > 0)
@@ -169,21 +207,16 @@
                 </tbody>
             </table>
         @else
-            <div class="text-center py-10 text-gray-500 dark:text-gray-400">
-                <i class="fas fa-chart-line text-5xl mb-4 opacity-50"></i>
-                <p>No performance reviews yet</p>
-            </div>
+            @include('partials.ui.empty-state', ['title' => 'No performance reviews', 'text' => 'Reviews will appear here when they are recorded.'])
         @endif
-    </div>
+    </section>
     @endif
 
-    <!-- Submitted Documents -->
-    <div class="content-card">
-        <div class="card-header">
-            <h3 class="card-title">Submitted Documents</h3>
+    <section class="employee-record__panel employee-record__panel--compact">
+        <div class="employee-record__panel-head">
+            <h3>Submitted documents</h3>
             <span class="badge badge-info">{{ $documentStats['total'] }} Documents</span>
         </div>
-
         @if($documentStats['total'] > 0)
             @include('partials.faculty-profile-documents', [
                 'documents' => $documents,
@@ -191,30 +224,21 @@
                 'documentTree' => $documentTree ?? [],
             ])
         @else
-            <div class="text-center py-10 text-gray-500 dark:text-gray-400">
-                <i class="fas fa-folder-open text-5xl mb-4 opacity-50"></i>
-                <p>No documents submitted yet</p>
-            </div>
+            @include('partials.ui.empty-state', ['title' => 'No documents submitted', 'text' => 'Uploads from this employee will appear here.'])
         @endif
-    </div>
+    </section>
 
-    <!-- Submitted Reports -->
-    <div class="content-card">
-        <div class="card-header">
-            <h3 class="card-title">Submitted Reports</h3>
-            <span class="badge badge-info">{{ $reportStats['total'] ?? 0 }} Reports</span>
+    <section class="employee-record__panel employee-record__panel--compact">
+        <div class="employee-record__panel-head">
+            <h3>Submitted reports</h3>
+            <span class="badge badge-info">{{ $reportStats['total'] ?? 0 }}</span>
         </div>
-        
         @if(isset($reports) && $reports->count() > 0)
-            <!-- Report Stats by Category -->
-            <div class="flex flex-wrap gap-2.5 mb-5 p-2.5 bg-gray-100 dark:bg-gray-800">
+            <div class="employee-record__courses mb-3">
                 @foreach($reportStats['byCategory'] as $category => $count)
-                    <div class="py-2 px-4 bg-[#028a0f] text-white text-sm">
-                        <i class="fas fa-file-pdf"></i> {{ $category ?? 'Other' }}: <strong>{{ $count }}</strong>
-                    </div>
+                    <span class="employee-record__course">{{ $category ?? 'Other' }}: {{ $count }}</span>
                 @endforeach
             </div>
-
             <table class="data-table">
                 <thead>
                     <tr>
@@ -230,19 +254,15 @@
                     <tr>
                         <td><strong>{{ $report->report_title }}</strong></td>
                         <td>
-                            <span class="badge badge-warning">
-                                {{ $report->report_category ?? 'N/A' }}
-                            </span>
+                            <span class="badge badge-info">{{ $report->report_category ?? 'N/A' }}</span>
                         </td>
-                        <td class="font-mono text-xs">
-                            {{ basename($report->file_path) }}
-                        </td>
+                        <td class="font-mono text-xs">{{ $report->displayFilename() }}</td>
                         <td>{{ $report->created_at->format('M d, Y h:i A') }}</td>
                         <td>
-                            <a href="{{ asset($report->file_path) }}" target="_blank" class="btn btn-primary py-1 px-2.5 text-xs mr-1">
+                            <a href="{{ route('reports.view', $report->report_id) }}" target="_blank" class="btn btn-primary py-1 px-2.5 text-xs mr-1">
                                 <i class="fas fa-eye"></i> View
                             </a>
-                            <a href="{{ asset($report->file_path) }}" download class="btn btn-success py-1 px-2.5 text-xs">
+                            <a href="{{ route('reports.download', $report->report_id) }}" class="btn btn-secondary py-1 px-2.5 text-xs">
                                 <i class="fas fa-download"></i> Download
                             </a>
                         </td>
@@ -251,17 +271,13 @@
                 </tbody>
             </table>
         @else
-            <div class="text-center py-10 text-gray-500 dark:text-gray-400">
-                <i class="fas fa-file-pdf text-5xl mb-4 opacity-50"></i>
-                <p>No reports submitted yet</p>
-            </div>
+            <p class="employee-record__empty">No reports submitted.</p>
         @endif
-    </div>
+    </section>
 
-    <!-- Task History -->
-    <div class="content-card">
-        <div class="card-header">
-            <h3 class="card-title">Task History</h3>
+    <section class="employee-record__panel">
+        <div class="employee-record__panel-head">
+            <h3>Task history</h3>
             <span class="badge badge-info">{{ $tasks->count() }} Tasks</span>
         </div>
         @if($tasks->count() > 0)
@@ -301,73 +317,33 @@
                 </tbody>
             </table>
         @else
-            <div class="text-center py-10 text-gray-500 dark:text-gray-400">
-                <i class="fas fa-tasks text-5xl mb-4 opacity-50"></i>
-                <p>No tasks assigned yet</p>
-            </div>
+            @include('partials.ui.empty-state', ['title' => 'No tasks assigned', 'text' => 'Assigned work will appear in this history.'])
         @endif
-    </div>
+    </section>
 
-    <!-- Statistics -->
-    <div class="stats-grid">
-        <div class="stat-card">
-            <div class="stat-icon">
-                <i class="fas fa-tasks"></i>
-            </div>
-            <div class="stat-value">{{ $taskStats['total'] }}</div>
-            <div class="stat-label">Total Tasks</div>
-        </div>
-
-        <div class="stat-card">
-            <div class="stat-icon">
-                <i class="fas fa-check-circle"></i>
-            </div>
-            <div class="stat-value">{{ $taskStats['completed'] }}</div>
-            <div class="stat-label">Completed Tasks</div>
-        </div>
-
-        <div class="stat-card">
-            <div class="stat-icon">
-                <i class="fas fa-clock"></i>
-            </div>
-            <div class="stat-value">{{ $taskStats['pending'] }}</div>
-            <div class="stat-label">Pending Tasks</div>
-        </div>
-
-        <div class="stat-card">
-            <div class="stat-icon">
-                <i class="fas fa-folder"></i>
-            </div>
-            <div class="stat-value">{{ $documentStats['total'] }}</div>
-            <div class="stat-label">Documents Submitted</div>
-        </div>
-
-        @if(auth()->user()->isDean() && $performanceReports->count() > 0)
-        <div class="stat-card">
-            <div class="stat-icon">
-                <i class="fas fa-star"></i>
-            </div>
-            <div class="stat-value">{{ number_format($performanceReports->avg('rating'), 1) }}</div>
-            <div class="stat-label">Average Rating</div>
-        </div>
+    @if($viewerIsDeanOffice && $employee->user->role_id !== 1 && (int) $employee->user_id !== (int) auth()->id() && ($employee->user->status === 'Active' || (config('employee.allow_hard_delete') && in_array((int) $employee->user->role_id, [2, 3], true))))
+    <section class="employee-record__danger" aria-labelledby="account-actions-heading">
+        <h3 id="account-actions-heading">Account actions</h3>
+        @if($employee->user->status === 'Active')
+            <p class="text-sm text-gray-700 dark:text-gray-300 mb-3">
+                Deactivate to block sign-in while keeping documents and folders for records.
+            </p>
+            <form action="{{ route('dean.deactivate-employee', $employee->employee_id) }}" method="POST" class="m-0 mb-4" id="deactivateAccountForm">
+                @csrf
+                <button type="button" class="btn btn-danger text-sm" onclick="confirmDeactivateAccount()">
+                    <i class="fas fa-user-slash"></i> Deactivate Account
+                </button>
+            </form>
         @endif
-    </div>
 
-    @if(auth()->user()->isDeanOrSecretary() && config('employee.allow_hard_delete') && in_array((int) $employee->user->role_id, [2, 3], true) && (int) $employee->user_id !== (int) auth()->id())
-    <div class="content-card account-delete-danger mt-6">
-        <div class="card-header">
-            <h3 class="card-title text-red-700 dark:text-red-400">
-                <i class="fas fa-exclamation-triangle mr-2"></i> Dry-run cleanup — permanent delete
-            </h3>
-        </div>
-        <div class="p-5 pt-0">
-            <p class="text-sm text-gray-700 dark:text-gray-300 mb-4">
-                <strong>Temporary feature.</strong> This removes the account and <strong>all</strong> related data:
-                documents (including recycle bin), teaching guides, exam questionnaires, tasks, notifications,
-                custom folders, announcements they authored, and activity tied to this user. <strong>This cannot be undone.</strong>
+        @if(config('employee.allow_hard_delete') && in_array((int) $employee->user->role_id, [2, 3], true))
+            <p class="text-sm text-gray-700 dark:text-gray-300 mb-3">
+                <strong>Temporary feature.</strong> Permanent delete removes the account and all related data:
+                documents, teaching guides, exam questionnaires, tasks, notifications, custom folders,
+                announcements they authored, and activity tied to this user. This cannot be undone.
             </p>
             <p class="text-sm text-gray-600 dark:text-gray-400 mb-4">
-                Prefer <strong>Deactivate</strong> if you only need to block login but keep files for archiving.
+                Prefer Deactivate if you only need to block login but keep files for archiving.
             </p>
 
             @error('confirm_username')
@@ -398,9 +374,10 @@
                     <i class="fas fa-trash-alt"></i> Permanently delete account and all data
                 </button>
             </form>
-        </div>
-    </div>
+        @endif
+    </section>
     @endif
+</div>
 @endsection
 
 @push('scripts')
@@ -415,7 +392,7 @@ function confirmPermanentDeleteAccount() {
 
     if (usernameInput && usernameInput.value.trim() !== expectedUser) {
         if (typeof Swal !== 'undefined') {
-            Swal.fire({ title: 'Username mismatch', text: 'Enter the exact username: ' + expectedUser, icon: 'error', confirmButtonColor: '#028a0f', customClass: { popup: 'swal-flat' } });
+            Swal.fire({ title: 'Username mismatch', text: 'Enter the exact username: ' + expectedUser, icon: 'error', confirmButtonColor: '#0d5c3b', customClass: { popup: 'swal-flat' } });
         } else {
             alert('Username does not match.');
         }
@@ -424,7 +401,7 @@ function confirmPermanentDeleteAccount() {
 
     if (phraseInput && phraseInput.value.trim() !== 'DELETE PERMANENTLY') {
         if (typeof Swal !== 'undefined') {
-            Swal.fire({ title: 'Confirmation required', text: 'Type DELETE PERMANENTLY in all caps.', icon: 'error', confirmButtonColor: '#028a0f', customClass: { popup: 'swal-flat' } });
+            Swal.fire({ title: 'Confirmation required', text: 'Type DELETE PERMANENTLY in all caps.', icon: 'error', confirmButtonColor: '#0d5c3b', customClass: { popup: 'swal-flat' } });
         } else {
             alert('Type DELETE PERMANENTLY to confirm.');
         }

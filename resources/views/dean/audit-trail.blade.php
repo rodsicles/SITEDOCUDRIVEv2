@@ -26,7 +26,7 @@
 
         {{-- Filter form --}}
         <form method="GET" action="{{ route('dean.audit-trail') }}"
-              class="mb-5 p-4 border border-gray-200 dark:border-gray-700 bg-gray-50 dark:bg-[#1e1e1e]">
+              class="audit-filter-panel">
             <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-5 gap-3">
 
                 <div class="form-group mb-0 lg:col-span-2">
@@ -85,14 +85,14 @@
 
         {{-- Results table --}}
         <div class="overflow-x-auto">
-            <table class="data-table compact" style="width: 100%;">
+            <table class="data-table compact audit-table">
                 <thead>
                     <tr>
-                        <th style="width: 16%;">Date &amp; Time</th>
-                        <th style="width: 20%;">User</th>
-                        <th style="width: 12%;">Role</th>
+                        <th class="audit-col-date">Date &amp; Time</th>
+                        <th class="audit-col-user">User</th>
+                        <th class="audit-col-role">Role</th>
                         <th>Action</th>
-                        <th style="width: 14%;">Type</th>
+                        <th class="audit-col-type">Type</th>
                     </tr>
                 </thead>
                 <tbody>

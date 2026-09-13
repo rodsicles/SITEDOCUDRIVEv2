@@ -2,67 +2,44 @@
 <html lang="en">
 <head>
     <meta charset="utf-8">
-    <title>403 - Forbidden</title>
-    <style>
-        body {
-            background: #1a2332;
-            color: #e2e8f0;
-            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            height: 100vh;
-            margin: 0;
-        }
-        .box {
-            text-align: center;
-            max-width: 480px;
-            padding: 0 20px;
-        }
-        .code {
-            display: inline-block;
-            font-weight: 700;
-            font-size: 1.1rem;
-            border-right: 1px solid #475569;
-            padding-right: 16px;
-            margin-right: 16px;
-            vertical-align: top;
-        }
-        .message {
-            display: inline-block;
-            text-align: left;
-            font-size: 0.95rem;
-            letter-spacing: 0.02em;
-            max-width: 320px;
-        }
-        form {
-            margin-top: 28px;
-        }
-        button {
-            background: #028a0f;
-            color: #fff;
-            border: none;
-            padding: 10px 24px;
-            font-size: 0.9rem;
-            cursor: pointer;
-            border-radius: 4px;
-        }
-        button:hover {
-            background: #026a0c;
-        }
-    </style>
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <title>Access Restricted - SITE DocuDrive</title>
+    <link rel="icon" type="image/png" href="{{ asset('images/SPUP-final-logo.png') }}">
+    @vite(['resources/css/app.css', 'resources/js/app.js'])
 </head>
-<body>
-    <div class="box">
-        <span class="code">403</span>
-        <span class="message">{{ $exception->getMessage() ?: 'Forbidden' }}</span>
-
-        @auth
-        <form action="{{ route('logout') }}" method="POST">
-            @csrf
-            <button type="submit">Log Out</button>
-        </form>
-        @endauth
-    </div>
+<body class="system-message-page">
+    <main class="system-message-shell">
+        <section class="system-message-panel" aria-labelledby="errorTitle">
+            <div class="system-message-brand">
+                <img src="{{ asset('images/site-logo.png') }}" alt="SITE logo">
+                <span>SITE DocuDrive</span>
+            </div>
+            <p class="system-message-code">Error 403</p>
+            <h1 id="errorTitle">Access restricted</h1>
+            <p>You do not have permission to open this page. Return to a page your role can access, or sign out.</p>
+            <div class="system-message-actions">
+                <button type="button" class="btn btn-secondary" onclick="history.back()">
+                    <i class="fas fa-arrow-left" aria-hidden="true"></i> Go back
+                </button>
+                @auth
+                @php
+                    $dashboardUrl = match (true) {
+                        auth()->user()->isFaculty() => route('faculty.dashboard'),
+                        auth()->user()->isProgramCoordinator() => route('coordinator.dashboard'),
+                        auth()->user()->isDeanOrSecretary() => route('dean.dashboard'),
+                        default => url('/'),
+                    };
+                @endphp
+                <a href="{{ $dashboardUrl }}" class="btn btn-primary">Dashboard</a>
+                <form action="{{ route('logout') }}" method="POST">
+                    @csrf
+                    <button type="submit" class="btn btn-secondary">
+                        <i class="fas fa-sign-out-alt" aria-hidden="true"></i> Sign out
+                    </button>
+                </form>
+                @endauth
+            </div>
+        </section>
+    </main>
 </body>
 </html>

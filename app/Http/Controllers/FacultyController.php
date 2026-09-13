@@ -95,10 +95,18 @@ class FacultyController extends Controller
         return redirect()->back()->with('success', 'Task status updated successfully');
     }
 
-    public function activityLog()
+    public function activityLog(Request $request)
     {
-        $activities = DashboardLog::getPaginatedLogs(auth()->user(), 20);
-        return view('activity-log', compact('activities'));
+        $filters = $request->validate([
+            'q' => 'nullable|string|max:100',
+            'activity_type' => 'nullable|string|max:100',
+        ]);
+
+        $user = auth()->user();
+        $activities = DashboardLog::getPaginatedLogs($user, 20, $filters);
+        $activityTypes = DashboardLog::visibleActivityTypes($user);
+
+        return view('activity-log', compact('activities', 'activityTypes', 'filters'));
     }
 
     public function documents(Request $request)

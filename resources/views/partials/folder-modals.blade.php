@@ -4,11 +4,11 @@
 @endphp
 
 {{-- Create Folder Modal --}}
-<div id="createFolderModal" class="modal-overlay" onclick="if(event.target===this)closeCreateFolderModal()">
-    <div class="modal-card">
+<div id="createFolderModal" class="modal-overlay" role="dialog" aria-modal="true" aria-hidden="true" aria-labelledby="createFolderModalTitle" onclick="if(event.target===this)closeCreateFolderModal()">
+    <div class="modal-card" role="document">
         <div class="modal-header">
-            <h3 class="modal-title"><i class="fas fa-folder-plus mr-2"></i> Create New Folder</h3>
-            <span class="modal-close" onclick="closeCreateFolderModal()">&times;</span>
+            <h3 class="modal-title" id="createFolderModalTitle"><i class="fas fa-folder-plus mr-2"></i> Create New Folder</h3>
+            <button type="button" class="modal-close" onclick="closeCreateFolderModal()" aria-label="Close create folder dialog"><i class="fas fa-times"></i></button>
         </div>
         <form id="createFolderForm" onsubmit="handleCreateFolder(event)">
             @csrf
@@ -21,8 +21,8 @@
                 <div class="form-group">
                     <label class="form-label">Color</label>
                     <div class="flex gap-2">
-                        <input type="color" name="color" id="folderColor" value="#028a0f" class="form-input w-20 h-10 p-1 cursor-pointer">
-                        <input type="text" value="#028a0f" class="form-input flex-1" readonly>
+                        <input type="color" name="color" id="folderColor" value="#0d5c3b" class="form-input w-20 h-10 p-1 cursor-pointer">
+                        <input type="text" value="#0d5c3b" class="form-input flex-1" readonly>
                     </div>
                 </div>
             </div>
@@ -39,11 +39,11 @@
 </div>
 
 {{-- Rename Folder Modal --}}
-<div id="renameFolderModal" class="modal-overlay" onclick="if(event.target===this)closeRenameFolderModal()">
-    <div class="modal-card">
+<div id="renameFolderModal" class="modal-overlay" role="dialog" aria-modal="true" aria-hidden="true" aria-labelledby="renameFolderModalTitle" onclick="if(event.target===this)closeRenameFolderModal()">
+    <div class="modal-card" role="document">
         <div class="modal-header">
-            <h3 class="modal-title"><i class="fas fa-edit mr-2"></i> Rename Folder</h3>
-            <span class="modal-close" onclick="closeRenameFolderModal()">&times;</span>
+            <h3 class="modal-title" id="renameFolderModalTitle"><i class="fas fa-edit mr-2"></i> Rename Folder</h3>
+            <button type="button" class="modal-close" onclick="closeRenameFolderModal()" aria-label="Close rename folder dialog"><i class="fas fa-times"></i></button>
         </div>
         <form id="renameFolderForm" onsubmit="handleRenameFolder(event)">
             @csrf
@@ -75,11 +75,11 @@
 </div>
 
 {{-- Move Document Modal --}}
-<div id="moveDocumentModal" class="modal-overlay" onclick="if(event.target===this)closeMoveDocumentModal()">
-    <div class="modal-card">
+<div id="moveDocumentModal" class="modal-overlay" role="dialog" aria-modal="true" aria-hidden="true" aria-labelledby="moveDocumentModalTitle" onclick="if(event.target===this)closeMoveDocumentModal()">
+    <div class="modal-card" role="document">
         <div class="modal-header">
-            <h3 class="modal-title"><i class="fas fa-arrow-right mr-2"></i> Move to Folder</h3>
-            <span class="modal-close" onclick="closeMoveDocumentModal()">&times;</span>
+            <h3 class="modal-title" id="moveDocumentModalTitle"><i class="fas fa-arrow-right mr-2"></i> Move to Folder</h3>
+            <button type="button" class="modal-close" onclick="closeMoveDocumentModal()" aria-label="Close move document dialog"><i class="fas fa-times"></i></button>
         </div>
         <form id="moveDocumentForm" onsubmit="handleMoveDocument(event)">
             @csrf
@@ -131,14 +131,22 @@
 function openCreateFolderModal() {
     const modal = document.getElementById('createFolderModal');
     const input = document.getElementById('newFolderName');
-    if (modal) modal.classList.add('active');
+    if (modal) {
+        modal.classList.add('active');
+        modal.setAttribute('aria-hidden', 'false');
+        document.body.style.overflow = 'hidden';
+    }
     if (input) input.focus();
 }
 
 function closeCreateFolderModal() {
     const modal = document.getElementById('createFolderModal');
     const form = document.getElementById('createFolderForm');
-    if (modal) modal.classList.remove('active');
+    if (modal) {
+        modal.classList.remove('active');
+        modal.setAttribute('aria-hidden', 'true');
+        document.body.style.overflow = '';
+    }
     if (form) form.reset();
 }
 
@@ -153,14 +161,22 @@ function openRenameFolderModal(folderId, folderName, folderColor) {
     if (nameInput) nameInput.value = folderName;
     if (colorInput) colorInput.value = folderColor;
     if (colorText) colorText.value = folderColor;
-    if (modal) modal.classList.add('active');
+    if (modal) {
+        modal.classList.add('active');
+        modal.setAttribute('aria-hidden', 'false');
+        document.body.style.overflow = 'hidden';
+    }
     if (nameInput) nameInput.focus();
 }
 
 function closeRenameFolderModal() {
     const modal = document.getElementById('renameFolderModal');
     const form = document.getElementById('renameFolderForm');
-    if (modal) modal.classList.remove('active');
+    if (modal) {
+        modal.classList.remove('active');
+        modal.setAttribute('aria-hidden', 'true');
+        document.body.style.overflow = '';
+    }
     if (form) form.reset();
 }
 
@@ -169,7 +185,11 @@ function openMoveDocumentModal(documentId) {
     const idInput = document.getElementById('moveDocumentId');
 
     if (idInput) idInput.value = documentId;
-    if (modal) modal.classList.add('active');
+    if (modal) {
+        modal.classList.add('active');
+        modal.setAttribute('aria-hidden', 'false');
+        document.body.style.overflow = 'hidden';
+    }
 
     // Clear previous selection
     document.querySelectorAll('#folderListForMove .folder-list-item').forEach(item => {
@@ -181,7 +201,11 @@ function closeMoveDocumentModal() {
     const modal = document.getElementById('moveDocumentModal');
     const folderIdInput = document.getElementById('selectedFolderId');
 
-    if (modal) modal.classList.remove('active');
+    if (modal) {
+        modal.classList.remove('active');
+        modal.setAttribute('aria-hidden', 'true');
+        document.body.style.overflow = '';
+    }
     if (folderIdInput) folderIdInput.value = '';
 }
 
@@ -199,6 +223,13 @@ function showCreateFolderFromMove() {
     closeMoveDocumentModal();
     openCreateFolderModal();
 }
+
+document.addEventListener('keydown', function (event) {
+    if (event.key !== 'Escape') return;
+    if (document.getElementById('createFolderModal')?.classList.contains('active')) closeCreateFolderModal();
+    if (document.getElementById('renameFolderModal')?.classList.contains('active')) closeRenameFolderModal();
+    if (document.getElementById('moveDocumentModal')?.classList.contains('active')) closeMoveDocumentModal();
+});
 
 // Folder CRUD Functions
 async function handleCreateFolder(event) {

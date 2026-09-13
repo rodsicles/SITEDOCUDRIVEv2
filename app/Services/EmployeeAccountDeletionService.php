@@ -9,6 +9,7 @@ use App\Models\DocumentFavorite;
 use App\Models\DocumentView;
 use App\Models\Employee;
 use App\Models\ExamQuestionnaire;
+use App\Models\Report;
 use App\Models\ExamRecord;
 use App\Models\Folder;
 use App\Models\Task;
@@ -54,6 +55,7 @@ class EmployeeAccountDeletionService
             'documents' => 0,
             'teaching_guides' => 0,
             'exam_questionnaires' => 0,
+            'reports' => 0,
             'exam_records' => 0,
             'tasks' => 0,
             'folders' => 0,
@@ -72,6 +74,7 @@ class EmployeeAccountDeletionService
                 ->update(['document_id' => null]);
 
             $summary['exam_questionnaires'] = $this->deleteExamQuestionnaires($userId);
+            $summary['reports'] = $this->deleteReports($userId);
             $summary['teaching_guides'] = $this->deleteTeachingGuides($userId);
             $summary['documents'] = $this->deleteDocuments($userId);
             $summary['exam_records'] = ExamRecord::query()->where('recorded_by', $userId)->delete();
@@ -96,6 +99,24 @@ class EmployeeAccountDeletionService
         });
 
         return $summary;
+    }
+
+    protected function deleteReports(int $userId): int
+    {
+        $count = 0;
+
+        Report::query()
+            ->where('submitted_by', $userId)
+            ->orderBy('report_id')
+            ->chunkById(50, function ($rows) use (&$count) {
+                foreach ($rows as $row) {
+                    $this->deleteStoredFile($row->file_path);
+                    $row->delete();
+                    $count++;
+                }
+            }, 'report_id');
+
+        return $count;
     }
 
     protected function deleteExamQuestionnaires(int $userId): int

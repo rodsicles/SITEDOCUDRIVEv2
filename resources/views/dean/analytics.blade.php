@@ -10,28 +10,62 @@
 @endsection
 
 @section('content')
+@php
+    $taskTotal = ($taskStatusData ?? collect())->sum('count');
+    $inactiveCount = ($inactiveUsers ?? collect())->count();
+    $latestWeek = ($weeklyTrend ?? collect())->last();
+    $taskMax = max($taskTotal ?: 1, 1);
+@endphp
+
+<div class="analytics-page">
+    <div class="analytics-stats" aria-label="Key analytics">
+        <div class="analytics-stat">
+            <div class="analytics-stat__value">{{ number_format($totalSubmissions ?? 0) }}</div>
+            <div class="analytics-stat__label">Submissions</div>
+        </div>
+        <div class="analytics-stat">
+            <div class="analytics-stat__value">{{ $latestWeek['actions'] ?? 0 }}</div>
+            <div class="analytics-stat__label">Latest week actions</div>
+        </div>
+        <div class="analytics-stat">
+            <div class="analytics-stat__value">{{ $inactiveCount }}</div>
+            <div class="analytics-stat__label">Inactive users</div>
+        </div>
+        <div class="analytics-stat">
+            <div class="analytics-stat__value">{{ number_format($taskTotal) }}</div>
+            <div class="analytics-stat__label">Tasks</div>
+        </div>
+    </div>
+
+    <p class="sr-only">
+        {{ number_format($totalSubmissions ?? 0) }} submissions in the selected school year.
+        Latest recorded week had {{ $latestWeek['actions'] ?? 0 }} actions.
+        {{ $inactiveCount }} users are inactive. {{ number_format($taskTotal) }} tasks are in the system.
+    </p>
+
     @include('partials.engagement-analytics')
 
     @include('partials.submission-analytics')
 
-    <div class="content-card">
+    <section class="analytics-section content-card mb-0" aria-labelledby="task-status-heading">
         <div class="card-header">
-            <h3 class="card-title"><i class="fas fa-tasks mr-2"></i>Task Status Distribution</h3>
+            <h3 id="task-status-heading" class="card-title">Task status</h3>
         </div>
-        <div class="py-2">
+        <div class="p-4">
             @forelse($taskStatusData as $status)
-                <div class="mb-5">
-                    <div class="flex justify-between mb-2">
-                        <span class="font-semibold text-sm text-gray-800 dark:text-gray-200">{{ $status->status }}</span>
-                        <span class="text-sm text-gray-500 dark:text-gray-400">{{ $status->count }} tasks</span>
+                <div class="ui-meter">
+                    <div class="ui-meter__row">
+                        <span class="ui-meter__label">{{ $status->status }}</span>
+                        <span class="ui-meter__value">{{ $status->count }} tasks</span>
                     </div>
-                    <div class="bg-gray-200 dark:bg-gray-700 h-2.5 overflow-hidden">
-                        <div class="bg-gradient-to-r from-[#4caf50] to-[#028a0f] h-full" style="width: {{ ($status->count / max($taskStatusData->sum('count'), 1)) * 100 }}%;"></div>
+                    <div class="ui-meter__track" aria-hidden="true">
+                        <div class="ui-meter__fill" style="width: {{ ($status->count / $taskMax) * 100 }}%;"></div>
                     </div>
                 </div>
             @empty
-                <p class="text-center text-gray-500 dark:text-gray-400 py-8">No task data available</p>
+                @include('partials.ui.empty-state', ['title' => 'No task data', 'text' => 'No task data available.'])
             @endforelse
         </div>
-    </div>
+    </section>
+</div>
 @endsection

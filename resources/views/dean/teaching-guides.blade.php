@@ -19,20 +19,21 @@
             <h3 class="card-title">Teaching Guide Submissions</h3>
             <span class="badge badge-info">{{ $guides->total() }} Submissions</span>
             @if(($pendingCount ?? 0) > 0)
-                <span class="badge" style="background:#b45309;color:#fff;">{{ $pendingCount }} Pending Review</span>
+                <span class="badge badge-warning">{{ $pendingCount }} Pending Review</span>
             @endif
         </div>
 
         <div class="submission-toolbar">
-            <div class="submission-toolbar__group">
-                <label class="submission-toolbar__label">Status</label>
-                <select onchange="window.location.href=this.value" class="form-control submission-toolbar__select">
-                    <option value="{{ route('dean.teaching-guides.index') }}">All</option>
-                    @foreach(['pending','approved','rejected'] as $s)
-                        <option value="{{ route('dean.teaching-guides.index', ['status' => $s]) }}" {{ ($statusFilter ?? '') === $s ? 'selected' : '' }}>{{ ucfirst($s) }}</option>
-                    @endforeach
-                </select>
-            </div>
+            <nav class="ui-segmented" aria-label="Submission status">
+                <a href="{{ route('dean.teaching-guides.index', array_filter(['semester' => $semesterFilter ?? null, 'search' => $search ?: null])) }}"
+                   class="{{ ($statusFilter ?? '') === '' ? 'is-active' : '' }}">All</a>
+                <a href="{{ route('dean.teaching-guides.index', array_filter(['status' => 'pending', 'semester' => $semesterFilter ?? null, 'search' => $search ?: null])) }}"
+                   class="{{ ($statusFilter ?? '') === 'pending' ? 'is-active' : '' }}">Pending{{ ($pendingCount ?? 0) > 0 ? ' · '.$pendingCount : '' }}</a>
+                <a href="{{ route('dean.teaching-guides.index', array_filter(['status' => 'approved', 'semester' => $semesterFilter ?? null, 'search' => $search ?: null])) }}"
+                   class="{{ ($statusFilter ?? '') === 'approved' ? 'is-active' : '' }}">Approved</a>
+                <a href="{{ route('dean.teaching-guides.index', array_filter(['status' => 'rejected', 'semester' => $semesterFilter ?? null, 'search' => $search ?: null])) }}"
+                   class="{{ ($statusFilter ?? '') === 'rejected' ? 'is-active' : '' }}">Rejected</a>
+            </nav>
             <div class="submission-toolbar__group">
                 <label class="submission-toolbar__label">Semester</label>
                 <select onchange="window.location.href=this.value" class="form-control submission-toolbar__select">
@@ -114,10 +115,10 @@
     @include('partials.submission-review-table-scripts')
 
     {{-- Reject Modal --}}
-    <div id="tgRejectModal" style="display:none;position:fixed;inset:0;background:rgba(0,0,0,0.5);z-index:1000;align-items:center;justify-content:center;">
-        <div class="content-card" style="width:100%;max-width:480px;margin:auto;">
+    <div id="tgRejectModal" class="modal-overlay" hidden role="dialog" aria-modal="true" aria-labelledby="tgRejectTitle">
+        <div class="modal-card">
             <div class="card-header">
-                <h3 class="card-title">Reject Teaching Guide</h3>
+                <h3 class="card-title" id="tgRejectTitle">Reject Teaching Guide</h3>
                 <button type="button" onclick="closeTgRejectModal()" class="btn btn-sm bg-gray-200 dark:bg-gray-700"><i class="fas fa-times"></i></button>
             </div>
             <form id="tgRejectForm" method="POST">
@@ -137,10 +138,14 @@
     <script>
         function openTgRejectModal(id) {
             document.getElementById('tgRejectForm').action = '{{ url('/dean/teaching-guides') }}/' + id + '/reject';
-            document.getElementById('tgRejectModal').style.display = 'flex';
+            const modal = document.getElementById('tgRejectModal');
+            modal.hidden = false;
+            modal.classList.add('active');
         }
         function closeTgRejectModal() {
-            document.getElementById('tgRejectModal').style.display = 'none';
+            const modal = document.getElementById('tgRejectModal');
+            modal.classList.remove('active');
+            modal.hidden = true;
         }
     </script>
 @endsection

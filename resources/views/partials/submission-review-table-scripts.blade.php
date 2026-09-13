@@ -27,7 +27,7 @@ function confirmSubmissionApprove(formId, submissionTitle) {
             showCancelButton: true,
             confirmButtonText: 'Approve',
             cancelButtonText: 'Cancel',
-            confirmButtonColor: '#028a0f',
+            confirmButtonColor: '#0d5c3b',
             cancelButtonColor: '#6b7280',
             width: '22rem',
             padding: '1.25rem 1.35rem 1rem',

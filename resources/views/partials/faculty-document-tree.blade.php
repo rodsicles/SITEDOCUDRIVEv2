@@ -32,7 +32,7 @@
             <details class="doc-tree-category">
                 <summary class="doc-tree-category__summary">
                     <span class="doc-tree-category__label">
-                        <i class="fas fa-folder text-[#028a0f]" aria-hidden="true"></i>
+                        <i class="fas fa-folder" aria-hidden="true"></i>
                         {{ $categoryName }}
                     </span>
                     <span class="doc-tree-count">{{ $catCount }}</span>

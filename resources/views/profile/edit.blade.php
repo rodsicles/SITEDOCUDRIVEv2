@@ -21,19 +21,13 @@
 @php
     $displayName = optional($employee)->full_name ?? $user->username;
     $roleName = $user->role->role_name ?? '';
+    $departmentValue = old('department', optional($employee)->department);
+    $departments = ['Engineering', 'Information Technology'];
 @endphp
 
 <div class="profile-edit-page">
     <div class="content-card profile-edit-card">
-        <div class="card-header profile-edit-card__header">
-            <h3 class="card-title profile-edit-card__title mb-0">
-                <i class="fas fa-user-circle mr-1.5" aria-hidden="true"></i>
-                Profile Information
-            </h3>
-        </div>
-
-        {{-- Identity strip --}}
-        <div class="profile-identity">
+        <section class="profile-identity" aria-label="Profile photo and name">
             <form action="{{ route('profile.avatar') }}" method="POST" enctype="multipart/form-data" id="avatarForm" class="profile-identity__avatar-form">
                 @csrf
                 <div class="profile-identity__avatar">
@@ -64,14 +58,14 @@
                 </div>
             </form>
 
-            <div class="profile-identity__meta min-w-0">
+            <div class="profile-identity__meta">
                 <div class="profile-identity__name">{{ $displayName }}</div>
                 @if($roleName !== '')
                     <span class="profile-identity__role">{{ $roleName }}</span>
                 @endif
                 <p class="profile-identity__hint">Click the camera to upload a photo (JPG, PNG, or WebP, max 2MB)</p>
             </div>
-        </div>
+        </section>
 
         @error('avatar')
             <p class="profile-edit-error">{{ $message }}</p>
@@ -80,122 +74,155 @@
         <form action="{{ route('profile.update') }}" method="POST" class="profile-edit-form">
             @csrf
 
-            <section class="profile-section" aria-labelledby="profile-account-heading">
-                <h4 id="profile-account-heading" class="profile-section__title">Account</h4>
+            <section class="profile-section" aria-labelledby="profile-personal-heading">
+                <h3 id="profile-personal-heading" class="profile-section__title">Personal details</h3>
+
                 <div class="profile-edit-grid">
                     <div class="form-group">
-                        <label class="form-label">
-                            Full Name
+                        <label class="form-label" for="profileFullName">
+                            Full name
                             @if(!$canEditFullName)
                                 <span class="profile-field-tag">Read-only</span>
                             @endif
                         </label>
                         <input type="text"
+                               id="profileFullName"
                                name="full_name"
-                               class="form-control {{ !$canEditFullName ? 'is-readonly' : '' }}"
+                               class="form-control {{ !$canEditFullName ? 'is-readonly' : '' }} @error('full_name') is-invalid @enderror"
                                value="{{ old('full_name', optional($employee)->full_name) }}"
                                @if($canEditFullName) required @else readonly disabled @endif>
                         @if(!$canEditFullName)
                             <small class="profile-edit-note">Only the Dean or Program Coordinator can change your name.</small>
                         @endif
+                        @error('full_name')
+                            <small class="profile-edit-error-inline">{{ $message }}</small>
+                        @enderror
                     </div>
 
                     <div class="form-group">
-                        <label class="form-label">
-                            Email Address
+                        <label class="form-label" for="profileEmail">
+                            Email address
                             <span class="profile-field-tag profile-field-tag--muted">Optional</span>
                         </label>
                         <input type="email"
+                               id="profileEmail"
                                name="email"
-                               class="form-control"
+                               class="form-control @error('email') is-invalid @enderror"
                                value="{{ old('email', $user->email) }}"
                                placeholder="you@example.com">
+                        @error('email')
+                            <small class="profile-edit-error-inline">{{ $message }}</small>
+                        @enderror
                     </div>
 
                     <div class="form-group">
-                        <label class="form-label">
+                        <label class="form-label" for="profileUsername">
                             Username
                             <span class="profile-field-tag">Read-only</span>
                         </label>
-                        <input type="text" class="form-control is-readonly" value="{{ $user->username }}" disabled>
+                        <input type="text" id="profileUsername" class="form-control is-readonly" value="{{ $user->username }}" disabled>
                     </div>
-                </div>
-            </section>
 
-            <section class="profile-section" aria-labelledby="profile-employment-heading">
-                <h4 id="profile-employment-heading" class="profile-section__title">Employment</h4>
-                <div class="profile-edit-grid">
                     <div class="form-group">
-                        <label class="form-label">Employee Number</label>
+                        <label class="form-label" for="profileEmployeeNo">Employee number</label>
                         <input type="text"
+                               id="profileEmployeeNo"
                                name="employee_no"
-                               class="form-control"
+                               class="form-control @error('employee_no') is-invalid @enderror"
                                value="{{ old('employee_no', optional($employee)->employee_no) }}">
+                        @error('employee_no')
+                            <small class="profile-edit-error-inline">{{ $message }}</small>
+                        @enderror
                     </div>
 
                     <div class="form-group">
-                        <label class="form-label">Department</label>
-                        <input type="text"
-                               name="department"
-                               class="form-control"
-                               value="{{ old('department', optional($employee)->department) }}">
+                        <label class="form-label" for="profileDepartment">Department</label>
+                        <select id="profileDepartment"
+                                name="department"
+                                class="form-control @error('department') is-invalid @enderror">
+                            <option value="">Select department</option>
+                            @foreach($departments as $department)
+                                <option value="{{ $department }}" @selected($departmentValue === $department)>{{ $department }}</option>
+                            @endforeach
+                        </select>
+                        @error('department')
+                            <small class="profile-edit-error-inline">{{ $message }}</small>
+                        @enderror
                     </div>
 
                     <div class="form-group">
-                        <label class="form-label">
+                        <label class="form-label" for="profileRole">
                             Role
                             <span class="profile-field-tag">Read-only</span>
                         </label>
-                        <input type="text" class="form-control is-readonly" value="{{ $roleName }}" disabled>
+                        <input type="text" id="profileRole" class="form-control is-readonly" value="{{ $roleName }}" disabled>
                     </div>
                 </div>
-            </section>
 
-            <div class="profile-edit-actions">
-                <button type="submit" class="btn btn-primary profile-edit-btn">
-                    <i class="fas fa-save" aria-hidden="true"></i> Update Profile
-                </button>
-                <a href="#change-password" class="profile-edit-link">
-                    <i class="fas fa-key" aria-hidden="true"></i> Change password
-                </a>
-            </div>
+                <div class="profile-edit-actions">
+                    <button type="submit" class="btn btn-primary profile-edit-btn">
+                        <i class="fas fa-save" aria-hidden="true"></i> Update Profile
+                    </button>
+                </div>
+            </section>
         </form>
     </div>
 
     <div id="change-password" class="content-card profile-edit-card profile-edit-card--password">
-        <div class="card-header profile-edit-card__header">
-            <h3 class="card-title profile-edit-card__title mb-0">
-                <i class="fas fa-lock mr-1.5" aria-hidden="true"></i>
-                Change Password
-            </h3>
-        </div>
-
         <form action="{{ route('profile.change-password') }}" method="POST" class="profile-edit-form">
             @csrf
 
-            <div class="profile-edit-grid profile-edit-grid--password">
-                <div class="form-group">
-                    <label class="form-label">Current Password</label>
-                    <input type="password" name="current_password" class="form-control" required autocomplete="current-password">
+            <section class="profile-section profile-section--flush" aria-labelledby="profile-security-heading">
+                <h3 id="profile-security-heading" class="profile-section__title">Account security</h3>
+                <p class="profile-section__lede">Change the password you use to sign in to SITE DocuDrive.</p>
+
+                <div class="profile-edit-grid profile-edit-grid--password">
+                    <div class="form-group profile-edit-grid__span">
+                        <label class="form-label" for="currentPassword">Current password</label>
+                        <input type="password"
+                               id="currentPassword"
+                               name="current_password"
+                               class="form-control @error('current_password') is-invalid @enderror"
+                               required
+                               autocomplete="current-password">
+                        @error('current_password')
+                            <small class="profile-edit-error-inline">{{ $message }}</small>
+                        @enderror
+                    </div>
+
+                    <div class="form-group">
+                        <label class="form-label" for="newPassword">New password</label>
+                        <input type="password"
+                               id="newPassword"
+                               name="new_password"
+                               class="form-control @error('new_password') is-invalid @enderror"
+                               required
+                               minlength="8"
+                               autocomplete="new-password">
+                        <small class="profile-edit-note">Minimum 8 characters</small>
+                        @error('new_password')
+                            <small class="profile-edit-error-inline">{{ $message }}</small>
+                        @enderror
+                    </div>
+
+                    <div class="form-group">
+                        <label class="form-label" for="confirmNewPassword">Confirm new password</label>
+                        <input type="password"
+                               id="confirmNewPassword"
+                               name="new_password_confirmation"
+                               class="form-control"
+                               required
+                               minlength="8"
+                               autocomplete="new-password">
+                    </div>
                 </div>
 
-                <div class="form-group">
-                    <label class="form-label">New Password</label>
-                    <input type="password" name="new_password" class="form-control" required minlength="8" autocomplete="new-password">
-                    <small class="profile-edit-note">Minimum 8 characters</small>
+                <div class="profile-edit-actions">
+                    <button type="submit" class="btn btn-primary profile-edit-btn">
+                        <i class="fas fa-key" aria-hidden="true"></i> Change Password
+                    </button>
                 </div>
-
-                <div class="form-group">
-                    <label class="form-label">Confirm New Password</label>
-                    <input type="password" name="new_password_confirmation" class="form-control" required minlength="8" autocomplete="new-password">
-                </div>
-            </div>
-
-            <div class="profile-edit-actions">
-                <button type="submit" class="btn btn-primary profile-edit-btn">
-                    <i class="fas fa-key" aria-hidden="true"></i> Change Password
-                </button>
-            </div>
+            </section>
         </form>
     </div>
 </div>

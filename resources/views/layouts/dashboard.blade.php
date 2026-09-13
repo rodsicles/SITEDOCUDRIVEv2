@@ -8,141 +8,11 @@
     <title>@yield('title', 'Employee Dashboard with Data Analytics - SITE')</title>
     <link rel="icon" type="image/png" href="{{ asset('images/SPUP-final-logo.png') }}">
     @vite(['resources/css/app.css', 'resources/js/app.js'])
-    <style>
-        /* Menu Item Styles */
-        .menu-item {
-            padding: 8px 12px;
-            margin: 2px 0;
-            display: flex;
-            align-items: center;
-            color: #2c3e50;
-            text-decoration: none;
-            position: relative;
-            font-weight: 500;
-            font-size: 0.875rem;
-            letter-spacing: 0em;
-            border: 1px solid transparent;
-            background: transparent;
-        }
-
-        [data-theme="dark"] .menu-item {
-            color: #e0e0e0;
-        }
-
-        .menu-item:active {
-            background: rgba(2, 138, 15, 0.1);
-            border-color: #028a0f;
-        }
-
-        .menu-item.active {
-            background: #028a0f;
-            color: white;
-            font-weight: 600;
-            border-color: #028a0f;
-        }
-
-        .menu-item.active:active {
-            background: #026a0c;
-            border-color: #026a0c;
-        }
-
-        .menu-item i {
-            margin-right: 10px;
-            font-size: 1rem;
-            width: 20px;
-            text-align: center;
-        }
-
-        /* Badge Styles */
-        .badge {
-            padding: 4px 10px;
-            font-size: 11px;
-            font-weight: 600;
-            display: inline-block;
-            border: 1px solid #d0d0d0;
-        }
-
-        .badge-danger {
-            background: #f8d7da;
-            color: #721c24;
-            border-color: #f5c6cb;
-        }
-
-        /* Responsive */
-        @media (max-width: 768px) {
-            .sidebar {
-                transform: translateX(-100%);
-                transition: transform 0.3s ease;
-            }
-
-            .sidebar.active {
-                transform: translateX(0);
-            }
-
-            .main-content {
-                margin-left: 0 !important;
-                width: 100% !important;
-                padding: 0.75rem !important;
-            }
-
-            .top-bar {
-                padding: 0.75rem 1rem !important;
-                margin-bottom: 0.75rem !important;
-            }
-
-            .top-bar h1 {
-                font-size: 1.25rem !important;
-            }
-
-            .top-bar p {
-                font-size: 0.75rem !important;
-            }
-
-            .stats-grid {
-                grid-template-columns: 1fr 1fr !important;
-                gap: 0.5rem !important;
-            }
-
-            .stat-card {
-                padding: 0.75rem !important;
-            }
-
-            .stat-value {
-                font-size: 1.25rem !important;
-            }
-
-            .stat-label {
-                font-size: 0.65rem !important;
-            }
-
-            .content-card {
-                padding: 0.75rem !important;
-                margin-bottom: 0.75rem !important;
-            }
-
-            .data-table {
-                font-size: 0.75rem;
-            }
-
-            .data-table thead th {
-                font-size: 0.6rem;
-                padding: 0.4rem 0.4rem;
-            }
-
-            .data-table tbody td {
-                padding: 0.4rem 0.4rem;
-            }
-        }
-
-        @media (max-width: 480px) {
-            .stats-grid {
-                grid-template-columns: 1fr !important;
-            }
-        }
-    </style>
     @stack('styles')
 </head>
-<body class="overflow-x-hidden bg-gray-100 dark:bg-[#121212] text-gray-800 dark:text-gray-200" data-font-size="medium">
+<body class="site-app-body authenticated-ui route-{{ str_replace('.', '-', request()->route()?->getName() ?? 'page') }} overflow-x-hidden text-gray-800 dark:text-gray-200"
+      data-font-size="medium"
+      data-user-role="{{ auth()->user()->role->role_name ?? 'user' }}">
 
 
     <div class="flex min-h-screen">
@@ -150,7 +20,7 @@
         <div id="sidebarOverlay" class="fixed inset-0 bg-black/50 z-[999] hidden md:hidden"></div>
 
         <!-- Sidebar -->
-        <aside class="w-64 bg-white dark:bg-[#2a2a2a] border-r border-gray-200 dark:border-gray-700 fixed h-screen overflow-hidden z-[1000] sidebar">
+        <aside id="appSidebar" class="w-64 fixed h-screen overflow-hidden z-[1000] sidebar" aria-label="Primary navigation">
             <div class="sidebar-brand">
                 <div class="sidebar-brand-heading">
                     <img src="{{ asset('images/site-logo.png') }}" alt="SITE Logo" class="sidebar-brand-logo">
@@ -167,12 +37,12 @@
         </aside>
 
         <!-- Main Content -->
-        <main class="ml-64 flex-1 p-8 w-[calc(100%-16rem)] main-content">
+        <main class="ml-64 flex-1 p-8 w-[calc(100%-16rem)] main-content" id="main-content">
             <!-- Top Bar -->
-            <div class="bg-white dark:bg-[#2a2a2a] p-4 px-6 border border-gray-200 dark:border-gray-700 mb-4 flex justify-between items-center gap-4 top-bar sticky top-0 z-[300] shadow-sm">
+            <div class="p-4 px-6 mb-4 flex justify-between items-center gap-4 top-bar sticky top-0 z-[300]">
                 <div class="flex items-center gap-3 min-w-0 flex-shrink-0">
                     <!-- Mobile Hamburger Menu -->
-                    <button id="mobileMenuToggle" class="hidden max-md:block text-xl text-gray-800 dark:text-gray-200 bg-transparent border-none cursor-pointer flex-shrink-0 p-1">
+                    <button id="mobileMenuToggle" class="hidden max-md:block top-control text-xl text-gray-800 dark:text-gray-200 cursor-pointer flex-shrink-0" type="button" aria-label="Open navigation menu" aria-controls="appSidebar" aria-expanded="false">
                         <i class="fas fa-bars"></i>
                     </button>
                     <div class="min-w-0">
@@ -196,23 +66,23 @@
                     @endphp
                     @if($notificationsPageUrl)
                     <div class="relative" id="notification-dropdown-wrap">
-                        <button type="button" class="relative bg-transparent border-none text-gray-600 dark:text-gray-400 cursor-pointer p-1 flex flex-col items-center leading-none" id="notification-bell-btn" aria-label="Notifications" aria-expanded="false" aria-haspopup="true">
+                        <button type="button" class="relative top-control text-gray-600 dark:text-gray-400 cursor-pointer flex flex-col items-center leading-none" id="notification-bell-btn" aria-label="Notifications" aria-expanded="false" aria-haspopup="true">
                             <span class="relative text-lg max-md:text-base">
                                 <i class="fas fa-bell"></i>
-                                <span id="notification-badge" class="absolute -top-2 -right-2 bg-[#028a0f] text-white w-4 h-4 text-xs flex items-center justify-center font-bold {{ (isset($unreadNotifications) && $unreadNotifications > 0) ? '' : 'hidden' }}">{{ $unreadNotifications ?? 0 }}</span>
+                                <span id="notification-badge" class="absolute -top-2 -right-2 bg-[#0d5c3b] text-white w-4 h-4 text-xs flex items-center justify-center font-bold {{ (isset($unreadNotifications) && $unreadNotifications > 0) ? '' : 'hidden' }}">{{ $unreadNotifications ?? 0 }}</span>
                             </span>
                             <i class="fas fa-caret-down text-[9px] mt-0.5 opacity-70"></i>
                         </button>
                         <div id="notification-dropdown" class="hidden notification-dropdown absolute top-full right-0 mt-2 w-[min(22rem,calc(100vw-2rem))] bg-white dark:bg-[#2a2a2a] border border-gray-200 dark:border-gray-700 shadow-lg z-[1000]">
                             <div class="notification-dropdown-header">
                                 <span class="font-semibold text-sm text-gray-800 dark:text-gray-200">Notifications</span>
-                                <button type="button" id="notification-mark-all-btn" class="text-xs text-[#028a0f] dark:text-[#34d399] bg-transparent border-none cursor-pointer font-semibold hidden">Mark all read</button>
+                                <button type="button" id="notification-mark-all-btn" class="text-xs text-[#0d5c3b] dark:text-[#56c596] bg-transparent border-none cursor-pointer font-semibold hidden">Mark all read</button>
                             </div>
                             <div id="notification-dropdown-list" class="notification-dropdown-list">
                                 <p class="notification-dropdown-empty">Loading...</p>
                             </div>
                             <div class="notification-dropdown-footer">
-                                <a href="{{ $notificationsPageUrl }}" class="text-xs font-semibold text-[#028a0f] dark:text-[#34d399] no-underline">See all notifications</a>
+                                <a href="{{ $notificationsPageUrl }}" class="text-xs font-semibold text-[#0d5c3b] dark:text-[#56c596] no-underline">See all notifications</a>
                             </div>
                         </div>
                     </div>
@@ -222,7 +92,7 @@
                     <div class="flex gap-2 max-md:gap-1 items-center">
                         <!-- Font Size (hidden on mobile) -->
                         <div class="relative max-md:hidden">
-                            <button id="fontSizeBtn" class="bg-transparent border-none text-gray-600 dark:text-gray-400 text-lg p-2 cursor-pointer" title="Font Size">
+                            <button id="fontSizeBtn" class="top-control text-gray-600 dark:text-gray-400 text-lg cursor-pointer" type="button" title="Font size" aria-label="Font size" aria-haspopup="true" aria-expanded="false">
                                 <i class="fas fa-text-height"></i>
                             </button>
                             <div id="fontSizeMenu" class="hidden absolute top-full right-0 bg-white dark:bg-[#2a2a2a] border border-gray-200 dark:border-gray-700 p-2 min-w-[100px] z-[1000] mt-1">
@@ -233,20 +103,20 @@
                         </div>
 
                         <!-- Dark Mode Toggle -->
-                        <button id="darkModeToggle" class="bg-transparent border-none text-gray-600 dark:text-gray-400 text-lg max-md:text-base p-2 max-md:p-1 cursor-pointer" title="Toggle Dark Mode">
+                        <button id="darkModeToggle" class="top-control text-gray-600 dark:text-gray-400 text-lg max-md:text-base cursor-pointer" type="button" title="Toggle color theme" aria-label="Toggle color theme">
                             <i class="fas fa-moon"></i>
                         </button>
 
                         <!-- Global Search -->
-                        <button id="globalSearchBtn" class="bg-transparent border-none text-gray-600 dark:text-gray-400 text-lg max-md:text-base p-2 max-md:p-1 cursor-pointer" title="Search">
+                        <button id="globalSearchBtn" class="top-control text-gray-600 dark:text-gray-400 text-lg max-md:text-base cursor-pointer" type="button" title="Search" aria-label="Open global search">
                             <i class="fas fa-search"></i>
                         </button>
                     </div>
 
                     @if(auth()->user()->avatarUrl())
-                        <img src="{{ auth()->user()->avatarUrl() }}" alt="Profile picture" class="w-10 h-10 max-md:w-8 max-md:h-8 rounded-full object-cover flex-shrink-0 border border-[#026a0c]">
+                        <img src="{{ auth()->user()->avatarUrl() }}" alt="Profile picture" class="w-10 h-10 max-md:w-8 max-md:h-8 rounded-full object-cover flex-shrink-0 border border-[#08472e]">
                     @else
-                        <div class="w-10 h-10 max-md:w-8 max-md:h-8 bg-[#028a0f] text-white flex items-center justify-center font-semibold text-sm max-md:text-xs flex-shrink-0 border border-[#026a0c]">
+                        <div class="w-10 h-10 max-md:w-8 max-md:h-8 bg-[#0d5c3b] text-white flex items-center justify-center font-semibold text-sm max-md:text-xs flex-shrink-0 border border-[#08472e]">
                             {{ auth()->user()->initials() }}
                         </div>
                     @endif
@@ -261,7 +131,7 @@
                             <div class="px-4 py-3 border-b border-gray-200 dark:border-gray-700">
                                 <p class="text-sm font-semibold text-gray-800 dark:text-gray-200 m-0">{{ auth()->user()->employee->full_name ?? auth()->user()->username }}</p>
                                 <p class="text-xs text-gray-500 dark:text-gray-400 m-0 mt-1">
-                                    <span class="inline-block px-2 py-0.5 bg-[#028a0f] text-white text-[10px] font-semibold">{{ auth()->user()->role->role_name }}</span>
+                                    <span class="inline-block px-2 py-0.5 bg-[#0d5c3b] text-white text-[10px] font-semibold">{{ auth()->user()->role->role_name }}</span>
                                 </p>
                             </div>
                             <!-- Menu Items -->
@@ -287,18 +157,18 @@
             <!-- Alerts removed - using toast only -->
 
             <!-- Page Content -->
+            <div class="app-page">
             @yield('content')
+            </div>
         </main>
     </div>
 
     <!-- Global Search Modal -->
-    <div id="searchModal" class="hidden fixed inset-0 bg-black/60 z-[9999] items-start justify-center pt-14">
-        <div class="bg-white dark:bg-[#2a2a2a] w-[92%] max-w-3xl border border-gray-200 dark:border-gray-700">
-            <div class="p-4 border-b border-gray-200 dark:border-gray-700">
-                <input type="text" id="globalSearchInput" placeholder="Search files, announcements, users..." autocomplete="off" maxlength="80" class="w-full px-3 py-3 border-2 border-gray-300 dark:border-gray-600 text-[1.05rem] leading-snug focus:outline-none focus:border-[#028a0f] dark:focus:border-[#028a0f] bg-white dark:bg-[#1e1e1e] text-gray-800 dark:text-gray-200">
-            </div>
-            <div id="searchResults" class="max-h-80 overflow-y-auto p-3">
-                <p class="text-center text-gray-600 dark:text-gray-400 p-5 text-sm">Type to search...</p>
+    <div id="searchModal" class="hidden fixed inset-0 bg-black/60 z-[9999] items-start justify-center pt-14" role="dialog" aria-modal="true" aria-label="Search">
+        <div class="search-palette">
+            <input type="text" id="globalSearchInput" placeholder="Search files, announcements, and people" autocomplete="off" maxlength="80" class="search-palette__input">
+            <div id="searchResults" class="search-palette__results" role="listbox">
+                <p class="search-palette__hint">Type at least 3 characters.</p>
             </div>
         </div>
     </div>
@@ -306,7 +176,7 @@
 
 
     <!-- Toast Container -->
-    <div id="toastContainer" class="fixed top-20 right-5 z-[10000]"></div>
+    <div id="toastContainer" class="ui-toast-stack" aria-live="polite" aria-atomic="true"></div>
 
     <script>
         // Dark Mode Toggle
@@ -386,29 +256,27 @@
         const globalSearchBtn = document.getElementById('globalSearchBtn');
         const searchInput = document.getElementById('globalSearchInput');
         const searchResults = document.getElementById('searchResults');
-        
-        globalSearchBtn.addEventListener('click', () => {
+        let searchActiveIndex = -1;
+        const searchHint = '<p class="search-palette__hint">Type at least 3 characters.</p>';
+
+        function openSearch() {
             searchModal.classList.remove('hidden');
             searchModal.classList.add('flex');
             searchInput.focus();
-        });
-        
+        }
+
+        function closeSearch() {
+            searchModal.classList.add('hidden');
+            searchModal.classList.remove('flex');
+            searchInput.value = '';
+            searchResults.innerHTML = searchHint;
+            searchActiveIndex = -1;
+        }
+
+        globalSearchBtn.addEventListener('click', openSearch);
+
         searchModal.addEventListener('click', (e) => {
-            if (e.target === searchModal) {
-                searchModal.classList.add('hidden');
-                searchModal.classList.remove('flex');
-                searchInput.value = '';
-                searchResults.innerHTML = '<p class="text-center text-gray-600 dark:text-gray-400 p-5 text-sm">Type to search...</p>';
-            }
-        });
-        
-        // ESC key to close search
-        document.addEventListener('keydown', (e) => {
-            if (e.key === 'Escape' && !searchModal.classList.contains('hidden')) {
-                searchModal.classList.add('hidden');
-                searchModal.classList.remove('flex');
-                searchInput.value = '';
-            }
+            if (e.target === searchModal) closeSearch();
         });
         
         // Search functionality
@@ -418,11 +286,12 @@
             const query = e.target.value.trim();
             
             if (query.length < 3) {
-                searchResults.innerHTML = '<p class="text-center text-gray-600 dark:text-gray-400 p-5 text-sm">Type at least 3 characters...</p>';
+                searchResults.innerHTML = searchHint;
+                searchActiveIndex = -1;
                 return;
             }
-            
-            searchResults.innerHTML = '<p class="text-center text-gray-600 dark:text-gray-400 p-5 text-sm"><i class="fas fa-spinner fa-spin"></i> Searching...</p>';
+
+            searchResults.innerHTML = '<p class="search-palette__hint">Searching…</p>';
             
             searchTimeout = setTimeout(() => {
                 performSearch(query);
@@ -439,8 +308,8 @@
             .then(data => {
                 displaySearchResults(data);
             })
-            .catch(error => {
-                searchResults.innerHTML = '<p class="text-center text-gray-600 dark:text-gray-400 p-5 text-sm">No results found</p>';
+            .catch(() => {
+                searchResults.innerHTML = '<p class="search-palette__empty">No results found</p>';
             });
         }
         
@@ -450,49 +319,103 @@
             return div.innerHTML;
         }
 
+        function dedupeSearchResults(results) {
+            const seenPeople = new Set();
+            const seenOther = new Set();
+            const out = [];
+            (Array.isArray(results) ? results : []).forEach((result) => {
+                const type = result.type || '';
+                const title = String(result.title || '').toLowerCase().trim();
+                const url = result.url || '';
+                const isPerson = type === 'User' || type === 'Employee';
+                if (isPerson) {
+                    const key = url || ('name:' + title);
+                    if (seenPeople.has(key)) return;
+                    seenPeople.add(key);
+                    out.push(result);
+                    return;
+                }
+                const key = type + '|' + url + '|' + title;
+                if (seenOther.has(key)) return;
+                seenOther.add(key);
+                out.push(result);
+            });
+            return out;
+        }
+
+        function highlightSearchResult() {
+            const items = searchResults.querySelectorAll('.search-result');
+            items.forEach((item, index) => {
+                item.classList.toggle('is-active', index === searchActiveIndex);
+            });
+            if (searchActiveIndex >= 0 && items[searchActiveIndex]) {
+                items[searchActiveIndex].scrollIntoView({ block: 'nearest' });
+            }
+        }
+
         function displaySearchResults(results) {
-            if (results.length === 0) {
-                searchResults.innerHTML = '<p class="text-center text-gray-600 dark:text-gray-400 p-5 text-sm">No results found</p>';
+            const unique = dedupeSearchResults(results);
+            if (unique.length === 0) {
+                searchResults.innerHTML = '<p class="search-palette__empty">No results found</p>';
                 return;
             }
 
             searchResults.innerHTML = '';
-            results.forEach(result => {
+            unique.forEach((result) => {
                 const item = document.createElement('div');
-                item.className = 'p-3.5 mb-2 cursor-pointer hover:bg-[rgba(2,138,15,0.1)]';
-                item.addEventListener('click', () => {
-                    window.location.href = result.url;
+                const isPerson = result.type === 'User' || result.type === 'Employee';
+                item.className = 'search-result';
+                item.setAttribute('role', 'option');
+                item.addEventListener('click', () => { window.location.href = result.url; });
+                item.addEventListener('mouseenter', () => {
+                    const items = [...searchResults.querySelectorAll('.search-result')];
+                    searchActiveIndex = items.indexOf(item);
+                    highlightSearchResult();
                 });
 
                 const title = document.createElement('div');
-                title.className = 'font-semibold text-[0.98rem] text-gray-800 dark:text-gray-200 mb-1';
+                title.className = 'search-result__title';
                 title.textContent = result.title;
 
-                const type = document.createElement('div');
-                type.className = 'text-[11px] uppercase tracking-wide text-[#028a0f] dark:text-[#34d399] font-semibold mb-0.5';
-                type.textContent = result.type || 'Result';
+                const meta = document.createElement('div');
+                meta.className = 'search-result__meta';
+                meta.textContent = isPerson
+                    ? (result.subtitle || 'Person')
+                    : [result.type || 'Result', result.subtitle].filter(Boolean).join(' · ');
 
                 item.appendChild(title);
-                item.appendChild(type);
-
-                if (result.subtitle) {
-                    const subtitle = document.createElement('div');
-                    subtitle.className = 'text-sm text-gray-600 dark:text-gray-400';
-                    subtitle.textContent = result.subtitle;
-                    item.appendChild(subtitle);
-                }
-
+                item.appendChild(meta);
                 searchResults.appendChild(item);
             });
+            searchActiveIndex = 0;
+            highlightSearchResult();
         }
-        
-        // Keyboard shortcut: Ctrl+K for search
+
         document.addEventListener('keydown', (e) => {
+            const open = !searchModal.classList.contains('hidden');
             if ((e.ctrlKey || e.metaKey) && e.key === 'k') {
                 e.preventDefault();
-                searchModal.classList.remove('hidden');
-                searchModal.classList.add('flex');
-                searchInput.focus();
+                openSearch();
+                return;
+            }
+            if (!open) return;
+            if (e.key === 'Escape') {
+                closeSearch();
+                return;
+            }
+            const items = searchResults.querySelectorAll('.search-result');
+            if (!items.length) return;
+            if (e.key === 'ArrowDown') {
+                e.preventDefault();
+                searchActiveIndex = Math.min(searchActiveIndex + 1, items.length - 1);
+                highlightSearchResult();
+            } else if (e.key === 'ArrowUp') {
+                e.preventDefault();
+                searchActiveIndex = Math.max(searchActiveIndex - 1, 0);
+                highlightSearchResult();
+            } else if (e.key === 'Enter' && searchActiveIndex >= 0 && items[searchActiveIndex]) {
+                e.preventDefault();
+                items[searchActiveIndex].click();
             }
         });
 
@@ -504,7 +427,7 @@
                     title: 'Upload notice',
                     text: message,
                     confirmButtonText: 'OK',
-                    confirmButtonColor: '#028a0f',
+                    confirmButtonColor: '#0d5c3b',
                     customClass: { popup: 'swal-flat' },
                     showClass: { popup: '' },
                     hideClass: { popup: '' },
@@ -515,20 +438,27 @@
             const container = document.getElementById('toastContainer');
             if (!container) return;
 
+            container.querySelectorAll('.ui-toast').forEach((el) => el.remove());
+
             const toast = document.createElement('div');
-            const colors = {
-                success: 'bg-green-600',
-                error: 'bg-red-600',
-                info: 'bg-blue-600'
-            };
-            toast.className = `${colors[type] || colors.success} text-white px-6 py-4 mb-2 flex items-center gap-3 min-w-[300px]`;
-            const icon = type === 'success' ? '✓' : type === 'error' ? '!' : 'ℹ';
-            toast.innerHTML = `
-                <span class="text-xl font-bold">${icon}</span>
-                <span>${message}</span>
-            `;
+            toast.className = 'ui-toast ui-toast--' + (type === 'error' ? 'error' : (type === 'info' ? 'info' : 'success'));
+            toast.setAttribute('role', 'status');
+
+            const text = document.createElement('span');
+            text.className = 'ui-toast__text';
+            text.textContent = String(message || '').replace(/\s+successfully!?$/i, '').trim();
+
+            const close = document.createElement('button');
+            close.type = 'button';
+            close.className = 'ui-toast__close';
+            close.setAttribute('aria-label', 'Dismiss');
+            close.innerHTML = '&times;';
+            close.addEventListener('click', () => toast.remove());
+
+            toast.appendChild(text);
+            toast.appendChild(close);
             container.appendChild(toast);
-            setTimeout(() => toast.remove(), 4000);
+            setTimeout(() => toast.remove(), 2800);
         }
 
         (function () {
@@ -566,13 +496,13 @@
 
                 const wrapper = document.createElement('div');
                 wrapper.className = 'drop-zone';
-                wrapper.style.cssText = 'position:relative;border:2px dashed #cbd5e1;border-radius:6px;padding:18px;background:#f8fafc;color:#475569;text-align:center;font-size:12px;cursor:pointer;transition:all .15s;';
+                wrapper.style.cssText = 'position:relative;border:1px dashed #9fb8aa;padding:32px 16px;background:#f7faf8;color:#68766f;text-align:center;font-size:12px;cursor:pointer;';
 
                 const label = document.createElement('div');
-                label.innerHTML = '<i class="fas fa-cloud-upload-alt" style="font-size:22px;color:#64748b;display:block;margin-bottom:6px;"></i>'
-                    + '<strong style="color:#334155;">Drag &amp; drop file here</strong>'
-                    + '<span style="opacity:.7;"> or click to browse</span>'
-                    + '<div data-drop-filename style="margin-top:6px;font-size:11px;color:#0f766e;font-weight:600;"></div>';
+                label.innerHTML = '<i class="fas fa-cloud-upload-alt" style="font-size:24px;color:#0d5c3b;display:block;margin-bottom:8px;"></i>'
+                    + '<strong style="color:#0b4931;">Drag &amp; drop files here</strong>'
+                    + '<span style="opacity:.75;"> or choose files from your device</span>'
+                    + '<div data-drop-filename style="margin-top:8px;font-size:11px;color:#0d5c3b;font-weight:600;"></div>';
 
                 input.parentNode.insertBefore(wrapper, input);
                 wrapper.appendChild(label);
@@ -598,17 +528,19 @@
                 ['dragenter', 'dragover'].forEach(evt =>
                     wrapper.addEventListener(evt, e => {
                         e.preventDefault();
-                        wrapper.style.borderColor = '#028a0f';
-                        wrapper.style.background = '#f0fdf4';
-                        wrapper.style.color = '#028a0f';
+                        wrapper.classList.add('is-dragging');
+                        wrapper.style.borderColor = '#0d5c3b';
+                        wrapper.style.background = '#edf7f1';
+                        wrapper.style.color = '#0d5c3b';
                     })
                 );
                 ['dragleave', 'drop'].forEach(evt =>
                     wrapper.addEventListener(evt, e => {
                         e.preventDefault();
-                        wrapper.style.borderColor = '#cbd5e1';
-                        wrapper.style.background = '#f8fafc';
-                        wrapper.style.color = '#475569';
+                        wrapper.classList.remove('is-dragging');
+                        wrapper.style.borderColor = '#9fb8aa';
+                        wrapper.style.background = '#f7faf8';
+                        wrapper.style.color = '#68766f';
                     })
                 );
                 const fileMatchesAccept = (file, acceptAttr) => {
@@ -735,12 +667,14 @@
             sidebar.classList.add('active');
             sidebarOverlay.classList.remove('hidden');
             document.body.style.overflow = 'hidden';
+            if (mobileMenuToggle) mobileMenuToggle.setAttribute('aria-expanded', 'true');
         }
 
         function closeSidebar() {
             sidebar.classList.remove('active');
             sidebarOverlay.classList.add('hidden');
             document.body.style.overflow = '';
+            if (mobileMenuToggle) mobileMenuToggle.setAttribute('aria-expanded', 'false');
         }
 
         if (mobileMenuToggle) {

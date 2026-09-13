@@ -94,39 +94,64 @@ class DashboardLog extends Model
     /**
      * Get paginated filtered logs based on user role
      */
-    public static function getPaginatedLogs($user, $perPage = 20)
+    public static function getPaginatedLogs($user, $perPage = 20, array $filters = [])
     {
-        $query = self::with(['user.employee', 'targetUser.employee']);
+        $query = self::roleScopedQuery($user)->with(['user.employee', 'targetUser.employee']);
 
-        if ($user->isDean()) {
-            $query->latest('log_date');
-        } elseif ($user->role_id === 2) {
-            $coordinatorDept = \App\Support\CoordinatorDepartment::name($user);
+        if (!empty($filters['q'])) {
+            $term = $filters['q'];
+            $query->where('activity', 'like', "%{$term}%");
+        }
 
-            if (!$coordinatorDept) {
-                $query->where(function ($q) use ($user) {
-                    $q->where('user_id', $user->id)
-                        ->orWhere('target_user_id', $user->id);
-                });
-            } else {
-                $query->where(function ($q) use ($user, $coordinatorDept) {
-                    $q->where('user_id', $user->id)
-                        ->orWhere('target_user_id', $user->id)
-                        ->orWhereHas('user', function ($subQ) use ($coordinatorDept) {
-                            $subQ->where('role_id', 3)
-                                ->whereHas('employee', function ($empQ) use ($coordinatorDept) {
-                                    $empQ->where('department', $coordinatorDept);
-                                });
-                        });
-                });
-            }
-        } else {
-            $query->where(function($q) use ($user) {
-                $q->where('user_id', $user->id)
-                  ->orWhere('target_user_id', $user->id);
-            });
+        if (!empty($filters['activity_type'])) {
+            $query->where('activity_type', $filters['activity_type']);
         }
 
         return $query->latest('log_date')->paginate($perPage)->withQueryString();
+    }
+
+    public static function visibleActivityTypes($user)
+    {
+        return self::roleScopedQuery($user)
+            ->whereNotNull('activity_type')
+            ->distinct()
+            ->orderBy('activity_type')
+            ->pluck('activity_type');
+    }
+
+    protected static function roleScopedQuery($user)
+    {
+        $query = self::query();
+
+        if ($user->isDean()) {
+            return $query;
+        }
+
+        if ($user->role_id === 2) {
+            $coordinatorDept = \App\Support\CoordinatorDepartment::name($user);
+
+            if (!$coordinatorDept) {
+                return $query->where(function ($q) use ($user) {
+                    $q->where('user_id', $user->id)
+                        ->orWhere('target_user_id', $user->id);
+                });
+            }
+
+            return $query->where(function ($q) use ($user, $coordinatorDept) {
+                $q->where('user_id', $user->id)
+                    ->orWhere('target_user_id', $user->id)
+                    ->orWhereHas('user', function ($subQ) use ($coordinatorDept) {
+                        $subQ->where('role_id', 3)
+                            ->whereHas('employee', function ($empQ) use ($coordinatorDept) {
+                                $empQ->where('department', $coordinatorDept);
+                            });
+                    });
+            });
+        }
+
+        return $query->where(function ($q) use ($user) {
+            $q->where('user_id', $user->id)
+                ->orWhere('target_user_id', $user->id);
+        });
     }
 }

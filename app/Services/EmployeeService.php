@@ -331,7 +331,7 @@ class EmployeeService
 
         $documentTree = $treeService->buildForUser($employee->user_id);
 
-        $reports = Report::select('report_id', 'submitted_by', 'report_category', 'created_at')
+        $reports = Report::query()
             ->where('submitted_by', $employee->user_id)
             ->orderBy('created_at', 'desc')
             ->get();

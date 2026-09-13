@@ -88,7 +88,7 @@ class UploadStorage
         $path = static::normalizeStoragePath($path);
         static::assertSafeRelativePath($path);
 
-        foreach (['teaching-guides', 'exam-questionnaires', 'task-attachments', 'documents'] as $directory) {
+        foreach (['teaching-guides', 'exam-questionnaires', 'task-attachments', 'documents', 'reports', 'certificates'] as $directory) {
             if (str_starts_with($path, $directory . '/')) {
                 return $directory;
             }

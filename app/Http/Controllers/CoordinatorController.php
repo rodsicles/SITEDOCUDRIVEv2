@@ -103,10 +103,18 @@ class CoordinatorController extends Controller
         )));
     }
 
-    public function activityLog()
+    public function activityLog(Request $request)
     {
-        $activities = DashboardLog::getPaginatedLogs(auth()->user(), 20);
-        return view('activity-log', compact('activities'));
+        $filters = $request->validate([
+            'q' => 'nullable|string|max:100',
+            'activity_type' => 'nullable|string|max:100',
+        ]);
+
+        $user = auth()->user();
+        $activities = DashboardLog::getPaginatedLogs($user, 20, $filters);
+        $activityTypes = DashboardLog::visibleActivityTypes($user);
+
+        return view('activity-log', compact('activities', 'activityTypes', 'filters'));
     }
 
     public function tasks()

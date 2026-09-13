@@ -37,7 +37,7 @@
                         <a href="{{ $streamUrl }}" target="_blank" rel="noopener" class="btn btn-action-view text-xs">
                             <i class="fas fa-external-link-alt"></i> Open in tab
                         </a>
-                        <a href="{{ $downloadUrl }}" class="btn btn-action-download text-xs">
+                        <a href="{{ $downloadUrl }}" class="btn btn-primary text-xs">
                             <i class="fas fa-download"></i> Download
                         </a>
                         @if(($canCopy ?? false) && ! $isArchivedPreview)

@@ -17,34 +17,53 @@
 @endsection
 
 @section('content')
+@php
+    $filters = $filters ?? [];
+    $activityTypes = $activityTypes ?? collect();
+    $hasFilters = filled($filters['q'] ?? null) || filled($filters['activity_type'] ?? null);
+    $isFaculty = auth()->user()->isFaculty();
+@endphp
 
-<div class="content-card">
+<div class="content-card activity-log-page">
     <div class="card-header">
-        <h3 class="card-title">
-            <i class="fas fa-history mr-2"></i> Activity Log
-        </h3>
-        <span class="badge badge-info">{{ $activities->total() }} Total Records</span>
+        <h3 class="card-title">Activity Log</h3>
+        <span class="badge badge-info">{{ $activities->total() }} records</span>
     </div>
 
+    <form method="GET" action="{{ url()->current() }}" class="activity-log-toolbar">
+        <label class="sr-only" for="activity-log-search">Search activity</label>
+        <input type="search"
+               id="activity-log-search"
+               name="q"
+               value="{{ $filters['q'] ?? '' }}"
+               class="form-control activity-log-toolbar__search"
+               placeholder="Search activity"
+               maxlength="100"
+               autocomplete="off">
+
+        <label class="sr-only" for="activity-log-type">Activity type</label>
+        <select id="activity-log-type" name="activity_type" class="form-control activity-log-toolbar__type">
+            <option value="">All types</option>
+            @foreach($activityTypes as $type)
+                <option value="{{ $type }}" @selected(($filters['activity_type'] ?? '') === $type)>
+                    {{ ucfirst(str_replace('_', ' ', $type)) }}
+                </option>
+            @endforeach
+        </select>
+
+        <button type="submit" class="btn btn-primary">Filter</button>
+        @if($hasFilters)
+            <a href="{{ url()->current() }}" class="btn btn-secondary">Clear</a>
+        @endif
+    </form>
+
     <div class="overflow-x-auto">
-        <table class="data-table compact" style="width: 100%; table-layout: fixed;">
-            <colgroup>
-                @if(!auth()->user()->isFaculty())
-                <col style="width: 25%;">
-                <col style="width: 40%;">
-                <col style="width: 18%;">
-                <col style="width: 17%;">
-                @else
-                <col style="width: 55%;">
-                <col style="width: 22%;">
-                <col style="width: 23%;">
-                @endif
-            </colgroup>
+        <table class="data-table compact activity-log-table">
             <thead>
                 <tr>
-                    @if(!auth()->user()->isFaculty())
+                    @unless($isFaculty)
                     <th>User</th>
-                    @endif
+                    @endunless
                     <th>Activity</th>
                     <th>Type</th>
                     <th>Date & Time</th>
@@ -53,7 +72,7 @@
             <tbody>
                 @forelse($activities as $activity)
                 <tr>
-                    @if(!auth()->user()->isFaculty())
+                    @unless($isFaculty)
                     <td>
                         <strong>{{ $activity->user->employee->full_name ?? $activity->user->username ?? 'System' }}</strong>
                         @if($activity->targetUser)
@@ -61,31 +80,31 @@
                             <span class="text-gray-500 dark:text-gray-400 text-sm">{{ $activity->targetUser->employee->full_name ?? $activity->targetUser->username }}</span>
                         @endif
                     </td>
-                    @endif
-                    <td>
+                    @endunless
+                    <td class="activity-log-table__activity">
                         {{ $activity->activity }}
-                        @if(auth()->user()->isFaculty() && $activity->user_id !== auth()->id() && $activity->user)
-                            <br><small class="text-gray-500 dark:text-gray-400"><i class="fas fa-info-circle mr-0.5"></i> By {{ $activity->user->employee->full_name ?? $activity->user->username }}</small>
+                        @if($isFaculty && $activity->user_id !== auth()->id() && $activity->user)
+                            <span class="activity-log-table__by">By {{ $activity->user->employee->full_name ?? $activity->user->username }}</span>
                         @endif
                     </td>
-                    <td>
+                    <td class="activity-log-table__type">
                         @if($activity->activity_type)
-                            <span class="badge badge-neutral text-[0.7rem]">
-                                {{ ucfirst(str_replace('_', ' ', $activity->activity_type)) }}
-                            </span>
+                            <span class="badge badge-info">{{ ucfirst(str_replace('_', ' ', $activity->activity_type)) }}</span>
                         @else
-                            <span class="text-gray-400 dark:text-gray-500 text-sm">—</span>
+                            —
                         @endif
                     </td>
-                    <td class="text-sm text-gray-600 dark:text-gray-400 whitespace-nowrap">
+                    <td class="activity-log-table__date">
                         {{ $activity->log_date->timezone(config('app.timezone'))->format('M d, Y g:i A') }}
                     </td>
                 </tr>
                 @empty
                 <tr>
-                    <td colspan="{{ auth()->user()->isFaculty() ? 3 : 4 }}" class="text-center py-8 text-gray-500 dark:text-gray-400">
-                        <i class="fas fa-history text-2xl mb-2 block text-gray-300 dark:text-gray-600"></i>
-                        No activity records found.
+                    <td colspan="{{ $isFaculty ? 3 : 4 }}">
+                        @include('partials.ui.empty-state', [
+                            'title' => 'No activity records',
+                            'text' => $hasFilters ? 'No records match this search or filter.' : 'No activity records found.',
+                        ])
                     </td>
                 </tr>
                 @endforelse
@@ -93,9 +112,6 @@
         </table>
     </div>
 
-    <div class="mt-4 px-2 pb-4">
-        {{ $activities->links('partials.pagination') }}
-    </div>
+    {{ $activities->links('partials.pagination') }}
 </div>
-
 @endsection

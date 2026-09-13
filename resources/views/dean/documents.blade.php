@@ -3,36 +3,14 @@
 @section('title', 'Documents - Dean')
 
 @section('page-title', 'Documents')
-@section('page-subtitle', 'View all uploaded documents')
+@section('page-subtitle', 'Browse folders and manage files')
 
 @section('sidebar')
     @include('partials.dean-sidebar')
 @endsection
 
 @section('content')
-    @include('partials.documents-quick-access', ['routePrefix' => 'dean'])
+<div class="documents-page" data-page="documents">
     @include('partials.folder-tree')
-
-    @php
-        $hierarchy = app(\App\Services\AcademicHierarchyService::class);
-        $hideDocumentsList = isset($currentFolder)
-            && $currentFolder
-            && (
-                $hierarchy->isSemesterTypeLeafFolder($currentFolder)
-                || $hierarchy->isTgSemesterFolder($currentFolder)
-                || $hierarchy->isTgSubjectFolder($currentFolder)
-                || $hierarchy->isEqSemesterFolder($currentFolder)
-                || $hierarchy->isEqSubjectFolder($currentFolder)
-                || $hierarchy->isEqAssessmentFolder($currentFolder)
-            );
-    @endphp
-
-    @if(!$hideDocumentsList)
-    <div class="content-card">
-        @include('partials.documents-filter-panel', [
-            'documentsRoute' => 'dean.documents',
-        ])
-        @include('partials.documents-list-table', ['routePrefix' => 'dean'])
-    </div>
-    @endif
+</div>
 @endsection

@@ -17,9 +17,9 @@
 
 {{-- One-time temporary password reveal banner --}}
 @if($tempPassword)
-<div class="content-card" style="border-left-color: #92400e;">
+<div class="ui-notice ui-notice--warning" role="status">
     <div class="card-header">
-        <h3 class="card-title" style="color: #92400e;">
+        <h3 class="card-title">
             <i class="fas fa-key"></i> Temporary Password (Show Once)
         </h3>
         <span class="badge badge-warning">Visible only on this page load</span>
@@ -29,12 +29,11 @@
         It will <strong>not</strong> be shown again. The user will be forced to change it on first login.
     </p>
     <div class="flex items-center gap-3 flex-wrap">
-        <code id="tempPasswordValue"
-              style="font-family: monospace; font-size: 1.25rem; padding: 0.75rem 1rem; background: #fef3c7; color: #92400e; letter-spacing: 0.15em; user-select: all;">{{ $tempPassword }}</code>
+        <code id="tempPasswordValue" class="temporary-password-value">{{ $tempPassword }}</code>
         <button type="button" class="btn btn-sm btn-primary" onclick="copyTempPassword()">
             <i class="fas fa-copy"></i> Copy
         </button>
-        <span id="tempCopiedNotice" class="text-sm text-green-700 dark:text-green-300" style="display:none;">
+        <span id="tempCopiedNotice" class="text-sm text-green-700 dark:text-green-300" hidden>
             <i class="fas fa-check"></i> Copied
         </span>
     </div>
@@ -46,14 +45,14 @@
 
 {{-- Flash notices --}}
 @if(session('success') && !$tempPassword)
-<div class="content-card" style="border-left-color: #047857;">
-    <i class="fas fa-check-circle" style="color: #047857;"></i> {{ session('success') }}
+<div class="content-card password-reset-notice password-reset-notice--success" role="status">
+    <i class="fas fa-check-circle"></i> {{ session('success') }}
 </div>
 @endif
 
 @if($errors->any())
-<div class="content-card" style="border-left-color: #b91c1c;">
-    <i class="fas fa-exclamation-circle" style="color: #b91c1c;"></i> {{ $errors->first() }}
+<div class="content-card password-reset-notice password-reset-notice--danger" role="alert">
+    <i class="fas fa-exclamation-circle"></i> {{ $errors->first() }}
 </div>
 @endif
 
@@ -143,7 +142,7 @@
                                         <i class="fas fa-check"></i> Approve
                                     </button>
                                 </form>
-                                <button type="button" class="btn btn-sm" style="background:#b91c1c;color:#fff;"
+                                <button type="button" class="btn btn-sm btn-danger"
                                         onclick="openDenyModal({{ $req->password_reset_request_id }}, '{{ addslashes($req->user->username) }}')">
                                     <i class="fas fa-times"></i> Deny
                                 </button>
@@ -178,8 +177,9 @@
 </div>
 
 {{-- Deny modal --}}
-<div id="denyModal" style="display:none; position:fixed; inset:0; background:rgba(0,0,0,0.5); z-index:9999; align-items:center; justify-content:center;">
-    <div style="background:#fff; max-width:30rem; width:90%; padding:1.5rem;" class="dark:bg-[#1f1f1f]">
+<div id="denyModal" class="modal-overlay" hidden role="dialog" aria-modal="true" aria-labelledby="denyModalTitle">
+    <div class="modal-card">
+        <div class="modal-body">
         <h3 class="card-title mb-3" id="denyModalTitle">Deny Password Reset</h3>
         <form id="denyForm" method="POST" action="">
             @csrf
@@ -190,9 +190,10 @@
             <textarea name="reason" class="form-control text-sm w-full" maxlength="255" rows="3" placeholder="Optional reason..."></textarea>
             <div class="flex items-center gap-2 mt-4 justify-end">
                 <button type="button" class="btn btn-sm bg-gray-200 dark:bg-gray-700 text-gray-700 dark:text-gray-200" onclick="closeDenyModal()">Cancel</button>
-                <button type="submit" class="btn btn-sm" style="background:#b91c1c;color:#fff;">Deny Request</button>
+                <button type="submit" class="btn btn-sm btn-danger">Deny Request</button>
             </div>
         </form>
+        </div>
     </div>
 </div>
 
@@ -206,8 +207,8 @@ function copyTempPassword() {
         navigator.clipboard.writeText(text).then(function () {
             var notice = document.getElementById('tempCopiedNotice');
             if (notice) {
-                notice.style.display = 'inline';
-                setTimeout(function () { notice.style.display = 'none'; }, 2000);
+                notice.hidden = false;
+                setTimeout(function () { notice.hidden = true; }, 2000);
             }
         });
     } else {
@@ -226,11 +227,14 @@ function openDenyModal(id, username) {
     var form = document.getElementById('denyForm');
     document.getElementById('denyUsername').innerText = username;
     form.action = denyBase + '/' + id + '/deny';
-    modal.style.display = 'flex';
+    modal.hidden = false;
+    modal.classList.add('active');
 }
 
 function closeDenyModal() {
-    document.getElementById('denyModal').style.display = 'none';
+    var modal = document.getElementById('denyModal');
+    modal.classList.remove('active');
+    modal.hidden = true;
 }
 
 document.getElementById('denyModal').addEventListener('click', function (e) {

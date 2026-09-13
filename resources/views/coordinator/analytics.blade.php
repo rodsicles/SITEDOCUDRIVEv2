@@ -10,7 +10,9 @@
 @endsection
 
 @section('content')
+<div class="analytics-page">
     @include('partials.engagement-analytics')
 
     @include('partials.submission-analytics')
+</div>
 @endsection

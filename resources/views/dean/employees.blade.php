@@ -10,19 +10,20 @@
 @endsection
 
 @section('content')
+<div class="ui-page ui-page--employees">
     <!-- Tab Navigation -->
     <div class="mb-6">
-        <div class="flex gap-2 border-b-2 border-gray-200 dark:border-gray-700">
-            <button class="tab-button inline-flex items-center gap-2 px-5 py-3.5 bg-transparent border-0 border-b-[3px] border-transparent text-gray-600 dark:text-gray-400 text-sm font-semibold cursor-pointer" onclick="switchTab('list')" id="listTab">
+        <div class="ui-segmented" role="tablist" aria-label="Employee management">
+            <button type="button" class="tab-button" onclick="switchTab('list')" id="listTab" role="tab" aria-selected="false">
                 <i class="fas fa-users"></i> Employee Directory
             </button>
-            <button class="tab-button inline-flex items-center gap-2 px-5 py-3.5 bg-transparent border-0 border-b-[3px] border-transparent text-gray-600 dark:text-gray-400 text-sm font-semibold cursor-pointer" onclick="switchTab('createCoord')" id="createCoordTab">
+            <button type="button" class="tab-button" onclick="switchTab('createCoord')" id="createCoordTab" role="tab" aria-selected="false">
                 <i class="fas fa-user-tie"></i> Create Coordinator
             </button>
-            <button class="tab-button inline-flex items-center gap-2 px-5 py-3.5 bg-transparent border-0 border-b-[3px] border-transparent text-gray-600 dark:text-gray-400 text-sm font-semibold cursor-pointer" onclick="switchTab('createFaculty')" id="createFacultyTab">
+            <button type="button" class="tab-button" onclick="switchTab('createFaculty')" id="createFacultyTab" role="tab" aria-selected="false">
                 <i class="fas fa-user-plus"></i> Create Faculty
             </button>
-            <button class="tab-button inline-flex items-center gap-2 px-5 py-3.5 bg-transparent border-0 border-b-[3px] border-transparent text-gray-600 dark:text-gray-400 text-sm font-semibold cursor-pointer" onclick="switchTab('deactivated')" id="deactivatedTab">
+            <button type="button" class="tab-button" onclick="switchTab('deactivated')" id="deactivatedTab" role="tab" aria-selected="false">
                 <i class="fas fa-user-slash"></i> Deactivated Accounts
                 @if(($deactivatedEmployees->total() ?? 0) > 0)
                 <span class="badge badge-danger text-[10px] py-0.5 px-1.5">{{ $deactivatedEmployees->total() }}</span>
@@ -82,7 +83,7 @@
     </div>
 
     <!-- Tab: Deactivated Accounts -->
-    <div class="tab-content" id="deactivatedContent" style="display: none;">
+    <div class="tab-content" id="deactivatedContent" hidden>
         <div class="content-card">
             <div class="card-header">
                 <h3 class="card-title">Deactivated Accounts</h3>
@@ -132,7 +133,7 @@
     </div>
 
     <!-- Tab 2: Create Coordinator -->
-    <div class="tab-content" id="createCoordContent" style="display: none;">
+    <div class="tab-content" id="createCoordContent" hidden>
         <div class="content-card">
             <div class="card-header">
                 <h3 class="card-title">Coordinator Account Information</h3>
@@ -149,26 +150,49 @@
                 </div>
             @endif
 
-            <form action="{{ route('dean.store-coordinator') }}" method="POST">
+            <form action="{{ route('dean.store-coordinator') }}" method="POST" class="account-form">
                 @csrf
                 <input type="hidden" name="_form" value="coordinator">
 
-                <div class="form-group">
-                    <label class="form-label">Full Name *</label>
-                    <input type="text" name="full_name" class="form-control" placeholder="Enter full name" required maxlength="45" value="{{ old('_form') === 'coordinator' ? old('full_name') : '' }}">
+                <div class="account-form__grid">
+                    <div class="account-form__col">
+                        <div class="ui-form-section">
+                            <h4 class="ui-form-section__title">Identity</h4>
+                            <div class="form-group">
+                                <label class="form-label">Full Name *</label>
+                                <input type="text" name="full_name" class="form-control" placeholder="Enter full name" required maxlength="45" value="{{ old('_form') === 'coordinator' ? old('full_name') : '' }}">
+                            </div>
+                            <div class="form-group">
+                                <label class="form-label">Department *</label>
+                                <select id="coordinatorDepartment" name="department" class="form-control" required>
+                                    <option value="">Select Department</option>
+                                    <option value="Engineering" {{ (old('_form') === 'coordinator' && old('department') == 'Engineering') ? 'selected' : '' }}>Engineering</option>
+                                    <option value="Information Technology" {{ (old('_form') === 'coordinator' && old('department') == 'Information Technology') ? 'selected' : '' }}>Information Technology</option>
+                                </select>
+                            </div>
+                            <div class="form-group">
+                                <label class="form-label">Employee Number</label>
+                                <input type="text" id="coordinatorEmployeeNo" class="form-control bg-gray-100 dark:bg-gray-800" value="" placeholder="Select department first" readonly disabled>
+                                <small class="text-xs text-gray-500 dark:text-gray-400 mt-1">Auto-generated per department (e.g. SITE-IT-COOR001). Existing numbers are not changed.</small>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="account-form__col">
+                        <div class="ui-form-section">
+                            <h4 class="ui-form-section__title">Credentials</h4>
+                            <div class="form-group">
+                                <label class="form-label">Username *</label>
+                                <input type="text" name="username" class="form-control" placeholder="Enter username" required maxlength="20" value="{{ old('_form') === 'coordinator' ? old('username') : '' }}">
+                            </div>
+                            <div class="form-group">
+                                <label class="form-label">Password *</label>
+                                <input type="password" name="password" class="form-control" placeholder="Minimum 8 characters" required minlength="8" maxlength="40">
+                            </div>
+                        </div>
+                    </div>
                 </div>
 
-                <div class="form-group">
-                    <label class="form-label">Department *</label>
-                    <select id="coordinatorDepartment" name="department" class="form-control" required>
-                        <option value="">Select Department</option>
-                        <option value="Engineering" {{ (old('_form') === 'coordinator' && old('department') == 'Engineering') ? 'selected' : '' }}>Engineering</option>
-                        <option value="Information Technology" {{ (old('_form') === 'coordinator' && old('department') == 'Information Technology') ? 'selected' : '' }}>Information Technology</option>
-                    </select>
-                </div>
-
-                {{-- Course Assignment (loaded via AJAX when dept is chosen) --}}
-                <div class="form-group" id="coordCourseSection" style="display:none">
+                <div class="account-form__courses form-group" id="coordCourseSection" hidden>
                     <label class="form-label">Assigned Courses / Subjects</label>
                     <small class="text-xs text-gray-500 dark:text-gray-400 block mb-2">Select the subjects this coordinator will handle.</small>
                     <div class="course-picker-wrap">
@@ -187,23 +211,7 @@
                     <p id="coordCourseError" class="text-xs text-red-600 dark:text-red-400 mt-1 hidden"></p>
                 </div>
 
-                <div class="form-group">
-                    <label class="form-label">Employee Number</label>
-                    <input type="text" id="coordinatorEmployeeNo" class="form-control bg-gray-100 dark:bg-gray-800" value="" placeholder="Select department first" readonly disabled>
-                    <small class="text-xs text-gray-500 dark:text-gray-400 mt-1">Auto-generated per department (e.g. SITE-IT-COOR001, SITE-ENGR-COOR001). Existing numbers are not changed.</small>
-                </div>
-
-                <div class="form-group">
-                    <label class="form-label">Username *</label>
-                    <input type="text" name="username" class="form-control" placeholder="Enter username" required maxlength="20" value="{{ old('_form') === 'coordinator' ? old('username') : '' }}">
-                </div>
-
-                <div class="form-group">
-                    <label class="form-label">Password *</label>
-                    <input type="password" name="password" class="form-control" placeholder="Enter password (min 8 characters)" required minlength="8" maxlength="40">
-                </div>
-
-                <div class="flex gap-2.5">
+                <div class="account-form__actions">
                     <button type="submit" class="btn btn-success">
                         <i class="fas fa-user-tie"></i> Create Coordinator Account
                     </button>
@@ -216,7 +224,7 @@
     </div>
 
     <!-- Tab 3: Create Faculty -->
-    <div class="tab-content" id="createFacultyContent" style="display: none;">
+    <div class="tab-content" id="createFacultyContent" hidden>
         <div class="content-card">
             <div class="card-header">
                 <h3 class="card-title">Faculty Account Information</h3>
@@ -233,26 +241,49 @@
                 </div>
             @endif
 
-            <form action="{{ route('dean.store-faculty') }}" method="POST">
+            <form action="{{ route('dean.store-faculty') }}" method="POST" class="account-form">
                 @csrf
                 <input type="hidden" name="_form" value="faculty">
 
-                <div class="form-group">
-                    <label class="form-label">Full Name *</label>
-                    <input type="text" name="full_name" class="form-control" placeholder="Enter full name" required maxlength="45" value="{{ old('_form') === 'faculty' ? old('full_name') : '' }}">
+                <div class="account-form__grid">
+                    <div class="account-form__col">
+                        <div class="ui-form-section">
+                            <h4 class="ui-form-section__title">Identity</h4>
+                            <div class="form-group">
+                                <label class="form-label">Full Name *</label>
+                                <input type="text" name="full_name" class="form-control" placeholder="Enter full name" required maxlength="45" value="{{ old('_form') === 'faculty' ? old('full_name') : '' }}">
+                            </div>
+                            <div class="form-group">
+                                <label class="form-label">Department *</label>
+                                <select id="facultyDepartment" name="department" class="form-control" required>
+                                    <option value="">Select Department</option>
+                                    <option value="Engineering" {{ (old('_form') === 'faculty' && old('department') == 'Engineering') ? 'selected' : '' }}>Engineering</option>
+                                    <option value="Information Technology" {{ (old('_form') === 'faculty' && old('department') == 'Information Technology') ? 'selected' : '' }}>Information Technology</option>
+                                </select>
+                            </div>
+                            <div class="form-group">
+                                <label class="form-label">Employee Number</label>
+                                <input type="text" id="facultyEmployeeNo" class="form-control bg-gray-100 dark:bg-gray-800" value="" placeholder="Select department first" readonly disabled>
+                                <small class="text-xs text-gray-500 dark:text-gray-400 mt-1">Auto-generated per department (e.g. SITE-IT-FAC001). Existing numbers are not changed.</small>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="account-form__col">
+                        <div class="ui-form-section">
+                            <h4 class="ui-form-section__title">Credentials</h4>
+                            <div class="form-group">
+                                <label class="form-label">Username *</label>
+                                <input type="text" name="username" class="form-control" placeholder="Enter username" required maxlength="20" value="{{ old('_form') === 'faculty' ? old('username') : '' }}">
+                            </div>
+                            <div class="form-group">
+                                <label class="form-label">Password *</label>
+                                <input type="password" name="password" class="form-control" placeholder="Minimum 8 characters" required minlength="8" maxlength="40">
+                            </div>
+                        </div>
+                    </div>
                 </div>
 
-                <div class="form-group">
-                    <label class="form-label">Department *</label>
-                    <select id="facultyDepartment" name="department" class="form-control" required>
-                        <option value="">Select Department</option>
-                        <option value="Engineering" {{ (old('_form') === 'faculty' && old('department') == 'Engineering') ? 'selected' : '' }}>Engineering</option>
-                        <option value="Information Technology" {{ (old('_form') === 'faculty' && old('department') == 'Information Technology') ? 'selected' : '' }}>Information Technology</option>
-                    </select>
-                </div>
-
-                {{-- Course Assignment (loaded via AJAX when dept is chosen) --}}
-                <div class="form-group" id="facultyCourseSection" style="display:none">
+                <div class="account-form__courses form-group" id="facultyCourseSection" hidden>
                     <label class="form-label">Assigned Courses / Subjects *</label>
                     <small class="text-xs text-gray-500 dark:text-gray-400 block mb-2">Select the subjects this faculty member will teach. At least one is required.</small>
                     <div class="course-picker-wrap">
@@ -271,23 +302,7 @@
                     <p id="facultyCourseError" class="text-xs text-red-600 dark:text-red-400 mt-1 hidden"></p>
                 </div>
 
-                <div class="form-group">
-                    <label class="form-label">Employee Number</label>
-                    <input type="text" id="facultyEmployeeNo" class="form-control bg-gray-100 dark:bg-gray-800" value="" placeholder="Select department first" readonly disabled>
-                    <small class="text-xs text-gray-500 dark:text-gray-400 mt-1">Auto-generated per department (e.g. SITE-IT-FAC001, SITE-ENGR-FAC001). Existing numbers are not changed.</small>
-                </div>
-
-                <div class="form-group">
-                    <label class="form-label">Username *</label>
-                    <input type="text" name="username" class="form-control" placeholder="Enter username" required maxlength="20" value="{{ old('_form') === 'faculty' ? old('username') : '' }}">
-                </div>
-
-                <div class="form-group">
-                    <label class="form-label">Password *</label>
-                    <input type="password" name="password" class="form-control" placeholder="Enter password (min 8 characters)" required minlength="8" maxlength="40">
-                </div>
-
-                <div class="flex gap-2.5">
+                <div class="account-form__actions">
                     <button type="submit" class="btn btn-success">
                         <i class="fas fa-user-plus"></i> Create Faculty Account
                     </button>
@@ -299,13 +314,14 @@
         </div>
     </div>
 
+    </div>
+
     <script>
         function switchTab(tabName) {
-            document.querySelectorAll('.tab-content').forEach(c => c.style.display = 'none');
+            document.querySelectorAll('.tab-content').forEach(c => c.hidden = true);
             document.querySelectorAll('.tab-button').forEach(b => {
-                b.style.color = '';
-                b.style.borderBottomColor = '';
-                b.style.background = '';
+                b.classList.remove('is-active');
+                b.setAttribute('aria-selected', 'false');
             });
 
             const tabMap = {
@@ -317,11 +333,10 @@
 
             const t = tabMap[tabName];
             if (t) {
-                document.getElementById(t.content).style.display = 'block';
+                document.getElementById(t.content).hidden = false;
                 const btn = document.getElementById(t.button);
-                btn.style.color = 'var(--color-primary)';
-                btn.style.borderBottomColor = 'var(--color-primary)';
-                btn.style.background = 'rgba(2, 138, 15, 0.1)';
+                btn.classList.add('is-active');
+                btn.setAttribute('aria-selected', 'true');
             }
 
             const url = new URL(window.location.href);
@@ -344,7 +359,7 @@
         document.addEventListener('DOMContentLoaded', function() {
             const initialTab = @json(request('tab', 'list'));
             const allowed = ['list', 'createCoord', 'createFaculty', 'deactivated'];
-            if (!document.querySelector('.tab-button[style*="color"]')) {
+            if (!document.querySelector('.tab-button.is-active')) {
                 switchTab(allowed.includes(initialTab) ? initialTab : 'list');
             }
         });
@@ -488,12 +503,12 @@
 
         async function loadCourses(dept, listEl, sectionEl, errorEl, searchId, countId, noResId, clearId) {
             if (!dept) {
-                sectionEl.style.display = 'none';
+                sectionEl.hidden = true;
                 listEl.innerHTML = '';
                 return;
             }
             listEl.innerHTML = '<span class="course-section-empty"><i class="fas fa-spinner fa-spin mr-1"></i>Loading courses...</span>';
-            sectionEl.style.display = '';
+            sectionEl.hidden = false;
             errorEl.classList.add('hidden');
             try {
                 const res = await fetch(coursesByDeptUrl + '?dept=' + encodeURIComponent(dept));
@@ -529,7 +544,7 @@
         // Validate at least 1 course on faculty form submit
         document.querySelector('form[action*="store-faculty"]')?.addEventListener('submit', function(e) {
             const section = document.getElementById('facultyCourseSection');
-            if (section && section.style.display !== 'none') {
+            if (section && !section.hidden) {
                 const checked = section.querySelectorAll('input[type="checkbox"]:checked');
                 if (checked.length === 0) {
                     e.preventDefault();

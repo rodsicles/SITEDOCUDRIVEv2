@@ -11,10 +11,10 @@
 
 {{-- Resources & Development --}}
 <div class="sidebar-group">
-    <div class="sidebar-section-label" data-target="group-resources">
+    <button type="button" class="sidebar-section-label" aria-expanded="false" data-target="group-resources">
         <span>Resources &amp; Development</span>
-        <i class="fas fa-chevron-down sidebar-chevron"></i>
-    </div>
+        <i class="fas fa-chevron-down sidebar-chevron" aria-hidden="true"></i>
+    </button>
     <div class="sidebar-group-items" id="group-resources">
         <a href="{{ route('dean.documents') }}" class="menu-item {{ request()->routeIs('dean.documents') ? 'active' : '' }}">
             <i class="fas fa-folder"></i> Documents
@@ -42,10 +42,10 @@
 
 {{-- Communication --}}
 <div class="sidebar-group">
-    <div class="sidebar-section-label" data-target="group-communication">
+    <button type="button" class="sidebar-section-label" aria-expanded="false" data-target="group-communication">
         <span>Communication</span>
-        <i class="fas fa-chevron-down sidebar-chevron"></i>
-    </div>
+        <i class="fas fa-chevron-down sidebar-chevron" aria-hidden="true"></i>
+    </button>
     <div class="sidebar-group-items" id="group-communication">
         <a href="{{ route('announcements.index') }}" class="menu-item {{ request()->routeIs('announcements.index', 'announcements.show') ? 'active' : '' }}">
             <i class="fas fa-bullhorn"></i> Announcements
@@ -55,10 +55,10 @@
 
 {{-- Core Functions --}}
 <div class="sidebar-group">
-    <div class="sidebar-section-label" data-target="group-core">
+    <button type="button" class="sidebar-section-label" aria-expanded="false" data-target="group-core">
         <span>Core Functions</span>
-        <i class="fas fa-chevron-down sidebar-chevron"></i>
-    </div>
+        <i class="fas fa-chevron-down sidebar-chevron" aria-hidden="true"></i>
+    </button>
     <div class="sidebar-group-items" id="group-core">
         <a href="{{ route('dean.dashboard') }}" class="menu-item {{ request()->routeIs('dean.dashboard') ? 'active' : '' }}">
             <i class="fas fa-chart-line"></i> Dashboard
@@ -74,10 +74,10 @@
 
 {{-- Management --}}
 <div class="sidebar-group">
-    <div class="sidebar-section-label" data-target="group-management">
+    <button type="button" class="sidebar-section-label" aria-expanded="false" data-target="group-management">
         <span>Management</span>
-        <i class="fas fa-chevron-down sidebar-chevron"></i>
-    </div>
+        <i class="fas fa-chevron-down sidebar-chevron" aria-hidden="true"></i>
+    </button>
     <div class="sidebar-group-items" id="group-management">
         <a href="{{ route('dean.employees') }}" class="menu-item {{ request()->routeIs('dean.employees', 'dean.employee-profile', 'dean.edit-employee') ? 'active' : '' }}">
             <i class="fas fa-users"></i> Faculty Members

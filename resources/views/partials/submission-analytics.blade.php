@@ -4,10 +4,10 @@
     $maxMonthly = max($monthlyTrend->max('count') ?: 1, 1);
 @endphp
 
-<div class="content-card mb-6">
+<div class="analytics-section content-card mb-0">
     <div class="card-header flex flex-wrap items-center justify-between gap-3">
         <div>
-            <h3 class="card-title"><i class="fas fa-filter mr-2"></i>Submission Analytics</h3>
+            <h3 class="card-title">Submission analytics</h3>
             <p class="text-sm text-gray-500 dark:text-gray-400 mt-1">{{ $scopeLabel ?? '' }}</p>
         </div>
         <span class="badge badge-info">{{ number_format($totalSubmissions ?? 0) }} total submissions</span>
@@ -78,19 +78,19 @@
         @endif
         @if(isset($activeSchoolYearStart) && (string) ($filters['school_year'] ?? '') === (string) $activeSchoolYearStart)
         <p class="submission-analytics-filters__hint">
-            <i class="fas fa-check-circle text-[#028a0f]"></i>
+            <i class="fas fa-check-circle"></i>
             Showing data for the current school year.
         </p>
         @endif
     </form>
 
-    <div class="p-4 grid grid-cols-1 xl:grid-cols-2 gap-6">
+    <div class="analytics-grid">
         <div>
-            <h4 class="font-semibold text-gray-800 dark:text-gray-200 mb-4">
+            <h4>
                 @if($showResponsivenessTable ?? true)
-                    <i class="fas fa-tachometer-alt mr-1 text-blue-500"></i> Faculty Responsiveness
+                    Faculty responsiveness
                 @else
-                    <i class="fas fa-user-check mr-1 text-emerald-500"></i> Your Responsiveness
+                    Your responsiveness
                 @endif
             </h4>
             @if($showResponsivenessTable ?? true)
@@ -146,10 +146,10 @@
                 </table>
             @else
                 @php $you = $facultyResponsiveness->first(); @endphp
-                <div class="grid grid-cols-1 sm:grid-cols-3 gap-4">
-                    <div class="bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-lg p-4">
-                        <div class="text-xs font-semibold uppercase tracking-wide text-gray-500 dark:text-gray-400 mb-1">Avg. Task Response</div>
-                        <div class="text-2xl font-bold text-gray-800 dark:text-gray-100">
+                <div class="grid grid-cols-1 sm:grid-cols-3 gap-3">
+                    <div class="analytics-metric">
+                        <div class="analytics-metric__label">Avg. Task Response</div>
+                        <div class="analytics-metric__value">
                             @if($you && $you['avg_response_days'] !== null)
                                 {{ $you['avg_response_days'] }} day{{ $you['avg_response_days'] != 1 ? 's' : '' }}
                             @else
@@ -157,47 +157,43 @@
                             @endif
                         </div>
                     </div>
-                    <div class="bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-lg p-4">
-                        <div class="text-xs font-semibold uppercase tracking-wide text-gray-500 dark:text-gray-400 mb-1">Announcement Read Rate</div>
-                        <div class="text-2xl font-bold text-gray-800 dark:text-gray-100">{{ $you['read_rate'] ?? 0 }}%</div>
+                    <div class="analytics-metric">
+                        <div class="analytics-metric__label">Announcement Read Rate</div>
+                        <div class="analytics-metric__value">{{ $you['read_rate'] ?? 0 }}%</div>
                     </div>
-                    <div class="bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-lg p-4">
-                        <div class="text-xs font-semibold uppercase tracking-wide text-gray-500 dark:text-gray-400 mb-1">Submissions</div>
-                        <div class="text-2xl font-bold text-gray-800 dark:text-gray-100">{{ $you['submissions'] ?? 0 }}</div>
+                    <div class="analytics-metric">
+                        <div class="analytics-metric__label">Submissions</div>
+                        <div class="analytics-metric__value">{{ $you['submissions'] ?? 0 }}</div>
                     </div>
                 </div>
             @endif
         </div>
 
         <div>
-            <h4 class="font-semibold text-gray-800 dark:text-gray-200 mb-4">
-                <i class="fas fa-chart-bar mr-1"></i> Monthly Submission Trend
-            </h4>
+            <h4>Monthly submission trend</h4>
             @if($monthlyTrend->isNotEmpty())
-                <div class="space-y-3">
+                <div role="img" aria-label="Monthly submission trend">
                     @foreach($monthlyTrend as $point)
-                    <div>
-                        <div class="flex justify-between mb-1 text-sm">
-                            <span class="text-gray-700 dark:text-gray-300">{{ $point['label'] }}</span>
-                            <span class="font-semibold text-gray-800 dark:text-gray-200">{{ $point['count'] }}</span>
+                    <div class="ui-meter">
+                        <div class="ui-meter__row">
+                            <span class="ui-meter__label">{{ $point['label'] }}</span>
+                            <span class="ui-meter__value">{{ $point['count'] }}</span>
                         </div>
-                        <div class="bg-gray-200 dark:bg-gray-700 h-2.5">
-                            <div class="bg-gradient-to-r from-blue-500 to-indigo-600 h-full" style="width: {{ ($point['count'] / $maxMonthly) * 100 }}%;"></div>
+                        <div class="ui-meter__track" aria-hidden="true">
+                            <div class="ui-meter__fill" style="width: {{ ($point['count'] / $maxMonthly) * 100 }}%;"></div>
                         </div>
                     </div>
                     @endforeach
                 </div>
             @else
-                <p class="text-center text-gray-500 dark:text-gray-400 py-8">No monthly data for the selected filters.</p>
+                @include('partials.ui.empty-state', ['title' => 'No monthly data', 'text' => 'No monthly data for the selected filters.'])
             @endif
         </div>
     </div>
 
     @if(auth()->user()->isFaculty() && $monthlyTrend->isNotEmpty())
     <div class="p-4 pt-0 border-t border-gray-200 dark:border-gray-700">
-        <h4 class="font-semibold text-gray-800 dark:text-gray-200 mb-3">
-            <i class="fas fa-chart-line mr-1 text-[#028a0f]"></i> Submission overview
-        </h4>
+        <h4>Submission overview</h4>
         <div class="submission-overview-chart" role="img" aria-label="Monthly submission bar chart">
             @foreach($monthlyTrend as $point)
             <div class="submission-overview-chart__bar-col">

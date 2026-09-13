@@ -30,15 +30,19 @@
     </div>
 
     <form action="{{ route($routePrefix . '.notifications') }}" method="GET" class="notifications-toolbar px-4 mb-3">
+        <nav class="ui-segmented" aria-label="Notification status">
+            <a href="{{ route($routePrefix . '.notifications', array_filter(['q' => request('q') ?: null, 'tone' => request('tone') ?: null])) }}"
+               class="{{ request('status') === '' || request('status') === null ? 'is-active' : '' }}">All</a>
+            <a href="{{ route($routePrefix . '.notifications', array_filter(['status' => 'unread', 'q' => request('q') ?: null, 'tone' => request('tone') ?: null])) }}"
+               class="{{ request('status') === 'unread' ? 'is-active' : '' }}">Unread</a>
+            <a href="{{ route($routePrefix . '.notifications', array_filter(['status' => 'read', 'q' => request('q') ?: null, 'tone' => request('tone') ?: null])) }}"
+               class="{{ request('status') === 'read' ? 'is-active' : '' }}">Read</a>
+        </nav>
         <div class="notifications-toolbar-search">
             <i class="fas fa-search notifications-toolbar-icon" aria-hidden="true"></i>
             <input type="search" name="q" value="{{ request('q') }}" class="form-control text-sm" placeholder="Search...">
         </div>
-        <select name="status" class="form-control text-sm notifications-toolbar-select" aria-label="Status">
-            <option value="">All status</option>
-            <option value="unread" @selected(request('status') === 'unread')>Unread</option>
-            <option value="read" @selected(request('status') === 'read')>Read</option>
-        </select>
+        <input type="hidden" name="status" value="{{ request('status') }}">
         <select name="tone" class="form-control text-sm notifications-toolbar-select" aria-label="Type">
             <option value="">All types</option>
             <option value="success" @selected(request('tone') === 'success')>Approvals</option>

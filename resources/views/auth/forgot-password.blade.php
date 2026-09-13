@@ -48,13 +48,13 @@
                 </div>
 
                 @if(session('success'))
-                <div style="background: #065f46; color: #6ee7b7; padding: 0.75rem 1rem; margin-bottom: 1rem; font-size: 0.875rem;">
+                <div class="login-auth-message login-auth-message--success" role="status">
                     <i class="fas fa-check-circle"></i> {{ session('success') }}
                 </div>
                 @endif
 
                 @if(session('info'))
-                <div style="background: #1e3a8a; color: #bfdbfe; padding: 0.75rem 1rem; margin-bottom: 1rem; font-size: 0.875rem;">
+                <div class="login-auth-message login-auth-message--info" role="status">
                     <i class="fas fa-info-circle"></i> {{ session('info') }}
                 </div>
                 @endif
@@ -88,14 +88,14 @@
                         </button>
                     </div>
 
-                    <div class="login-portal-row" style="margin-top: 1rem;">
+                    <div class="login-portal-row forgot-password-back">
                         <a href="{{ route('login') }}" class="login-portal-forgot">
                             <i class="fas fa-arrow-left"></i> Back to login
                         </a>
                     </div>
                 </form>
 
-                <div style="margin-top: 1rem; font-size: 0.75rem; color: #9ca3af;">
+                <div class="forgot-password-note">
                     <i class="fas fa-shield-alt"></i>
                     For security, your existing password will be replaced with a one-time temporary
                     password the Dean issues to you. You will be required to change it on first login.

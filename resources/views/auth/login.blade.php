@@ -43,62 +43,75 @@
 
     {{-- ───────────────── MAIN CARD ───────────────── --}}
     <main class="login-portal-main">
-        <div class="login-portal-card">
-            <div class="login-portal-card-header">
-                <h2 class="login-portal-card-title">SITE DocuDrive</h2>
-                <p class="login-portal-card-subtitle">Employee Dashboard</p>
-            </div>
-
-            <div class="login-portal-card-body">
-                <div class="login-portal-welcome">
-                    <p class="login-portal-greeting" id="loginGreeting">
-                        <i class="fas fa-sun" id="greetingIcon"></i>
-                        <span id="greetingText">Good Day</span>
-                        <span class="greeting-sep">·</span>
-                        <span id="greetingDate">{{ now()->format('l, F j, Y') }}</span>
+        <section class="login-auth-shell" aria-labelledby="loginTitle">
+            <aside class="login-auth-identity" aria-label="SITE DocuDrive information">
+                <div class="login-auth-identity__brand">
+                    <img src="{{ asset('images/site-logo.png') }}" alt="" class="login-auth-identity__logo" aria-hidden="true">
+                    <span class="login-auth-identity__eyebrow">Employee portal</span>
+                </div>
+                <div class="login-auth-identity__content">
+                    <h2>SITE DocuDrive</h2>
+                    <p class="login-auth-identity__subtitle">Employee Document Management System</p>
+                    <p class="login-auth-identity__description">
+                        Secure access to institutional documents, submissions, reviews, and academic records.
                     </p>
-                    <h3 class="login-portal-welcome-title">Welcome Back</h3>
-                    <p class="login-portal-welcome-sub">Sign in to your account</p>
+                </div>
+                <div class="login-auth-identity__security">
+                    <i class="fas fa-shield-alt" aria-hidden="true"></i>
+                    <span>Authorized employees only</span>
+                </div>
+            </aside>
+
+            <div class="login-auth-form-panel">
+                <div class="login-auth-mobile-brand" aria-hidden="true">
+                    <img src="{{ asset('images/site-logo.png') }}" alt="">
+                    <span>SITE DocuDrive</span>
                 </div>
 
-                {{-- Success Message --}}
+                <div class="login-auth-heading">
+                    <p class="login-auth-heading__eyebrow">Employee access</p>
+                    <h2 id="loginTitle">Sign in</h2>
+                    <p>Use your SITE employee account to continue.</p>
+                </div>
+
                 @if(session('success'))
-                <div style="background: #065f46; color: #6ee7b7; padding: 0.75rem 1rem; border-radius: 0.5rem; margin-bottom: 1rem; font-size: 0.875rem;">
-                    {{ session('success') }}
+                <div class="login-auth-message login-auth-message--success" role="status">
+                    <i class="fas fa-check-circle" aria-hidden="true"></i>
+                    <span>{{ session('success') }}</span>
                 </div>
                 @endif
 
-                {{-- Error Message --}}
                 @if($errors->any())
-                <div class="login-portal-error">
-                    {{ $errors->first() }}
+                <div class="login-auth-message login-auth-message--error" role="alert">
+                    <i class="fas fa-exclamation-circle" aria-hidden="true"></i>
+                    <span>{{ $errors->first() }}</span>
                 </div>
                 @endif
 
-                <form action="{{ route('login.post') }}" method="POST" id="loginForm">
+                <form action="{{ route('login.post') }}" method="POST" id="loginForm" class="login-auth-form">
                     @csrf
 
                     <div class="login-portal-field">
-                        <label class="login-portal-label">Username</label>
+                        <label class="login-portal-label" for="username">Username</label>
                         <div class="login-portal-input-wrapper">
-                            <i class="fas fa-user login-portal-input-icon"></i>
-                            <input type="text" name="username" class="login-portal-input"
-                                placeholder="Enter username" required value="{{ old('username') }}">
+                            <i class="fas fa-user login-portal-input-icon" aria-hidden="true"></i>
+                            <input type="text" id="username" name="username" class="login-portal-input"
+                                placeholder="Enter username" required autocomplete="username" value="{{ old('username') }}">
                         </div>
                     </div>
 
                     <div class="login-portal-field">
-                        <label class="login-portal-label">Password</label>
+                        <label class="login-portal-label" for="password">Password</label>
                         <div class="login-portal-input-wrapper">
-                            <i class="fas fa-lock login-portal-input-icon"></i>
+                            <i class="fas fa-lock login-portal-input-icon" aria-hidden="true"></i>
                             <input type="password" id="password" name="password"
-                                class="login-portal-input has-toggle" placeholder="Enter password" required>
-                            <button type="button" id="togglePassword" class="login-portal-pw-toggle" aria-label="Toggle password visibility">
-                                <i class="fas fa-eye" id="toggleIcon"></i>
+                                class="login-portal-input has-toggle" placeholder="Enter password" required autocomplete="current-password">
+                            <button type="button" id="togglePassword" class="login-portal-pw-toggle" aria-label="Show password" aria-pressed="false">
+                                <i class="fas fa-eye" id="toggleIcon" aria-hidden="true"></i>
                             </button>
                         </div>
-                        <div id="capsLockWarning" class="login-portal-capslock">
-                            <i class="fas fa-exclamation-triangle"></i> Caps Lock is on
+                        <div id="capsLockWarning" class="login-portal-capslock" role="status">
+                            <i class="fas fa-exclamation-triangle" aria-hidden="true"></i> Caps Lock is on
                         </div>
                     </div>
 
@@ -110,22 +123,27 @@
                         <a href="{{ route('password.forgot.show') }}" class="login-portal-forgot">Forgot password?</a>
                     </div>
 
-                    <div class="login-portal-submit-wrap">
-                        <button type="submit" class="login-portal-submit">
-                            SIGN IN <i class="fas fa-sign-in-alt"></i>
-                        </button>
-                    </div>
+                    <button type="submit" class="login-portal-submit">
+                        <span>Sign in</span>
+                        <i class="fas fa-arrow-right" aria-hidden="true"></i>
+                    </button>
                 </form>
 
+                <p class="login-auth-help">
+                    <i class="fas fa-circle-info" aria-hidden="true"></i>
+                    For account access concerns, contact your system administrator.
+                </p>
             </div>
-        </div>
-
-        <p class="login-portal-ay">A.Y. 2025-2026 &nbsp;|&nbsp; <span class="ay-motto">Caritas Christi Urget Nos</span></p>
+        </section>
     </main>
 
     {{-- ───────────────── FOOTER ───────────────── --}}
     <footer class="login-portal-footer">
-        &copy; {{ date('Y') }} St. Paul University Philippines. All rights reserved.
+        <span>&copy; {{ date('Y') }} St. Paul University Philippines</span>
+        <span class="login-portal-footer__divider" aria-hidden="true"></span>
+        <span>A.Y. 2025-2026</span>
+        <span class="login-portal-footer__divider" aria-hidden="true"></span>
+        <em>Caritas Christi Urget Nos</em>
     </footer>
 
     <script>
@@ -156,33 +174,6 @@
             icon.className = theme === 'dark' ? 'fas fa-sun' : 'fas fa-moon';
         }
 
-        // ── Time-of-day Greeting (live, updates every 60s) ──
-        (function() {
-            const textEl = document.getElementById('greetingText');
-            const dateEl = document.getElementById('greetingDate');
-            const iconEl = document.getElementById('greetingIcon');
-            if (!textEl || !dateEl || !iconEl) return;
-
-            function update() {
-                const now = new Date();
-                const h = now.getHours();
-                let phrase, icon;
-                if (h < 5)        { phrase = 'Good Evening';   icon = 'fa-moon'; }
-                else if (h < 12)  { phrase = 'Good Morning';   icon = 'fa-sun'; }
-                else if (h < 18)  { phrase = 'Good Afternoon'; icon = 'fa-cloud-sun'; }
-                else              { phrase = 'Good Evening';   icon = 'fa-moon'; }
-
-                textEl.textContent = phrase;
-                iconEl.className = 'fas ' + icon;
-
-                const opts = { weekday: 'long', month: 'long', day: 'numeric', year: 'numeric' };
-                dateEl.textContent = now.toLocaleDateString(undefined, opts);
-            }
-
-            update();
-            setInterval(update, 60000);
-        })();
-
         // Show/Hide Password
         const togglePassword = document.getElementById('togglePassword');
         const passwordInput = document.getElementById('password');
@@ -193,6 +184,8 @@
                 const isPassword = passwordInput.type === 'password';
                 passwordInput.type = isPassword ? 'text' : 'password';
                 toggleIcon.className = isPassword ? 'fas fa-eye-slash' : 'fas fa-eye';
+                togglePassword.setAttribute('aria-label', isPassword ? 'Hide password' : 'Show password');
+                togglePassword.setAttribute('aria-pressed', isPassword ? 'true' : 'false');
             });
         }
 

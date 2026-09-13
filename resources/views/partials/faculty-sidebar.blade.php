@@ -2,10 +2,10 @@
 
 {{-- Resources & Development --}}
 <div class="sidebar-group">
-    <div class="sidebar-section-label" data-target="group-resources">
+    <button type="button" class="sidebar-section-label" aria-expanded="false" data-target="group-resources">
         <span>Resources &amp; Development</span>
-        <i class="fas fa-chevron-down sidebar-chevron"></i>
-    </div>
+        <i class="fas fa-chevron-down sidebar-chevron" aria-hidden="true"></i>
+    </button>
     <div class="sidebar-group-items" id="group-resources">
         <a href="{{ route('faculty.documents') }}" class="menu-item {{ request()->routeIs('faculty.documents', 'faculty.upload-document') ? 'active' : '' }}">
             <i class="fas fa-folder"></i> Documents
@@ -21,23 +21,26 @@
 
 {{-- Communication --}}
 <div class="sidebar-group">
-    <div class="sidebar-section-label" data-target="group-communication">
+    <button type="button" class="sidebar-section-label" aria-expanded="false" data-target="group-communication">
         <span>Communication</span>
-        <i class="fas fa-chevron-down sidebar-chevron"></i>
-    </div>
+        <i class="fas fa-chevron-down sidebar-chevron" aria-hidden="true"></i>
+    </button>
     <div class="sidebar-group-items" id="group-communication">
         <a href="{{ route('announcements.index') }}" class="menu-item {{ request()->routeIs('announcements.index', 'announcements.show') ? 'active' : '' }}">
             <i class="fas fa-bullhorn"></i> Announcements
+        </a>
+        <a href="{{ route('faculty.reports') }}" class="menu-item {{ request()->routeIs('faculty.reports', 'faculty.store-report') ? 'active' : '' }}">
+            <i class="fas fa-file-alt"></i> Reports
         </a>
     </div>
 </div>
 
 {{-- Core Functions --}}
 <div class="sidebar-group">
-    <div class="sidebar-section-label" data-target="group-core">
+    <button type="button" class="sidebar-section-label" aria-expanded="false" data-target="group-core">
         <span>Core Functions</span>
-        <i class="fas fa-chevron-down sidebar-chevron"></i>
-    </div>
+        <i class="fas fa-chevron-down sidebar-chevron" aria-hidden="true"></i>
+    </button>
     <div class="sidebar-group-items" id="group-core">
         <a href="{{ route('faculty.dashboard') }}" class="menu-item {{ request()->routeIs('faculty.dashboard') ? 'active' : '' }}">
             <i class="fas fa-chart-line"></i> Dashboard

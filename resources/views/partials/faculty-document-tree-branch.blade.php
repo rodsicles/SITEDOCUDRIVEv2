@@ -34,7 +34,7 @@
         <details class="doc-tree-node" style="--tree-depth: {{ $depth }}">
             <summary class="doc-tree-node__summary">
                 <span>
-                    <i class="fas {{ $icon }} text-[#028a0f]" aria-hidden="true"></i>
+                    <i class="fas {{ $icon }}" aria-hidden="true"></i>
                     {{ $label }}
                 </span>
                 <span class="doc-tree-count">{{ $childCount }}</span>

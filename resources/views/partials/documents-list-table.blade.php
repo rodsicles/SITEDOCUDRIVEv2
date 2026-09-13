@@ -11,62 +11,47 @@
         || request()->filled('date_from')
         || request()->filled('date_to')
         || request()->filled('file_type');
+    $isScopedList = $isScopedList ?? false;
+    $compactEmpty = $compactEmpty ?? false;
+    $documentRows = $isScopedList ? collect($documents) : $documents;
+    $canMove = \Illuminate\Support\Facades\Route::has($routePrefix . '.documents.move');
 @endphp
 
 <div class="documents-list-table-wrap">
-<table class="data-table" id="documentsListTable">
+<table class="data-table data-table--responsive" id="documentsListTable">
     <thead>
         <tr>
-            <th class="w-12"></th>
-            <th>Document Title</th>
-            <th>Type</th>
-            <th>Uploaded By</th>
-            <th>Upload Date</th>
+            <th>Document</th>
+            <th>Uploaded by</th>
+            <th>Date</th>
             <th>Actions</th>
         </tr>
     </thead>
     <tbody>
-        @forelse($documents as $document)
+        @forelse($documentRows as $document)
         @php
             $extension = strtolower(pathinfo($document->file_path, PATHINFO_EXTENSION));
             $canRename = $documentService->userCanRenameDocument($document, $user);
             $canDelete = $user->isDean() || $user->isSecretary() || (int) $document->uploaded_by === (int) $user->id;
             $canCopy   = $document->canView($user);
             $isFavorited = $canFavorite && $document->isFavoritedBy($user->id);
+            $sizeBytes = (int) ($document->file_size ?? 0);
+            $sizeLabel = $sizeBytes >= 1048576
+                ? number_format($sizeBytes / 1048576, 1).' MB'
+                : ($sizeBytes >= 1024 ? number_format($sizeBytes / 1024, 1).' KB' : ($sizeBytes ? $sizeBytes.' B' : strtoupper($extension ?: 'file')));
+            $typeLabel = $document->category
+                ?: ($document->document_type === 'pdf' ? 'PDF' : ($document->document_type === 'word' ? 'Word' : ($document->document_type === 'image' ? 'Image' : strtoupper($extension ?: 'File'))));
         @endphp
         <tr>
-            <td>
-                <div class="w-9 h-9 flex items-center justify-center text-lg bg-gray-100 dark:bg-gray-700 documents-icon">
-                    @if($extension === 'pdf')
-                        <i class="fas fa-file-pdf text-red-700"></i>
-                    @elseif(in_array($extension, ['doc', 'docx']))
-                        <i class="fas fa-file-word text-blue-700"></i>
-                    @elseif(in_array($extension, ['png', 'jpg', 'jpeg', 'gif', 'webp']))
-                        <i class="fas fa-file-image text-green-700"></i>
-                    @else
-                        <i class="fas fa-file text-gray-600"></i>
-                    @endif
+            <td data-label="Document">
+                <div class="doc-title-block">
+                    <strong class="doc-title-text" id="doc-title-text-{{ $document->document_id }}">{{ $document->document_title }}</strong>
+                    <span class="doc-title-meta">{{ $typeLabel }} · {{ $sizeLabel }}</span>
                 </div>
             </td>
-            <td>
-                <strong class="doc-title-text" id="doc-title-text-{{ $document->document_id }}">{{ $document->document_title }}</strong>
-            </td>
-            <td>
-                @if($document->category)
-                    <span class="doc-category-badge">{{ $document->category }}</span>
-                @elseif($document->document_type === 'pdf')
-                    <span class="doc-category-badge">PDF Document</span>
-                @elseif($document->document_type === 'word')
-                    <span class="doc-category-badge">Word Document</span>
-                @elseif($document->document_type === 'image')
-                    <span class="doc-category-badge">Image File</span>
-                @else
-                    <span class="doc-category-badge">{{ $document->document_type ?? 'General' }}</span>
-                @endif
-            </td>
-            <td>{{ $document->uploader ? ($document->uploader->employee->full_name ?? $document->uploader->username) : 'Unknown' }}</td>
-            <td>{{ $document->created_at->format('M d, Y g:i A') }}</td>
-            <td class="doc-action-cell">
+            <td data-label="Uploaded by">{{ $document->uploader ? ($document->uploader->employee->full_name ?? $document->uploader->username) : 'Unknown' }}</td>
+            <td data-label="Date">{{ optional($document->created_at)->format('M j, Y') }}</td>
+            <td data-label="Actions" class="doc-action-cell">
                 <div class="doc-action-btns archive-row-actions" role="group" aria-label="Document actions">
                     @if($canFavorite)
                     <button type="button"
@@ -78,55 +63,67 @@
                         <i class="{{ $isFavorited ? 'fas' : 'far' }} fa-star" aria-hidden="true"></i>
                     </button>
                     @endif
-                    @include('partials.archive-row-actions', [
-                        'viewUrl' => route($routePrefix . '.view-document', $document->document_id),
-                        'downloadUrl' => route($routePrefix . '.download-document', $document->document_id),
-                        'viewLabel' => 'View ' . $document->document_title,
-                        'downloadLabel' => 'Download ' . $document->document_title,
-                    ])
-                    @if($canRename)
-                    <button type="button"
-                            class="btn btn-sm btn-success border-0 archive-row-actions__btn"
-                            title="Rename"
-                            aria-label="Rename {{ $document->document_title }}"
-                            onclick="openRenameDocumentModal({{ $document->document_id }}, @js($document->document_title))">
-                        <i class="fas fa-pen" aria-hidden="true"></i>
-                    </button>
-                    @endif
-                    @if($canCopy)
-                    <button type="button"
-                            class="btn btn-sm btn-success border-0 archive-row-actions__btn"
-                            title="Copy to…"
-                            aria-label="Copy {{ $document->document_title }}"
-                            onclick="openCopyDocumentModal({{ $document->document_id }}, @js(route($routePrefix.'.documents.copy', $document->document_id)))">
-                        <i class="fas fa-copy" aria-hidden="true"></i>
-                    </button>
-                    @endif
-                    @if($canDelete)
-                    <form id="delete-doc-{{ $document->document_id }}"
-                          action="{{ route($routePrefix . '.delete-document', $document->document_id) }}"
-                          method="POST"
-                          class="submission-review-actions__form">
-                        @csrf @method('DELETE')
+                    <a href="{{ route($routePrefix . '.view-document', $document->document_id) }}"
+                       class="btn btn-sm btn-primary border-0"
+                       target="_blank"
+                       rel="noopener noreferrer">
+                        View
+                    </a>
+                    <div class="ui-action-menu">
                         <button type="button"
-                                class="btn btn-sm btn-danger border-0 archive-row-actions__btn"
-                                title="Delete"
-                                aria-label="Delete {{ $document->document_title }}"
-                                onclick="confirmDelete({{ $document->document_id }})">
-                            <i class="fas fa-trash" aria-hidden="true"></i>
+                                class="btn btn-sm bg-gray-200 dark:bg-gray-700 text-gray-700 dark:text-gray-300 doc-actions-btn"
+                                data-doc-id="{{ $document->document_id }}"
+                                aria-haspopup="true"
+                                aria-expanded="false"
+                                aria-controls="doc-popover-{{ $document->document_id }}">
+                            More
                         </button>
-                    </form>
-                    @endif
+                        <div id="doc-popover-{{ $document->document_id }}" class="doc-list-popover" data-popover-id="{{ $document->document_id }}" hidden>
+                            <a href="{{ route($routePrefix . '.download-document', $document->document_id) }}">
+                                <i class="fas fa-download" aria-hidden="true"></i> Download
+                            </a>
+                            @if($canRename)
+                            <button type="button" onclick="openRenameDocumentModal({{ $document->document_id }}, @js($document->document_title))">
+                                <i class="fas fa-pen" aria-hidden="true"></i> Rename
+                            </button>
+                            @endif
+                            @if($canCopy)
+                            <button type="button" onclick="openCopyDocumentModal({{ $document->document_id }}, @js(route($routePrefix.'.documents.copy', $document->document_id)))">
+                                <i class="fas fa-copy" aria-hidden="true"></i> Copy
+                            </button>
+                            @endif
+                            @if($canMove)
+                            <button type="button" onclick="openMoveDocumentModal({{ $document->document_id }})">
+                                <i class="fas fa-folder-open" aria-hidden="true"></i> Move
+                            </button>
+                            @endif
+                            @if($canDelete)
+                            <form id="delete-doc-{{ $document->document_id }}"
+                                  action="{{ route($routePrefix . '.delete-document', $document->document_id) }}"
+                                  method="POST"
+                                  class="m-0">
+                                @csrf @method('DELETE')
+                                <button type="button" class="is-danger" onclick="confirmDelete({{ $document->document_id }})">
+                                    <i class="fas fa-trash" aria-hidden="true"></i> Delete
+                                </button>
+                            </form>
+                            @endif
+                        </div>
+                    </div>
                 </div>
             </td>
         </tr>
         @empty
         <tr>
-            <td colspan="6" class="py-10">
-                <div class="docs-empty-state">
-                    <div class="docs-empty-state__icon"><i class="fas fa-folder-open" aria-hidden="true"></i></div>
-                    <p class="docs-empty-state__title">No documents in this view</p>
-                    @if($hasListFilters)
+            <td colspan="4" class="{{ $compactEmpty ? 'py-4' : 'py-10' }}">
+                <div class="docs-empty-state {{ $compactEmpty ? 'docs-empty-state--compact' : '' }}">
+                    @if($compactEmpty && ! $isScopedList && ! $hasListFilters)
+                        <p class="docs-empty-state__text">This folder is empty.</p>
+                    @else
+                    <p class="docs-empty-state__title">{{ $isScopedList ? 'No files in this scope' : 'No documents in this view' }}</p>
+                    @if($isScopedList)
+                        <p class="docs-empty-state__text">{{ request('browse') === 'favorites' ? 'Star a file in a folder to pin it here.' : 'Open a document to see it in Recent.' }}</p>
+                    @elseif($hasListFilters)
                         <p class="docs-empty-state__text">Nothing matches your current filters or search.</p>
                         <a href="{{ route($docsListRoute, array_filter(['tab' => request('tab', 'accreditation'), 'folder' => request('folder')])) }}"
                            class="btn btn-primary text-sm mt-3">
@@ -137,6 +134,7 @@
                     @else
                         <p class="docs-empty-state__text">Open a folder above to browse files, or upload once you are inside a folder.</p>
                     @endif
+                    @endif
                 </div>
             </td>
         </tr>
@@ -146,7 +144,9 @@
 </div>
 
 <div class="mt-5">
-    {{ $documents->links() }}
+    @if(!$isScopedList)
+        {{ $documents->links() }}
+    @endif
 </div>
 
 @include('partials.rename-document-modal', ['routePrefix' => $routePrefix])

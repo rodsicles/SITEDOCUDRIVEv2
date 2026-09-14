@@ -8,10 +8,15 @@ use App\Models\Document;
 use App\Models\DocumentRequest;
 use App\Models\DocumentRequestRecipient;
 use App\Models\DocumentSearchIndex;
+use App\Models\Folder;
 use App\Models\Notification;
 use App\Models\SchoolYear;
 use App\Models\User;
 use App\Jobs\IndexDocumentContentJob;
+use App\Services\AcademicHierarchyService;
+use App\Services\DocumentVersionService;
+use App\Services\ExamQuestionnaireSyncService;
+use App\Services\TeachingGuideSyncService;
 use App\Support\UploadStorage;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
@@ -21,11 +26,13 @@ use Illuminate\Validation\ValidationException;
 
 class DocumentRequestController extends Controller
 {
+    private const REQUEST_CATEGORIES = ['teaching_guide', 'exam_questionnaire', 'general'];
+
     public function index(Request $request)
     {
         $user = $request->user();
         $tab = $request->string('tab')->value() === 'sent' ? 'sent' : 'received';
-        $query = DocumentRequest::query()->with(['requester.employee', 'course', 'schoolYear', 'recipients.recipient.employee', 'recipients.document']);
+        $query = DocumentRequest::query()->with(['requester.employee', 'requester.role', 'course', 'schoolYear', 'destinationFolder', 'recipients.recipient.employee', 'recipients.document']);
 
         if ($tab === 'sent') {
             $query->where('requested_by', $user->id);
@@ -43,22 +50,31 @@ class DocumentRequestController extends Controller
         }
 
         $requests = $query->orderByRaw('CASE WHEN due_at IS NULL THEN 1 ELSE 0 END')->orderBy('due_at')->latest('id')->paginate(20)->withQueryString();
-        $people = User::query()
+        $canCreateRequests = $user->isDean() || $user->isProgramCoordinator();
+        $peopleQuery = User::query()
             ->with([
                 'employee',
                 'role',
                 'assignedCourses' => fn ($query) => $query->active()->ordered(),
             ])
             ->where('status', 'Active')
-            ->whereKeyNot($user->id)
-            ->orderBy('username')
-            ->get();
+            ->whereKeyNot($user->id);
+
+        if ($user->isProgramCoordinator()) {
+            $department = optional($user->employee)->department;
+            $peopleQuery->whereHas('employee', fn ($query) => $query->where('department', $department));
+        }
+
+        $people = $canCreateRequests ? $peopleQuery->orderBy('username')->get() : collect();
+        $courses = Course::active()->ordered()->get();
 
         return view('document-requests.index', [
             'requests' => $requests,
             'tab' => $tab,
             'people' => $people,
-            'courses' => Course::active()->ordered()->get(),
+            'courses' => $courses,
+            'destinations' => $canCreateRequests ? $this->requestDestinations($courses) : [],
+            'canCreateRequests' => $canCreateRequests,
             'schoolYears' => SchoolYear::orderByDesc('start_year')->get(),
             'pendingCount' => DocumentRequestRecipient::where('user_id', $user->id)->whereIn('status', ['pending', 'changes_requested'])->count(),
         ]);
@@ -66,13 +82,17 @@ class DocumentRequestController extends Controller
 
     public function store(Request $request)
     {
+        abort_unless($request->user()->isDean() || $request->user()->isProgramCoordinator(), 403, 'Only deans and program coordinators can create document requests.');
+
         $validated = $request->validate([
             'title' => ['required', 'string', 'max:150'],
             'instructions' => ['nullable', 'string', 'max:2000'],
             'document_type' => ['required', Rule::in(['any', 'pdf', 'word', 'image'])],
+            'request_category' => ['required', Rule::in(self::REQUEST_CATEGORIES)],
             'recipient_ids' => ['required', 'array', 'min:1'],
             'recipient_ids.*' => ['integer', Rule::exists('users', 'id')->where('status', 'Active')],
             'course_id' => ['nullable', Rule::exists('courses', 'id')->where('is_active', true)],
+            'destination_folder_id' => ['nullable', 'integer', 'exists:folders,folder_id'],
             'school_year_id' => ['nullable', 'exists:school_years,id'],
             'semester' => ['nullable', Rule::in(['1st', '2nd'])],
             'due_at' => ['nullable', 'date', 'after:now'],
@@ -81,6 +101,53 @@ class DocumentRequestController extends Controller
 
         $recipientIds = collect($validated['recipient_ids'])->map(fn ($id) => (int) $id)->unique()->reject(fn ($id) => $id === (int) $request->user()->id);
         abort_if($recipientIds->isEmpty(), 422, 'Choose at least one other employee.');
+
+        if ($request->user()->isProgramCoordinator()) {
+            $department = optional($request->user()->employee)->department;
+            $accessibleCount = User::query()
+                ->whereIn('id', $recipientIds)
+                ->whereHas('employee', fn ($query) => $query->where('department', $department))
+                ->count();
+            if ($accessibleCount !== $recipientIds->count()) {
+                throw ValidationException::withMessages(['recipient_ids' => 'Choose recipients from your department only.']);
+            }
+        }
+
+        if ($validated['request_category'] === 'general') {
+            $validated['course_id'] = null;
+            $validated['destination_folder_id'] = null;
+        } else {
+            if (empty($validated['course_id']) || empty($validated['destination_folder_id'])) {
+                throw ValidationException::withMessages([
+                    'destination_folder_id' => 'Choose a valid destination for this course-related request.',
+                ]);
+            }
+
+            if (!in_array($validated['document_type'], ['pdf', 'word'], true)) {
+                throw ValidationException::withMessages([
+                    'document_type' => 'Teaching Guides and Exam Questionnaires must use PDF or Word files.',
+                ]);
+            }
+
+            $destination = Folder::findOrFail($validated['destination_folder_id']);
+            $hierarchy = app(AcademicHierarchyService::class);
+            $validDestination = $validated['request_category'] === 'teaching_guide'
+                ? $hierarchy->isTgUploadLeafFolder($destination)
+                : $hierarchy->isEqUploadLeafFolder($destination);
+            $subjectLabel = $validated['request_category'] === 'teaching_guide'
+                ? $hierarchy->subjectLabelFromTgUploadFolder($destination)
+                : $hierarchy->subjectLabelFromEqUploadFolder($destination);
+            $course = Course::find($validated['course_id']);
+
+            if (!$validDestination || !$course || !$this->subjectMatchesCourse($subjectLabel, $course)) {
+                throw ValidationException::withMessages([
+                    'destination_folder_id' => 'The selected destination does not match the request category and course.',
+                ]);
+            }
+
+            $validated['school_year_id'] = $destination->school_year_id;
+            $validated['semester'] = str_contains(strtolower(implode(' ', array_map(fn ($folder) => $folder->folder_name, [...$destination->getAncestors(), $destination]))), '2nd') ? '2nd' : '1st';
+        }
 
         if (!empty($validated['course_id'])) {
             $assignedRecipientCount = DB::table('faculty_courses')
@@ -126,9 +193,10 @@ class DocumentRequestController extends Controller
     public function submit(Request $request, DocumentRequestRecipient $recipient)
     {
         abort_unless((int) $recipient->user_id === (int) $request->user()->id, 403);
-        $recipient->load('request.course');
+        $recipient->load(['request.course', 'request.destinationFolder', 'request.requester.role', 'document']);
         abort_if($recipient->request->status !== 'open', 422, 'This request is closed.');
         abort_if($recipient->request->due_at?->isPast() && !$recipient->request->allow_late_submission, 422, 'The submission deadline has passed.');
+        abort_unless(in_array($recipient->status, ['pending', 'changes_requested'], true), 422, 'This request already has a submission under review.');
 
         $rules = ['file' => ['required', 'file', 'max:10240']];
         $rules['file'][] = match ($recipient->request->document_type) {
@@ -137,20 +205,63 @@ class DocumentRequestController extends Controller
         };
         $validated = $request->validate($rules);
         $file = $validated['file'];
+
+        if ($recipient->status === 'changes_requested' && $recipient->document) {
+            app(DocumentVersionService::class)->uploadNewVersion(
+                $recipient->document,
+                $file,
+                $request->user(),
+                'Corrected document-request submission',
+            );
+
+            DB::transaction(function () use ($recipient, $request) {
+                $recipient->update([
+                    'status' => 'submitted',
+                    'submitted_at' => now(),
+                    'review_note' => null,
+                    'reviewed_at' => null,
+                    'reviewed_by' => null,
+                ]);
+                Notification::create([
+                    'user_id' => $recipient->request->requested_by,
+                    'message' => ($request->user()->employee->full_name ?? $request->user()->username).' resubmitted "'.$recipient->request->title.'".',
+                    'tone' => Notification::TONE_SUCCESS,
+                    'action_url' => route('document-requests.index', ['tab' => 'sent']),
+                    'is_read' => false,
+                ]);
+            });
+
+            return back()->with('success', 'Corrected document submitted successfully.');
+        }
+
         $path = UploadStorage::storeAs($file, 'documents/requests', Str::uuid().'.'.strtolower($file->getClientOriginalExtension()));
 
         try {
             $document = DB::transaction(function () use ($recipient, $request, $file, $path) {
+                $category = match ($recipient->request->request_category) {
+                    'teaching_guide' => 'Teaching Guides',
+                    'exam_questionnaire' => 'Exam Questionnaires',
+                    default => 'Other',
+                };
+                $extension = strtolower($file->getClientOriginalExtension());
+                $documentType = match ($extension) {
+                    'doc', 'docx' => 'word',
+                    'jpg', 'jpeg', 'png', 'gif', 'webp' => 'image',
+                    default => 'pdf',
+                };
+                $origin = $recipient->request->requester?->isProgramCoordinator() ? 'requested-by-coordinator' : 'requested-by-dean';
+
                 $document = Document::create([
                     'uploaded_by' => $request->user()->id,
-                    'document_title' => pathinfo($file->getClientOriginalName(), PATHINFO_FILENAME),
+                    'folder_id' => $recipient->request->destination_folder_id,
+                    'document_title' => $recipient->request->title,
                     'file_path' => $path,
                     'file_size' => $file->getSize() ?: 0,
-                    'document_type' => strtolower($file->getClientOriginalExtension()),
-                    'category' => 'Other',
+                    'document_type' => $documentType,
+                    'category' => $category,
                     'school_year_id' => $recipient->request->school_year_id,
                     'subject' => $recipient->request->course?->code,
-                    'tags' => 'document-request,compliance',
+                    'tags' => 'document-request,'.$origin.','.$recipient->request->title,
                     'version' => 1,
                 ]);
                 $document->recipients()->syncWithoutDetaching([$recipient->request->requested_by]);
@@ -185,7 +296,7 @@ class DocumentRequestController extends Controller
 
     public function review(Request $request, DocumentRequestRecipient $recipient)
     {
-        $recipient->load('request');
+        $recipient->load(['request.destinationFolder', 'request.course', 'document']);
         abort_unless((int) $recipient->request->requested_by === (int) $request->user()->id, 403);
         $validated = $request->validate([
             'decision' => ['required', Rule::in(['approved', 'changes_requested'])],
@@ -193,22 +304,126 @@ class DocumentRequestController extends Controller
         ]);
         abort_unless($recipient->status === 'submitted', 422, 'Only submitted documents can be reviewed.');
 
-        $recipient->update([
-            'status' => $validated['decision'],
-            'review_note' => $validated['review_note'] ?? null,
-            'reviewed_at' => now(),
-            'reviewed_by' => $request->user()->id,
-        ]);
-        $recipient->request->update([
-            'status' => $recipient->request->recipients()->where('status', '!=', 'approved')->exists() ? 'open' : 'completed',
-        ]);
-        Notification::create([
-            'user_id' => $recipient->user_id,
-            'message' => 'Your submission for "'.$recipient->request->title.'" was '.str_replace('_', ' ', $validated['decision']).'.'.(!empty($validated['review_note']) ? ' Note: '.$validated['review_note'] : ''),
-            'tone' => $validated['decision'] === 'approved' ? Notification::TONE_SUCCESS : Notification::TONE_DANGER,
-            'action_url' => route('document-requests.index'),
-            'is_read' => false,
-        ]);
+        DB::transaction(function () use ($recipient, $validated, $request) {
+            if ($validated['decision'] === 'approved') {
+                $this->approveRequestedDocument($recipient, $request->user());
+            }
+
+            $recipient->update([
+                'status' => $validated['decision'],
+                'review_note' => $validated['review_note'] ?? null,
+                'reviewed_at' => now(),
+                'reviewed_by' => $request->user()->id,
+            ]);
+            $recipient->request->update([
+                'status' => $recipient->request->recipients()->where('id', '!=', $recipient->id)->where('status', '!=', 'approved')->exists()
+                    || $validated['decision'] !== 'approved' ? 'open' : 'completed',
+            ]);
+            Notification::create([
+                'user_id' => $recipient->user_id,
+                'message' => 'Your submission for "'.$recipient->request->title.'" was '.str_replace('_', ' ', $validated['decision']).'.'.(!empty($validated['review_note']) ? ' Note: '.$validated['review_note'] : ''),
+                'tone' => $validated['decision'] === 'approved' ? Notification::TONE_SUCCESS : Notification::TONE_DANGER,
+                'action_url' => route('document-requests.index'),
+                'is_read' => false,
+            ]);
+        });
         return back()->with('success', $validated['decision'] === 'approved' ? 'Submission approved.' : 'Correction request sent.');
+    }
+
+    private function approveRequestedDocument(DocumentRequestRecipient $recipient, User $reviewer): void
+    {
+        $document = $recipient->document;
+        $request = $recipient->request;
+        if (!$document) {
+            throw ValidationException::withMessages(['decision' => 'The submitted document could not be found.']);
+        }
+
+        if ($request->request_category === 'teaching_guide') {
+            $folder = $request->destinationFolder;
+            $guide = app(TeachingGuideSyncService::class)->syncFromDocument(
+                $document,
+                $folder,
+                [$request->requested_by],
+                $request->course?->code,
+            );
+            $guide?->update([
+                'status' => 'approved',
+                'reviewed_by' => $reviewer->id,
+                'reviewed_at' => now(),
+                'remarks' => 'Approved through Document Requests.',
+            ]);
+        }
+
+        if ($request->request_category === 'exam_questionnaire') {
+            $folder = $request->destinationFolder;
+            $sync = app(ExamQuestionnaireSyncService::class);
+            $questionnaire = $sync->createFromFolderUpload(
+                $document->uploaded_by,
+                $folder,
+                $document->document_title,
+                $document->file_path,
+                $document->document_type,
+                app(AcademicHierarchyService::class)->examTypeFromEqUploadFolder($folder),
+                $request->course?->code,
+                'approved',
+                $reviewer->id,
+            );
+            $questionnaire->update([
+                'document_id' => $document->document_id,
+                'school_year_id' => $request->school_year_id,
+            ]);
+        }
+    }
+
+    private function requestDestinations($courses): array
+    {
+        $hierarchy = app(AcademicHierarchyService::class);
+        $courseByCode = $courses->keyBy(fn (Course $course) => strtoupper($course->code));
+
+        return Folder::query()
+            ->where('is_system', true)
+            ->orderBy('sort_order')
+            ->get()
+            ->map(function (Folder $folder) use ($hierarchy, $courseByCode) {
+                $category = match (true) {
+                    $hierarchy->isTgUploadLeafFolder($folder) => 'teaching_guide',
+                    $hierarchy->isEqUploadLeafFolder($folder) => 'exam_questionnaire',
+                    default => null,
+                };
+                if (!$category) {
+                    return null;
+                }
+
+                $subjectLabel = $category === 'teaching_guide'
+                    ? $hierarchy->subjectLabelFromTgUploadFolder($folder)
+                    : $hierarchy->subjectLabelFromEqUploadFolder($folder);
+                $course = $courseByCode->first(fn (Course $candidate) => $this->subjectMatchesCourse($subjectLabel, $candidate));
+                if (!$course) {
+                    return null;
+                }
+
+                $path = collect([...$folder->getAncestors(), $folder])->pluck('folder_name')->implode(' › ');
+                $semester = str_contains(strtolower($path), '2nd') ? '2nd' : '1st';
+
+                return [
+                    'id' => $folder->folder_id,
+                    'category' => $category,
+                    'course_id' => $course->id,
+                    'school_year_id' => $folder->school_year_id,
+                    'semester' => $semester,
+                    'path' => $path,
+                ];
+            })
+            ->filter()
+            ->values()
+            ->all();
+    }
+
+    private function subjectMatchesCourse(?string $subjectLabel, Course $course): bool
+    {
+        return (bool) preg_match(
+            '/^'.preg_quote($course->code, '/').'(?=\s|[-–—]|$)/iu',
+            trim((string) $subjectLabel),
+        );
     }
 }

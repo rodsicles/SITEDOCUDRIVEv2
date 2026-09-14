@@ -102,7 +102,9 @@ return new class extends Migration
             DocumentService::allowedCategories()
         );
 
-        DB::statement('ALTER TABLE documents MODIFY COLUMN category ENUM('.implode(', ', $values).") DEFAULT 'Other'");
+        if (DB::getDriverName() !== 'sqlite') {
+            DB::statement('ALTER TABLE documents MODIFY COLUMN category ENUM('.implode(', ', $values).") DEFAULT 'Other'");
+        }
     }
 
     protected function shrinkDocumentsCategoryEnum(): void
@@ -121,6 +123,8 @@ return new class extends Migration
         ];
 
         $sql = array_map(fn (string $v) => "'".str_replace("'", "''", $v)."'", $values);
-        DB::statement('ALTER TABLE documents MODIFY COLUMN category ENUM('.implode(', ', $sql).") DEFAULT 'Other'");
+        if (DB::getDriverName() !== 'sqlite') {
+            DB::statement('ALTER TABLE documents MODIFY COLUMN category ENUM('.implode(', ', $sql).") DEFAULT 'Other'");
+        }
     }
 };

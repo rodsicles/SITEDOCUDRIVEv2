@@ -7,7 +7,8 @@ use Illuminate\Database\Eloquent\Model;
 class DocumentRequest extends Model
 {
     protected $fillable = [
-        'requested_by', 'title', 'instructions', 'document_type', 'course_id',
+        'requested_by', 'title', 'instructions', 'document_type', 'request_category', 'course_id',
+        'destination_folder_id',
         'department', 'school_year_id', 'semester', 'due_at',
         'allow_late_submission', 'status',
     ];
@@ -19,6 +20,7 @@ class DocumentRequest extends Model
 
     public function requester() { return $this->belongsTo(User::class, 'requested_by'); }
     public function course() { return $this->belongsTo(Course::class); }
+    public function destinationFolder() { return $this->belongsTo(Folder::class, 'destination_folder_id', 'folder_id'); }
     public function schoolYear() { return $this->belongsTo(SchoolYear::class); }
     public function recipients() { return $this->hasMany(DocumentRequestRecipient::class); }
 

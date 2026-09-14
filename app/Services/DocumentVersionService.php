@@ -50,7 +50,11 @@ class DocumentVersionService
             $document->update([
                 'file_path' => $storedPath,
                 'file_size' => $file->getSize(),
-                'document_type' => $extension === 'pdf' ? 'pdf' : 'word',
+                'document_type' => match ($extension) {
+                    'doc', 'docx' => 'word',
+                    'jpg', 'jpeg', 'png', 'gif', 'webp' => 'image',
+                    default => 'pdf',
+                },
             ]);
 
             DashboardLog::create([

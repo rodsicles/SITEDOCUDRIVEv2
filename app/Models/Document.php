@@ -227,6 +227,13 @@ class Document extends Model
             ->orderByDesc('version_number');
     }
 
+    public function canManageVersions(User $user): bool
+    {
+        return (int) $this->uploaded_by === (int) $user->id
+            || $user->isDean()
+            || $user->isSecretary();
+    }
+
     public function searchIndex()
     {
         return $this->hasOne(DocumentSearchIndex::class, 'document_id', 'document_id');
@@ -237,12 +244,29 @@ class Document extends Model
         return $this->hasMany(DocumentRequestRecipient::class, 'submitted_document_id', 'document_id');
     }
 
+    public function getRequestedOriginLabelAttribute(): ?string
+    {
+        $submission = $this->requestSubmissions()->with('request.requester.role')->first();
+        $role = $submission?->request?->requester?->role?->role_name;
+
+        return match ($role) {
+            'Dean' => 'Requested by Dean',
+            'Program Coordinator' => 'Requested by Coordinator',
+            default => $submission ? 'Requested document' : null,
+        };
+    }
+
     /**
      * Hide Teaching Guides / Exam Questionnaires until linked submission is approved.
      */
     public function scopeOnlyApprovedShareable($query)
     {
-        return $query->where(function ($q) {
+        return $query
+            ->where(function ($requestReview) {
+                $requestReview->whereDoesntHave('requestSubmissions')
+                    ->orWhereHas('requestSubmissions', fn ($submission) => $submission->where('status', 'approved'));
+            })
+            ->where(function ($q) {
             $q->whereNotIn('category', self::SHAREABLE_CATEGORIES)
                 ->orWhereNull('category')
                 ->orWhere(function ($sub) {
@@ -253,7 +277,7 @@ class Document extends Model
                     $sub->where('category', 'Exam Questionnaires')
                         ->whereHas('examQuestionnaire', fn ($eq) => $eq->where('status', 'approved'));
                 });
-        });
+            });
     }
 
     public function scopeVisibleTo($query, User $user)

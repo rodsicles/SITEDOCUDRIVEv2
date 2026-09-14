@@ -41,12 +41,20 @@
                 : ($sizeBytes >= 1024 ? number_format($sizeBytes / 1024, 1).' KB' : ($sizeBytes ? $sizeBytes.' B' : strtoupper($extension ?: 'file')));
             $typeLabel = $document->category
                 ?: ($document->document_type === 'pdf' ? 'PDF' : ($document->document_type === 'word' ? 'Word' : ($document->document_type === 'image' ? 'Image' : strtoupper($extension ?: 'File'))));
+            $requestSubmission = $document->requestSubmissions()->with(['request.requester.employee', 'request.requester.role'])->first();
+            $requesterRole = $requestSubmission?->request?->requester?->role?->role_name;
+            $requestOriginLabel = match($requesterRole) {
+                'Dean' => 'Requested by Dean',
+                'Program Coordinator' => 'Requested by Coordinator',
+                default => $requestSubmission ? 'Requested document' : null,
+            };
         @endphp
         <tr>
             <td data-label="Document">
                 <div class="doc-title-block">
                     <strong class="doc-title-text" id="doc-title-text-{{ $document->document_id }}">{{ $document->document_title }}</strong>
                     <span class="doc-title-meta">{{ $typeLabel }} · {{ $sizeLabel }}</span>
+                    @if($requestOriginLabel)<span class="requested-origin-badge" title="{{ $requestSubmission->request->title }} · {{ $requestSubmission->request->requester->employee->full_name ?? $requestSubmission->request->requester->username }}"><i class="fas fa-clipboard-check"></i>{{ $requestOriginLabel }}</span>@endif
                     @if(!empty($document->search_excerpt))
                     <span class="doc-search-excerpt">{!! preg_replace('/('.preg_quote(request('search'), '/').')/iu', '<mark>$1</mark>', e($document->search_excerpt)) !!}</span>
                     @elseif(request('search') && optional($document->searchIndex)->index_status === 'pending')
@@ -74,47 +82,32 @@
                        rel="noopener noreferrer">
                         View
                     </a>
-                    <div class="ui-action-menu">
-                        <button type="button"
-                                class="btn btn-sm bg-gray-200 dark:bg-gray-700 text-gray-700 dark:text-gray-300 doc-actions-btn"
-                                data-doc-id="{{ $document->document_id }}"
-                                aria-haspopup="true"
-                                aria-expanded="false"
-                                aria-controls="doc-popover-{{ $document->document_id }}">
-                            More
+                    <a href="{{ route($routePrefix . '.download-document', $document->document_id) }}" class="doc-inline-action" title="Download" aria-label="Download {{ $document->document_title }}">
+                        <i class="fas fa-download" aria-hidden="true"></i>
+                    </a>
+                    @if($canRename)
+                    <button type="button" class="doc-inline-action" title="Rename" aria-label="Rename {{ $document->document_title }}" onclick="openRenameDocumentModal({{ $document->document_id }}, @js($document->document_title))">
+                        <i class="fas fa-pen" aria-hidden="true"></i>
+                    </button>
+                    @endif
+                    @if($canCopy)
+                    <button type="button" class="doc-inline-action" title="Copy" aria-label="Copy {{ $document->document_title }}" onclick="openCopyDocumentModal({{ $document->document_id }}, @js(route($routePrefix.'.documents.copy', $document->document_id)))">
+                        <i class="fas fa-copy" aria-hidden="true"></i>
+                    </button>
+                    @endif
+                    @if($canMove)
+                    <button type="button" class="doc-inline-action" title="Move" aria-label="Move {{ $document->document_title }}" onclick="openMoveDocumentModal({{ $document->document_id }})">
+                        <i class="fas fa-folder-open" aria-hidden="true"></i>
+                    </button>
+                    @endif
+                    @if($canDelete)
+                    <form id="delete-doc-{{ $document->document_id }}" action="{{ route($routePrefix . '.delete-document', $document->document_id) }}" method="POST" class="m-0 inline-flex">
+                        @csrf @method('DELETE')
+                        <button type="button" class="doc-inline-action doc-inline-action--danger" title="Delete" aria-label="Delete {{ $document->document_title }}" onclick="confirmDelete({{ $document->document_id }})">
+                            <i class="fas fa-trash" aria-hidden="true"></i>
                         </button>
-                        <div id="doc-popover-{{ $document->document_id }}" class="doc-list-popover" data-popover-id="{{ $document->document_id }}" hidden>
-                            <a href="{{ route($routePrefix . '.download-document', $document->document_id) }}">
-                                <i class="fas fa-download" aria-hidden="true"></i> Download
-                            </a>
-                            @if($canRename)
-                            <button type="button" onclick="openRenameDocumentModal({{ $document->document_id }}, @js($document->document_title))">
-                                <i class="fas fa-pen" aria-hidden="true"></i> Rename
-                            </button>
-                            @endif
-                            @if($canCopy)
-                            <button type="button" onclick="openCopyDocumentModal({{ $document->document_id }}, @js(route($routePrefix.'.documents.copy', $document->document_id)))">
-                                <i class="fas fa-copy" aria-hidden="true"></i> Copy
-                            </button>
-                            @endif
-                            @if($canMove)
-                            <button type="button" onclick="openMoveDocumentModal({{ $document->document_id }})">
-                                <i class="fas fa-folder-open" aria-hidden="true"></i> Move
-                            </button>
-                            @endif
-                            @if($canDelete)
-                            <form id="delete-doc-{{ $document->document_id }}"
-                                  action="{{ route($routePrefix . '.delete-document', $document->document_id) }}"
-                                  method="POST"
-                                  class="m-0">
-                                @csrf @method('DELETE')
-                                <button type="button" class="is-danger" onclick="confirmDelete({{ $document->document_id }})">
-                                    <i class="fas fa-trash" aria-hidden="true"></i> Delete
-                                </button>
-                            </form>
-                            @endif
-                        </div>
-                    </div>
+                    </form>
+                    @endif
                 </div>
             </td>
         </tr>
@@ -327,52 +320,6 @@ document.addEventListener('click', function (e) {
     });
 })();
 
-document.addEventListener('DOMContentLoaded', function () {
-    function closeDocPopover(popover, toggleBtn) {
-        if (!popover) return;
-        popover.classList.remove('is-open');
-        popover.setAttribute('hidden', '');
-        if (toggleBtn) toggleBtn.setAttribute('aria-expanded', 'false');
-    }
-
-    function closeAllDocPopovers() {
-        document.querySelectorAll('.doc-list-popover').forEach(function (popover) {
-            var id = popover.dataset.popoverId;
-            var btn = document.querySelector('.doc-actions-btn[data-doc-id="' + id + '"]');
-            closeDocPopover(popover, btn);
-        });
-    }
-
-    document.querySelectorAll('.doc-actions-btn').forEach(function (btn) {
-        btn.addEventListener('click', function (e) {
-            e.stopPropagation();
-            var id = btn.dataset.docId;
-            var popover = document.getElementById('doc-popover-' + id);
-            if (!popover) return;
-            var isOpen = popover.classList.contains('is-open');
-            closeAllDocPopovers();
-            if (!isOpen) {
-                popover.classList.add('is-open');
-                popover.removeAttribute('hidden');
-                btn.setAttribute('aria-expanded', 'true');
-            }
-        });
-    });
-
-    document.addEventListener('click', function () {
-        closeAllDocPopovers();
-    });
-
-    document.querySelectorAll('.doc-list-popover').forEach(function (popover) {
-        popover.addEventListener('click', function (e) {
-            e.stopPropagation();
-        });
-    });
-
-    document.addEventListener('keydown', function (e) {
-        if (e.key === 'Escape') closeAllDocPopovers();
-    });
-});
 </script>
 @endpush
 @endonce

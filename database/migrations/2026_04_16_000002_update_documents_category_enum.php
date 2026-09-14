@@ -17,11 +17,15 @@ return new class extends Migration
         DB::table('documents')->where('category', 'Research Papers')->update(['category' => 'Other']);
 
         // Change enum values
-        DB::statement("ALTER TABLE documents MODIFY COLUMN category ENUM('Accreditation and Certifications', 'Academics', 'Other') DEFAULT 'Other'");
+        if (DB::getDriverName() !== 'sqlite') {
+            DB::statement("ALTER TABLE documents MODIFY COLUMN category ENUM('Accreditation and Certifications', 'Academics', 'Other') DEFAULT 'Other'");
+        }
     }
 
     public function down(): void
     {
-        DB::statement("ALTER TABLE documents MODIFY COLUMN category ENUM('Policies', 'Forms', 'Reports', 'Memos', 'Research Papers', 'Other') DEFAULT 'Other'");
+        if (DB::getDriverName() !== 'sqlite') {
+            DB::statement("ALTER TABLE documents MODIFY COLUMN category ENUM('Policies', 'Forms', 'Reports', 'Memos', 'Research Papers', 'Other') DEFAULT 'Other'");
+        }
     }
 };

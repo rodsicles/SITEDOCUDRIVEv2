@@ -2724,7 +2724,11 @@ input[type="password"].has-toggle::-webkit-textfield-decoration-container {
 
 /* Action buttons container */
 .folder-actions-new {
-    @apply flex gap-1.5 flex-shrink-0 ml-2 pl-2 border-l border-gray-200 dark:border-gray-700;
+    @apply flex flex-shrink-0 border-l border-gray-200 dark:border-gray-700;
+    align-items: center;
+    gap: 0.375rem;
+    margin-left: 0.75rem;
+    padding-left: 0.75rem;
 }
 
 /* Individual action button */
@@ -2738,14 +2742,17 @@ input[type="password"].has-toggle::-webkit-textfield-decoration-container {
     display: inline-flex;
     align-items: center;
     justify-content: center;
-    width: 1.75rem;
-    height: 1.75rem;
+    width: 2rem;
+    height: 2rem;
     padding: 0;
     border: 1px solid #d1d5db;
     border-radius: 0.375rem;
     background: #f9fafb;
     color: #028a0f;
+    line-height: 1;
 }
+
+.custom-folder-action-btn i { width: 1em; text-align: center; }
 
 .custom-folder-action-btn:hover {
     background: #ecfdf3;
@@ -7349,6 +7356,87 @@ a.doc-sort-item:hover,
     color: #e5e7eb !important;
     border-color: #4b5563 !important;
 }
+
+/* Compact folder privacy confirmation */
+.swal-folder-privacy {
+    width: min(calc(100vw - 2rem), 27rem) !important;
+    padding: 1.25rem !important;
+    border-top-color: var(--site-primary) !important;
+}
+
+.swal-folder-privacy-title {
+    padding: 0 !important;
+    margin: 0 !important;
+    color: var(--site-heading) !important;
+    font-size: 1.05rem !important;
+    font-weight: 700 !important;
+    line-height: 1.35 !important;
+    text-align: left !important;
+}
+
+.swal-folder-privacy-content {
+    padding: 0 !important;
+    margin: 0.85rem 0 0 !important;
+    text-align: left !important;
+}
+
+.swal-folder-privacy-body p {
+    margin: 0.75rem 0 0;
+    color: var(--site-muted);
+    font-size: 0.78rem;
+    line-height: 1.55;
+}
+
+.swal-folder-privacy-folder {
+    display: flex;
+    align-items: center;
+    gap: 0.65rem;
+    padding: 0.7rem 0.75rem;
+    color: var(--site-primary);
+    background: var(--site-surface-selected);
+    border: 1px solid var(--site-border);
+}
+
+.swal-folder-privacy-folder > i {
+    display: inline-flex;
+    width: 1.8rem;
+    height: 1.8rem;
+    align-items: center;
+    justify-content: center;
+    flex: 0 0 auto;
+    border: 1px solid currentColor;
+}
+
+.swal-folder-privacy-folder span,
+.swal-folder-privacy-folder small,
+.swal-folder-privacy-folder strong { display: block; }
+.swal-folder-privacy-folder span { min-width: 0; }
+.swal-folder-privacy-folder small { color: var(--site-muted); font-size: 0.62rem; font-weight: 700; text-transform: uppercase; }
+.swal-folder-privacy-folder strong { overflow: hidden; color: var(--site-heading); font-size: 0.8rem; text-overflow: ellipsis; white-space: nowrap; }
+
+.swal-folder-privacy-actions {
+    width: 100% !important;
+    margin: 1rem 0 0 !important;
+    gap: 0.5rem !important;
+    justify-content: flex-end !important;
+}
+
+.swal-folder-privacy-confirm,
+.swal-folder-privacy-cancel {
+    min-height: 2.35rem;
+    padding: 0.5rem 0.9rem !important;
+    border: 1px solid transparent !important;
+    border-radius: 0 !important;
+    font-size: 0.76rem !important;
+    font-weight: 700 !important;
+    cursor: pointer;
+}
+
+.swal-folder-privacy-confirm { color: #fff !important; background: var(--site-primary) !important; }
+.swal-folder-privacy-confirm.is-private { background: #b42318 !important; }
+.swal-folder-privacy-cancel { color: var(--site-text) !important; background: var(--site-surface) !important; border-color: var(--site-border-strong) !important; }
+.swal-folder-privacy-confirm:focus-visible,
+.swal-folder-privacy-cancel:focus-visible { outline: 2px solid var(--site-primary); outline-offset: 2px; }
 
 /* Faculty Dashboard - Two Column Row */
 .faculty-dashboard-row {

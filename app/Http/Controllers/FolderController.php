@@ -115,7 +115,7 @@ class FolderController extends Controller
                 'private' => $folder->is_private,
                 'message' => $folder->is_private
                     ? 'Folder is now private. Only you can access its contents.'
-                    : 'Folder privacy removed.',
+                    : 'Folder is now public and follows the standard access rules.',
             ]);
         } catch (HttpException $e) {
             return response()->json(['success' => false, 'message' => $e->getMessage()], $e->getStatusCode());

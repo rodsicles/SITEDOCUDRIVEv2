@@ -340,9 +340,10 @@
                 @if(($isCustomSubfolder ?? false) && isset($currentFolder) && (int) $currentFolder->user_id === (int) auth()->id())
                 @if(auth()->user()->isFaculty())
                 <button type="button" class="btn btn-sm {{ $currentFolder->is_private ? 'btn-success' : 'bg-gray-200 text-gray-700' }}"
+                        title="{{ $currentFolder->is_private ? 'Make folder public' : 'Make folder private' }}"
                         onclick="setFolderPrivacy({{ $currentFolder->folder_id }}, {{ $currentFolder->is_private ? 'false' : 'true' }}, @js($currentFolder->folder_name))">
                     <i class="fas {{ $currentFolder->is_private ? 'fa-lock-open' : 'fa-lock' }} mr-1"></i>
-                    {{ $currentFolder->is_private ? 'Unlock Folder' : 'Make Private' }}
+                    {{ $currentFolder->is_private ? 'Make Public' : 'Make Private' }}
                 </button>
                 @endif
                 <button type="button"
@@ -512,7 +513,8 @@
                 @if($ownsCustomFolder)
                 <div class="folder-actions-new">
                     @if(auth()->user()->isFaculty())
-                    <button type="button" class="folder-action-btn custom-folder-action-btn" title="{{ $folder->is_private ? 'Unlock folder' : 'Make folder private' }}"
+                    <button type="button" class="folder-action-btn custom-folder-action-btn custom-folder-action-btn--privacy" title="{{ $folder->is_private ? 'Make folder public' : 'Make folder private' }}"
+                            aria-label="{{ $folder->is_private ? 'Make '.$folder->folder_name.' public' : 'Make '.$folder->folder_name.' private' }}"
                             onclick="event.preventDefault();event.stopPropagation();setFolderPrivacy({{ $folder->folder_id }},{{ $folder->is_private ? 'false' : 'true' }},@js($folder->folder_name))">
                         <i class="fas {{ $folder->is_private ? 'fa-lock-open' : 'fa-lock' }}"></i>
                     </button>
@@ -1000,24 +1002,37 @@
 @push('scripts')
 <script>
 async function setFolderPrivacy(folderId, makePrivate, folderName) {
-    const title = makePrivate ? 'Make this folder private?' : 'Restore folder access?';
+    const title = makePrivate ? 'Make folder private?' : 'Make folder public?';
     const message = makePrivate
-        ? 'All existing shares for "' + folderName + '" will be removed. Only you will be able to find and open this folder.'
-        : '"' + folderName + '" will return to the standard access rules for folders.';
+        ? 'Existing shares will be removed. Only you will be able to find and open this folder.'
+        : 'This folder will follow the standard access rules and can be shared again.';
+    const privacyClass = makePrivate ? 'is-private' : 'is-public';
+    const privacyIcon = makePrivate ? 'fa-lock' : 'fa-lock-open';
 
     if (typeof Swal !== 'undefined') {
         const confirmation = await Swal.fire({
             title: title,
-            text: message,
-            icon: makePrivate ? 'warning' : 'question',
+            html: '<div class="swal-folder-privacy-body ' + privacyClass + '">' +
+                '<div class="swal-folder-privacy-folder"><i class="fas ' + privacyIcon + '" aria-hidden="true"></i><span><small>Folder</small><strong data-privacy-folder-name></strong></span></div>' +
+                '<p>' + message + '</p></div>',
             showCancelButton: true,
-            confirmButtonText: makePrivate ? 'Make private' : 'Restore access',
+            confirmButtonText: makePrivate ? 'Make private' : 'Make public',
             cancelButtonText: 'Cancel',
-            confirmButtonColor: makePrivate ? '#dc2626' : '#0d5c3b',
-            cancelButtonColor: '#6b7280',
             reverseButtons: true,
             focusCancel: true,
-            customClass: { popup: 'swal-flat' }
+            buttonsStyling: false,
+            customClass: {
+                popup: 'swal-flat swal-folder-privacy',
+                title: 'swal-folder-privacy-title',
+                htmlContainer: 'swal-folder-privacy-content',
+                actions: 'swal-folder-privacy-actions',
+                confirmButton: 'swal-folder-privacy-confirm ' + privacyClass,
+                cancelButton: 'swal-folder-privacy-cancel'
+            },
+            didOpen: function (popup) {
+                const name = popup.querySelector('[data-privacy-folder-name]');
+                if (name) name.textContent = folderName;
+            }
         });
 
         if (!confirmation.isConfirmed) return;

@@ -1000,10 +1000,31 @@
 @push('scripts')
 <script>
 async function setFolderPrivacy(folderId, makePrivate, folderName) {
-    const warning = makePrivate
-        ? 'Make "' + folderName + '" private? Existing shares will be removed. Dean, coordinators, and other employees will not be able to find or open it.'
-        : 'Unlock "' + folderName + '"? Its contents will return to normal access rules.';
-    if (!confirm(warning)) return;
+    const title = makePrivate ? 'Make this folder private?' : 'Restore folder access?';
+    const message = makePrivate
+        ? 'All existing shares for "' + folderName + '" will be removed. Only you will be able to find and open this folder.'
+        : '"' + folderName + '" will return to the standard access rules for folders.';
+
+    if (typeof Swal !== 'undefined') {
+        const confirmation = await Swal.fire({
+            title: title,
+            text: message,
+            icon: makePrivate ? 'warning' : 'question',
+            showCancelButton: true,
+            confirmButtonText: makePrivate ? 'Make private' : 'Restore access',
+            cancelButtonText: 'Cancel',
+            confirmButtonColor: makePrivate ? '#dc2626' : '#0d5c3b',
+            cancelButtonColor: '#6b7280',
+            reverseButtons: true,
+            focusCancel: true,
+            customClass: { popup: 'swal-flat' }
+        });
+
+        if (!confirmation.isConfirmed) return;
+    } else if (!confirm(title + '\n\n' + message)) {
+        return;
+    }
+
     const response = await fetch(@json(url('/folders')) + '/' + folderId + '/privacy', {
         method: 'PATCH',
         headers: {'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]').content, 'Accept':'application/json', 'Content-Type':'application/json'},

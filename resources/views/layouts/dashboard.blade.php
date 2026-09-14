@@ -34,6 +34,7 @@
             <nav class="p-2">
                 @yield('sidebar')
             </nav>
+            @include('partials.sidebar-account')
         </aside>
 
         <!-- Main Content -->
@@ -113,44 +114,6 @@
                         </button>
                     </div>
 
-                    @if(auth()->user()->avatarUrl())
-                        <img src="{{ auth()->user()->avatarUrl() }}" alt="Profile picture" class="w-10 h-10 max-md:w-8 max-md:h-8 rounded-full object-cover flex-shrink-0 border border-[#08472e]">
-                    @else
-                        <div class="w-10 h-10 max-md:w-8 max-md:h-8 bg-[#0d5c3b] text-white flex items-center justify-center font-semibold text-sm max-md:text-xs flex-shrink-0 border border-[#08472e]">
-                            {{ auth()->user()->initials() }}
-                        </div>
-                    @endif
-
-                    <!-- User Dropdown Menu -->
-                    <div class="relative">
-                        <button id="userMenuBtn" class="bg-transparent border-none text-gray-800 dark:text-gray-200 text-sm px-2 py-1 max-md:px-1 max-md:py-1 cursor-pointer font-medium">
-                            <span class="max-md:hidden">{{ auth()->user()->username }}</span> <i class="fas fa-chevron-down text-xs ml-1"></i>
-                        </button>
-                        <div id="userMenu" class="hidden absolute top-full right-0 bg-white dark:bg-[#2a2a2a] border border-gray-200 dark:border-gray-700 min-w-[200px] z-[1000] mt-1">
-                            <!-- User Info -->
-                            <div class="px-4 py-3 border-b border-gray-200 dark:border-gray-700">
-                                <p class="text-sm font-semibold text-gray-800 dark:text-gray-200 m-0">{{ auth()->user()->employee->full_name ?? auth()->user()->username }}</p>
-                                <p class="text-xs text-gray-500 dark:text-gray-400 m-0 mt-1">
-                                    <span class="inline-block px-2 py-0.5 bg-[#0d5c3b] text-white text-[10px] font-semibold">{{ auth()->user()->role->role_name }}</span>
-                                </p>
-                            </div>
-                            <!-- Menu Items -->
-                            <div class="py-1">
-                                <a href="{{ route('profile.edit') }}" class="flex items-center gap-2.5 px-4 py-2.5 text-gray-700 dark:text-gray-200 no-underline text-sm">
-                                    <i class="fas fa-user-edit text-gray-400 dark:text-gray-500 w-4 text-center"></i> Edit Profile
-                                </a>
-                            </div>
-                            <!-- Logout -->
-                            <div class="border-t border-gray-200 dark:border-gray-700 p-2">
-                                <form action="{{ route('logout') }}" method="POST" class="m-0" id="logoutForm">
-                                    @csrf
-                                    <button type="submit" class="flex items-center justify-center gap-2 w-full px-4 py-2.5 bg-red-600 text-white border-none cursor-pointer text-sm font-semibold">
-                                        <i class="fas fa-sign-out-alt"></i> Logout
-                                    </button>
-                                </form>
-                            </div>
-                        </div>
-                    </div>
                 </div>
             </div>
 
@@ -218,6 +181,7 @@
         document.addEventListener('click', () => {
             fontSizeMenu.classList.add('hidden');
             document.getElementById('userMenu').classList.add('hidden');
+            document.getElementById('userMenuBtn')?.setAttribute('aria-expanded', 'false');
             const notifDropdown = document.getElementById('notification-dropdown');
             const notifBtn = document.getElementById('notification-bell-btn');
             if (notifDropdown) notifDropdown.classList.add('hidden');
@@ -231,12 +195,16 @@
         userMenuBtn.addEventListener('click', (e) => {
             e.stopPropagation();
             userMenu.classList.toggle('hidden');
+            const isOpen = !userMenu.classList.contains('hidden');
+            userMenuBtn.setAttribute('aria-expanded', isOpen ? 'true' : 'false');
             fontSizeMenu.classList.add('hidden');
             const notifDropdown = document.getElementById('notification-dropdown');
             const notifBtn = document.getElementById('notification-bell-btn');
             if (notifDropdown) notifDropdown.classList.add('hidden');
             if (notifBtn) notifBtn.setAttribute('aria-expanded', 'false');
         });
+
+        userMenu.addEventListener('click', (e) => e.stopPropagation());
         
         // Load saved font size
         const savedFontSize = localStorage.getItem('fontSize') || 'medium';
@@ -881,6 +849,7 @@
                         dropdown.classList.toggle('hidden', isOpen);
                         bellBtn.setAttribute('aria-expanded', isOpen ? 'false' : 'true');
                         document.getElementById('userMenu')?.classList.add('hidden');
+                        document.getElementById('userMenuBtn')?.setAttribute('aria-expanded', 'false');
                         document.getElementById('fontSizeMenu')?.classList.add('hidden');
                         if (!isOpen) loadDropdown(true);
                     });

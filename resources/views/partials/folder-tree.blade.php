@@ -499,7 +499,8 @@
                     && !isset($currentFolder)
                     && (int) $folder->user_id === (int) auth()->id();
             @endphp
-            <div class="folder-card-new {{ $ownsCustomFolder ? 'folder-card-new--with-actions' : '' }} {{ (isset($folderFilter) && $folderFilter == $folder->folder_id) ? 'folder-card-active' : '' }}">
+            @if($ownsCustomFolder)<div class="folder-card-action-group">@endif
+            <div class="folder-card-new {{ (isset($folderFilter) && $folderFilter == $folder->folder_id) ? 'folder-card-active' : '' }}">
                 <a href="{{ route($docsRoute, ['tab' => $tab, 'folder' => $folder->folder_id]) }}" class="folder-card-link-new">
                     <div class="folder-icon-new" style="background-color: #028a0f; color: white;">
                         <i class="fas {{ $folder->is_private ? 'fa-lock' : 'fa-folder' }}"></i>
@@ -510,8 +511,9 @@
                         @include('partials.folder-card-meta', ['folder' => $folder])
                     </div>
                 </a>
+            </div>
                 @if($ownsCustomFolder)
-                <div class="folder-actions-new">
+                <div class="folder-actions-new folder-card-action-rail" aria-label="Actions for {{ $folder->folder_name }}">
                     @if(auth()->user()->isFaculty())
                     <button type="button" class="folder-action-btn custom-folder-action-btn custom-folder-action-btn--privacy" title="{{ $folder->is_private ? 'Make folder public' : 'Make folder private' }}"
                             aria-label="{{ $folder->is_private ? 'Make '.$folder->folder_name.' public' : 'Make '.$folder->folder_name.' private' }}"
@@ -535,7 +537,7 @@
                     </button>
                 </div>
                 @endif
-            </div>
+            @if($ownsCustomFolder)</div>@endif
             @empty
             <div class="empty-state p-8 text-center w-full">
                 <div class="empty-state-icon mb-3 text-4xl text-gray-300 dark:text-gray-600">

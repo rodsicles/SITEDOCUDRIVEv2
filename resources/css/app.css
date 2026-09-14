@@ -2682,8 +2682,19 @@ input[type="password"].has-toggle::-webkit-textfield-decoration-container {
     border-left: 3px solid transparent;
 }
 
-.folder-card-new--with-actions {
-    padding-right: 0.75rem;
+.folder-card-action-group {
+    display: grid;
+    grid-template-columns: minmax(0, 1fr) auto;
+    align-items: center;
+    gap: 0.5rem;
+    min-width: 0;
+}
+
+.folder-card-action-group > .folder-card-new {
+    width: 100%;
+    min-width: 0;
+    max-width: none;
+    margin: 0;
 }
 
 /* Active/selected folder card */
@@ -2753,6 +2764,19 @@ input[type="password"].has-toggle::-webkit-textfield-decoration-container {
 }
 
 .custom-folder-action-btn i { width: 1em; text-align: center; }
+
+.folder-card-action-rail {
+    flex-direction: column;
+    gap: 0.35rem;
+    margin: 0;
+    padding: 0;
+    border: 0;
+}
+
+@media (max-width: 640px) {
+    .folder-card-action-group { grid-template-columns: minmax(0, 1fr); gap: 0.4rem; }
+    .folder-card-action-rail { flex-direction: row; justify-content: flex-end; }
+}
 
 .custom-folder-action-btn:hover {
     background: #ecfdf3;

@@ -78,6 +78,8 @@
         </div>
     </div>
 
+    @include('partials.operational-insights')
+
     <!-- Announcements Feed Widget -->
     @include('partials.announcement-widget')
 

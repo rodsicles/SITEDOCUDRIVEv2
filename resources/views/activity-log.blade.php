@@ -58,7 +58,13 @@
     </form>
 
     <div class="overflow-x-auto">
-        <table class="data-table compact activity-log-table">
+        <table class="data-table compact activity-log-table {{ $isFaculty ? 'activity-log-table--faculty' : 'activity-log-table--staff' }}">
+            <colgroup>
+                @unless($isFaculty)<col class="activity-log-col-user">@endunless
+                <col class="activity-log-col-activity">
+                <col class="activity-log-col-type">
+                <col class="activity-log-col-date">
+            </colgroup>
             <thead>
                 <tr>
                     @unless($isFaculty)

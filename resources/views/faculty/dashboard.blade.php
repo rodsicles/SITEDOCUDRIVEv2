@@ -198,6 +198,7 @@
                     </div>
                 </div>
             </div>
+            @include('partials.operational-insights')
         </div>
 
         <div class="dean-preview-col">

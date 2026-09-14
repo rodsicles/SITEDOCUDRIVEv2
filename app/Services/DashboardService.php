@@ -18,6 +18,52 @@ use Illuminate\Support\Collection;
 class DashboardService
 {
     /**
+     * Three concise, role-scoped signals: urgent, trend, and positive/useful.
+     */
+    public function getOperationalInsights(User $user): array
+    {
+        $userId = (int) $user->id;
+        $documents = Document::query()->visibleTo($user);
+        $currentUploads = (clone $documents)->whereBetween('created_at', [now()->subDays(6)->startOfDay(), now()])->count();
+        $previousUploads = (clone $documents)->whereBetween('created_at', [now()->subDays(13)->startOfDay(), now()->subDays(7)->endOfDay()])->count();
+        $difference = $currentUploads - $previousUploads;
+        $trendWord = $difference > 0 ? 'increased' : ($difference < 0 ? 'decreased' : 'held steady');
+        $trendDetail = $difference === 0
+            ? "{$currentUploads} uploads in each seven-day period."
+            : abs($difference).' '.(abs($difference) === 1 ? 'file' : 'files').' '.($difference > 0 ? 'more' : 'fewer').' than the previous seven days.';
+
+        if ($user->isDean() || $user->isSecretary()) {
+            $overdue = Task::whereNotNull('due_date')->whereDate('due_date', '<', today())->where('status', '!=', 'Completed')->count();
+            $pending = \App\Models\TeachingGuide::where('status', 'pending')->count()
+                + \App\Models\ExamQuestionnaire::where('status', 'pending')->count();
+            $urgent = $overdue > 0
+                ? ['tone'=>'urgent','title'=>"{$overdue} overdue ".($overdue === 1 ? 'task' : 'tasks'),'detail'=>'These assignments are past their due date and still incomplete.','url'=>route('dean.tasks'),'action'=>'Review tasks']
+                : ['tone'=>$pending > 0 ? 'urgent' : 'clear','title'=>$pending > 0 ? "{$pending} submissions awaiting review" : 'No urgent review backlog','detail'=>$pending > 0 ? 'Teaching Guides or Exam Questionnaires are waiting for a decision.' : 'There are no overdue tasks or pending academic submissions.','url'=>$pending > 0 ? route('dean.teaching-guides.index', ['status'=>'pending']) : route('dean.dashboard'),'action'=>$pending > 0 ? 'Open review queue' : 'Dashboard'];
+            $completed = Task::where('status', 'Completed')->where('updated_at', '>=', now()->subDays(30))->count();
+            $positive = ['tone'=>'positive','title'=>"{$completed} tasks completed in 30 days",'detail'=>'A useful monthly signal of work closed across the institution.','url'=>route('dean.analytics'),'action'=>'View analytics'];
+        } elseif ($user->isProgramCoordinator()) {
+            $overdue = Task::where('assigned_to', $userId)->whereNotNull('due_date')->whereDate('due_date', '<', today())->where('status', '!=', 'Completed')->count();
+            $urgent = ['tone'=>$overdue > 0 ? 'urgent' : 'clear','title'=>$overdue > 0 ? "{$overdue} overdue ".($overdue === 1 ? 'task' : 'tasks') : 'No overdue assigned work','detail'=>$overdue > 0 ? 'Finish or update these assignments before other work.' : 'Your assigned tasks are currently within their deadlines.','url'=>route('coordinator.tasks'),'action'=>'Open tasks'];
+            $department = optional($user->employee)->department;
+            $faculty = User::where('role_id', 3)->when($department, fn ($q) => $q->whereHas('employee', fn ($e) => $e->where('department', $department)))->count();
+            $positive = ['tone'=>'positive','title'=>"{$faculty} faculty in your department",'detail'=>'Use this directory for focused follow-up and document coordination.','url'=>route('coordinator.faculty'),'action'=>'View faculty'];
+        } else {
+            $overdue = Task::where('assigned_to', $userId)->whereNotNull('due_date')->whereDate('due_date', '<', today())->where('status', '!=', 'Completed')->count();
+            $pending = \App\Models\TeachingGuide::where('user_id', $userId)->where('status', 'pending')->count()
+                + \App\Models\ExamQuestionnaire::where('submitted_by', $userId)->where('status', 'pending')->count();
+            $urgent = $overdue > 0
+                ? ['tone'=>'urgent','title'=>"{$overdue} overdue ".($overdue === 1 ? 'task' : 'tasks'),'detail'=>'These items should be completed before starting lower-priority work.','url'=>route('faculty.tasks', ['filter'=>'overdue']),'action'=>'Review overdue']
+                : ['tone'=>$pending > 0 ? 'attention' : 'clear','title'=>$pending > 0 ? "{$pending} submissions under review" : 'No urgent work overdue','detail'=>$pending > 0 ? 'Your academic submissions are awaiting an approval decision.' : 'Your assigned work is currently within deadline.','url'=>$pending > 0 ? route('faculty.documents') : route('faculty.tasks'),'action'=>$pending > 0 ? 'Check documents' : 'View tasks'];
+            $completed = Task::where('assigned_to', $userId)->where('status', 'Completed')->where('updated_at', '>=', now()->subDays(30))->count();
+            $positive = ['tone'=>'positive','title'=>"{$completed} tasks completed in 30 days",'detail'=>'A concise view of your recently finished work.','url'=>route('faculty.tasks', ['filter'=>'completed']),'action'=>'View completed'];
+        }
+
+        $trend = ['tone'=>'trend','title'=>"Document activity {$trendWord}",'detail'=>$trendDetail,'url'=>match (true) { $user->isDean() || $user->isSecretary() => route('dean.documents', ['scope'=>'all']), $user->isProgramCoordinator() => route('coordinator.documents', ['scope'=>'all']), default => route('faculty.documents', ['scope'=>'all']) },'action'=>'Open documents'];
+
+        return [$urgent, $trend, $positive];
+    }
+
+    /**
      * Get Dean dashboard statistics.
      */
     public function getDeanStats(int $userId): array
@@ -230,6 +276,7 @@ class DashboardService
                 'usageMax' => $usageMax,
                 'usageTotal' => $usageTotal,
                 'activeDays' => $activeDays,
+                'operationalInsights' => $this->getOperationalInsights($user),
             ]);
         });
     }
@@ -482,6 +529,7 @@ class DashboardService
                 'uploadMax' => $uploadMax,
                 'taskStatusBars' => $taskStatusBars,
                 'taskMax' => $taskMax,
+                'operationalInsights' => $this->getOperationalInsights($user),
             ]);
         });
     }

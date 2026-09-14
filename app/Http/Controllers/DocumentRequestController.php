@@ -17,6 +17,7 @@ use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Str;
 use Illuminate\Validation\Rule;
+use Illuminate\Validation\ValidationException;
 
 class DocumentRequestController extends Controller
 {
@@ -42,7 +43,16 @@ class DocumentRequestController extends Controller
         }
 
         $requests = $query->orderByRaw('CASE WHEN due_at IS NULL THEN 1 ELSE 0 END')->orderBy('due_at')->latest('id')->paginate(20)->withQueryString();
-        $people = User::query()->with(['employee', 'role'])->where('status', 'Active')->whereKeyNot($user->id)->orderBy('username')->get();
+        $people = User::query()
+            ->with([
+                'employee',
+                'role',
+                'assignedCourses' => fn ($query) => $query->active()->ordered(),
+            ])
+            ->where('status', 'Active')
+            ->whereKeyNot($user->id)
+            ->orderBy('username')
+            ->get();
 
         return view('document-requests.index', [
             'requests' => $requests,
@@ -62,8 +72,7 @@ class DocumentRequestController extends Controller
             'document_type' => ['required', Rule::in(['any', 'pdf', 'word', 'image'])],
             'recipient_ids' => ['required', 'array', 'min:1'],
             'recipient_ids.*' => ['integer', Rule::exists('users', 'id')->where('status', 'Active')],
-            'course_id' => ['nullable', 'exists:courses,id'],
-            'department' => ['nullable', Rule::in(['Information Technology', 'Engineering'])],
+            'course_id' => ['nullable', Rule::exists('courses', 'id')->where('is_active', true)],
             'school_year_id' => ['nullable', 'exists:school_years,id'],
             'semester' => ['nullable', Rule::in(['1st', '2nd'])],
             'due_at' => ['nullable', 'date', 'after:now'],
@@ -72,6 +81,20 @@ class DocumentRequestController extends Controller
 
         $recipientIds = collect($validated['recipient_ids'])->map(fn ($id) => (int) $id)->unique()->reject(fn ($id) => $id === (int) $request->user()->id);
         abort_if($recipientIds->isEmpty(), 422, 'Choose at least one other employee.');
+
+        if (!empty($validated['course_id'])) {
+            $assignedRecipientCount = DB::table('faculty_courses')
+                ->where('course_id', $validated['course_id'])
+                ->whereIn('user_id', $recipientIds)
+                ->distinct()
+                ->count('user_id');
+
+            if ($assignedRecipientCount !== $recipientIds->count()) {
+                throw ValidationException::withMessages([
+                    'course_id' => 'The selected course must be assigned to every chosen recipient.',
+                ]);
+            }
+        }
 
         $documentRequest = DB::transaction(function () use ($validated, $recipientIds, $request) {
             $item = DocumentRequest::create([

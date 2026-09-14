@@ -112,13 +112,12 @@
             <div class="modal-body request-form-grid">
                 <div class="form-group request-form-wide"><label class="form-label">Request title *</label><input class="form-control" name="title" value="{{ old('title') }}" maxlength="150" required placeholder="e.g. Updated faculty workload form"></div>
                 <div class="form-group request-form-wide"><label class="form-label">Instructions</label><textarea class="form-control" name="instructions" maxlength="2000" rows="3" placeholder="Explain exactly what must be submitted.">{{ old('instructions') }}</textarea></div>
+                <fieldset class="request-people request-form-wide"><legend>Recipients *</legend><input type="search" class="form-control request-people-search" placeholder="Find an employee…"><div class="request-people-list">@foreach($people as $person)<label data-search="{{ strtolower(($person->employee->full_name ?? $person->username).' '.($person->employee->department ?? '').' '.($person->role->role_name ?? '')) }}"><input type="checkbox" name="recipient_ids[]" value="{{ $person->id }}" data-course-ids='@json($person->assignedCourses->pluck('id')->values())' @checked(in_array($person->id, old('recipient_ids', [])))><span><strong>{{ $person->employee->full_name ?? $person->username }}</strong><small>{{ $person->role->role_name ?? 'Employee' }} · {{ $person->employee->department ?? 'No department' }}</small></span></label>@endforeach</div></fieldset>
                 <div class="form-group"><label class="form-label">Accepted file type *</label><select class="form-control" name="document_type" required><option value="any">PDF, Word, or image</option><option value="pdf">PDF only</option><option value="word">Word only</option><option value="image">Image only</option></select></div>
                 <div class="form-group"><label class="form-label">Due date</label><input class="form-control" type="datetime-local" name="due_at" min="{{ now()->addMinute()->format('Y-m-d\TH:i') }}"></div>
-                <div class="form-group"><label class="form-label">Department</label><select class="form-control" name="department"><option value="">Any department</option><option>Information Technology</option><option>Engineering</option></select></div>
-                <div class="form-group"><label class="form-label">Course</label><select class="form-control" name="course_id"><option value="">Not course-specific</option>@foreach($courses as $course)<option value="{{ $course->id }}">{{ $course->code }} — {{ $course->title }}</option>@endforeach</select></div>
+                <div class="form-group request-form-wide"><label class="form-label" for="requestCourse">Course</label><select id="requestCourse" class="form-control" name="course_id" data-selected-course="{{ old('course_id') }}"><option value="">Not course-specific</option></select><small id="requestCourseHint" class="text-xs text-gray-500">Select recipients to see their assigned courses. You may leave this as not course-specific.</small></div>
                 <div class="form-group"><label class="form-label">School year</label><select class="form-control" name="school_year_id"><option value="">Not specified</option>@foreach($schoolYears as $year)<option value="{{ $year->id }}">{{ $year->name }}</option>@endforeach</select></div>
                 <div class="form-group"><label class="form-label">Semester</label><select class="form-control" name="semester"><option value="">Not specified</option><option value="1st">1st semester</option><option value="2nd">2nd semester</option></select></div>
-                <fieldset class="request-people request-form-wide"><legend>Recipients *</legend><input type="search" class="form-control request-people-search" placeholder="Find an employee…"><div class="request-people-list">@foreach($people as $person)<label data-search="{{ strtolower(($person->employee->full_name ?? $person->username).' '.($person->employee->department ?? '').' '.($person->role->role_name ?? '')) }}"><input type="checkbox" name="recipient_ids[]" value="{{ $person->id }}"><span><strong>{{ $person->employee->full_name ?? $person->username }}</strong><small>{{ $person->role->role_name ?? 'Employee' }} · {{ $person->employee->department ?? 'No department' }}</small></span></label>@endforeach</div></fieldset>
                 <label class="request-checkbox request-form-wide"><input type="checkbox" name="allow_late_submission" value="1" checked> Allow late submissions and mark them overdue</label>
             </div>
             <div class="modal-footer"><button type="button" class="btn btn-secondary" data-close-modal>Cancel</button><button type="submit" class="btn btn-primary"><i class="fas fa-paper-plane"></i> Send request</button></div>
@@ -155,6 +154,52 @@ document.querySelectorAll('[data-open-modal]').forEach(function (button) {
 });
 document.querySelectorAll('[data-close-modal]').forEach(function (button) { button.addEventListener('click', function () { var modal = this.closest('.modal-overlay'); modal.classList.remove('active'); modal.hidden = true; }); });
 document.querySelector('.request-people-search')?.addEventListener('input', function () { var q = this.value.toLowerCase(); document.querySelectorAll('.request-people-list label').forEach(function (row) { row.hidden = !row.dataset.search.includes(q); }); });
+
+var requestCourses = @json($courses->mapWithKeys(fn ($course) => [(string) $course->id => $course->code.' — '.$course->title]));
+var requestCourseSelect = document.getElementById('requestCourse');
+
+function updateRequestCourseChoices() {
+    if (!requestCourseSelect) return;
+
+    var recipients = Array.from(document.querySelectorAll('.request-people-list input[name="recipient_ids[]"]:checked'));
+    var previousValue = requestCourseSelect.value || requestCourseSelect.dataset.selectedCourse || '';
+    var commonCourseIds = [];
+
+    if (recipients.length) {
+        commonCourseIds = JSON.parse(recipients[0].dataset.courseIds || '[]').map(String);
+        recipients.slice(1).forEach(function (recipient) {
+            var assignedIds = JSON.parse(recipient.dataset.courseIds || '[]').map(String);
+            commonCourseIds = commonCourseIds.filter(function (courseId) { return assignedIds.includes(courseId); });
+        });
+    }
+
+    requestCourseSelect.replaceChildren(new Option('Not course-specific', ''));
+    commonCourseIds.forEach(function (courseId) {
+        if (requestCourses[courseId]) requestCourseSelect.add(new Option(requestCourses[courseId], courseId));
+    });
+    requestCourseSelect.value = commonCourseIds.includes(String(previousValue)) ? String(previousValue) : '';
+    requestCourseSelect.dataset.selectedCourse = '';
+
+    var hint = document.getElementById('requestCourseHint');
+    if (!hint) return;
+    if (!recipients.length) {
+        hint.textContent = 'Select recipients to see their assigned courses. You may leave this as not course-specific.';
+    } else if (!commonCourseIds.length) {
+        hint.textContent = recipients.length > 1
+            ? 'The selected recipients have no assigned course in common. This request will be not course-specific.'
+            : 'This recipient has no assigned courses. This request will be not course-specific.';
+    } else {
+        hint.textContent = recipients.length > 1
+            ? 'Only courses assigned to every selected recipient are shown.'
+            : 'Only courses assigned to this recipient are shown.';
+    }
+}
+
+document.querySelectorAll('.request-people-list input[name="recipient_ids[]"]').forEach(function (checkbox) {
+    checkbox.addEventListener('change', updateRequestCourseChoices);
+});
+updateRequestCourseChoices();
+
 document.getElementById('requestFile')?.addEventListener('change', async function () {
     var warning = document.getElementById('duplicateWarning'); warning.hidden = true;
     if (!this.files[0] || !crypto.subtle) return;

@@ -499,8 +499,7 @@
                     && !isset($currentFolder)
                     && (int) $folder->user_id === (int) auth()->id();
             @endphp
-            @if($ownsCustomFolder)<div class="folder-card-action-group">@endif
-            <div class="folder-card-new {{ (isset($folderFilter) && $folderFilter == $folder->folder_id) ? 'folder-card-active' : '' }}">
+            <div class="folder-card-new {{ $ownsCustomFolder ? 'folder-card-new--has-actions' : '' }} {{ (isset($folderFilter) && $folderFilter == $folder->folder_id) ? 'folder-card-active' : '' }}">
                 <a href="{{ route($docsRoute, ['tab' => $tab, 'folder' => $folder->folder_id]) }}" class="folder-card-link-new">
                     <div class="folder-icon-new" style="background-color: #028a0f; color: white;">
                         <i class="fas {{ $folder->is_private ? 'fa-lock' : 'fa-folder' }}"></i>
@@ -511,33 +510,47 @@
                         @include('partials.folder-card-meta', ['folder' => $folder])
                     </div>
                 </a>
-            </div>
                 @if($ownsCustomFolder)
-                <div class="folder-actions-new folder-card-action-rail" aria-label="Actions for {{ $folder->folder_name }}">
+                <div class="folder-card-action-wrap">
+                    <button type="button"
+                            class="folder-card-actions-trigger"
+                            data-folder-actions-trigger="{{ $folder->folder_id }}"
+                            aria-label="Actions for {{ $folder->folder_name }}"
+                            aria-haspopup="menu"
+                            aria-expanded="false"
+                            aria-controls="folder-actions-{{ $folder->folder_id }}">
+                        <i class="fas fa-ellipsis-v" aria-hidden="true"></i>
+                    </button>
+                    <div id="folder-actions-{{ $folder->folder_id }}"
+                         class="folder-card-action-popover"
+                         data-folder-actions-popover="{{ $folder->folder_id }}"
+                         role="menu"
+                         hidden>
                     @if(auth()->user()->isFaculty())
-                    <button type="button" class="folder-action-btn custom-folder-action-btn custom-folder-action-btn--privacy" title="{{ $folder->is_private ? 'Make folder public' : 'Make folder private' }}"
-                            aria-label="{{ $folder->is_private ? 'Make '.$folder->folder_name.' public' : 'Make '.$folder->folder_name.' private' }}"
-                            onclick="event.preventDefault();event.stopPropagation();setFolderPrivacy({{ $folder->folder_id }},{{ $folder->is_private ? 'false' : 'true' }},@js($folder->folder_name))">
+                    <button type="button" class="folder-card-action-item folder-card-action-item--privacy" role="menuitem"
+                            onclick="closeFolderActionPopovers();setFolderPrivacy({{ $folder->folder_id }},{{ $folder->is_private ? 'false' : 'true' }},@js($folder->folder_name))">
                         <i class="fas {{ $folder->is_private ? 'fa-lock-open' : 'fa-lock' }}"></i>
+                        <span>{{ $folder->is_private ? 'Make Public' : 'Make Private' }}</span>
                     </button>
                     @endif
                     <button type="button"
-                            class="folder-action-btn custom-folder-action-btn"
-                            title="Rename folder"
-                            aria-label="Rename {{ $folder->folder_name }}"
-                            onclick="event.preventDefault(); event.stopPropagation(); openRenameFolderModal({{ $folder->folder_id }}, @js($folder->folder_name), @js($folder->color ?? '#028a0f'))">
+                            class="folder-card-action-item"
+                            role="menuitem"
+                            onclick="closeFolderActionPopovers();openRenameFolderModal({{ $folder->folder_id }}, @js($folder->folder_name), @js($folder->color ?? '#028a0f'))">
                         <i class="fas fa-pen" aria-hidden="true"></i>
+                        <span>Rename</span>
                     </button>
                     <button type="button"
-                            class="folder-action-btn custom-folder-action-btn custom-folder-action-btn--danger"
-                            title="Delete folder"
-                            aria-label="Delete {{ $folder->folder_name }}"
-                            onclick="event.preventDefault(); event.stopPropagation(); deleteFolder({{ $folder->folder_id }}, @js($folder->folder_name))">
+                            class="folder-card-action-item folder-card-action-item--danger"
+                            role="menuitem"
+                            onclick="closeFolderActionPopovers();deleteFolder({{ $folder->folder_id }}, @js($folder->folder_name))">
                         <i class="fas fa-trash" aria-hidden="true"></i>
+                        <span>Delete</span>
                     </button>
+                    </div>
                 </div>
                 @endif
-            @if($ownsCustomFolder)</div>@endif
+            </div>
             @empty
             <div class="empty-state p-8 text-center w-full">
                 <div class="empty-state-icon mb-3 text-4xl text-gray-300 dark:text-gray-600">
@@ -999,6 +1012,54 @@
 @if($canUpload)
 @include('partials.folder-modals')
 @endif
+
+@push('scripts')
+<script>
+function closeFolderActionPopovers(exceptId) {
+    document.querySelectorAll('[data-folder-actions-popover]').forEach(function (popover) {
+        if (exceptId && String(popover.dataset.folderActionsPopover) === String(exceptId)) return;
+        popover.hidden = true;
+        popover.classList.remove('is-open', 'opens-upward');
+        const trigger = document.querySelector('[data-folder-actions-trigger="' + popover.dataset.folderActionsPopover + '"]');
+        if (trigger) trigger.setAttribute('aria-expanded', 'false');
+    });
+}
+
+document.addEventListener('DOMContentLoaded', function () {
+    document.querySelectorAll('[data-folder-actions-trigger]').forEach(function (trigger) {
+        trigger.addEventListener('click', function (event) {
+            event.preventDefault();
+            event.stopPropagation();
+            const folderId = trigger.dataset.folderActionsTrigger;
+            const popover = document.querySelector('[data-folder-actions-popover="' + folderId + '"]');
+            if (!popover) return;
+            const willOpen = popover.hidden;
+            closeFolderActionPopovers(willOpen ? folderId : null);
+            if (!willOpen) return;
+
+            popover.hidden = false;
+            popover.classList.add('is-open');
+            trigger.setAttribute('aria-expanded', 'true');
+            if (popover.getBoundingClientRect().bottom > window.innerHeight - 12) {
+                popover.classList.add('opens-upward');
+            }
+            popover.querySelector('[role="menuitem"]')?.focus();
+        });
+    });
+
+    document.addEventListener('click', function (event) {
+        if (!event.target.closest('.folder-card-action-wrap')) closeFolderActionPopovers();
+    });
+
+    document.addEventListener('keydown', function (event) {
+        if (event.key !== 'Escape') return;
+        const openTrigger = document.querySelector('[data-folder-actions-trigger][aria-expanded="true"]');
+        closeFolderActionPopovers();
+        openTrigger?.focus();
+    });
+});
+</script>
+@endpush
 
 @if(auth()->user()->isFaculty())
 @push('scripts')

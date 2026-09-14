@@ -73,7 +73,6 @@ class DocumentRequestController extends Controller
             'tab' => $tab,
             'people' => $people,
             'courses' => $courses,
-            'destinations' => $canCreateRequests ? $this->requestDestinations($courses) : [],
             'canCreateRequests' => $canCreateRequests,
             'schoolYears' => SchoolYear::orderByDesc('start_year')->get(),
             'pendingCount' => DocumentRequestRecipient::where('user_id', $user->id)->whereIn('status', ['pending', 'changes_requested'])->count(),
@@ -92,7 +91,8 @@ class DocumentRequestController extends Controller
             'recipient_ids' => ['required', 'array', 'min:1'],
             'recipient_ids.*' => ['integer', Rule::exists('users', 'id')->where('status', 'Active')],
             'course_id' => ['nullable', Rule::exists('courses', 'id')->where('is_active', true)],
-            'destination_folder_id' => ['nullable', 'integer', 'exists:folders,folder_id'],
+            'destination_type' => ['nullable', Rule::in(['tg', 'lb', 'tos', 'toq'])],
+            'exam_period' => ['nullable', Rule::in(['prelims', 'midterms', 'finals'])],
             'school_year_id' => ['nullable', 'exists:school_years,id'],
             'semester' => ['nullable', Rule::in(['1st', '2nd'])],
             'due_at' => ['nullable', 'date', 'after:now'],
@@ -117,9 +117,20 @@ class DocumentRequestController extends Controller
             $validated['course_id'] = null;
             $validated['destination_folder_id'] = null;
         } else {
-            if (empty($validated['course_id']) || empty($validated['destination_folder_id'])) {
+            if (empty($validated['course_id']) || empty($validated['school_year_id']) || empty($validated['semester']) || empty($validated['destination_type'])) {
                 throw ValidationException::withMessages([
-                    'destination_folder_id' => 'Choose a valid destination for this course-related request.',
+                    'destination_type' => 'Complete the destination selection for this course-related request.',
+                ]);
+            }
+
+            $assignedRecipientCount = DB::table('faculty_courses')
+                ->where('course_id', $validated['course_id'])
+                ->whereIn('user_id', $recipientIds)
+                ->distinct()
+                ->count('user_id');
+            if ($assignedRecipientCount !== $recipientIds->count()) {
+                throw ValidationException::withMessages([
+                    'course_id' => 'The selected course must be assigned to every chosen recipient.',
                 ]);
             }
 
@@ -129,43 +140,54 @@ class DocumentRequestController extends Controller
                 ]);
             }
 
-            $destination = Folder::findOrFail($validated['destination_folder_id']);
             $hierarchy = app(AcademicHierarchyService::class);
-            $validDestination = $validated['request_category'] === 'teaching_guide'
-                ? $hierarchy->isTgUploadLeafFolder($destination)
-                : $hierarchy->isEqUploadLeafFolder($destination);
-            $subjectLabel = $validated['request_category'] === 'teaching_guide'
-                ? $hierarchy->subjectLabelFromTgUploadFolder($destination)
-                : $hierarchy->subjectLabelFromEqUploadFolder($destination);
             $course = Course::find($validated['course_id']);
+            $schoolYear = SchoolYear::find($validated['school_year_id']);
+            $subjectLabel = $course?->code.' — '.$course?->title;
+            $destination = null;
 
-            if (!$validDestination || !$course || !$this->subjectMatchesCourse($subjectLabel, $course)) {
+            if ($validated['request_category'] === 'teaching_guide') {
+                if (!in_array($validated['destination_type'], ['tg', 'lb'], true)) {
+                    throw ValidationException::withMessages(['destination_type' => 'Choose TG or LB for a Teaching Guide request.']);
+                }
+                $hierarchy->ensureSchoolYearStructure('tg', $schoolYear->start_year);
+                $semesterFolder = Folder::where('slug', 'tg-'.$validated['semester'].'-'.$schoolYear->start_year.'-'.$schoolYear->end_year)->first();
+                if ($semesterFolder) {
+                    $subjectFolder = $hierarchy->ensureSubjectWithTgLb($semesterFolder, $subjectLabel);
+                    $destination = $subjectFolder->children()->where('folder_name', strtoupper($validated['destination_type']))->first();
+                }
+            } else {
+                if (!in_array($validated['destination_type'], ['tos', 'toq'], true) || empty($validated['exam_period'])) {
+                    throw ValidationException::withMessages(['destination_type' => 'Choose an exam period and TOS or TOQ.']);
+                }
+                $examType = match ($validated['exam_period']) {
+                    'midterms' => 'Midterm',
+                    'finals' => 'Final',
+                    default => 'Prelim',
+                };
+                $hierarchy->ensureSchoolYearStructure('eq', $schoolYear->start_year);
+                $destination = $hierarchy->resolveEqUploadFolder(
+                    $schoolYear->start_year,
+                    $validated['semester'],
+                    $subjectLabel,
+                    $examType,
+                    $validated['destination_type'],
+                );
+            }
+
+            if (!$destination) {
                 throw ValidationException::withMessages([
-                    'destination_folder_id' => 'The selected destination does not match the request category and course.',
+                    'destination_type' => 'The selected destination could not be created. Please review your choices.',
                 ]);
             }
 
+            $validated['destination_folder_id'] = $destination->folder_id;
             $validated['school_year_id'] = $destination->school_year_id;
-            $validated['semester'] = str_contains(strtolower(implode(' ', array_map(fn ($folder) => $folder->folder_name, [...$destination->getAncestors(), $destination]))), '2nd') ? '2nd' : '1st';
-        }
-
-        if (!empty($validated['course_id'])) {
-            $assignedRecipientCount = DB::table('faculty_courses')
-                ->where('course_id', $validated['course_id'])
-                ->whereIn('user_id', $recipientIds)
-                ->distinct()
-                ->count('user_id');
-
-            if ($assignedRecipientCount !== $recipientIds->count()) {
-                throw ValidationException::withMessages([
-                    'course_id' => 'The selected course must be assigned to every chosen recipient.',
-                ]);
-            }
         }
 
         $documentRequest = DB::transaction(function () use ($validated, $recipientIds, $request) {
             $item = DocumentRequest::create([
-                ...collect($validated)->except('recipient_ids')->all(),
+                ...collect($validated)->except(['recipient_ids', 'destination_type', 'exam_period'])->all(),
                 'requested_by' => $request->user()->id,
                 'allow_late_submission' => $request->boolean('allow_late_submission', true),
             ]);
@@ -375,55 +397,4 @@ class DocumentRequestController extends Controller
         }
     }
 
-    private function requestDestinations($courses): array
-    {
-        $hierarchy = app(AcademicHierarchyService::class);
-        $courseByCode = $courses->keyBy(fn (Course $course) => strtoupper($course->code));
-
-        return Folder::query()
-            ->where('is_system', true)
-            ->orderBy('sort_order')
-            ->get()
-            ->map(function (Folder $folder) use ($hierarchy, $courseByCode) {
-                $category = match (true) {
-                    $hierarchy->isTgUploadLeafFolder($folder) => 'teaching_guide',
-                    $hierarchy->isEqUploadLeafFolder($folder) => 'exam_questionnaire',
-                    default => null,
-                };
-                if (!$category) {
-                    return null;
-                }
-
-                $subjectLabel = $category === 'teaching_guide'
-                    ? $hierarchy->subjectLabelFromTgUploadFolder($folder)
-                    : $hierarchy->subjectLabelFromEqUploadFolder($folder);
-                $course = $courseByCode->first(fn (Course $candidate) => $this->subjectMatchesCourse($subjectLabel, $candidate));
-                if (!$course) {
-                    return null;
-                }
-
-                $path = collect([...$folder->getAncestors(), $folder])->pluck('folder_name')->implode(' › ');
-                $semester = str_contains(strtolower($path), '2nd') ? '2nd' : '1st';
-
-                return [
-                    'id' => $folder->folder_id,
-                    'category' => $category,
-                    'course_id' => $course->id,
-                    'school_year_id' => $folder->school_year_id,
-                    'semester' => $semester,
-                    'path' => $path,
-                ];
-            })
-            ->filter()
-            ->values()
-            ->all();
-    }
-
-    private function subjectMatchesCourse(?string $subjectLabel, Course $course): bool
-    {
-        return (bool) preg_match(
-            '/^'.preg_quote($course->code, '/').'(?=\s|[-–—]|$)/iu',
-            trim((string) $subjectLabel),
-        );
-    }
 }

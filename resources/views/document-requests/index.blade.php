@@ -118,14 +118,31 @@
                 <div class="form-group"><label class="form-label">Accepted file type *</label><select id="requestDocumentType" class="form-control" name="document_type" required><option value="any" @selected(old('document_type', 'any') === 'any')>PDF, Word, or image</option><option value="pdf" @selected(old('document_type') === 'pdf')>PDF only</option><option value="word" @selected(old('document_type') === 'word')>Word only</option><option value="image" @selected(old('document_type') === 'image')>Image only</option></select></div>
                 <div class="form-group"><label class="form-label">Due date</label><input class="form-control" type="datetime-local" name="due_at" value="{{ old('due_at') }}" min="{{ now()->addMinute()->format('Y-m-d\TH:i') }}"></div>
                 <div class="form-group request-form-wide"><label class="form-label" for="requestCategory">Request category *</label><select id="requestCategory" class="form-control" name="request_category" required><option value="general" @selected(old('request_category', 'general') === 'general')>General Document</option><option value="teaching_guide" @selected(old('request_category') === 'teaching_guide')>Teaching Guide</option><option value="exam_questionnaire" @selected(old('request_category') === 'exam_questionnaire')>Exam Questionnaire</option></select><small id="requestCategoryHint" class="text-xs text-gray-500">General documents are filed in Uncategorized Files and marked with their request origin.</small></div>
-                <div class="form-group request-form-wide"><label class="form-label" for="requestCourse">Course</label><select id="requestCourse" class="form-control" name="course_id" data-selected-course="{{ old('course_id') }}"><option value="">Not course-specific</option></select><small id="requestCourseHint" class="text-xs text-gray-500">Select recipients to see their assigned courses. You may leave this as not course-specific.</small></div>
-                <div id="requestDestinationGroup" class="form-group request-form-wide" hidden><label class="form-label">Destination *</label><input id="requestDestinationId" type="hidden" name="destination_folder_id" value="{{ old('destination_folder_id') }}"><div class="request-destination-control"><button id="requestDestinationToggle" type="button" class="btn btn-secondary"><i class="fas fa-folder-tree"></i> Choose destination</button><button id="requestDestinationClear" type="button" class="btn btn-secondary" hidden>Change</button><span id="requestDestinationPath">No destination selected</span></div><div id="requestDestinationPicker" class="request-destination-picker" hidden><input id="requestDestinationSearch" type="search" class="form-control" placeholder="Search available destinations…"><div id="requestDestinationOptions" class="request-destination-options"></div><p id="requestDestinationEmpty" class="text-sm text-gray-500" hidden>No matching destination is available for the selected category and course.</p></div></div>
-                <div class="form-group"><label class="form-label">School year</label><select id="requestSchoolYear" class="form-control" name="school_year_id"><option value="">Not specified</option>@foreach($schoolYears as $year)<option value="{{ $year->id }}" @selected((string) old('school_year_id') === (string) $year->id)>{{ $year->name }}</option>@endforeach</select></div>
-                <div class="form-group"><label class="form-label">Semester</label><select id="requestSemester" class="form-control" name="semester"><option value="">Not specified</option><option value="1st" @selected(old('semester') === '1st')>1st semester</option><option value="2nd" @selected(old('semester') === '2nd')>2nd semester</option></select></div>
+                <input id="requestCourseId" type="hidden" name="course_id" value="{{ old('course_id') }}">
+                <input id="requestSchoolYearId" type="hidden" name="school_year_id" value="{{ old('school_year_id') }}">
+                <input id="requestSemesterValue" type="hidden" name="semester" value="{{ old('semester') }}">
+                <input id="requestDestinationType" type="hidden" name="destination_type" value="{{ old('destination_type') }}">
+                <input id="requestExamPeriod" type="hidden" name="exam_period" value="{{ old('exam_period') }}">
+                <div id="generalRequestPeriod" class="request-form-wide request-form-grid"><div class="form-group"><label class="form-label" for="generalSchoolYear">School year</label><select id="generalSchoolYear" class="form-control"><option value="">Not specified</option>@foreach($schoolYears as $year)<option value="{{ $year->id }}">{{ $year->name }}</option>@endforeach</select></div><div class="form-group"><label class="form-label" for="generalSemester">Semester</label><select id="generalSemester" class="form-control"><option value="">Not specified</option><option value="1st">1st semester</option><option value="2nd">2nd semester</option></select></div></div>
+                <div id="requestDestinationGroup" class="form-group request-form-wide" hidden><label class="form-label">Filing destination *</label><div class="request-destination-control"><button id="openDestinationModal" type="button" class="btn btn-secondary"><i class="fas fa-folder-tree"></i> Choose destination</button><span id="requestDestinationPath">No destination selected</span></div><small class="text-xs text-gray-500">Choose the course and filing details in a separate guided window.</small></div>
                 <label class="request-checkbox request-form-wide"><input type="checkbox" name="allow_late_submission" value="1" checked> Allow late submissions and mark them overdue</label>
             </div>
             <div class="modal-footer"><button type="button" class="btn btn-secondary" data-close-modal>Cancel</button><button type="submit" class="btn btn-primary"><i class="fas fa-paper-plane"></i> Send request</button></div>
         </form>
+    </div>
+</div>
+
+<div id="destinationPickerModal" class="modal-overlay destination-picker-modal" hidden role="dialog" aria-modal="true" aria-labelledby="destinationPickerTitle">
+    <div class="modal-card destination-picker-card">
+        <div class="modal-header destination-picker-header"><div><h2 id="destinationPickerTitle" class="modal-title">Choose filing destination</h2><p>Select one option in each step. The folder path is created automatically.</p></div><button id="closeDestinationModal" type="button" class="modal-close" aria-label="Close destination picker"><i class="fas fa-times"></i></button></div>
+        <div class="modal-body destination-picker-body">
+            <div class="destination-step"><span class="destination-step__number">1</span><div><label class="form-label" for="destinationCourse">Course</label><select id="destinationCourse" class="form-control" data-selected-course="{{ old('course_id') }}"><option value="">Select a recipient first</option></select><small id="requestCourseHint" class="text-xs text-gray-500">Only courses assigned to every selected recipient are available.</small></div></div>
+            <div class="destination-step"><span class="destination-step__number">2</span><div class="destination-paired-fields"><div><label class="form-label" for="destinationSchoolYear">School year</label><select id="destinationSchoolYear" class="form-control"><option value="">Select school year</option>@foreach($schoolYears as $year)<option value="{{ $year->id }}" data-label="{{ $year->name }}" @selected((string) old('school_year_id') === (string) $year->id || (old('school_year_id') === null && $year->is_active))>{{ $year->name }}</option>@endforeach</select></div><div><label class="form-label" for="destinationSemester">Semester</label><select id="destinationSemester" class="form-control"><option value="">Select semester</option><option value="1st" @selected(old('semester') === '1st')>1st semester</option><option value="2nd" @selected(old('semester') === '2nd')>2nd semester</option></select></div></div></div>
+            <div id="examPeriodStep" class="destination-step" hidden><span class="destination-step__number">3</span><div><span class="form-label">Exam period</span><div class="destination-choice-row" role="radiogroup" aria-label="Exam period">@foreach(['prelims' => 'Prelims', 'midterms' => 'Midterms', 'finals' => 'Finals'] as $value => $label)<button type="button" class="destination-choice" data-exam-period="{{ $value }}">{{ $label }}</button>@endforeach</div></div></div>
+            <div class="destination-step"><span id="documentTypeStepNumber" class="destination-step__number">3</span><div><span class="form-label">Document type</span><div id="teachingGuideTypes" class="destination-choice-row" role="radiogroup" aria-label="Teaching Guide document type"><button type="button" class="destination-choice" data-destination-type="tg">TG</button><button type="button" class="destination-choice" data-destination-type="lb">LB</button></div><div id="examQuestionnaireTypes" class="destination-choice-row" role="radiogroup" aria-label="Exam Questionnaire document type" hidden><button type="button" class="destination-choice" data-destination-type="tos">TOS</button><button type="button" class="destination-choice" data-destination-type="toq">TOQ</button></div></div></div>
+            <div class="destination-summary"><span>Selected destination</span><strong id="destinationDraftSummary">Complete the choices above.</strong></div>
+        </div>
+        <div class="modal-footer destination-picker-footer"><button id="cancelDestinationModal" type="button" class="btn btn-secondary">Cancel</button><button id="useDestination" type="button" class="btn btn-primary" disabled><i class="fas fa-check"></i> Use this destination</button></div>
     </div>
 </div>
 @endif
@@ -161,19 +178,26 @@ document.querySelectorAll('[data-close-modal]').forEach(function (button) { butt
 document.querySelector('.request-people-search')?.addEventListener('input', function () { var q = this.value.toLowerCase(); document.querySelectorAll('.request-people-list label').forEach(function (row) { row.hidden = !row.dataset.search.includes(q); }); });
 
 var requestCourses = @json($courses->mapWithKeys(fn ($course) => [(string) $course->id => $course->code.' — '.$course->title]));
-var requestDestinations = @json($destinations);
-var requestCourseSelect = document.getElementById('requestCourse');
 var requestCategorySelect = document.getElementById('requestCategory');
-var requestDestinationId = document.getElementById('requestDestinationId');
-var requestDestinationPicker = document.getElementById('requestDestinationPicker');
-var requestSchoolYear = document.getElementById('requestSchoolYear');
-var requestSemester = document.getElementById('requestSemester');
+var destinationCourse = document.getElementById('destinationCourse');
+var destinationSchoolYear = document.getElementById('destinationSchoolYear');
+var destinationSemester = document.getElementById('destinationSemester');
+var destinationModal = document.getElementById('destinationPickerModal');
+var courseIdInput = document.getElementById('requestCourseId');
+var schoolYearIdInput = document.getElementById('requestSchoolYearId');
+var semesterInput = document.getElementById('requestSemesterValue');
+var destinationTypeInput = document.getElementById('requestDestinationType');
+var examPeriodInput = document.getElementById('requestExamPeriod');
+var generalSchoolYear = document.getElementById('generalSchoolYear');
+var generalSemester = document.getElementById('generalSemester');
+var draftDestinationType = destinationTypeInput?.value || '';
+var draftExamPeriod = examPeriodInput?.value || '';
 
 function updateRequestCourseChoices() {
-    if (!requestCourseSelect) return;
+    if (!destinationCourse) return;
 
     var recipients = Array.from(document.querySelectorAll('.request-people-list input[name="recipient_ids[]"]:checked'));
-    var previousValue = requestCourseSelect.value || requestCourseSelect.dataset.selectedCourse || '';
+    var previousValue = destinationCourse.value || destinationCourse.dataset.selectedCourse || courseIdInput.value || '';
     var commonCourseIds = [];
 
     if (recipients.length) {
@@ -184,122 +208,181 @@ function updateRequestCourseChoices() {
         });
     }
 
-    requestCourseSelect.replaceChildren(new Option('Not course-specific', ''));
+    destinationCourse.replaceChildren(new Option(recipients.length ? 'Select course' : 'Select a recipient first', ''));
     commonCourseIds.forEach(function (courseId) {
-        if (requestCourses[courseId]) requestCourseSelect.add(new Option(requestCourses[courseId], courseId));
+        if (requestCourses[courseId]) destinationCourse.add(new Option(requestCourses[courseId], courseId));
     });
-    requestCourseSelect.value = commonCourseIds.includes(String(previousValue)) ? String(previousValue) : '';
-    requestCourseSelect.dataset.selectedCourse = '';
+    destinationCourse.value = commonCourseIds.includes(String(previousValue)) ? String(previousValue) : '';
+    destinationCourse.dataset.selectedCourse = '';
+
+    if (courseIdInput.value && !commonCourseIds.includes(String(courseIdInput.value))) clearCommittedDestination();
 
     var hint = document.getElementById('requestCourseHint');
     if (!hint) return;
     if (!recipients.length) {
-        hint.textContent = 'Select recipients to see their assigned courses. You may leave this as not course-specific.';
+        hint.textContent = 'Return to the request form and select at least one recipient first.';
     } else if (!commonCourseIds.length) {
         hint.textContent = recipients.length > 1
-            ? 'The selected recipients have no assigned course in common. This request will be not course-specific.'
-            : 'This recipient has no assigned courses. This request will be not course-specific.';
+            ? 'The selected recipients have no assigned course in common.'
+            : 'This recipient has no assigned courses.';
     } else {
         hint.textContent = recipients.length > 1
             ? 'Only courses assigned to every selected recipient are shown.'
             : 'Only courses assigned to this recipient are shown.';
     }
-
-    applyRequestCategoryState();
 }
 
-function clearRequestDestination() {
-    if (!requestDestinationId) return;
-    requestDestinationId.value = '';
+function clearCommittedDestination() {
+    if (!courseIdInput) return;
+    courseIdInput.value = '';
+    schoolYearIdInput.value = '';
+    semesterInput.value = '';
+    destinationTypeInput.value = '';
+    examPeriodInput.value = '';
+    draftDestinationType = '';
+    draftExamPeriod = '';
     document.getElementById('requestDestinationPath').textContent = 'No destination selected';
-    document.getElementById('requestDestinationClear').hidden = true;
+    document.getElementById('openDestinationModal').innerHTML = '<i class="fas fa-folder-tree"></i> Choose destination';
 }
 
-function renderRequestDestinations() {
-    var options = document.getElementById('requestDestinationOptions');
-    if (!options || !requestCategorySelect || !requestCourseSelect) return;
-
-    var search = (document.getElementById('requestDestinationSearch')?.value || '').toLowerCase();
-    var matches = requestDestinations.filter(function (destination) {
-        return destination.category === requestCategorySelect.value
-            && String(destination.course_id) === requestCourseSelect.value
-            && destination.path.toLowerCase().includes(search);
+function updateChoiceButtons() {
+    document.querySelectorAll('[data-exam-period]').forEach(function (button) {
+        var selected = button.dataset.examPeriod === draftExamPeriod;
+        button.classList.toggle('is-selected', selected);
+        button.setAttribute('aria-pressed', selected ? 'true' : 'false');
     });
-
-    options.replaceChildren();
-    matches.forEach(function (destination) {
-        var button = document.createElement('button');
-        button.type = 'button';
-        button.className = 'request-destination-option';
-        button.innerHTML = '<i class="fas fa-folder"></i><span></span>';
-        button.querySelector('span').textContent = destination.path;
-        button.addEventListener('click', function () {
-            requestDestinationId.value = destination.id;
-            document.getElementById('requestDestinationPath').textContent = destination.path;
-            document.getElementById('requestDestinationClear').hidden = false;
-            requestSchoolYear.value = destination.school_year_id || '';
-            requestSemester.value = destination.semester || '';
-            requestDestinationPicker.hidden = true;
-        });
-        options.appendChild(button);
+    document.querySelectorAll('[data-destination-type]').forEach(function (button) {
+        var selected = button.dataset.destinationType === draftDestinationType;
+        button.classList.toggle('is-selected', selected);
+        button.setAttribute('aria-pressed', selected ? 'true' : 'false');
     });
-    document.getElementById('requestDestinationEmpty').hidden = matches.length > 0;
+}
 
-    var selected = requestDestinations.find(function (destination) {
-        return String(destination.id) === String(requestDestinationId.value)
-            && destination.category === requestCategorySelect.value
-            && String(destination.course_id) === requestCourseSelect.value;
-    });
-    if (requestDestinationId.value && !selected) clearRequestDestination();
-    if (selected) {
-        document.getElementById('requestDestinationPath').textContent = selected.path;
-        document.getElementById('requestDestinationClear').hidden = false;
-        requestSchoolYear.value = selected.school_year_id || '';
-        requestSemester.value = selected.semester || '';
-    }
+function destinationSummary() {
+    var category = requestCategorySelect?.value;
+    var course = destinationCourse?.value;
+    var year = destinationSchoolYear?.value;
+    var semester = destinationSemester?.value;
+    var needsExamPeriod = category === 'exam_questionnaire';
+    var validType = category === 'teaching_guide'
+        ? ['tg', 'lb'].includes(draftDestinationType)
+        : ['tos', 'toq'].includes(draftDestinationType);
+    var complete = Boolean(course && year && semester && validType && (!needsExamPeriod || draftExamPeriod));
+    if (!complete) return null;
+
+    var categoryLabel = category === 'teaching_guide' ? 'Teaching Guides' : 'Exam Questionnaires';
+    var yearLabel = destinationSchoolYear.options[destinationSchoolYear.selectedIndex].text;
+    var semesterLabel = destinationSemester.options[destinationSemester.selectedIndex].text;
+    var parts = [categoryLabel, semesterLabel + ' · ' + yearLabel, requestCourses[course]];
+    if (needsExamPeriod) parts.push(draftExamPeriod.charAt(0).toUpperCase() + draftExamPeriod.slice(1));
+    parts.push(draftDestinationType.toUpperCase());
+    return parts.join(' › ');
+}
+
+function updateDestinationDraftSummary() {
+    var summary = destinationSummary();
+    document.getElementById('destinationDraftSummary').textContent = summary || 'Complete the choices above.';
+    document.getElementById('useDestination').disabled = !summary;
+    updateChoiceButtons();
+}
+
+function configureDestinationModal() {
+    var isExam = requestCategorySelect?.value === 'exam_questionnaire';
+    document.getElementById('examPeriodStep').hidden = !isExam;
+    document.getElementById('teachingGuideTypes').hidden = isExam;
+    document.getElementById('examQuestionnaireTypes').hidden = !isExam;
+    document.getElementById('documentTypeStepNumber').textContent = isExam ? '4' : '3';
+    if (isExam && !['tos', 'toq'].includes(draftDestinationType)) draftDestinationType = '';
+    if (!isExam && !['tg', 'lb'].includes(draftDestinationType)) draftDestinationType = '';
+    if (!isExam) draftExamPeriod = '';
+    updateDestinationDraftSummary();
+}
+
+function openDestinationPicker() {
+    updateRequestCourseChoices();
+    destinationCourse.value = courseIdInput.value || destinationCourse.value || '';
+    destinationSchoolYear.value = schoolYearIdInput.value || destinationSchoolYear.value || '';
+    destinationSemester.value = semesterInput.value || destinationSemester.value || '';
+    draftDestinationType = destinationTypeInput.value || '';
+    draftExamPeriod = examPeriodInput.value || '';
+    configureDestinationModal();
+    destinationModal.hidden = false;
+    destinationModal.classList.add('active');
+    window.setTimeout(function () { destinationCourse.focus(); }, 0);
+}
+
+function closeDestinationPicker() {
+    destinationModal?.classList.remove('active');
+    if (destinationModal) destinationModal.hidden = true;
+    document.getElementById('openDestinationModal')?.focus();
 }
 
 function applyRequestCategoryState() {
-    if (!requestCategorySelect || !requestCourseSelect) return;
+    if (!requestCategorySelect) return;
     var isGeneral = requestCategorySelect.value === 'general';
-    var destinationGroup = document.getElementById('requestDestinationGroup');
     var documentType = document.getElementById('requestDocumentType');
-    destinationGroup.hidden = isGeneral;
-    requestCourseSelect.disabled = isGeneral;
-    requestSchoolYear.disabled = !isGeneral;
-    requestSemester.disabled = !isGeneral;
-
-    Array.from(documentType.options).forEach(function (option) {
-        option.disabled = !isGeneral && ['any', 'image'].includes(option.value);
-    });
+    document.getElementById('generalRequestPeriod').hidden = !isGeneral;
+    document.getElementById('requestDestinationGroup').hidden = isGeneral;
+    Array.from(documentType.options).forEach(function (option) { option.disabled = !isGeneral && ['any', 'image'].includes(option.value); });
 
     if (isGeneral) {
-        requestCourseSelect.value = '';
-        clearRequestDestination();
-        requestDestinationPicker.hidden = true;
+        clearCommittedDestination();
+        schoolYearIdInput.value = generalSchoolYear?.value || '';
+        semesterInput.value = generalSemester?.value || '';
         document.getElementById('requestCategoryHint').textContent = 'The approved file will stay in Uncategorized Files and display its request origin.';
     } else {
+        clearCommittedDestination();
         if (!['pdf', 'word'].includes(documentType.value)) documentType.value = 'pdf';
-        document.getElementById('requestCategoryHint').textContent = 'Choose a course and then select its exact filing destination.';
-        renderRequestDestinations();
+        document.getElementById('requestCategoryHint').textContent = 'Choose the filing details in a separate guided window.';
     }
 }
 
-document.querySelectorAll('.request-people-list input[name="recipient_ids[]"]').forEach(function (checkbox) {
-    checkbox.addEventListener('change', updateRequestCourseChoices);
-});
+document.querySelectorAll('.request-people-list input[name="recipient_ids[]"]').forEach(function (checkbox) { checkbox.addEventListener('change', updateRequestCourseChoices); });
 requestCategorySelect?.addEventListener('change', applyRequestCategoryState);
-requestCourseSelect?.addEventListener('change', function () { clearRequestDestination(); renderRequestDestinations(); });
-document.getElementById('requestDestinationToggle')?.addEventListener('click', function () {
-    requestDestinationPicker.hidden = !requestDestinationPicker.hidden;
-    if (!requestDestinationPicker.hidden) document.getElementById('requestDestinationSearch').focus();
+destinationCourse?.addEventListener('change', updateDestinationDraftSummary);
+destinationSchoolYear?.addEventListener('change', updateDestinationDraftSummary);
+destinationSemester?.addEventListener('change', updateDestinationDraftSummary);
+document.querySelectorAll('[data-exam-period]').forEach(function (button) { button.addEventListener('click', function () { draftExamPeriod = button.dataset.examPeriod; updateDestinationDraftSummary(); }); });
+document.querySelectorAll('[data-destination-type]').forEach(function (button) { button.addEventListener('click', function () { draftDestinationType = button.dataset.destinationType; updateDestinationDraftSummary(); }); });
+document.getElementById('openDestinationModal')?.addEventListener('click', openDestinationPicker);
+document.getElementById('closeDestinationModal')?.addEventListener('click', closeDestinationPicker);
+document.getElementById('cancelDestinationModal')?.addEventListener('click', closeDestinationPicker);
+destinationModal?.addEventListener('click', function (event) { if (event.target === destinationModal) closeDestinationPicker(); });
+document.getElementById('useDestination')?.addEventListener('click', function () {
+    var summary = destinationSummary();
+    if (!summary) return;
+    courseIdInput.value = destinationCourse.value;
+    schoolYearIdInput.value = destinationSchoolYear.value;
+    semesterInput.value = destinationSemester.value;
+    destinationTypeInput.value = draftDestinationType;
+    examPeriodInput.value = draftExamPeriod;
+    document.getElementById('requestDestinationPath').textContent = summary;
+    document.getElementById('openDestinationModal').innerHTML = '<i class="fas fa-pen"></i> Change destination';
+    closeDestinationPicker();
 });
-document.getElementById('requestDestinationClear')?.addEventListener('click', function () {
-    requestDestinationPicker.hidden = false;
-    document.getElementById('requestDestinationSearch').focus();
-});
-document.getElementById('requestDestinationSearch')?.addEventListener('input', renderRequestDestinations);
+generalSchoolYear?.addEventListener('change', function () { schoolYearIdInput.value = this.value; });
+generalSemester?.addEventListener('change', function () { semesterInput.value = this.value; });
+document.addEventListener('keydown', function (event) { if (event.key === 'Escape' && destinationModal && !destinationModal.hidden) closeDestinationPicker(); });
 updateRequestCourseChoices();
+if (generalSchoolYear) generalSchoolYear.value = schoolYearIdInput?.value || '';
+if (generalSemester) generalSemester.value = semesterInput?.value || '';
+if (requestCategorySelect?.value === 'general') {
+    document.getElementById('generalRequestPeriod').hidden = false;
+    document.getElementById('requestDestinationGroup').hidden = true;
+} else {
+    document.getElementById('generalRequestPeriod').hidden = true;
+    document.getElementById('requestDestinationGroup').hidden = false;
+    if (courseIdInput.value && schoolYearIdInput.value && semesterInput.value && destinationTypeInput.value) {
+        destinationCourse.value = courseIdInput.value;
+        draftDestinationType = destinationTypeInput.value;
+        draftExamPeriod = examPeriodInput.value;
+        var restoredSummary = destinationSummary();
+        if (restoredSummary) {
+            document.getElementById('requestDestinationPath').textContent = restoredSummary;
+            document.getElementById('openDestinationModal').innerHTML = '<i class="fas fa-pen"></i> Change destination';
+        }
+    }
+}
 
 @if($errors->any() && old('request_category') !== null)
 var createRequestModal = document.getElementById('createRequestModal');
@@ -309,7 +392,12 @@ if (createRequestModal) {
 }
 @endif
 
-document.getElementById('createDocumentRequestForm')?.addEventListener('submit', function () {
+document.getElementById('createDocumentRequestForm')?.addEventListener('submit', function (event) {
+    if (requestCategorySelect?.value !== 'general' && !destinationSummary()) {
+        event.preventDefault();
+        openDestinationPicker();
+        return;
+    }
     var button = this.querySelector('button[type="submit"]');
     if (!button || button.disabled) return;
     button.disabled = true;

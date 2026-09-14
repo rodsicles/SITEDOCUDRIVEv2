@@ -28,7 +28,9 @@ class DocumentRequestFilingTest extends TestCase
             ->assertSee('Request category')
             ->assertSee('Teaching Guide')
             ->assertSee('Exam Questionnaire')
-            ->assertSee('Choose destination');
+            ->assertSee('Choose destination')
+            ->assertSee('Use this destination')
+            ->assertDontSee('Search available destinations');
     }
 
     public function test_general_request_is_course_independent_and_has_no_destination(): void
@@ -59,7 +61,8 @@ class DocumentRequestFilingTest extends TestCase
     {
         $dean = User::where('username', 'dean')->firstOrFail();
         $faculty = User::where('username', 'faculty')->firstOrFail();
-        [$course, $leaf] = $this->teachingGuideDestination();
+        $course = Course::active()->ordered()->firstOrFail();
+        $schoolYear = SchoolYear::active();
 
         $response = $this->actingAs($dean)->from(route('document-requests.index'))->post(route('document-requests.store'), [
             'title' => 'Teaching guide submission',
@@ -67,12 +70,39 @@ class DocumentRequestFilingTest extends TestCase
             'request_category' => 'teaching_guide',
             'recipient_ids' => [$faculty->id],
             'course_id' => $course->id,
-            'destination_folder_id' => $leaf->folder_id,
+            'school_year_id' => $schoolYear->id,
+            'semester' => '1st',
+            'destination_type' => 'tg',
         ]);
 
         $response->assertRedirect(route('document-requests.index'));
         $response->assertSessionHasErrors('course_id');
         $this->assertDatabaseMissing('document_requests', ['title' => 'Teaching guide submission']);
+    }
+
+    public function test_structured_destination_choices_resolve_the_folder_on_the_server(): void
+    {
+        $dean = User::where('username', 'dean')->firstOrFail();
+        $faculty = User::where('username', 'faculty')->firstOrFail();
+        $course = Course::active()->ordered()->firstOrFail();
+        $schoolYear = SchoolYear::active();
+        $faculty->assignedCourses()->sync([$course->id]);
+
+        $this->actingAs($dean)->post(route('document-requests.store'), [
+            'title' => 'Requested laboratory manual',
+            'document_type' => 'word',
+            'request_category' => 'teaching_guide',
+            'recipient_ids' => [$faculty->id],
+            'course_id' => $course->id,
+            'school_year_id' => $schoolYear->id,
+            'semester' => '1st',
+            'destination_type' => 'lb',
+        ])->assertRedirect(route('document-requests.index', ['tab' => 'sent']));
+
+        $request = DocumentRequest::where('title', 'Requested laboratory manual')->firstOrFail();
+        $this->assertNotNull($request->destination_folder_id);
+        $this->assertSame('LB', $request->destinationFolder->folder_name);
+        $this->assertTrue(app(AcademicHierarchyService::class)->isTgUploadLeafFolder($request->destinationFolder));
     }
 
     public function test_document_request_approval_is_the_only_teaching_guide_approval(): void

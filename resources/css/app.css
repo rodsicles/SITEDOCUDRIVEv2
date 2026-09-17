@@ -12253,6 +12253,61 @@ html[data-theme="dark"],
     background: var(--site-surface-selected);
 }
 
+.authenticated-ui .employee-account-card {
+    width: 100%;
+    max-width: 58rem;
+    margin-inline: auto;
+}
+
+.employee-account-card__intro {
+    margin: 0.35rem 0 0;
+    color: var(--site-muted);
+    font-size: 0.8rem;
+    line-height: 1.5;
+}
+
+.employee-account-card .account-form__grid {
+    gap: 1.5rem;
+    align-items: start;
+}
+
+.employee-account-card .account-form__col {
+    min-width: 0;
+}
+
+.employee-account-card .ui-form-section__title {
+    margin: 0 0 1rem;
+    padding-bottom: 0.6rem;
+    border-bottom: 1px solid var(--site-border);
+    color: var(--site-heading);
+    font-size: 0.85rem;
+    font-weight: 600;
+}
+
+.employee-account-card .account-form__col + .account-form__col {
+    padding: 1rem;
+    border: 1px solid var(--site-border);
+    background: var(--site-surface-subtle);
+}
+
+.employee-account-card .form-group small {
+    display: block;
+    line-height: 1.5;
+}
+
+.employee-account-card .course-picker-body {
+    max-height: 15rem;
+    overflow-y: auto;
+    overscroll-behavior: contain;
+}
+
+@media (max-width: 640px) {
+    .employee-account-card .account-form__grid {
+        grid-template-columns: minmax(0, 1fr);
+        gap: 0.75rem;
+    }
+}
+
 .authenticated-ui .account-form {
     margin-inline: 0 !important;
     padding: 1rem 1.1rem 1.15rem;

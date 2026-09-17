@@ -134,9 +134,12 @@
 
     <!-- Tab 2: Create Coordinator -->
     <div class="tab-content" id="createCoordContent" hidden>
-        <div class="content-card">
+        <div class="content-card employee-account-card">
             <div class="card-header">
-                <h3 class="card-title">Coordinator Account Information</h3>
+                <div>
+                    <h3 class="card-title">Create coordinator account</h3>
+                    <p class="employee-account-card__intro">Enter employee details and set their sign-in credentials.</p>
+                </div>
             </div>
 
             @if($errors->any() && session('_form') === 'coordinator')
@@ -157,7 +160,7 @@
                 <div class="account-form__grid">
                     <div class="account-form__col">
                         <div class="ui-form-section">
-                            <h4 class="ui-form-section__title">Identity</h4>
+                            <h4 class="ui-form-section__title">Employee details</h4>
                             <div class="form-group">
                                 <label class="form-label">Full Name *</label>
                                 <input type="text" name="full_name" class="form-control" placeholder="Enter full name" required maxlength="45" value="{{ old('_form') === 'coordinator' ? old('full_name') : '' }}">
@@ -179,14 +182,14 @@
                     </div>
                     <div class="account-form__col">
                         <div class="ui-form-section">
-                            <h4 class="ui-form-section__title">Credentials</h4>
+                            <h4 class="ui-form-section__title">Account access</h4>
                             <div class="form-group">
                                 <label class="form-label">Username *</label>
-                                <input type="text" name="username" class="form-control" placeholder="Enter username" required maxlength="20" value="{{ old('_form') === 'coordinator' ? old('username') : '' }}">
+                                <input type="text" name="username" class="form-control" autocomplete="off" autocapitalize="none" spellcheck="false" placeholder="Choose a username" required maxlength="20" value="{{ old('_form') === 'coordinator' ? old('username') : '' }}">
                             </div>
                             <div class="form-group">
                                 <label class="form-label">Password *</label>
-                                <input type="password" name="password" class="form-control" placeholder="Minimum 8 characters" required minlength="8" maxlength="40">
+                                <input type="password" name="password" class="form-control" autocomplete="new-password" placeholder="Minimum 8 characters" required minlength="8" maxlength="40">
                             </div>
                         </div>
                     </div>
@@ -225,9 +228,12 @@
 
     <!-- Tab 3: Create Faculty -->
     <div class="tab-content" id="createFacultyContent" hidden>
-        <div class="content-card">
+        <div class="content-card employee-account-card">
             <div class="card-header">
-                <h3 class="card-title">Faculty Account Information</h3>
+                <div>
+                    <h3 class="card-title">Create faculty account</h3>
+                    <p class="employee-account-card__intro">Enter employee details, set sign-in credentials, and assign subjects.</p>
+                </div>
             </div>
 
             @if($errors->any() && session('_form') === 'faculty')
@@ -248,7 +254,7 @@
                 <div class="account-form__grid">
                     <div class="account-form__col">
                         <div class="ui-form-section">
-                            <h4 class="ui-form-section__title">Identity</h4>
+                            <h4 class="ui-form-section__title">Employee details</h4>
                             <div class="form-group">
                                 <label class="form-label">Full Name *</label>
                                 <input type="text" name="full_name" class="form-control" placeholder="Enter full name" required maxlength="45" value="{{ old('_form') === 'faculty' ? old('full_name') : '' }}">
@@ -270,14 +276,14 @@
                     </div>
                     <div class="account-form__col">
                         <div class="ui-form-section">
-                            <h4 class="ui-form-section__title">Credentials</h4>
+                            <h4 class="ui-form-section__title">Account access</h4>
                             <div class="form-group">
                                 <label class="form-label">Username *</label>
-                                <input type="text" name="username" class="form-control" placeholder="Enter username" required maxlength="20" value="{{ old('_form') === 'faculty' ? old('username') : '' }}">
+                                <input type="text" name="username" class="form-control" autocomplete="off" autocapitalize="none" spellcheck="false" placeholder="Choose a username" required maxlength="20" value="{{ old('_form') === 'faculty' ? old('username') : '' }}">
                             </div>
                             <div class="form-group">
                                 <label class="form-label">Password *</label>
-                                <input type="password" name="password" class="form-control" placeholder="Minimum 8 characters" required minlength="8" maxlength="40">
+                                <input type="password" name="password" class="form-control" autocomplete="new-password" placeholder="Minimum 8 characters" required minlength="8" maxlength="40">
                             </div>
                         </div>
                     </div>

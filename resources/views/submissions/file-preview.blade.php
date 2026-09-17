@@ -163,6 +163,14 @@
                 and the document will be renamed to include that version
                 (e.g. Title (v{{ ($currentVersion ?? 1) + 1 }})).
             </p>
+            <div class="mb-4">
+                <a href="{{ $downloadUrl }}" class="btn btn-secondary text-xs">
+                    <i class="fas fa-download" aria-hidden="true"></i> Download Current Version (v{{ $currentVersion ?? 1 }})
+                </a>
+                <p class="text-xs text-gray-500 dark:text-gray-400 mt-2">
+                    Download the current file to review or edit before uploading its replacement.
+                </p>
+            </div>
             <form method="POST" action="{{ $versionUploadUrl }}" enctype="multipart/form-data">
                 @csrf
                 <div class="form-group">

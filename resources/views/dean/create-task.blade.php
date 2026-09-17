@@ -20,7 +20,7 @@
 @endphp
 
 @section('content')
-    <div class="max-w-4xl mx-auto">
+    <div class="task-create-page mx-auto">
     <div class="content-card">
         <div class="card-header">
             <h3 class="card-title">Task Details</h3>
@@ -29,6 +29,8 @@
         <form action="{{ route('dean.store-task') }}" method="POST" enctype="multipart/form-data" id="createTaskForm">
             @csrf
 
+            <div class="task-create-columns">
+            <div class="task-create-assignment">
             <div class="form-group">
                 <label class="form-label" for="assignment_scope">Assign To</label>
                 <select name="assignment_scope" id="assignment_scope" class="form-control" required>
@@ -59,7 +61,7 @@
                         <div class="task-assignee-picker__list" id="assigneeAvailableList" role="listbox" aria-label="Available faculty and coordinators"></div>
                     </div>
 
-                    <div class="task-assignee-picker__actions" aria-hidden="true">
+                    <div class="task-assignee-picker__actions">
                         <button type="button" class="btn btn-primary task-assignee-picker__action-btn" id="assigneeAddBtn" disabled title="Add selected">
                             <i class="fas fa-chevron-right"></i>
                         </button>
@@ -91,6 +93,8 @@
                 @enderror
             </div>
 
+            </div>
+            <div class="task-create-details">
             <div class="form-group">
                 <label class="form-label" for="task_title">Task Title</label>
                 <input type="text" name="task_title" id="task_title" class="form-control"
@@ -101,7 +105,7 @@
 
             <div class="form-group">
                 <label class="form-label" for="task_description">Task Description</label>
-                <textarea name="task_description" id="task_description" class="form-control" rows="5"
+                <textarea name="task_description" id="task_description" class="form-control" rows="3"
                           placeholder="Enter detailed task description" maxlength="250">{{ old('task_description') }}</textarea>
                 <small class="text-gray-500 dark:text-gray-400 block mt-1">Maximum 250 characters.</small>
             </div>
@@ -119,7 +123,9 @@
                 <small class="text-gray-500 dark:text-gray-400 block mt-1">Optional. Upload up to 5 reference files (included in each assignee’s notification).</small>
             </div>
 
-            <div class="flex gap-2.5">
+            </div>
+            </div>
+            <div class="task-create-actions flex gap-2.5">
                 <button type="submit" class="btn btn-primary">
                     <i class="fas fa-save"></i> Create Task
                 </button>

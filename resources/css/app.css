@@ -1420,6 +1420,57 @@ body {
 }
 
 /* Dean create task — department filter + dual assignee picker */
+.task-create-page {
+    width: 100%;
+    max-width: 80rem;
+}
+
+.task-create-columns {
+    display: grid;
+    grid-template-columns: minmax(0, 1fr);
+    gap: 1rem;
+}
+
+.task-create-assignment,
+.task-create-details {
+    min-width: 0;
+}
+
+.task-create-page .task-assignee-picker__panel {
+    min-height: 10rem;
+    min-width: 0;
+}
+
+.task-create-page .task-assignee-picker__list {
+    max-height: 12rem;
+    overscroll-behavior: contain;
+}
+
+.task-create-page .task-assignee-picker__panel-head {
+    flex-wrap: wrap;
+}
+
+.task-create-actions {
+    position: sticky;
+    bottom: 0;
+    z-index: 10;
+    flex-wrap: wrap;
+    padding: 1rem 0;
+    background: var(--site-surface, #fff);
+    border-top: 1px solid var(--site-border, #e5e7eb);
+}
+
+.dark .task-create-actions {
+    background: var(--site-surface, #1e1e1e);
+}
+
+@media (min-width: 1200px) {
+    .task-create-columns {
+        grid-template-columns: minmax(0, 1.15fr) minmax(0, 1fr);
+        gap: 1.5rem;
+    }
+}
+
 .task-assignee-picker {
     display: grid;
     grid-template-columns: 1fr auto 1fr;

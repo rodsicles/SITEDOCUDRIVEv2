@@ -11629,6 +11629,63 @@ textarea:disabled {
 .password-reset-notice--danger { border-left-color: var(--site-danger) !important; }
 .password-reset-notice--danger > i { color: var(--site-danger); }
 
+.password-reset-confirm-dialog {
+    width: min(100%, 30rem);
+}
+
+.password-reset-confirm-dialog__heading {
+    display: flex;
+    align-items: center;
+    gap: 0.85rem;
+    padding-bottom: 1rem;
+    border-bottom: 1px solid var(--site-border);
+}
+
+.password-reset-confirm-dialog__icon {
+    width: 2.5rem;
+    height: 2.5rem;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    flex: 0 0 auto;
+    color: var(--site-primary);
+    background: var(--site-surface-selected);
+    border: 1px solid var(--site-border-strong);
+}
+
+.password-reset-confirm-dialog__eyebrow {
+    margin: 0 0 0.2rem;
+    color: var(--site-muted);
+    font-size: 0.68rem;
+    font-weight: 700;
+    letter-spacing: 0.08em;
+    text-transform: uppercase;
+}
+
+.password-reset-confirm-dialog__message {
+    margin: 1rem 0;
+    color: var(--site-text);
+    font-size: 0.82rem;
+    line-height: 1.6;
+}
+
+.password-reset-confirm-dialog__note {
+    display: flex;
+    align-items: flex-start;
+    gap: 0.65rem;
+    padding: 0.75rem 0.85rem;
+    color: var(--site-muted);
+    background: var(--site-surface-subtle);
+    border-left: 3px solid var(--site-primary);
+    font-size: 0.75rem;
+    line-height: 1.5;
+}
+
+.password-reset-confirm-dialog__note i {
+    margin-top: 0.15rem;
+    color: var(--site-primary);
+}
+
 .temporary-password-value {
     padding: 0.75rem 1rem;
     color: var(--site-warning);

@@ -136,7 +136,8 @@
                             <div class="flex items-center gap-2">
                                 <form action="{{ route('password-reset-requests.approve', $req->password_reset_request_id) }}"
                                       method="POST"
-                                      onsubmit="return confirm('Approve this password reset? A one-time temporary password will be generated.');">
+                                      class="password-reset-approve-form"
+                                      data-username="{{ $req->user->username }}">
                                     @csrf
                                     <button type="submit" class="btn btn-sm btn-primary">
                                         <i class="fas fa-check"></i> Approve
@@ -174,6 +175,39 @@
         {{ $requests->links() }}
     </div>
     @endif
+</div>
+
+{{-- Approve confirmation modal --}}
+<div id="approveResetModal" class="modal-overlay" hidden role="dialog" aria-modal="true" aria-labelledby="approveResetModalTitle" aria-describedby="approveResetModalDescription">
+    <div class="modal-card password-reset-confirm-dialog" role="document">
+        <div class="modal-body">
+            <div class="password-reset-confirm-dialog__heading">
+                <span class="password-reset-confirm-dialog__icon" aria-hidden="true">
+                    <i class="fas fa-key"></i>
+                </span>
+                <div>
+                    <p class="password-reset-confirm-dialog__eyebrow">Password reset request</p>
+                    <h3 class="card-title" id="approveResetModalTitle">Approve this request?</h3>
+                </div>
+            </div>
+            <p class="password-reset-confirm-dialog__message" id="approveResetModalDescription">
+                A one-time temporary password will be generated for
+                <strong id="approveResetUsername"></strong>. It will only be shown once after approval.
+            </p>
+            <div class="password-reset-confirm-dialog__note">
+                <i class="fas fa-shield-alt" aria-hidden="true"></i>
+                <span>The employee must change the temporary password after signing in.</span>
+            </div>
+            <div class="flex items-center gap-2 mt-4 justify-end">
+                <button type="button" id="approveResetCancel" class="btn btn-sm bg-gray-200 dark:bg-gray-700 text-gray-700 dark:text-gray-200">
+                    Cancel
+                </button>
+                <button type="button" id="approveResetConfirm" class="btn btn-sm btn-primary">
+                    <i class="fas fa-check" aria-hidden="true"></i> Approve &amp; Generate Password
+                </button>
+            </div>
+        </div>
+    </div>
 </div>
 
 {{-- Deny modal --}}
@@ -221,6 +255,45 @@ function copyTempPassword() {
 }
 
 var denyBase = "{{ url('password-reset-requests') }}";
+var pendingApproveForm = null;
+
+function openApproveResetModal(form) {
+    var modal = document.getElementById('approveResetModal');
+    var username = document.getElementById('approveResetUsername');
+    pendingApproveForm = form;
+    username.innerText = form.dataset.username || 'this employee';
+    modal.hidden = false;
+    modal.classList.add('active');
+    document.getElementById('approveResetConfirm').focus();
+}
+
+function closeApproveResetModal() {
+    var modal = document.getElementById('approveResetModal');
+    modal.classList.remove('active');
+    modal.hidden = true;
+    pendingApproveForm = null;
+}
+
+document.querySelectorAll('.password-reset-approve-form').forEach(function (form) {
+    form.addEventListener('submit', function (event) {
+        event.preventDefault();
+        openApproveResetModal(form);
+    });
+});
+
+document.getElementById('approveResetCancel').addEventListener('click', closeApproveResetModal);
+document.getElementById('approveResetConfirm').addEventListener('click', function () {
+    if (!pendingApproveForm) return;
+    var form = pendingApproveForm;
+    var button = this;
+    button.disabled = true;
+    button.innerHTML = '<i class="fas fa-spinner fa-spin" aria-hidden="true"></i> Approving...';
+    form.submit();
+});
+
+document.getElementById('approveResetModal').addEventListener('click', function (event) {
+    if (event.target === this) closeApproveResetModal();
+});
 
 function openDenyModal(id, username) {
     var modal = document.getElementById('denyModal');
@@ -239,6 +312,12 @@ function closeDenyModal() {
 
 document.getElementById('denyModal').addEventListener('click', function (e) {
     if (e.target === this) closeDenyModal();
+});
+
+document.addEventListener('keydown', function (event) {
+    if (event.key !== 'Escape') return;
+    if (!document.getElementById('approveResetModal').hidden) closeApproveResetModal();
+    if (!document.getElementById('denyModal').hidden) closeDenyModal();
 });
 </script>
 @endpush

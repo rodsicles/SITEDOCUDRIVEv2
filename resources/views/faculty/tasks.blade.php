@@ -10,6 +10,7 @@
 @endsection
 
 @section('content')
+<div class="faculty-tasks-page">
     @php
         $filter = $filter ?? 'all';
         $counts = $counts ?? ['all'=>0,'today'=>0,'week'=>0,'overdue'=>0,'pending'=>0,'completed'=>0];
@@ -24,7 +25,7 @@
     @endphp
 
     {{-- Quick Filter Chips --}}
-    <div class="content-card mb-4">
+    <div class="content-card mb-4 faculty-task-filters" aria-label="Task filters">
         <div class="flex flex-wrap items-center gap-2">
             <span class="text-xs font-semibold uppercase tracking-wide text-gray-500 dark:text-gray-400 mr-2">
                 <i class="fas fa-filter mr-1"></i> Filter:
@@ -33,18 +34,18 @@
                 @php
                     $isActive = $filter === $chip['key'];
                     $count = $counts[$chip['key']] ?? 0;
-                    $base = 'inline-flex items-center gap-2 px-3 py-1.5 text-xs font-semibold no-underline border-0';
-                    $active = 'bg-[#028a0f] text-white';
-                    $inactive = 'bg-gray-100 dark:bg-gray-700 text-gray-700 dark:text-gray-200 hover:bg-gray-200 dark:hover:bg-gray-600';
+                    $base = 'faculty-task-filter';
+                    $active = 'is-active';
+                    $inactive = '';
                     $tone = $chip['key'] === 'overdue' && $count > 0 && !$isActive
-                        ? 'bg-red-50 dark:bg-red-900/30 text-red-700 dark:text-red-300 hover:bg-red-100'
+                        ? 'is-overdue'
                         : $inactive;
                 @endphp
                 <a href="{{ route('faculty.tasks', ['filter' => $chip['key']]) }}"
-                   class="{{ $base }} {{ $isActive ? $active : $tone }}">
+                   class="{{ $base }} {{ $isActive ? $active : $tone }}" @if($isActive) aria-current="page" @endif>
                     <i class="fas {{ $chip['icon'] }}"></i>
                     {{ $chip['label'] }}
-                    <span class="px-1.5 py-0.5 text-[10px] font-bold {{ $isActive ? 'bg-white text-[#028a0f]' : 'bg-white dark:bg-[#1e1e1e] text-gray-700 dark:text-gray-200 border border-gray-200 dark:border-gray-600' }}">
+                    <span class="faculty-task-filter__count">
                         {{ $count }}
                     </span>
                 </a>
@@ -63,8 +64,9 @@
                 @elseif($filter === 'completed') Completed Tasks
                 @endif
             </h3>
-            <span class="badge badge-info">{{ $tasks->total() }} Showing</span>
+            <span class="badge faculty-task-total">{{ $tasks->total() }} tasks</span>
         </div>
+        <div class="overflow-x-auto">
         <table class="data-table">
             <thead>
                 <tr>
@@ -102,7 +104,7 @@
                         @if($task->attachments->isNotEmpty())
                             <div class="flex flex-col gap-1">
                                 @foreach($task->attachments as $attachment)
-                                    <a href="{{ route('task-attachments.download', $attachment->task_attachment_id) }}" class="text-xs text-blue-700 dark:text-blue-300 no-underline">
+                                    <a href="{{ route('task-attachments.download', $attachment->task_attachment_id) }}" class="text-xs faculty-task-download">
                                         <i class="fas fa-paperclip mr-1"></i>{{ Str::limit($attachment->original_name, 24) }}
                                     </a>
                                 @endforeach
@@ -143,15 +145,17 @@
                 @empty
                 <tr>
                     <td colspan="7" class="text-center text-gray-500 dark:text-gray-400">
-                        No tasks assigned yet
+                        {{ $filter === 'all' ? 'No tasks assigned yet.' : 'No tasks match this filter.' }}
                     </td>
                 </tr>
                 @endforelse
             </tbody>
         </table>
+        </div>
         
         <div class="mt-5">
             {{ $tasks->links() }}
         </div>
     </div>
+</div>
 @endsection

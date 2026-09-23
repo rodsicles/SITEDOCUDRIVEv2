@@ -66,6 +66,7 @@
                     <div class="request-meta">
                         <span><i class="fas fa-user"></i>{{ $item->requester->employee->full_name ?? $item->requester->username }}</span>
                         <span><i class="fas fa-tag"></i>{{ match($item->request_category) { 'teaching_guide' => 'Teaching Guide', 'exam_questionnaire' => 'Exam Questionnaire', default => 'General Document' } }}</span>
+                        @if($item->destinationFolder?->document_category_id)<span>{{ $item->destinationFolder->managedCategory?->category_name }}</span>@endif
                         @if($item->course)<span><i class="fas fa-book"></i>{{ $item->course->code }}</span>@endif
                         @if($item->department)<span><i class="fas fa-building"></i>{{ $item->department }}</span>@endif
                         @if($item->schoolYear)<span><i class="fas fa-calendar"></i>{{ $item->schoolYear->name }}</span>@endif
@@ -124,6 +125,7 @@
                 <input id="requestDestinationType" type="hidden" name="destination_type" value="{{ old('destination_type') }}">
                 <input id="requestExamPeriod" type="hidden" name="exam_period" value="{{ old('exam_period') }}">
                 <div id="generalRequestPeriod" class="request-form-wide request-form-grid"><div class="form-group"><label class="form-label" for="generalSchoolYear">School year</label><select id="generalSchoolYear" class="form-control"><option value="">Not specified</option>@foreach($schoolYears as $year)<option value="{{ $year->id }}">{{ $year->name }}</option>@endforeach</select></div><div class="form-group"><label class="form-label" for="generalSemester">Semester</label><select id="generalSemester" class="form-control"><option value="">Not specified</option><option value="1st">1st semester</option><option value="2nd">2nd semester</option></select></div></div>
+                <div id="generalCategoryGroup" class="form-group request-form-wide" @if(old('request_category', 'general') !== 'general') hidden @endif><label for="generalCategory" class="form-label">File general requests under</label><select id="generalCategory" name="custom_category_id" class="form-control"><option value="">Uncategorized Files</option>@foreach($customRequestCategories as $customCategory)<option value="{{ $customCategory->category_id }}" @selected((string) old('custom_category_id') === (string) $customCategory->category_id)>{{ $customCategory->category_name }}</option>@endforeach</select><small class="text-xs">Only active system-wide categories are available. Personal categories stay private.</small></div>
                 <div id="requestDestinationGroup" class="form-group request-form-wide" hidden><label class="form-label">Filing destination *</label><div class="request-destination-control"><button id="openDestinationModal" type="button" class="btn btn-secondary"><i class="fas fa-folder-tree"></i> Choose destination</button><span id="requestDestinationPath">No destination selected</span></div><small class="text-xs text-gray-500">Choose the course and filing details in a separate guided window.</small></div>
                 <label class="request-checkbox request-form-wide"><input type="checkbox" name="allow_late_submission" value="1" checked> Allow late submissions and mark them overdue</label>
             </div>
@@ -326,11 +328,14 @@ function applyRequestCategoryState() {
     Array.from(documentType.options).forEach(function (option) { option.disabled = !isGeneral && ['any', 'image'].includes(option.value); });
 
     if (isGeneral) {
+        document.getElementById('generalCategoryGroup').hidden = false;
         clearCommittedDestination();
         schoolYearIdInput.value = generalSchoolYear?.value || '';
         semesterInput.value = generalSemester?.value || '';
-        document.getElementById('requestCategoryHint').textContent = 'The approved file will stay in Uncategorized Files and display its request origin.';
+        document.getElementById('requestCategoryHint').textContent = 'Files use the selected general category and display their request origin.';
     } else {
+        document.getElementById('generalCategoryGroup').hidden = true;
+        document.getElementById('generalCategory').value = '';
         clearCommittedDestination();
         if (!['pdf', 'word'].includes(documentType.value)) documentType.value = 'pdf';
         document.getElementById('requestCategoryHint').textContent = 'Choose the filing details in a separate guided window.';
@@ -339,6 +344,9 @@ function applyRequestCategoryState() {
 
 document.querySelectorAll('.request-people-list input[name="recipient_ids[]"]').forEach(function (checkbox) { checkbox.addEventListener('change', updateRequestCourseChoices); });
 requestCategorySelect?.addEventListener('change', applyRequestCategoryState);
+document.getElementById('generalCategory')?.addEventListener('change', function () {
+    document.getElementById('requestCategoryHint').textContent = 'Files will be filed under ' + this.options[this.selectedIndex].text + ' and display their request origin.';
+});
 destinationCourse?.addEventListener('change', updateDestinationDraftSummary);
 destinationSchoolYear?.addEventListener('change', updateDestinationDraftSummary);
 destinationSemester?.addEventListener('change', updateDestinationDraftSummary);

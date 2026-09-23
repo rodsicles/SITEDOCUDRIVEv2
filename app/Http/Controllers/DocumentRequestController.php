@@ -76,6 +76,7 @@ class DocumentRequestController extends Controller
             'canCreateRequests' => $canCreateRequests,
             'schoolYears' => SchoolYear::orderByDesc('start_year')->get(),
             'pendingCount' => DocumentRequestRecipient::where('user_id', $user->id)->whereIn('status', ['pending', 'changes_requested'])->count(),
+            'customRequestCategories' => \App\Models\DocumentCategory::whereNotNull('created_by')->whereNull('owner_id')->where('is_active', true)->orderBy('category_name')->get(),
         ]);
     }
 
@@ -88,6 +89,7 @@ class DocumentRequestController extends Controller
             'instructions' => ['nullable', 'string', 'max:2000'],
             'document_type' => ['required', Rule::in(['any', 'pdf', 'word', 'image'])],
             'request_category' => ['required', Rule::in(self::REQUEST_CATEGORIES)],
+            'custom_category_id' => ['nullable', Rule::exists('document_categories', 'category_id')->whereNull('owner_id')->whereNotNull('created_by')->where('is_active', true)],
             'recipient_ids' => ['required', 'array', 'min:1'],
             'recipient_ids.*' => ['integer', Rule::exists('users', 'id')->where('status', 'Active')],
             'course_id' => ['nullable', Rule::exists('courses', 'id')->where('is_active', true)],
@@ -116,6 +118,10 @@ class DocumentRequestController extends Controller
         if ($validated['request_category'] === 'general') {
             $validated['course_id'] = null;
             $validated['destination_folder_id'] = null;
+            if (!empty($validated['custom_category_id'])) {
+                $category = \App\Models\DocumentCategory::findOrFail($validated['custom_category_id']);
+                $validated['destination_folder_id'] = $category->folders()->whereNotNull('parent_id')->orderBy('folder_id')->firstOrFail()->folder_id;
+            }
         } else {
             if (empty($validated['course_id']) || empty($validated['school_year_id']) || empty($validated['semester']) || empty($validated['destination_type'])) {
                 throw ValidationException::withMessages([
@@ -187,7 +193,7 @@ class DocumentRequestController extends Controller
 
         $documentRequest = DB::transaction(function () use ($validated, $recipientIds, $request) {
             $item = DocumentRequest::create([
-                ...collect($validated)->except(['recipient_ids', 'destination_type', 'exam_period'])->all(),
+                ...collect($validated)->except(['recipient_ids', 'destination_type', 'exam_period', 'custom_category_id'])->all(),
                 'requested_by' => $request->user()->id,
                 'allow_late_submission' => $request->boolean('allow_late_submission', true),
             ]);
@@ -220,6 +226,10 @@ class DocumentRequestController extends Controller
         abort_if($recipient->request->due_at?->isPast() && !$recipient->request->allow_late_submission, 422, 'The submission deadline has passed.');
         abort_unless(in_array($recipient->status, ['pending', 'changes_requested'], true), 422, 'This request already has a submission under review.');
 
+        if ($recipient->request->destinationFolder?->document_category_id) {
+            abort_unless($recipient->request->destinationFolder->managedCategory?->is_active, 422, 'This request category is inactive. Contact the requester.');
+            abort_unless($recipient->request->destinationFolder->canBeViewedBy($request->user()), 404);
+        }
         $rules = ['file' => ['required', 'file', 'max:10240']];
         $rules['file'][] = match ($recipient->request->document_type) {
             'pdf' => 'mimes:pdf', 'word' => 'mimes:doc,docx',
@@ -281,6 +291,7 @@ class DocumentRequestController extends Controller
                     'file_size' => $file->getSize() ?: 0,
                     'document_type' => $documentType,
                     'category' => $category,
+                    'category_id' => $recipient->request->destinationFolder?->document_category_id,
                     'school_year_id' => $recipient->request->school_year_id,
                     'subject' => $recipient->request->course?->code,
                     'tags' => 'document-request,'.$origin.','.$recipient->request->title,

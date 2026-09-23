@@ -62,6 +62,8 @@ Route::middleware('auth')->group(function () {
 Route::get('/search', [SearchController::class, 'search'])->middleware(['auth', 'no.back', 'throttle:20,1'])->name('search');
 
 Route::middleware(['auth', 'no.back'])->group(function () {
+    Route::post('/document-categories', [\App\Http\Controllers\DocumentCategoryController::class, 'store'])->middleware('throttle:20,1')->name('document-categories.store');
+    Route::patch('/document-categories/{category}', [\App\Http\Controllers\DocumentCategoryController::class, 'update'])->middleware('throttle:20,1')->name('document-categories.update');
     Route::get('/upload-destinations', [\App\Http\Controllers\UploadDestinationController::class, 'index'])->name('upload-destinations.index');
     Route::post('/upload-destinations/subject', [\App\Http\Controllers\UploadDestinationController::class, 'subject'])->middleware('throttle:30,1')->name('upload-destinations.subject');
     Route::get('/document-requests', [DocumentRequestController::class, 'index'])->name('document-requests.index');

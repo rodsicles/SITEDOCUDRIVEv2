@@ -24,6 +24,7 @@ class UploadDestinationController extends Controller
     public function describe(\App\Models\User $user, ?int $folderId, FolderService $folders, AcademicHierarchyService $hierarchy): array
     {
         $roots = $folders->getSystemFolderTree($user);
+        $roots = $roots->filter(fn ($root) => !$root->document_category_id || $root->managedCategory?->is_active);
         $folder = $folderId ? $folders->visibleFolderOrFail($folderId, $user) : null;
         if ($folder) {
             // Recheck every level, including course assignments and active school year.
@@ -51,7 +52,7 @@ class UploadDestinationController extends Controller
             'subjects' => $semester ? IteSubjects::labelsForUser($user) : [],
             'url' => $folder ? route(($user->isDean() ? 'dean' : ($user->isProgramCoordinator() ? 'coordinator' : 'faculty')).'.documents', [
                 'folder' => $folder->folder_id,
-                'tab' => \Illuminate\Support\Str::slug(collect($folder->getAncestors())->first()?->folder_name ?? $folder->folder_name),
+                'tab' => (collect($folder->getAncestors())->first() ?? $folder)->tabKey(),
             ]) : null,
         ];
     }

@@ -13,6 +13,7 @@ class DocumentFilterController extends Controller
         $validated = $request->validate([
             'name' => 'required|string|max:50',
             'category' => 'nullable|string|max:50',
+            'managed_category_id' => 'nullable|integer|exists:document_categories,category_id',
             'folder' => 'nullable',
             'tab' => 'nullable|string|max:50',
             'search' => 'nullable|string|max:100',
@@ -35,6 +36,7 @@ class DocumentFilterController extends Controller
 
         $filters = collect([
             'category' => $validated['category'] ?? null,
+            'managed_category_id' => $validated['managed_category_id'] ?? null,
             'folder' => $validated['folder'] ?? null,
             'tab' => $validated['tab'] ?? null,
             'search' => $validated['search'] ?? null,

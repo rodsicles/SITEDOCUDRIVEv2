@@ -74,7 +74,7 @@ class DocumentService
      */
     public function resolveActiveTab(?string $tab, Collection $folderTree): ?string
     {
-        $slugs = $folderTree->map(fn ($category) => Str::slug($category->folder_name));
+        $slugs = $folderTree->map(fn ($category) => $category->tabKey());
 
         return $tab && $slugs->contains($tab) ? $tab : $slugs->first();
     }
@@ -92,7 +92,8 @@ class DocumentService
         }
 
         foreach ($folderTree as $category) {
-            if (Str::slug($category->folder_name) === $activeTab) {
+            if ($category->tabKey() === $activeTab) {
+                if ($category->document_category_id) return 'managed:'.$category->document_category_id;
                 return in_array($category->folder_name, self::allowedCategories(), true)
                     ? $category->folder_name
                     : 'Other';
@@ -177,6 +178,10 @@ class DocumentService
         $query = Document::getFilteredDocuments($user, $categoryFilter)
             ->with('searchIndex')
             ->onlyApprovedShareable();
+
+        if (!empty($queryParams['managed_category_id'])) {
+            $query->where('category_id', (int) $queryParams['managed_category_id']);
+        }
 
         if ($folderFilter !== null) {
             if ($folderFilter === 'uncategorized') {
@@ -659,6 +664,7 @@ class DocumentService
                 'file_size' => (int) ($file->getSize() ?? 0),
                 'document_type' => $validated['document_type'],
                 'category' => $category,
+                'category_id' => $folder?->document_category_id,
                 'school_year_id' => SchoolYear::activeId(),
                 'tags' => in_array($category, Document::SHAREABLE_CATEGORIES, true) ? '' : $tags,
             ]);
@@ -912,6 +918,11 @@ class DocumentService
             abort(403, 'Unauthorized to copy this document.');
         }
 
+        if ($destinationFolderId) {
+            $destination = Folder::visibleTo($actor)->findOrFail($destinationFolderId);
+            abort_if($destination->document_category_id && !$destination->managedCategory?->is_active, 422, 'This category is inactive.');
+        }
+
         $ext         = pathinfo($source->file_path, PATHINFO_EXTENSION);
         $newRelPath  = 'documents/' . uniqid('copy_', true) . '.' . strtolower($ext);
 
@@ -928,7 +939,7 @@ class DocumentService
             'file_size'      => $source->file_size,
             'document_type'  => $source->document_type,
             'category'       => $destCategory,
-            'category_id'    => $source->category_id,
+            'category_id'    => $destinationFolderId ? Folder::find($destinationFolderId)?->document_category_id : null,
             'school_year_id' => $source->school_year_id,
             'subject'        => $source->subject,
             'tags'           => $source->tags,

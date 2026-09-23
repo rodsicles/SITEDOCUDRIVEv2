@@ -28,9 +28,12 @@
         </a>
     </nav>
     @if($canUpload ?? false)
+    <div class="flex items-center gap-2 flex-wrap">
+    <button type="button" class="btn btn-secondary" id="openCategoryManager" aria-haspopup="dialog"><i class="fas fa-tags" aria-hidden="true"></i> Manage Categories</button>
     <button type="button" class="btn btn-primary" id="openDocumentUpload" aria-haspopup="dialog">
         <i class="fas fa-upload" aria-hidden="true"></i> Upload Document
     </button>
+    </div>
     @else
     <p class="docs-command-strip__muted m-0 text-xs">
         @if($browseMode === 'recent')

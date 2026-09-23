@@ -39,7 +39,7 @@
             $sizeLabel = $sizeBytes >= 1048576
                 ? number_format($sizeBytes / 1048576, 1).' MB'
                 : ($sizeBytes >= 1024 ? number_format($sizeBytes / 1024, 1).' KB' : ($sizeBytes ? $sizeBytes.' B' : strtoupper($extension ?: 'file')));
-            $typeLabel = $document->category
+            $typeLabel = $document->getRelationValue('category')?->category_name ?? $document->category
                 ?: ($document->document_type === 'pdf' ? 'PDF' : ($document->document_type === 'word' ? 'Word' : ($document->document_type === 'image' ? 'Image' : strtoupper($extension ?: 'File'))));
             $requestSubmission = $document->requestSubmissions()->with(['request.requester.employee', 'request.requester.role'])->first();
             $requesterRole = $requestSubmission?->request?->requester?->role?->role_name;

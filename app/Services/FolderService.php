@@ -40,6 +40,7 @@ class FolderService
 
         $tree = Folder::system()
             ->topLevel()
+            ->when($viewer, fn ($q) => $q->visibleTo($viewer))
             ->with(['children' => function ($query) use ($documentCount) {
                 $query->system()->orderBy('sort_order')
                     ->withCount(['documents' => $documentCount])
@@ -273,12 +274,14 @@ class FolderService
         if ($folderId) {
             $destination = Folder::visibleTo(User::findOrFail($userId))->findOrFail($folderId);
             abort_if($destination->is_private && (int) $destination->privacy_owner_id !== $userId, 403);
+            abort_if($destination->document_category_id && !$destination->managedCategory?->is_active, 422, 'This category is inactive.');
         }
 
         // Keep documents.category in sync with the destination folder's root
         // category, otherwise the document stays listed under its old tab.
         $document->update([
             'folder_id' => $folderId,
+            'category_id' => $folderId ? Folder::find($folderId)?->document_category_id : null,
             'category' => app(DocumentService::class)->resolveCategoryForFolder($folderId),
         ]);
 
@@ -313,6 +316,14 @@ class FolderService
                     $query->where('user_id', $userId)->orWhere('is_system', true);
                 })
                 ->firstOrFail();
+
+            abort_unless($parent->canBeViewedBy(User::findOrFail($userId)), 404);
+            if ($parent->document_category_id) {
+                abort_unless($parent->managedCategory?->is_active, 422, 'This category is inactive.');
+                $data['document_category_id'] = $parent->document_category_id;
+                $data['is_private'] = $parent->is_private;
+                $data['privacy_owner_id'] = $parent->privacy_owner_id;
+            }
 
             if ($parent->isCustomFoldersCategory()) {
                 $data['parent_id'] = $parentId;

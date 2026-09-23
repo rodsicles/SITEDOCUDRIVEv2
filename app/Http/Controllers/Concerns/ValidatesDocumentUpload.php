@@ -43,6 +43,10 @@ trait ValidatesDocumentUpload
             abort(404);
         }
 
+        if ($folder?->document_category_id && !$folder->managedCategory?->is_active) {
+            throw \Illuminate\Validation\ValidationException::withMessages(['folder_id' => 'This category is inactive. Choose an active category.']);
+        }
+
         $titleMax = DocumentNaming::TITLE_MAX_LENGTH;
 
         $rules = [

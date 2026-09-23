@@ -9,7 +9,7 @@
     $searchSchoolYears = $searchSchoolYears ?? collect();
     $search = request('search', request('name', ''));
     $scope = request('scope', 'folder');
-    $filterKeys = ['uploaded_by','department','course_id','school_year_id','semester','status','file_type','date_from','date_to'];
+    $filterKeys = ['uploaded_by','department','course_id','school_year_id','semester','status','file_type','date_from','date_to','managed_category_id'];
     $activeCount = collect($filterKeys)->filter(fn ($key) => request()->filled($key))->count();
     $showFilters = $activeCount > 0;
 @endphp
@@ -43,6 +43,7 @@
 
 <div id="docAdvancedFilters" class="doc-advanced-filters {{ $showFilters ? '' : 'is-collapsed' }}">
     <form action="{{ route($documentsRoute) }}" method="GET" class="unified-filter-grid">
+        <label>Custom category<select name="managed_category_id"><option value="">All accessible categories</option>@foreach(\App\Models\DocumentCategory::accessibleTo(auth()->user())->orderBy('category_name')->get() as $filterCategory)<option value="{{ $filterCategory->category_id }}" @selected((string)request('managed_category_id') === (string)$filterCategory->category_id)>{{ $filterCategory->category_name }}{{ $filterCategory->owner_id ? ' (Personal)' : '' }}{{ $filterCategory->is_active ? '' : ' (Inactive)' }}</option>@endforeach</select></label>
         <input type="hidden" name="tab" value="{{ $tab }}">
         @if($folderFilter)<input type="hidden" name="folder" value="{{ $folderFilter }}">@endif
         <input type="hidden" name="scope" value="{{ $scope }}">

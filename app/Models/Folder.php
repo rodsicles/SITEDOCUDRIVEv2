@@ -27,6 +27,7 @@ class Folder extends Model
         'sort_order',
         'slug',
         'school_year_id',
+        'document_category_id',
     ];
 
     protected $casts = [
@@ -34,6 +35,16 @@ class Folder extends Model
         'is_private' => 'boolean',
         'locked_at' => 'datetime',
     ];
+
+    public function managedCategory(): BelongsTo
+    {
+        return $this->belongsTo(DocumentCategory::class, 'document_category_id', 'category_id');
+    }
+
+    public function tabKey(): string
+    {
+        return $this->document_category_id ? 'category-'.$this->document_category_id : \Illuminate\Support\Str::slug($this->folder_name);
+    }
 
     /**
      * Get the user that owns the folder

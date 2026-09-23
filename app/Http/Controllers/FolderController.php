@@ -33,6 +33,8 @@ class FolderController extends Controller
                 'message' => 'Folder created successfully',
                 'folder' => $folder,
             ]);
+        } catch (HttpException $e) {
+            return response()->json(['success' => false, 'message' => $e->getMessage()], $e->getStatusCode());
         } catch (\Exception $e) {
             \Log::error('Folder creation error: ' . $e->getMessage());
             return response()->json([

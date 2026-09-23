@@ -331,7 +331,11 @@ class Document extends Model
         $query = self::with(['uploader.employee', 'category'])->visibleTo($user);
 
         if ($categoryFilter) {
-            $query->where('category', $categoryFilter);
+            if (str_starts_with($categoryFilter, 'managed:')) {
+                $query->where('category_id', (int) substr($categoryFilter, 8));
+            } else {
+                $query->where('category', $categoryFilter);
+            }
         }
 
         return $query;

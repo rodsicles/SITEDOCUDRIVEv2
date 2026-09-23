@@ -16,7 +16,7 @@
 <section id="folder-current-section" class="folder-current-section doc-workspace" tabindex="-1" aria-label="Document workspace">
     {{-- Category Tabs --}}
     @php
-        $validTabs = $folderTree->pluck('folder_name')->map(fn($n) => \Illuminate\Support\Str::slug($n))->toArray();
+        $validTabs = $folderTree->map(fn($category) => $category->tabKey())->toArray();
         $activeTab = in_array($tab, $validTabs) ? $tab : ($validTabs[0] ?? '');
         $shareableCategoryTab = in_array($activeTab, ['teaching-guides', 'exam-questionnaires'], true);
         $shareableUploadTab = $shareableCategoryTab
@@ -30,7 +30,7 @@
     <nav class="category-tabs" aria-label="Document categories">
         @foreach($folderTree as $category)
             @php
-                $tabSlug = \Illuminate\Support\Str::slug($category->folder_name);
+                $tabSlug = $category->tabKey();
                 $tabIcon = match ($tabSlug) {
                     'academics' => 'fa-book',
                     'event-letters' => 'fa-envelope-open-text',
@@ -45,6 +45,9 @@
                @if($activeTab === $tabSlug) aria-current="page" @endif>
                 <i class="fas {{ $tabIcon }} mr-2" aria-hidden="true"></i>
                 {{ $category->folder_name }}
+                @if($category->document_category_id)
+                    <small class="ml-1">({{ $category->managedCategory?->is_active ? ($category->is_private ? 'Personal' : 'Shared') : 'Inactive' }})</small>
+                @endif
             </a>
         @endforeach
     </nav>
@@ -78,7 +81,7 @@
             $isLeafFolder = $displayFolders->isEmpty();
         } else {
             foreach ($folderTree as $category) {
-                $tabSlug = \Illuminate\Support\Str::slug($category->folder_name);
+                $tabSlug = $category->tabKey();
                 if ($activeTab === $tabSlug) {
                     $displayFolders = $category->children;
                     break;
@@ -170,7 +173,7 @@
             );
 
         $selectedCategory = $folderTree->first(function ($category) use ($activeTab) {
-            return \Illuminate\Support\Str::slug($category->folder_name) === $activeTab;
+            return $category->tabKey() === $activeTab;
         });
 
         $explorerLevels = [];
@@ -565,6 +568,7 @@
 
 @if($canUpload)
     @include('partials.document-upload-dialog')
+    @include('partials.document-category-manager')
 @endif
 
 @if($canUpload && (($isLeafFolder ?? false) || ($isTypeLeafFolder ?? false)))

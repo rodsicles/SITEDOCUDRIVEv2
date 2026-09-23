@@ -23,10 +23,6 @@
                 <button id="themeToggle" type="button" class="login-portal-theme-toggle" aria-label="Toggle theme">
                     <i class="fas fa-moon"></i>
                 </button>
-                <div class="login-portal-secure">
-                    <i class="fas fa-shield-alt"></i>
-                    <span>Secure Login Portal</span>
-                </div>
             </div>
         </div>
     </header>

@@ -27,6 +27,11 @@
             Favorites{{ $favoriteCount ? ' · '.$favoriteCount : '' }}
         </a>
     </nav>
+    @if($canUpload ?? false)
+    <button type="button" class="btn btn-primary" id="openDocumentUpload" aria-haspopup="dialog">
+        <i class="fas fa-upload" aria-hidden="true"></i> Upload Document
+    </button>
+    @else
     <p class="docs-command-strip__muted m-0 text-xs">
         @if($browseMode === 'recent')
             Files you opened recently, across folders.
@@ -38,4 +43,5 @@
             Choose a folder below, or switch scope to Recent or Favorites.
         @endif
     </p>
+    @endif
 </div>

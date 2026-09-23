@@ -28,6 +28,17 @@ trait ValidatesDocumentUpload
         $useCourseSelect = $isTypeLeafFolder;
         $user = auth()->user();
 
+        if ($request->boolean('guided_upload')) {
+            $destination = app(\App\Http\Controllers\UploadDestinationController::class)->describe(
+                $user, $folderId, app(\App\Services\FolderService::class), $hierarchy
+            );
+            if (!$destination['uploadable']) {
+                throw \Illuminate\Validation\ValidationException::withMessages([
+                    'folder_id' => 'Choose a valid upload destination.',
+                ]);
+            }
+        }
+
         if ($folder && ! $folder->canBeViewedBy($user)) {
             abort(404);
         }

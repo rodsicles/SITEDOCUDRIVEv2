@@ -292,18 +292,8 @@
                 <div class="text-sm text-gray-600 dark:text-gray-400">
                     <i class="fas fa-layer-group mr-1"></i> Open a course folder, or upload to create one
                 </div>
-                @if($canUpload)
-                <div class="flex gap-2">
-                    <button type="button" id="btnFolderUpload" onclick="toggleFolderUpload()" class="btn btn-success doc-action-btn" aria-pressed="false">
-                        <i class="fas fa-upload mr-1"></i> Upload to this Folder
-                    </button>
-                </div>
-                @endif
             </div>
 
-            @if($canUpload)
-            @include('partials.folder-tree-upload-form')
-            @endif
 
             @if(empty($explorerLevels))
             <div class="folder-container-new flex gap-3 flex-wrap mt-4">
@@ -362,9 +352,6 @@
                     <i class="fas fa-folder-plus mr-1"></i> Create Folder
                 </button>
                 @endif
-                <button type="button" id="btnFolderUpload" onclick="toggleFolderUpload()" class="btn btn-success doc-action-btn" aria-pressed="false">
-                    <i class="fas fa-upload mr-1"></i> Upload to this Folder
-                </button>
             </div>
             @endif
         </div>
@@ -457,9 +444,6 @@
                 ])
             @endif
 
-            @if($canUpload)
-            @include('partials.folder-tree-upload-form')
-            @endif
         </div>
     @else
         {{-- FOLDER CARDS --}}
@@ -578,6 +562,10 @@
         @endif
     @endif
 </section>
+
+@if($canUpload)
+    @include('partials.document-upload-dialog')
+@endif
 
 @if($canUpload && (($isLeafFolder ?? false) || ($isTypeLeafFolder ?? false)))
 @push('scripts')

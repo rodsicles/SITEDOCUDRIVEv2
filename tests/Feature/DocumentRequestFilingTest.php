@@ -61,7 +61,7 @@ class DocumentRequestFilingTest extends TestCase
     {
         $dean = User::where('username', 'dean')->firstOrFail();
         $faculty = User::where('username', 'faculty')->firstOrFail();
-        $course = Course::active()->ordered()->firstOrFail();
+        $course = Course::active()->where('program', $faculty->employee->program)->ordered()->firstOrFail();
         $schoolYear = SchoolYear::active();
 
         $response = $this->actingAs($dean)->from(route('document-requests.index'))->post(route('document-requests.store'), [
@@ -84,7 +84,7 @@ class DocumentRequestFilingTest extends TestCase
     {
         $dean = User::where('username', 'dean')->firstOrFail();
         $faculty = User::where('username', 'faculty')->firstOrFail();
-        $course = Course::active()->ordered()->firstOrFail();
+        $course = Course::active()->where('program', $faculty->employee->program)->ordered()->firstOrFail();
         $schoolYear = SchoolYear::active();
         $faculty->assignedCourses()->sync([$course->id]);
 

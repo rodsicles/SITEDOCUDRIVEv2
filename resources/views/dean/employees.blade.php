@@ -291,6 +291,16 @@
                                 </select>
                             </div>
                             <div class="form-group">
+                                <label class="form-label" for="facultyType">Faculty Type *</label>
+                                <select id="facultyType" name="faculty_type" class="form-control" required>
+                                    <option value="">Select Faculty Type</option>
+                                    @foreach(\App\Models\Employee::FACULTY_TYPES as $value => $label)
+                                        <option value="{{ $value }}" @selected(old('_form') === 'faculty' && old('faculty_type') === $value)>{{ $label }}</option>
+                                    @endforeach
+                                </select>
+                                <small class="text-xs text-gray-500 dark:text-gray-400 mt-1">Shared faculty keeps one home program while teaching assigned subjects.</small>
+                            </div>
+                            <div class="form-group">
                                 <label class="form-label">Employee Number</label>
                                 <input type="text" id="facultyEmployeeNo" class="form-control bg-gray-100 dark:bg-gray-800" value="" placeholder="Select program first" readonly disabled>
                                 <small class="text-xs text-gray-500 dark:text-gray-400 mt-1">Auto-generated per program (e.g. SITE-IT-FAC001). Existing numbers are not changed.</small>

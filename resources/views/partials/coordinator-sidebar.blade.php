@@ -13,6 +13,9 @@
         <a href="{{ route('document-requests.index') }}" class="menu-item {{ request()->routeIs('document-requests.*') ? 'active' : '' }}">
             <i class="fas fa-file-circle-question"></i> Document Requests
         </a>
+        <a href="{{ route('teacher-loads.index') }}" class="menu-item {{ request()->routeIs('teacher-loads.*') ? 'active' : '' }}">
+            <i class="fas fa-chalkboard-teacher"></i> Teacher’s Load
+        </a>
         <a href="{{ route('coordinator.teaching-guides.index') }}" class="menu-item {{ request()->routeIs('coordinator.teaching-guides.*') ? 'active' : '' }}">
             <i class="fas fa-book-open"></i> Pending Teaching Guides
             @if(($pendingTeachingGuidesCount ?? 0) > 0)

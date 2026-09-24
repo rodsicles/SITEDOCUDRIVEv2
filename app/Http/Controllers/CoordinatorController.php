@@ -177,6 +177,7 @@ class CoordinatorController extends Controller
             'password'     => 'required|string|min:8|max:40',
             'full_name'    => 'required|string|max:45',
             'program'   => 'required|in:BLIS,BSEnSE,BSIT,BSCpE',
+            'faculty_type' => 'required|in:full_time,shared',
             'course_ids'   => 'nullable|array',
             'course_ids.*' => ['integer', \Illuminate\Validation\Rule::exists('courses', 'id')->where('program', $request->input('program'))->where('is_active', true)],
         ]);
@@ -333,6 +334,7 @@ class CoordinatorController extends Controller
             'full_name'    => 'required|string|max:45',
             'employee_no'  => 'nullable|string|max:20|unique:employees,employee_no,' . $employee->employee_id . ',employee_id',
             'program'   => 'required|in:BLIS,BSEnSE,BSIT,BSCpE',
+            'faculty_type' => 'required|in:full_time,shared',
             'email'        => 'nullable|email|max:45',
             'position'     => 'nullable|string|max:100',
             'hire_date'    => 'nullable|date|before_or_equal:today',

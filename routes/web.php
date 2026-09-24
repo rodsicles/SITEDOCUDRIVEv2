@@ -79,6 +79,18 @@ Route::middleware(['auth', 'no.back'])->group(function () {
 });
 
 // Teaching Guides: open or create subject folder (TG/LB) from semester picker
+Route::middleware(['auth', 'no.back', 'role:Dean,Program Coordinator,Faculty Employee'])->prefix('teacher-loads')->name('teacher-loads.')->group(function () {
+    $controller = \App\Http\Controllers\TeacherLoadController::class;
+    Route::get('/', [$controller, 'index'])->name('index');
+    Route::get('/options', [$controller, 'options'])->name('options');
+    Route::post('/preview', [$controller, 'preview'])->middleware('throttle:30,1')->name('preview');
+    Route::post('/', [$controller, 'store'])->middleware('throttle:30,1')->name('store');
+    Route::get('/{id}', [$controller, 'show'])->whereNumber('id')->name('show');
+    Route::patch('/{id}', [$controller, 'update'])->whereNumber('id')->middleware('throttle:30,1')->name('update');
+    Route::post('/{id}/finalize', [$controller, 'finalize'])->whereNumber('id')->middleware('throttle:20,1')->name('finalize');
+    Route::get('/{id}/pdf', [$controller, 'export'])->whereNumber('id')->middleware('throttle:30,1')->name('pdf');
+});
+
 Route::post('/documents/open-tg-subject', [TgSubjectFolderController::class, 'store'])
     ->middleware(['auth', 'no.back', 'throttle:30,1'])
     ->name('documents.open-tg-subject');

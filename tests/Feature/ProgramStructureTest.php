@@ -69,7 +69,7 @@ class ProgramStructureTest extends TestCase
     public function test_empty_program_allows_accounts_but_rejects_cross_program_assignments(): void
     {
         $dean = User::where('username', 'dean')->firstOrFail();
-        $data = ['username' => 'blis-test-faculty', 'password' => 'Test-only-password-2026', 'full_name' => 'Program Test Faculty', 'program' => 'BLIS'];
+        $data = ['username' => 'blis-test-faculty', 'password' => 'Test-only-password-2026', 'full_name' => 'Program Test Faculty', 'program' => 'BLIS', 'faculty_type' => 'full_time'];
         $this->actingAs($dean)->post(route('dean.store-faculty'), $data)->assertSessionHasNoErrors();
         $faculty = User::where('username', $data['username'])->firstOrFail();
         $this->assertSame('BLIS', $faculty->employee->program);

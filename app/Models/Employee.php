@@ -9,6 +9,11 @@ class Employee extends Model
 {
     use HasFactory;
 
+    public const FACULTY_TYPES = [
+        'full_time' => 'Full-Time Faculty',
+        'shared' => 'Shared Faculty',
+    ];
+
     protected $primaryKey = 'employee_id';
     
     protected $fillable = [
@@ -16,6 +21,7 @@ class Employee extends Model
         'employee_no',
         'full_name',
         'program',
+        'faculty_type',
         'department',
         'position',
         'hire_date',
@@ -33,6 +39,11 @@ class Employee extends Model
     }
 
     public function academicProgram() { return $this->belongsTo(Program::class, 'program', 'code'); }
+
+    public function facultyTypeLabel(): string
+    {
+        return self::FACULTY_TYPES[$this->faculty_type] ?? 'Full-Time Faculty';
+    }
 
     public function user()
     {

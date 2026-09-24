@@ -98,6 +98,7 @@ class EmployeeService
                 'employee_no' => $validated['employee_no'],
                 'full_name' => $validated['full_name'],
                 'program' => $validated['program'],
+                'faculty_type' => $validated['faculty_type'],
                 'position' => 'Faculty Employee',
                 'hire_date' => now(),
             ]);
@@ -135,6 +136,7 @@ class EmployeeService
                 'full_name' => $validated['full_name'],
                 'employee_no' => $validated['employee_no'],
                 'program' => $validated['program'],
+                'faculty_type' => $validated['faculty_type'] ?? $employee->faculty_type,
                 'position' => $validated['position'] ?? $employee->position,
                 'hire_date' => $validated['hire_date'] ?? $employee->hire_date,
             ]);
@@ -201,6 +203,7 @@ class EmployeeService
                 'full_name' => $validated['full_name'],
                 'employee_no' => $validated['employee_no'],
                 'program' => $validated['program'],
+                'faculty_type' => $validated['faculty_type'] ?? $employee->faculty_type,
                 'position' => $validated['position'] ?? $employee->position,
                 'hire_date' => $validated['hire_date'] ?? $employee->hire_date,
             ]);

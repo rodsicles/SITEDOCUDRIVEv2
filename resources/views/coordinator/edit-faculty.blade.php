@@ -87,6 +87,15 @@
                 </div>
 
                 <div class="form-group">
+                    <label class="form-label">Faculty Type *</label>
+                    <select name="faculty_type" class="form-control" required>
+                        @foreach(\App\Models\Employee::FACULTY_TYPES as $value => $label)
+                            <option value="{{ $value }}" @selected(old('faculty_type', $employee->faculty_type ?? 'full_time') === $value)>{{ $label }}</option>
+                        @endforeach
+                    </select>
+                </div>
+
+                <div class="form-group">
                     <label class="form-label">Hire date</label>
                     <input type="date" name="hire_date" class="form-control"
                            value="{{ old('hire_date', optional($employee->hire_date)->format('Y-m-d')) }}">

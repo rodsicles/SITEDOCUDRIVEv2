@@ -189,6 +189,7 @@ Route::middleware(['auth', 'no.back', 'role:Dean,Secretary'])->prefix('dean')->n
     Route::post('/accounts/{id}/reset-password', [DeanController::class, 'resetEmployeePassword'])->middleware('throttle:5,1')->name('reset-password');
 
     Route::get('/courses/by-department', [\App\Http\Controllers\DeanController::class, 'coursesByDepartment'])->name('courses.by-department');
+    Route::get('/courses/by-program', [\App\Http\Controllers\DeanController::class, 'coursesByDepartment'])->name('courses.by-program');
     Route::get('/courses', [DeanCourseController::class, 'index'])->name('courses');
     Route::post('/courses', [DeanCourseController::class, 'store'])->name('courses.store');
     Route::patch('/courses/{course}', [DeanCourseController::class, 'update'])->name('courses.update');

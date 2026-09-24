@@ -17,17 +17,9 @@ class CourseCatalog
             return null;
         }
 
-        $dept = trim((string) optional($user->employee)->department);
+        $dept = trim((string) optional($user->employee)->program);
 
-        if (str_contains(strtolower($dept), 'engineering')) {
-            return Course::DEPT_ENGINEERING;
-        }
-
-        if (IteSubjects::userIsInformationTechnology($user) || str_contains(strtolower($dept), 'information technology') || $dept === 'IT') {
-            return Course::DEPT_IT;
-        }
-
-        return $dept !== '' ? $dept : null;
+        return in_array($dept, \App\Models\Program::codes(), true) ? $dept : '__unassigned__';
     }
 
     /** @return list<string> */
@@ -61,6 +53,8 @@ class CourseCatalog
     public static function queryForUser(?User $user)
     {
         $query = Course::active()->ordered();
+        $program = self::departmentForUser($user);
+        if ($program) $query->where('program', $program);
 
         // Faculty with explicitly assigned courses → show ONLY those subjects
         if ($user && $user->isFaculty()) {

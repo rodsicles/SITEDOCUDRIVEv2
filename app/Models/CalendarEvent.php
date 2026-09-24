@@ -69,7 +69,7 @@ class CalendarEvent extends Model
     // Get events for a specific user
     public static function getEventsForUser($userId, $startDate = null, $endDate = null)
     {
-        $userDepartment = Employee::where('user_id', $userId)->value('department');
+        $userDepartment = Employee::where('user_id', $userId)->value('program');
 
         $query = self::where(function($q) use ($userId, $userDepartment) {
             $q->where('created_by', $userId)
@@ -83,7 +83,7 @@ class CalendarEvent extends Model
                 $q->orWhere(function($q3) use ($userDepartment) {
                     $q3->where('visibility', 'Department')
                        ->whereHas('creator.employee', function($q4) use ($userDepartment) {
-                           $q4->where('department', $userDepartment);
+                           $q4->where('program', $userDepartment);
                        });
                 });
             }

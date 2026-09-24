@@ -2,7 +2,7 @@
 
 @section('title', 'Pending Exam Questionnaires - Coordinator')
 @section('page-title', 'Pending Exam Questionnaires')
-@section('page-subtitle', 'Review and approve exam questionnaire submissions from your department faculty')
+@section('page-subtitle', 'Review and approve exam questionnaire submissions from your program faculty')
 
 @section('sidebar')
     @include('partials.coordinator-sidebar')
@@ -20,7 +20,7 @@
 
         <p class="px-4 pt-2 pb-0 text-xs text-gray-500 dark:text-gray-400 mb-0">
             <i class="fas fa-info-circle mr-1"></i>
-            You only see submissions from faculty in your department.
+            You only see submissions from faculty in your program.
         </p>
 
         <div class="submission-toolbar">
@@ -114,7 +114,7 @@
                 </tr>
                 @empty
                 <tr>
-                    <td colspan="10" class="text-center text-gray-500 dark:text-gray-400 py-8">No submissions found for your department.</td>
+                    <td colspan="10" class="text-center text-gray-500 dark:text-gray-400 py-8">No submissions found for your program.</td>
                 </tr>
                 @endforelse
             </tbody>

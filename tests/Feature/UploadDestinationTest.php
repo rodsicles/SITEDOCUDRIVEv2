@@ -27,7 +27,7 @@ class UploadDestinationTest extends TestCase
     public function test_assigned_course_can_be_opened_and_only_its_final_folder_selected(): void
     {
         $faculty = User::where('username', 'faculty')->firstOrFail();
-        $course = Course::active()->where('department', Course::DEPT_IT)->firstOrFail();
+        $course = Course::active()->where('program', Course::PROGRAM_IT)->firstOrFail();
         $faculty->assignedCourses()->sync([$course->id]);
         $hierarchy = app(AcademicHierarchyService::class);
         $hierarchy->ensureActiveSchoolYearStructures();
@@ -42,7 +42,7 @@ class UploadDestinationTest extends TestCase
         $leaf = $subject->children()->where('folder_name', 'TG')->firstOrFail();
         $this->getJson(route('upload-destinations.index', ['folder' => $leaf->folder_id]))
             ->assertOk()->assertJsonPath('uploadable', true)->assertJsonPath('academic', true);
-        $faculty->assignedCourses()->sync([Course::active()->where('department', Course::DEPT_IT)->where('id', '!=', $course->id)->firstOrFail()->id]);
+        $faculty->assignedCourses()->sync([Course::active()->where('program', Course::PROGRAM_IT)->where('id', '!=', $course->id)->firstOrFail()->id]);
         $this->getJson(route('upload-destinations.index', ['folder' => $leaf->folder_id]))->assertNotFound();
         $this->postJson(route('faculty.upload-document'), ['guided_upload' => 1, 'folder_id' => $leaf->folder_id])->assertNotFound();
     }

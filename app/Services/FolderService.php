@@ -101,9 +101,9 @@ class FolderService
         if ($viewer?->isFaculty()) {
             $query->where('user_id', $viewer->id);
         } elseif ($viewer?->isProgramCoordinator()) {
-            $dept = optional($viewer->employee)->department;
+            $dept = optional($viewer->employee)->program;
             if ($dept) {
-                $query->whereHas('user.employee', fn ($e) => $e->where('department', $dept));
+                $query->whereHas('user.employee', fn ($e) => $e->where('program', $dept));
             } else {
                 $query->where('user_id', $viewer->id);
             }

@@ -132,13 +132,13 @@
         @if(isset($summary) && $summary->count() > 0)
         <div class="content-card">
             <div class="card-header">
-                <h3 class="card-title"><i class="fas fa-chart-bar mr-2"></i>Department Training Summary</h3>
+                <h3 class="card-title"><i class="fas fa-chart-bar mr-2"></i>Program Training Summary</h3>
             </div>
             <table class="data-table">
                 <thead>
                     <tr>
                         <th>Faculty Name</th>
-                        <th>Department</th>
+                        <th>Program</th>
                         <th>Total Trainings</th>
                         <th>Total Hours</th>
                     </tr>
@@ -147,7 +147,7 @@
                     @foreach($summary as $item)
                     <tr>
                         <td><strong>{{ $item->full_name }}</strong></td>
-                        <td>{{ $item->department ?? 'N/A' }}</td>
+                        <td>{{ $item->program ?? 'N/A' }}</td>
                         <td>{{ $item->total_trainings }}</td>
                         <td>{{ number_format($item->total_hours, 1) }} hrs</td>
                     </tr>

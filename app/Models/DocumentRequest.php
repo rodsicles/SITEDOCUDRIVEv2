@@ -9,7 +9,7 @@ class DocumentRequest extends Model
     protected $fillable = [
         'requested_by', 'title', 'instructions', 'document_type', 'request_category', 'course_id',
         'destination_folder_id',
-        'department', 'school_year_id', 'semester', 'due_at',
+        'program', 'school_year_id', 'semester', 'due_at',
         'allow_late_submission', 'status',
     ];
 

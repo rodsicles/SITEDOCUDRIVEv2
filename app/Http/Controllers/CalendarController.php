@@ -129,8 +129,8 @@ class CalendarController extends Controller
         }
 
         if ($event->visibility === 'Department' && $event->created_by !== $user->id && !$event->hasAttendee($user->id)) {
-            $creatorDept = optional($event->creator->employee)->department;
-            $viewerDept = optional($user->employee)->department;
+            $creatorDept = optional($event->creator->employee)->program;
+            $viewerDept = optional($user->employee)->program;
             if (!$creatorDept || $creatorDept !== $viewerDept) {
                 abort(403, 'Unauthorized');
             }

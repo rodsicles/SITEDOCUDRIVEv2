@@ -21,8 +21,8 @@
 @php
     $displayName = optional($employee)->full_name ?? $user->username;
     $roleName = $user->role->role_name ?? '';
-    $departmentValue = old('department', optional($employee)->department);
-    $departments = ['Engineering', 'Information Technology'];
+    $departmentValue = old('program', optional($employee)->program);
+    $departments = \App\Models\Program::labels(); // code => "CODE — Full Name"
 @endphp
 
 <div class="profile-edit-page">
@@ -136,16 +136,16 @@
                     </div>
 
                     <div class="form-group">
-                        <label class="form-label" for="profileDepartment">Department</label>
+                        <label class="form-label" for="profileDepartment">Program</label>
                         <select id="profileDepartment"
-                                name="department"
-                                class="form-control @error('department') is-invalid @enderror">
-                            <option value="">Select department</option>
-                            @foreach($departments as $department)
-                                <option value="{{ $department }}" @selected($departmentValue === $department)>{{ $department }}</option>
+                                name="program" disabled
+                                class="form-control @error('program') is-invalid @enderror">
+                            <option value="">Select program</option>
+                            @foreach($departments as $code => $label)
+                                <option value="{{ $code }}" @selected($departmentValue === $code)>{{ $label }}</option>
                             @endforeach
                         </select>
-                        @error('department')
+                        @error('program')
                             <small class="profile-edit-error-inline">{{ $message }}</small>
                         @enderror
                     </div>

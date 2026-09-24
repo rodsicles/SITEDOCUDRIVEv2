@@ -24,8 +24,8 @@
                 <p class="font-semibold text-base">{{ $employee->full_name }}</p>
             </div>
             <div>
-                <p class="text-gray-500 dark:text-gray-400 mb-1.5 text-sm">Department</p>
-                <p class="font-semibold text-base">{{ $employee->department ?? 'N/A' }}</p>
+                <p class="text-gray-500 dark:text-gray-400 mb-1.5 text-sm">Program</p>
+                <p class="font-semibold text-base">{{ $employee->program ?? 'N/A' }}</p>
             </div>
             <div>
                 <p class="text-gray-500 dark:text-gray-400 mb-1.5 text-sm">Position</p>

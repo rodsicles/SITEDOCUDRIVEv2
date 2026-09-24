@@ -1,6 +1,6 @@
 @extends('exports.pdf-layout')
 
-@section('department', 'SCHOOL OF INFORMATION TECHNOLOGY AND ENGINEERING')
+@section('program', 'SCHOOL OF INFORMATION TECHNOLOGY AND ENGINEERING')
 
 @section('styles')
 /* ── Document title polish ── */

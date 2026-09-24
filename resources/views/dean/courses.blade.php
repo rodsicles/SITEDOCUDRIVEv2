@@ -3,7 +3,7 @@
 @section('title', 'Course Catalog - Dean')
 
 @section('page-title', 'Course Catalog')
-@section('page-subtitle', 'Manage ITE and Engineering courses for faculty uploads')
+@section('page-subtitle', 'Manage courses for BLIS, BSEnSE, BSIT and BSCpE')
 
 @section('sidebar')
     @include('partials.dean-sidebar')
@@ -13,7 +13,7 @@
     @include('partials.course-catalog', [
         'routePrefix' => 'dean',
         'courses' => $courses,
-        'departments' => $departments,
+        'programs' => $departments,
         'departmentFilter' => $departmentFilter,
         'search' => $search,
     ])

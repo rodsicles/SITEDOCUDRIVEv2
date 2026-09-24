@@ -178,8 +178,8 @@ class Document extends Model
             $uploader = $this->relationLoaded('uploader') ? $this->uploader : $this->uploader()->with('employee')->first();
 
             if ($uploader && ($uploader->isFaculty() || (int) $uploader->role_id === 3)) {
-                $coordinatorDept = optional($user->employee)->department;
-                $uploaderDept = optional($uploader->employee)->department;
+                $coordinatorDept = optional($user->employee)->program;
+                $uploaderDept = optional($uploader->employee)->program;
 
                 return $coordinatorDept && $uploaderDept && $coordinatorDept === $uploaderDept;
             }
@@ -292,7 +292,7 @@ class Document extends Model
         }
 
         if ($user->isProgramCoordinator()) {
-            $coordinatorDept = optional($user->employee)->department;
+            $coordinatorDept = optional($user->employee)->program;
 
             return $query->where(function ($q) use ($user, $coordinatorDept) {
                 $q->where('uploaded_by', $user->id)
@@ -301,7 +301,7 @@ class Document extends Model
                 if ($coordinatorDept) {
                     $q->orWhereHas('uploader', function ($subQ) use ($coordinatorDept) {
                         $subQ->whereHas('role', fn ($r) => $r->where('role_name', 'Faculty Employee'))
-                            ->whereHas('employee', fn ($empQ) => $empQ->where('department', $coordinatorDept));
+                            ->whereHas('employee', fn ($empQ) => $empQ->where('program', $coordinatorDept));
                     });
                 }
             });

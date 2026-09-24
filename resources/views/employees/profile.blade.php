@@ -38,7 +38,7 @@
             <h2 class="employee-record__name">{{ $employee->full_name }}</h2>
             <div class="employee-record__meta">
                 <span>{{ $employee->employee_no ?? 'No employee number' }}</span>
-                <span>{{ $employee->department ?? 'N/A' }}</span>
+                <span>{{ \App\Models\Program::OPTIONS[$employee->program] ?? ($employee->program ?? 'N/A') }}</span>
                 <span>{{ $employee->user->role->role_name }}</span>
                 <span>{{ $employee->position }}</span>
             </div>
@@ -103,6 +103,15 @@
     <section class="employee-record__panel">
         <div class="employee-record__panel-head">
             <h3>Identity and account</h3>
+            @if($viewerIsDeanOffice && $employee->user->role_id !== 1)
+                <a href="{{ route('dean.edit-employee', $employee->employee_id) }}" class="btn btn-primary text-sm">
+                    <i class="fas fa-edit"></i> Edit identity
+                </a>
+            @elseif(auth()->user()->role_id === 2)
+                <a href="{{ route('coordinator.edit-faculty', $employee->employee_id) }}" class="btn btn-primary text-sm">
+                    <i class="fas fa-edit"></i> Edit identity
+                </a>
+            @endif
         </div>
         <dl class="employee-record__fields">
             <div class="employee-record__field">
@@ -114,8 +123,8 @@
                 <dd>{{ $employee->full_name }}</dd>
             </div>
             <div class="employee-record__field">
-                <dt>Department</dt>
-                <dd>{{ $employee->department ?? 'N/A' }}</dd>
+                <dt>Program</dt>
+                <dd>{{ \App\Models\Program::OPTIONS[$employee->program] ?? ($employee->program ?? 'N/A') }}</dd>
             </div>
             <div class="employee-record__field">
                 <dt>Position</dt>

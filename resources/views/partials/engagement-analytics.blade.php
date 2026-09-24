@@ -15,7 +15,7 @@
 
     @if($isFaculty)
     <div class="p-4">
-        <h4>Your activity vs department average</h4>
+        <h4>Your activity vs program average</h4>
         @php
             $my = $myEngagementStats ?? [];
             $avg = $departmentAvgStats ?? [];
@@ -81,7 +81,7 @@
                     <tr>
                         <th>#</th>
                         <th>Faculty</th>
-                        <th>Department</th>
+                        <th>Program</th>
                         <th>Actions</th>
                         <th>Logins</th>
                         <th>Uploads</th>
@@ -92,7 +92,7 @@
                     <tr>
                         <td>{{ $row['rank'] }}</td>
                         <td><strong>{{ $row['name'] }}</strong></td>
-                        <td>{{ $row['department'] }}</td>
+                        <td>{{ $row['program'] }}</td>
                         <td>{{ number_format($row['actions']) }}</td>
                         <td>{{ $row['logins'] }}</td>
                         <td>{{ $row['uploads'] }}</td>
@@ -113,7 +113,7 @@
                     <tr>
                         <th>#</th>
                         <th>Coordinator</th>
-                        <th>Department</th>
+                        <th>Program</th>
                         <th>Actions</th>
                         <th>Logins</th>
                         <th>Uploads</th>
@@ -124,7 +124,7 @@
                     <tr>
                         <td>{{ $row['rank'] }}</td>
                         <td><strong>{{ $row['name'] }}</strong></td>
-                        <td>{{ $row['department'] }}</td>
+                        <td>{{ $row['program'] }}</td>
                         <td>{{ number_format($row['actions']) }}</td>
                         <td>{{ $row['logins'] }}</td>
                         <td>{{ $row['uploads'] }}</td>
@@ -190,7 +190,7 @@
             <thead>
                 <tr>
                     <th>Name</th>
-                    <th>Department</th>
+                    <th>Program</th>
                     <th>Last Activity</th>
                 </tr>
             </thead>
@@ -198,7 +198,7 @@
                 @foreach($inactiveUsers->take(10) as $user)
                 <tr>
                     <td><strong>{{ $user['name'] }}</strong></td>
-                    <td>{{ $user['department'] }}</td>
+                    <td>{{ $user['program'] }}</td>
                     <td>
                         @if($user['last_activity'])
                             {{ \Carbon\Carbon::parse($user['last_activity'])->diffForHumans() }}

@@ -189,8 +189,7 @@ class DeanController extends Controller
     {
         $scopes = [
             \App\Support\TaskAssigneeResolver::SCOPE_INDIVIDUAL,
-            \App\Support\TaskAssigneeResolver::SCOPE_DEPARTMENT_IT,
-            \App\Support\TaskAssigneeResolver::SCOPE_DEPARTMENT_ENGINEERING,
+            ...array_map(fn ($program) => 'program_'.$program, \App\Models\Program::codes()),
             \App\Support\TaskAssigneeResolver::SCOPE_DEPARTMENT_SITE,
         ];
 
@@ -398,9 +397,9 @@ class DeanController extends Controller
             'username'     => 'required|string|unique:users,username|max:20',
             'password'     => 'required|string|min:8|max:40',
             'full_name'    => 'required|string|max:45',
-            'department'   => 'required|in:Engineering,Information Technology',
+            'program'   => 'required|in:BLIS,BSEnSE,BSIT,BSCpE',
             'course_ids'   => 'nullable|array',
-            'course_ids.*' => 'integer|exists:courses,id',
+            'course_ids.*' => ['integer', \Illuminate\Validation\Rule::exists('courses', 'id')->where('program', $request->input('program'))->where('is_active', true)],
         ]);
 
         try {
@@ -418,9 +417,9 @@ class DeanController extends Controller
             'username'     => 'required|string|unique:users,username|max:20',
             'password'     => 'required|string|min:8|max:40',
             'full_name'    => 'required|string|max:45',
-            'department'   => 'required|in:Engineering,Information Technology',
+            'program'   => 'required|in:BLIS,BSEnSE,BSIT,BSCpE',
             'course_ids'   => 'nullable|array',
-            'course_ids.*' => 'integer|exists:courses,id',
+            'course_ids.*' => ['integer', \Illuminate\Validation\Rule::exists('courses', 'id')->where('program', $request->input('program'))->where('is_active', true)],
         ]);
 
         try {
@@ -438,13 +437,13 @@ class DeanController extends Controller
     public function coursesByDepartment(\Illuminate\Http\Request $request)
     {
         $dept = $request->query('dept');
-        if (!in_array($dept, ['Engineering', 'Information Technology'], true)) {
+        if (!in_array($dept, \App\Models\Program::codes(), true)) {
             return response()->json([]);
         }
         $courses = \App\Models\Course::active()
             ->forDepartment($dept)
             ->ordered()
-            ->get(['id', 'code', 'title']);
+            ->get(['id', 'code', 'title', 'year_level', 'semester']);
         return response()->json($courses);
     }
 
@@ -456,7 +455,7 @@ class DeanController extends Controller
             abort(403, 'Cannot edit Dean accounts.');
         }
 
-        $allCourses       = \App\Models\Course::active()->forDepartment($employee->department)->ordered()->get();
+        $allCourses       = \App\Models\Course::active()->forDepartment($employee->program)->ordered()->get();
         $assignedCourseIds = $employee->user->assignedCourses->pluck('id')->all();
 
         return view('dean.edit-employee', compact('employee', 'allCourses', 'assignedCourseIds'));
@@ -473,10 +472,12 @@ class DeanController extends Controller
         $validated = $request->validate([
             'full_name'    => 'required|string|max:45',
             'employee_no'  => 'nullable|string|max:20|unique:employees,employee_no,' . $employee->employee_id . ',employee_id',
-            'department'   => 'required|in:Engineering,Information Technology',
+            'program'   => 'required|in:BLIS,BSEnSE,BSIT,BSCpE',
             'email'        => 'nullable|email|max:45',
+            'position'     => 'nullable|string|max:100',
+            'hire_date'    => 'nullable|date|before_or_equal:today',
             'course_ids'   => 'nullable|array',
-            'course_ids.*' => 'integer|exists:courses,id',
+            'course_ids.*' => ['integer', \Illuminate\Validation\Rule::exists('courses', 'id')->where('program', $request->input('program'))->where('is_active', true)],
         ]);
 
         try {

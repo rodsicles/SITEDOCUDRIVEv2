@@ -25,7 +25,7 @@ class AnalyticsController extends Controller
             : [
                 'school_year' => $request->query('school_year'),
                 'semester' => $request->query('semester'),
-                'department' => $request->query('department'),
+                'program' => $request->query('program'),
             ];
 
         $submissionData = $this->submissionAnalytics->getAnalytics($user, $filterInput);

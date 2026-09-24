@@ -96,13 +96,12 @@
                     </div>
 
                     <div class="login-portal-field">
-                        <label class="login-portal-label">Department</label>
+                        <label class="login-portal-label">Program</label>
                         <div class="login-portal-input-wrapper">
                             <i class="fas fa-building login-portal-input-icon"></i>
-                            <select name="department" class="login-portal-input" required>
-                                <option value="">Select Department</option>
-                                <option value="Engineering" {{ old('department') == 'Engineering' ? 'selected' : '' }}>Engineering</option>
-                                <option value="Information Technology" {{ old('department') == 'Information Technology' ? 'selected' : '' }}>Information Technology</option>
+                            <select name="program" class="login-portal-input" required>
+                                <option value="">Select Program</option>
+                                @foreach(\App\Models\Program::labels() as $code => $label)<option value="{{ $code }}" @selected(old('program', $employee->program ?? null) === $code)>{{ $label }}</option>@endforeach
                             </select>
                         </div>
                     </div>

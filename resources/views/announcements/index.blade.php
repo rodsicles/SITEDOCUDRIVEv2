@@ -83,9 +83,9 @@
                                     <i class="fas fa-eye mr-0.5"></i>{{ $announcement->visibility }}
                                 </span>
                                 @endif
-                                @if($announcement->department !== 'All')
+                                @if($announcement->program !== 'All')
                                 <span class="px-2 py-0.5 bg-purple-100 dark:bg-purple-900/30 text-purple-700 dark:text-purple-300 text-[0.65rem] font-semibold">
-                                    <i class="fas fa-building mr-0.5"></i>{{ $announcement->department }}
+                                    <i class="fas fa-building mr-0.5"></i>{{ $announcement->program }}
                                 </span>
                                 @endif
                                 @if($announcement->expires_at)
@@ -385,7 +385,7 @@
                     const when = includeWhen && row.read_at
                         ? `<span class="text-[11px] text-gray-400 dark:text-gray-500">${new Date(row.read_at).toLocaleString()}</span>`
                         : '';
-                    const meta = [row.role, row.department].filter(Boolean).join(' &middot; ');
+                    const meta = [row.role, row.program].filter(Boolean).join(' &middot; ');
                     return `<div class="flex items-center justify-between gap-2 px-3 py-2 border-b border-gray-100 dark:border-gray-700">
                         <div class="min-w-0">
                             <div class="text-xs font-semibold text-gray-800 dark:text-gray-100 truncate">${row.name}</div>

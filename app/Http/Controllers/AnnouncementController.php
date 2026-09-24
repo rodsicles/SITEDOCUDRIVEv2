@@ -45,7 +45,7 @@ class AnnouncementController extends Controller
         $validated = $request->validate([
             'title' => 'required|string|max:255',
             'body' => 'required|string|max:5000',
-            'audience' => 'required|in:everyone,faculty,coordinators,dean,it,engineering',
+            'audience' => 'required|in:everyone,faculty,coordinators,dean,BLIS,BSEnSE,BSIT,BSCpE',
             'is_pinned' => 'boolean',
             'expires_at' => 'nullable|date|after:now',
         ]);
@@ -71,7 +71,7 @@ class AnnouncementController extends Controller
         $audienceOptions = self::audienceOptions();
         $selectedAudience = old('audience', $this->audienceFromFilters(
             $announcement->visibility,
-            $announcement->department
+            $announcement->program
         ));
 
         return view('announcements.edit', compact(
@@ -92,7 +92,7 @@ class AnnouncementController extends Controller
         $validated = $request->validate([
             'title' => 'required|string|max:255',
             'body' => 'required|string|max:5000',
-            'audience' => 'required|in:everyone,faculty,coordinators,dean,it,engineering',
+            'audience' => 'required|in:everyone,faculty,coordinators,dean,BLIS,BSEnSE,BSIT,BSCpE',
             'is_pinned' => 'boolean',
             'expires_at' => 'nullable|date|after:now',
         ]);
@@ -152,7 +152,7 @@ class AnnouncementController extends Controller
                 'id'         => $member->id,
                 'name'       => $member->employee->full_name ?? $member->name,
                 'role'       => $member->role->role_name ?? '',
-                'department' => $member->employee->department ?? '',
+                'program' => $member->employee->program ?? '',
             ];
             if (isset($reads[$member->id])) {
                 $row['read_at'] = optional($reads[$member->id]->read_at)->toIso8601String();
@@ -268,8 +268,7 @@ class AnnouncementController extends Controller
             'faculty' => 'Faculty only',
             'coordinators' => 'Coordinators only',
             'dean' => 'Dean only',
-            'it' => 'IT department',
-            'engineering' => 'Engineering department',
+            ...\App\Models\Program::labels(),
         ];
     }
 
@@ -278,13 +277,12 @@ class AnnouncementController extends Controller
      */
     private function mapAudience(string $audience): array
     {
+        if (in_array($audience, \App\Models\Program::codes(), true)) return ['visibility' => 'All', 'program' => $audience];
         return match ($audience) {
-            'faculty' => ['visibility' => 'Faculty Employee', 'department' => 'All'],
-            'coordinators' => ['visibility' => 'Program Coordinator', 'department' => 'All'],
-            'dean' => ['visibility' => 'Dean', 'department' => 'All'],
-            'it' => ['visibility' => 'All', 'department' => 'Information Technology'],
-            'engineering' => ['visibility' => 'All', 'department' => 'Engineering'],
-            default => ['visibility' => 'All', 'department' => 'All'],
+            'faculty' => ['visibility' => 'Faculty Employee', 'program' => 'All'],
+            'coordinators' => ['visibility' => 'Program Coordinator', 'program' => 'All'],
+            'dean' => ['visibility' => 'Dean', 'program' => 'All'],
+            default => ['visibility' => 'All', 'program' => 'All'],
         };
     }
 
@@ -293,12 +291,7 @@ class AnnouncementController extends Controller
         $visibility = $visibility ?: 'All';
         $department = $department ?: 'All';
 
-        if ($department === 'Information Technology' && $visibility === 'All') {
-            return 'it';
-        }
-        if ($department === 'Engineering' && $visibility === 'All') {
-            return 'engineering';
-        }
+        if (in_array($department, \App\Models\Program::codes(), true) && $visibility === 'All') return $department;
         if ($visibility === 'Faculty Employee') {
             return 'faculty';
         }

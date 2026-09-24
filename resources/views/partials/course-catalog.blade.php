@@ -25,8 +25,7 @@
     } else {
         $deptLinks = [
             ['label' => 'All courses', 'value' => 'all'],
-            ['label' => 'Information Technology', 'value' => 'it'],
-            ['label' => 'Engineering', 'value' => 'engineering'],
+            ...collect(\App\Models\Program::codes())->map(fn ($code) => ['label' => $code, 'value' => strtolower($code)])->all(),
             ['label' => 'Inactive', 'value' => 'inactive'],
         ];
     }
@@ -51,15 +50,15 @@
             </div>
             @if($lockedDepartment)
             <div class="form-group mb-0">
-                <label class="form-label">Department</label>
+                <label class="form-label">Program</label>
                 <input type="text" class="form-control bg-gray-100 dark:bg-gray-800" value="{{ $lockedDepartment }}" readonly disabled>
             </div>
             @else
             <div class="form-group mb-0">
-                <label class="form-label">Department <span class="text-red-500">*</span></label>
-                <select name="department" class="form-control" required>
+                <label class="form-label">Program <span class="text-red-500">*</span></label>
+                <select name="program" class="form-control" required>
                     @foreach($departments as $value => $label)
-                        <option value="{{ $value }}" @selected(old('department') === $value)>{{ $label }}</option>
+                        <option value="{{ $value }}" @selected(old('program') === $value)>{{ $label }}</option>
                     @endforeach
                 </select>
             </div>
@@ -69,7 +68,7 @@
             @if($lockedDepartment)
                 Faculty and coordinators in <strong>{{ $lockedDepartment }}</strong> will see this course when uploading to Teaching Guides or Exam Questionnaires.
             @else
-                Faculty and coordinators in the selected department will see this course when uploading to Teaching Guides or Exam Questionnaires.
+                Faculty and coordinators in the selected program will see this course when uploading to Teaching Guides or Exam Questionnaires.
             @endif
         </p>
         <button type="submit" class="btn btn-primary">
@@ -84,14 +83,14 @@
         <div class="flex flex-col sm:flex-row sm:items-center gap-3 w-full sm:w-auto sm:ml-auto">
             <form action="{{ route($indexRoute) }}" method="GET" class="flex items-center gap-2 w-full sm:w-auto">
                 @if($dept !== 'all')
-                    <input type="hidden" name="department" value="{{ $dept }}">
+                    <input type="hidden" name="program" value="{{ $dept }}">
                 @endif
                 <input type="search" name="search" value="{{ $search ?? '' }}" class="form-control text-sm w-full sm:min-w-[220px]" placeholder="Search code or title...">
                 <button type="submit" class="btn btn-primary text-sm whitespace-nowrap">
                     <i class="fas fa-search"></i>
                 </button>
                 @if($search)
-                    <a href="{{ route($indexRoute, array_filter(['department' => $dept !== 'all' ? $dept : null])) }}" class="btn bg-gray-200 dark:bg-gray-700 text-gray-700 dark:text-gray-300 text-sm">
+                    <a href="{{ route($indexRoute, array_filter(['program' => $dept !== 'all' ? $dept : null])) }}" class="btn bg-gray-200 dark:bg-gray-700 text-gray-700 dark:text-gray-300 text-sm">
                         <i class="fas fa-times"></i>
                     </a>
                 @endif
@@ -102,7 +101,7 @@
 
     <div class="px-4 pb-3 flex flex-wrap gap-2 border-b border-gray-200 dark:border-gray-700">
         @foreach($deptLinks as $link)
-            <a href="{{ route($indexRoute, array_filter(['department' => $link['value'], 'search' => $search ?? null])) }}"
+            <a href="{{ route($indexRoute, array_filter(['program' => $link['value'], 'search' => $search ?? null])) }}"
                class="btn text-sm {{ $dept === $link['value'] ? ($link['value'] === 'inactive' ? 'btn-danger' : 'btn-primary') : 'bg-gray-200 dark:bg-gray-700 text-gray-700 dark:text-gray-300' }}">
                 {{ $link['label'] }}
             </a>
@@ -115,7 +114,7 @@
             <tr>
                 <th>Code</th>
                 <th>Title</th>
-                <th>Department</th>
+                <th>Program</th>
                 <th>Status</th>
                 <th class="text-right">Action</th>
             </tr>
@@ -125,7 +124,7 @@
             <tr>
                 <td><strong>{{ $course->code }}</strong></td>
                 <td>{{ $course->title }}</td>
-                <td>{{ $course->department }}</td>
+                <td>{{ $course->program }}</td>
                 <td>
                     @if($course->is_active)
                         <span class="badge badge-success">Active</span>
@@ -184,7 +183,7 @@
                     @if($dept === 'inactive')
                         No inactive courses.
                     @else
-                        No courses yet. Add courses using the form above.
+                        No courses available for this program. Add official courses when available.
                     @endif
                 </td>
             </tr>

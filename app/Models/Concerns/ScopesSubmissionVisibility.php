@@ -26,7 +26,7 @@ trait ScopesSubmissionVisibility
         $submitterRelation = $this->submissionSubmitterRelation();
 
         if ($viewer->isProgramCoordinator()) {
-            $dept = optional($viewer->employee)->department;
+            $dept = optional($viewer->employee)->program;
             if (!$dept) {
                 return $query->whereRaw('1 = 0');
             }
@@ -35,7 +35,7 @@ trait ScopesSubmissionVisibility
                 $q->where($ownerColumn, $viewer->id)
                     ->orWhereHas($submitterRelation, function ($subQ) use ($dept) {
                         $subQ->whereHas('role', fn ($r) => $r->where('role_name', 'Faculty Employee'))
-                            ->whereHas('employee', fn ($e) => $e->where('department', $dept));
+                            ->whereHas('employee', fn ($e) => $e->where('program', $dept));
                     });
             });
         }
@@ -68,7 +68,7 @@ trait ScopesSubmissionVisibility
                 return true;
             }
 
-            $dept = optional($viewer->employee)->department;
+            $dept = optional($viewer->employee)->program;
             if (!$dept) {
                 return false;
             }
@@ -78,7 +78,7 @@ trait ScopesSubmissionVisibility
                 return false;
             }
 
-            return optional($submitter->employee)->department === $dept;
+            return optional($submitter->employee)->program === $dept;
         }
 
         if ($ownerId === (int) $viewer->id) {

@@ -24,6 +24,7 @@ class EmployeeService
      */
     public function createCoordinator(array $validated, int $creatorUserId): Employee
     {
+        $this->validateProgramAssignments($validated);
         $this->applyGeneratedAccountFields($validated, EmployeeNumberGenerator::ROLE_COORDINATOR);
 
         DB::beginTransaction();
@@ -45,10 +46,14 @@ class EmployeeService
                 'user_id' => $user->id,
                 'employee_no' => $validated['employee_no'],
                 'full_name' => $validated['full_name'],
-                'department' => $validated['department'],
+                'program' => $validated['program'],
                 'position' => 'Program Coordinator',
                 'hire_date' => now(),
             ]);
+
+            if (!empty($validated['course_ids'])) {
+                $user->assignedCourses()->sync($validated['course_ids']);
+            }
 
             DashboardLog::create([
                 'user_id' => $creatorUserId,
@@ -71,6 +76,7 @@ class EmployeeService
      */
     public function createFaculty(array $validated, int $creatorUserId): Employee
     {
+        $this->validateProgramAssignments($validated);
         $this->applyGeneratedAccountFields($validated, EmployeeNumberGenerator::ROLE_FACULTY);
 
         DB::beginTransaction();
@@ -91,7 +97,7 @@ class EmployeeService
                 'user_id' => $user->id,
                 'employee_no' => $validated['employee_no'],
                 'full_name' => $validated['full_name'],
-                'department' => $validated['department'],
+                'program' => $validated['program'],
                 'position' => 'Faculty Employee',
                 'hire_date' => now(),
             ]);
@@ -122,12 +128,15 @@ class EmployeeService
      */
     public function updateFaculty(Employee $employee, array $validated, int $updaterUserId): Employee
     {
+        $this->validateProgramAssignments($validated);
         DB::beginTransaction();
         try {
             $employee->update([
                 'full_name' => $validated['full_name'],
                 'employee_no' => $validated['employee_no'],
-                'department' => $validated['department'],
+                'program' => $validated['program'],
+                'position' => $validated['position'] ?? $employee->position,
+                'hire_date' => $validated['hire_date'] ?? $employee->hire_date,
             ]);
 
             $employee->user->update([
@@ -136,7 +145,7 @@ class EmployeeService
             ]);
 
             // Sync course assignments (replace all, empty array = clear)
-            $employee->user->assignedCourses()->sync($validated['course_ids'] ?? []);
+            $this->syncCurrentAssignments($employee->user, $validated);
 
             DashboardLog::create([
                 'user_id' => $updaterUserId,
@@ -185,12 +194,15 @@ class EmployeeService
      */
     public function updateEmployee(Employee $employee, array $validated, int $updaterUserId): Employee
     {
+        $this->validateProgramAssignments($validated);
         DB::beginTransaction();
         try {
             $employee->update([
                 'full_name' => $validated['full_name'],
                 'employee_no' => $validated['employee_no'],
-                'department' => $validated['department'],
+                'program' => $validated['program'],
+                'position' => $validated['position'] ?? $employee->position,
+                'hire_date' => $validated['hire_date'] ?? $employee->hire_date,
             ]);
 
             $employee->user->update([
@@ -199,7 +211,7 @@ class EmployeeService
             ]);
 
             // Sync course assignments for faculty/coordinator (replace all)
-            $employee->user->assignedCourses()->sync($validated['course_ids'] ?? []);
+            $this->syncCurrentAssignments($employee->user, $validated);
 
             DashboardLog::create([
                 'user_id' => $updaterUserId,
@@ -374,6 +386,25 @@ class EmployeeService
     protected function applyGeneratedAccountFields(array &$validated, string $role): void
     {
         $generator = app(EmployeeNumberGenerator::class);
-        $validated['employee_no'] = $generator->next($validated['department'], $role);
+        $validated['employee_no'] = $generator->next($validated['program'], $role);
+    }
+
+    private function validateProgramAssignments(array $data): void
+    {
+        validator($data, [
+            'program' => ['required', \Illuminate\Validation\Rule::in(\App\Models\Program::codes())],
+            'course_ids' => ['nullable', 'array'],
+            'course_ids.*' => ['integer', \Illuminate\Validation\Rule::exists('courses', 'id')->where('program', $data['program'] ?? '')->where('is_active', true)],
+        ])->validate();
+    }
+
+    private function syncCurrentAssignments(User $user, array $data): void
+    {
+        // An unrelated account edit must not erase teaching assignments or archived history.
+        if (!array_key_exists('course_ids', $data)) return;
+        $historical = $user->assignedCourses()->where(function ($query) {
+            $query->whereNull('courses.program')->orWhere('courses.is_active', false);
+        })->pluck('courses.id')->all();
+        $user->assignedCourses()->sync(array_unique(array_merge($historical, $data['course_ids'] ?? [])));
     }
 }

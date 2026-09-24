@@ -9,15 +9,7 @@ class TaskAssigneeResolver
 {
     public const SCOPE_INDIVIDUAL = 'individual';
 
-    public const SCOPE_DEPARTMENT_IT = 'department_it';
-
-    public const SCOPE_DEPARTMENT_ENGINEERING = 'department_engineering';
-
     public const SCOPE_DEPARTMENT_SITE = 'department_site';
-
-    public const DEPARTMENT_IT = 'Information Technology';
-
-    public const DEPARTMENT_ENGINEERING = 'Engineering';
 
     /**
      * Active faculty and program coordinators eligible for Dean-assigned tasks.
@@ -28,7 +20,7 @@ class TaskAssigneeResolver
             ->with(['employee', 'role'])
             ->whereIn('role_id', [2, 3])
             ->where('status', 'Active')
-            ->whereHas('employee');
+            ->whereHas('employee', fn ($q) => $q->whereIn('program', \App\Models\Program::codes()));
     }
 
     /**
@@ -37,15 +29,9 @@ class TaskAssigneeResolver
      */
     public static function resolve(string $scope, array $assigneeIds = []): array
     {
-        $ids = match ($scope) {
-            self::SCOPE_DEPARTMENT_IT => self::userIdsForDepartment(self::DEPARTMENT_IT),
-            self::SCOPE_DEPARTMENT_ENGINEERING => self::userIdsForDepartment(self::DEPARTMENT_ENGINEERING),
-            self::SCOPE_DEPARTMENT_SITE => self::userIdsForDepartments([
-                self::DEPARTMENT_IT,
-                self::DEPARTMENT_ENGINEERING,
-            ]),
-            default => self::resolveIndividual($assigneeIds),
-        };
+        $ids = $scope === self::SCOPE_DEPARTMENT_SITE
+            ? self::userIdsForDepartments(\App\Models\Program::codes())
+            : (str_starts_with($scope, 'program_') ? self::userIdsForDepartment(substr($scope, 8)) : self::resolveIndividual($assigneeIds));
 
         return array_values(array_unique($ids));
     }
@@ -85,7 +71,7 @@ class TaskAssigneeResolver
     protected static function userIdsForDepartments(array $departments): array
     {
         return self::assignableQuery()
-            ->whereHas('employee', fn ($q) => $q->whereIn('department', $departments))
+            ->whereHas('employee', fn ($q) => $q->whereIn('program', $departments))
             ->pluck('id')
             ->map(fn ($id) => (int) $id)
             ->all();

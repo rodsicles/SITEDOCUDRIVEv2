@@ -46,7 +46,7 @@
                     <tr>
                         <th>Employee No.</th>
                         <th>Full Name</th>
-                        <th>Department</th>
+                        <th>Program</th>
                         <th>Role</th>
                         <th>Action</th>
                     </tr>
@@ -60,7 +60,7 @@
                                   title="{{ optional($employee->user)->isOnline() ? 'Online' : 'Offline' }}"></span>
                             {{ $employee->full_name }}
                         </td>
-                        <td>{{ $employee->department ?? 'N/A' }}</td>
+                        <td>{{ \App\Models\Program::OPTIONS[$employee->program] ?? ($employee->program ?? 'N/A') }}</td>
                         <td>
                             <span class="badge badge-info">{{ $employee->user->role->role_name ?? ($employee->position ?? 'N/A') }}</span>
                         </td>
@@ -96,7 +96,7 @@
                     <tr>
                         <th>Employee No.</th>
                         <th>Full Name</th>
-                        <th>Department</th>
+                        <th>Program</th>
                         <th>Role</th>
                         <th>Action</th>
                         <th>Status</th>
@@ -107,7 +107,7 @@
                     <tr>
                         <td><strong>{{ $employee->employee_no ?? 'N/A' }}</strong></td>
                         <td>{{ $employee->full_name }}</td>
-                        <td>{{ $employee->department ?? 'N/A' }}</td>
+                        <td>{{ \App\Models\Program::OPTIONS[$employee->program] ?? ($employee->program ?? 'N/A') }}</td>
                         <td>
                             <span class="badge badge-info">{{ $employee->user->role->role_name ?? ($employee->position ?? 'N/A') }}</span>
                         </td>
@@ -166,17 +166,16 @@
                                 <input type="text" name="full_name" class="form-control" placeholder="Enter full name" required maxlength="45" value="{{ old('_form') === 'coordinator' ? old('full_name') : '' }}">
                             </div>
                             <div class="form-group">
-                                <label class="form-label">Department *</label>
-                                <select id="coordinatorDepartment" name="department" class="form-control" required>
-                                    <option value="">Select Department</option>
-                                    <option value="Engineering" {{ (old('_form') === 'coordinator' && old('department') == 'Engineering') ? 'selected' : '' }}>Engineering</option>
-                                    <option value="Information Technology" {{ (old('_form') === 'coordinator' && old('department') == 'Information Technology') ? 'selected' : '' }}>Information Technology</option>
+                                <label class="form-label">Program *</label>
+                                <select id="coordinatorDepartment" name="program" class="form-control" required>
+                                    <option value="">Select Program</option>
+                                    @foreach(\App\Models\Program::labels() as $code => $label)<option value="{{ $code }}" @selected(old('program', $employee->program ?? null) === $code)>{{ $label }}</option>@endforeach
                                 </select>
                             </div>
                             <div class="form-group">
                                 <label class="form-label">Employee Number</label>
-                                <input type="text" id="coordinatorEmployeeNo" class="form-control bg-gray-100 dark:bg-gray-800" value="" placeholder="Select department first" readonly disabled>
-                                <small class="text-xs text-gray-500 dark:text-gray-400 mt-1">Auto-generated per department (e.g. SITE-IT-COOR001). Existing numbers are not changed.</small>
+                                <input type="text" id="coordinatorEmployeeNo" class="form-control bg-gray-100 dark:bg-gray-800" value="" placeholder="Select program first" readonly disabled>
+                                <small class="text-xs text-gray-500 dark:text-gray-400 mt-1">Auto-generated per program (e.g. SITE-IT-COOR001). Existing numbers are not changed.</small>
                             </div>
                         </div>
                     </div>
@@ -197,18 +196,43 @@
 
                 <div class="account-form__courses form-group" id="coordCourseSection" hidden>
                     <label class="form-label">Assigned Courses / Subjects</label>
-                    <small class="text-xs text-gray-500 dark:text-gray-400 block mb-2">Select the subjects this coordinator will handle.</small>
-                    <div class="course-picker-wrap">
-                        <div class="course-picker-toolbar">
-                            <input type="text" id="coordCourseSearch" class="course-search-input" placeholder="Search by code or title..." autocomplete="off">
-                            <span class="course-selected-count" id="coordSelectedCount">0 selected</span>
-                            <button type="button" class="course-picker-clear" id="coordCourseClear" title="Clear selection">Clear</button>
-                        </div>
-                        <div class="course-picker-body">
-                            <div id="coordCourseList" class="course-checkbox-grid">
-                                <span class="course-section-empty">Select a department first.</span>
+                    <small class="text-xs text-gray-500 dark:text-gray-400 block mb-2">Select the subjects this coordinator will handle. Defaults to the current school term.</small>
+                    <div class="course-assignment-guide" data-course-guide="coordCourses" data-default-term="{{ \App\Support\SchoolTerm::current() }}">
+                        <div class="course-guide-bar">
+                            <div class="course-guide-bar__term">
+                                <label class="course-guide-label" for="coordCourseTerm">Current term</label>
+                                <select id="coordCourseTerm" class="form-control course-guide-term" data-guide-term>
+                                    @foreach(\App\Support\SchoolTerm::labels() as $value => $label)
+                                        <option value="{{ $value }}" @selected($value === \App\Support\SchoolTerm::current())>{{ $label }}</option>
+                                    @endforeach
+                                </select>
                             </div>
-                            <p class="course-no-results" id="coordNoResults">No matching courses.</p>
+                            <div class="course-guide-bar__years" role="group" aria-label="Year level filter">
+                                <span class="course-guide-label">Year</span>
+                                <div class="course-guide-year-chips">
+                                    <button type="button" class="course-guide-chip is-active" data-guide-year="" aria-pressed="true">All</button>
+                                    @for($y = 1; $y <= 4; $y++)
+                                        <button type="button" class="course-guide-chip" data-guide-year="{{ $y }}" aria-pressed="false">{{ $y }}Y</button>
+                                    @endfor
+                                </div>
+                            </div>
+                            <label class="course-guide-unlock">
+                                <input type="checkbox" data-guide-unlock>
+                                <span>Also show courses from other terms</span>
+                            </label>
+                        </div>
+                        <div class="course-picker-wrap">
+                            <div class="course-picker-toolbar">
+                                <input type="text" id="coordCourseSearch" class="course-search-input" data-guide-search placeholder="Search by code or title..." autocomplete="off">
+                                <span class="course-selected-count" id="coordSelectedCount" data-guide-count>0 selected</span>
+                                <button type="button" class="course-picker-clear" id="coordCourseClear" data-guide-clear title="Clear selection">Clear</button>
+                            </div>
+                            <div class="course-picker-body">
+                                <div id="coordCourseList" class="course-checkbox-grid" data-guide-grid>
+                                    <span class="course-section-empty">Select a program first.</span>
+                                </div>
+                                <p class="course-no-results" id="coordNoResults" data-guide-empty>No matching courses for this term filter.</p>
+                            </div>
                         </div>
                     </div>
                     <p id="coordCourseError" class="text-xs text-red-600 dark:text-red-400 mt-1 hidden"></p>
@@ -260,17 +284,16 @@
                                 <input type="text" name="full_name" class="form-control" placeholder="Enter full name" required maxlength="45" value="{{ old('_form') === 'faculty' ? old('full_name') : '' }}">
                             </div>
                             <div class="form-group">
-                                <label class="form-label">Department *</label>
-                                <select id="facultyDepartment" name="department" class="form-control" required>
-                                    <option value="">Select Department</option>
-                                    <option value="Engineering" {{ (old('_form') === 'faculty' && old('department') == 'Engineering') ? 'selected' : '' }}>Engineering</option>
-                                    <option value="Information Technology" {{ (old('_form') === 'faculty' && old('department') == 'Information Technology') ? 'selected' : '' }}>Information Technology</option>
+                                <label class="form-label">Program *</label>
+                                <select id="facultyDepartment" name="program" class="form-control" required>
+                                    <option value="">Select Program</option>
+                                    @foreach(\App\Models\Program::labels() as $code => $label)<option value="{{ $code }}" @selected(old('program', $employee->program ?? null) === $code)>{{ $label }}</option>@endforeach
                                 </select>
                             </div>
                             <div class="form-group">
                                 <label class="form-label">Employee Number</label>
-                                <input type="text" id="facultyEmployeeNo" class="form-control bg-gray-100 dark:bg-gray-800" value="" placeholder="Select department first" readonly disabled>
-                                <small class="text-xs text-gray-500 dark:text-gray-400 mt-1">Auto-generated per department (e.g. SITE-IT-FAC001). Existing numbers are not changed.</small>
+                                <input type="text" id="facultyEmployeeNo" class="form-control bg-gray-100 dark:bg-gray-800" value="" placeholder="Select program first" readonly disabled>
+                                <small class="text-xs text-gray-500 dark:text-gray-400 mt-1">Auto-generated per program (e.g. SITE-IT-FAC001). Existing numbers are not changed.</small>
                             </div>
                         </div>
                     </div>
@@ -291,18 +314,43 @@
 
                 <div class="account-form__courses form-group" id="facultyCourseSection" hidden>
                     <label class="form-label">Assigned Courses / Subjects *</label>
-                    <small class="text-xs text-gray-500 dark:text-gray-400 block mb-2">Select the subjects this faculty member will teach. At least one is required.</small>
-                    <div class="course-picker-wrap">
-                        <div class="course-picker-toolbar">
-                            <input type="text" id="facultyCourseSearch" class="course-search-input" placeholder="Search by code or title..." autocomplete="off">
-                            <span class="course-selected-count" id="facultySelectedCount">0 selected</span>
-                            <button type="button" class="course-picker-clear" id="facultyCourseClear" title="Clear selection">Clear</button>
-                        </div>
-                        <div class="course-picker-body">
-                            <div id="facultyCourseList" class="course-checkbox-grid">
-                                <span class="course-section-empty">Select a department first.</span>
+                    <small class="text-xs text-gray-500 dark:text-gray-400 block mb-2">Select subjects for the current school term. Unlock to include other terms. At least one is required.</small>
+                    <div class="course-assignment-guide" data-course-guide="facultyCourses" data-default-term="{{ \App\Support\SchoolTerm::current() }}">
+                        <div class="course-guide-bar">
+                            <div class="course-guide-bar__term">
+                                <label class="course-guide-label" for="facultyCourseTerm">Current term</label>
+                                <select id="facultyCourseTerm" class="form-control course-guide-term" data-guide-term>
+                                    @foreach(\App\Support\SchoolTerm::labels() as $value => $label)
+                                        <option value="{{ $value }}" @selected($value === \App\Support\SchoolTerm::current())>{{ $label }}</option>
+                                    @endforeach
+                                </select>
                             </div>
-                            <p class="course-no-results" id="facultyNoResults">No matching courses.</p>
+                            <div class="course-guide-bar__years" role="group" aria-label="Year level filter">
+                                <span class="course-guide-label">Year</span>
+                                <div class="course-guide-year-chips">
+                                    <button type="button" class="course-guide-chip is-active" data-guide-year="" aria-pressed="true">All</button>
+                                    @for($y = 1; $y <= 4; $y++)
+                                        <button type="button" class="course-guide-chip" data-guide-year="{{ $y }}" aria-pressed="false">{{ $y }}Y</button>
+                                    @endfor
+                                </div>
+                            </div>
+                            <label class="course-guide-unlock">
+                                <input type="checkbox" data-guide-unlock>
+                                <span>Also show courses from other terms</span>
+                            </label>
+                        </div>
+                        <div class="course-picker-wrap">
+                            <div class="course-picker-toolbar">
+                                <input type="text" id="facultyCourseSearch" class="course-search-input" data-guide-search placeholder="Search by code or title..." autocomplete="off">
+                                <span class="course-selected-count" id="facultySelectedCount" data-guide-count>0 selected</span>
+                                <button type="button" class="course-picker-clear" id="facultyCourseClear" data-guide-clear title="Clear selection">Clear</button>
+                            </div>
+                            <div class="course-picker-body">
+                                <div id="facultyCourseList" class="course-checkbox-grid" data-guide-grid>
+                                    <span class="course-section-empty">Select a program first.</span>
+                                </div>
+                                <p class="course-no-results" id="facultyNoResults" data-guide-empty>No matching courses for this term filter.</p>
+                            </div>
                         </div>
                     </div>
                     <p id="facultyCourseError" class="text-xs text-red-600 dark:text-red-400 mt-1 hidden"></p>
@@ -385,7 +433,7 @@
 
             if (!dept || !previews[dept]) {
                 noInput.value = '';
-                noInput.placeholder = 'Select department first';
+                noInput.placeholder = 'Select program first';
                 noInput.disabled = true;
                 return;
             }
@@ -418,136 +466,51 @@
             });
         });
 
-        // ── Course Assignment AJAX + Search (Dean create forms) ─────────────
-        const coursesByDeptUrl = @json(route('dean.courses.by-department'));
+        // ── Course Assignment AJAX + guided term filter (Dean create forms) ──
+        const coursesByDeptUrl = @json(route('dean.courses.by-program'));
 
-        /**
-         * Attach live search + selected-count + clear-button to a course picker.
-         * @param {string} searchId  - id of the <input type="text"> search field
-         * @param {string} gridId    - id of the .course-checkbox-grid element
-         * @param {string} countId   - id of the .course-selected-count element
-         * @param {string} noResId   - id of the .course-no-results element
-         * @param {string} clearId   - id of the Clear button
-         */
-        function attachCourseSearch(searchId, gridId, countId, noResId, clearId) {
-            const searchEl = document.getElementById(searchId);
-            const gridEl   = document.getElementById(gridId);
-            const countEl  = document.getElementById(countId);
-            const noResEl  = document.getElementById(noResId);
-            const clearEl  = document.getElementById(clearId);
-            if (!searchEl || !gridEl) return;
-
-            function updateCount() {
-                if (!countEl) return;
-                const n = gridEl.querySelectorAll('input[type="checkbox"]:checked').length;
-                countEl.textContent = n + ' selected';
-            }
-
-            function filterItems() {
-                const q = searchEl.value.trim().toLowerCase();
-                let visible = 0;
-                gridEl.querySelectorAll('.course-checkbox-item').forEach(function(item) {
-                    const match = q === '' || item.textContent.toLowerCase().includes(q);
-                    item.classList.toggle('course-hidden', !match);
-                    if (match) visible++;
-                });
-                if (noResEl) {
-                    noResEl.classList.toggle('visible',
-                        visible === 0 && gridEl.querySelectorAll('.course-checkbox-item').length > 0
-                    );
-                }
-            }
-
-            searchEl.addEventListener('input', filterItems);
-
-            if (clearEl) {
-                clearEl.addEventListener('click', function() {
-                    gridEl.querySelectorAll('input[type="checkbox"]:checked').forEach(function(cb) {
-                        cb.checked = false;
-                        cb.closest('.course-checkbox-item').classList.remove('selected');
-                    });
-                    updateCount();
-                });
-            }
-
-            // Observe checkbox changes inside the grid (works for dynamically added items too)
-            gridEl.addEventListener('change', updateCount);
-
-            return { updateCount, filterItems };
-        }
-
-        function renderCourseCheckboxes(listEl, courses, selectedIds, searchId, countId, noResId, clearId) {
-            listEl.innerHTML = '';
-            if (!courses || courses.length === 0) {
-                listEl.innerHTML = '<span class="course-section-empty">No courses found for this department.</span>';
-                // Reset counter
-                const countEl = document.getElementById(countId);
-                if (countEl) countEl.textContent = '0 selected';
-                return;
-            }
-            courses.forEach(c => {
-                const isChecked = selectedIds && selectedIds.includes(c.id);
-                const item = document.createElement('label');
-                item.className = 'course-checkbox-item' + (isChecked ? ' selected' : '');
-                item.innerHTML =
-                    '<input type="checkbox" name="course_ids[]" value="' + c.id + '"' + (isChecked ? ' checked' : '') + '>' +
-                    '<span><strong>' + c.code + '</strong> &ndash; ' + c.title + '</span>';
-                item.querySelector('input').addEventListener('change', function() {
-                    item.classList.toggle('selected', this.checked);
-                });
-                listEl.appendChild(item);
-            });
-            // Re-attach search behaviour (items were just rebuilt)
-            const searcher = attachCourseSearch(searchId, listEl.id, countId, noResId, clearId);
-            if (searcher) {
-                // Clear search field and reset count
-                const sEl = document.getElementById(searchId);
-                if (sEl) { sEl.value = ''; }
-                searcher.updateCount();
-            }
-        }
-
-        async function loadCourses(dept, listEl, sectionEl, errorEl, searchId, countId, noResId, clearId) {
+        function loadCourses(dept, guideRoot, sectionEl, errorEl) {
             if (!dept) {
                 sectionEl.hidden = true;
-                listEl.innerHTML = '';
                 return;
             }
-            listEl.innerHTML = '<span class="course-section-empty"><i class="fas fa-spinner fa-spin mr-1"></i>Loading courses...</span>';
+            const grid = guideRoot.querySelector('[data-guide-grid]');
+            if (grid) {
+                grid.innerHTML = '<span class="course-section-empty"><i class="fas fa-spinner fa-spin mr-1"></i>Loading courses...</span>';
+            }
             sectionEl.hidden = false;
             errorEl.classList.add('hidden');
-            try {
-                const res = await fetch(coursesByDeptUrl + '?dept=' + encodeURIComponent(dept));
-                const courses = await res.json();
-                renderCourseCheckboxes(listEl, courses, [], searchId, countId, noResId, clearId);
-            } catch (e) {
-                listEl.innerHTML = '<span class="course-section-empty" style="color:#dc2626">Failed to load courses. Please try again.</span>';
-            }
+            window.CourseAssignmentGuide.bindRoot(guideRoot);
+            fetch(coursesByDeptUrl + '?dept=' + encodeURIComponent(dept))
+                .then(function (res) { return res.json(); })
+                .then(function (courses) {
+                    window.CourseAssignmentGuide.renderCourses(guideRoot, courses, []);
+                })
+                .catch(function () {
+                    if (grid) {
+                        grid.innerHTML = '<span class="course-section-empty" style="color:#dc2626">Failed to load courses. Please try again.</span>';
+                    }
+                });
         }
 
-        // Faculty form
         document.getElementById('facultyDepartment')?.addEventListener('change', function() {
             loadCourses(
                 this.value,
-                document.getElementById('facultyCourseList'),
+                document.querySelector('[data-course-guide="facultyCourses"]'),
                 document.getElementById('facultyCourseSection'),
-                document.getElementById('facultyCourseError'),
-                'facultyCourseSearch', 'facultySelectedCount', 'facultyNoResults', 'facultyCourseClear'
+                document.getElementById('facultyCourseError')
             );
         });
 
-        // Coordinator form
         document.getElementById('coordinatorDepartment')?.addEventListener('change', function() {
             loadCourses(
                 this.value,
-                document.getElementById('coordCourseList'),
+                document.querySelector('[data-course-guide="coordCourses"]'),
                 document.getElementById('coordCourseSection'),
-                document.getElementById('coordCourseError'),
-                'coordCourseSearch', 'coordSelectedCount', 'coordNoResults', 'coordCourseClear'
+                document.getElementById('coordCourseError')
             );
         });
 
-        // Validate at least 1 course on faculty form submit
         document.querySelector('form[action*="store-faculty"]')?.addEventListener('submit', function(e) {
             const section = document.getElementById('facultyCourseSection');
             if (section && !section.hidden) {
@@ -563,4 +526,5 @@
         });
         // ─────────────────────────────────────────────────────────────────────
     </script>
+    @include('partials.course-assignment-guide-script')
 @endsection

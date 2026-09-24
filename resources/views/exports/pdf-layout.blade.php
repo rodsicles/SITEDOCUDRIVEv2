@@ -88,7 +88,7 @@
             line-height: 0;
         }
 
-        /* Department label */
+        /* Program label */
         .dept-label {
             text-align: center;
             font-weight: bold;
@@ -213,7 +213,7 @@
     </table>
     <div class="bar-gold"></div>
     <div class="bar-green"></div>
-    <div class="dept-label">@yield('department', 'STUDENT AFFAIRS AND ACADEMIC SUPPORT SERVICES')</div>
+    <div class="dept-label">@yield('program', 'STUDENT AFFAIRS AND ACADEMIC SUPPORT SERVICES')</div>
 </div>{{-- /#pdf-header --}}
 
 

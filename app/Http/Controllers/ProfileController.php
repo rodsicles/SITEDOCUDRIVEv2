@@ -31,7 +31,7 @@ class ProfileController extends Controller
             // we may re-introduce uniqueness then.
             'email' => 'nullable|email|max:45',
             'employee_no' => 'nullable|string|max:15|regex:/^[0-9]*$/|unique:employees,employee_no,'.optional($employee)->employee_id.',employee_id',
-            'department' => 'nullable|in:Engineering,Information Technology',
+            'program' => 'nullable|in:BLIS,BSEnSE,BSIT,BSCpE',
         ];
 
         if ($canEditFullName) {
@@ -46,7 +46,8 @@ class ProfileController extends Controller
 
         $employeeData = [
             'employee_no' => $validated['employee_no'] ?? null,
-            'department' => $validated['department'] ?? null,
+            // Program controls access and can only be reassigned through employee management.
+            'program' => $employee?->program,
         ];
 
         if ($canEditFullName) {

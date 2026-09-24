@@ -19,7 +19,7 @@ class CoordinatorCourseController extends Controller
         $department = $this->coordinatorDepartment();
         $deptSlug = CourseService::departmentToSlug($department);
         $allowedFilters = ['all', 'inactive', $deptSlug];
-        $requested = $request->query('department');
+        $requested = $request->query('program');
         $departmentFilter = $requested === null
             ? $deptSlug
             : (in_array($requested, $allowedFilters, true) ? $requested : $deptSlug);
@@ -47,10 +47,10 @@ class CoordinatorCourseController extends Controller
             'title' => 'required|string|max:150',
         ]);
 
-        $validated['department'] = $department;
+        $validated['program'] = $department;
 
         $exists = Course::where('code', strtoupper($validated['code']))
-            ->where('department', $department)
+            ->where('program', $department)
             ->exists();
 
         if ($exists) {
@@ -74,12 +74,12 @@ class CoordinatorCourseController extends Controller
         $newCode = strtoupper(trim($validated['code']));
 
         $duplicate = Course::where('code', $newCode)
-            ->where('department', $course->department)
+            ->where('program', $course->program)
             ->where('id', '!=', $course->id)
             ->exists();
 
         if ($duplicate) {
-            return back()->with('error', "Course code {$newCode} already exists in {$course->department}.");
+            return back()->with('error', "Course code {$newCode} already exists in {$course->program}.");
         }
 
         $this->courseService->rename($course, $newCode, trim($validated['title']), auth()->id());
@@ -107,8 +107,8 @@ class CoordinatorCourseController extends Controller
     {
         $dept = CoordinatorDepartment::require(auth()->user());
 
-        if (!in_array($dept, [Course::DEPT_IT, Course::DEPT_ENGINEERING], true)) {
-            abort(403, 'Your account must be assigned to Information Technology or Engineering to manage the course catalog.');
+        if (!in_array($dept, \App\Models\Program::codes(), true)) {
+            abort(403, 'Your account must have a current program assignment to manage the course catalog.');
         }
 
         return $dept;
@@ -116,7 +116,7 @@ class CoordinatorCourseController extends Controller
 
     private function authorizeCourse(Course $course): void
     {
-        if ($course->department !== $this->coordinatorDepartment()) {
+        if ($course->program !== $this->coordinatorDepartment()) {
             abort(403, 'You do not have access to courses outside your department.');
         }
     }

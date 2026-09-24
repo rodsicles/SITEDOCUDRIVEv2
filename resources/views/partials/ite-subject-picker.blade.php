@@ -1,4 +1,4 @@
-{{-- Searchable department course subject picker (ITE / Engineering) --}}
+{{-- Searchable program course subject picker (ITE / Engineering) --}}
 @php
     $pickerId = $pickerId ?? 'iteSubjectPicker';
     $pickerUser = auth()->user();

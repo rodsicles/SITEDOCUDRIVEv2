@@ -122,9 +122,9 @@ class GlobalSearchService
         if ($user->isFaculty()) {
             $usersQuery->where('id', $user->id);
         } elseif ($user->isProgramCoordinator()) {
-            $dept = optional($user->employee)->department;
+            $dept = (optional($user->employee)->program ?? "__unassigned__");
             if ($dept) {
-                $usersQuery->whereHas('employee', fn ($e) => $e->where('department', $dept));
+                $usersQuery->whereHas('employee', fn ($e) => $e->where('program', $dept));
             } else {
                 $usersQuery->where('id', $user->id);
             }
@@ -136,7 +136,7 @@ class GlobalSearchService
             ->map(function (User $found) use ($user) {
                 $name = $found->employee->full_name ?? $found->username;
                 $roleName = $found->role->role_name ?? 'User';
-                $dept = $found->employee->department ?? null;
+                $dept = $found->employee->program ?? null;
 
                 $url = match (true) {
                     $user->isDean() && $found->employee => route('dean.employee-profile', $found->employee->employee_id),
@@ -162,13 +162,13 @@ class GlobalSearchService
             ->where(function ($q) use ($query) {
                 $q->where('full_name', 'like', "%{$query}%")
                     ->orWhere('employee_no', 'like', "%{$query}%")
-                    ->orWhere('department', 'like', "%{$query}%");
+                    ->orWhere('program', 'like', "%{$query}%");
             });
 
         if ($user->isProgramCoordinator()) {
-            $dept = optional($user->employee)->department;
+            $dept = (optional($user->employee)->program ?? "__unassigned__");
             if ($dept) {
-                $employeeQuery->where('department', $dept);
+                $employeeQuery->where('program', $dept);
             }
         }
 
@@ -182,7 +182,7 @@ class GlobalSearchService
 
                 return [
                     'title' => $employee->full_name,
-                    'subtitle' => $employee->department ?? 'Employee',
+                    'subtitle' => $employee->program ?? 'Employee',
                     'type' => 'Employee',
                     'url' => $url,
                 ];

@@ -61,8 +61,8 @@ class DocumentRequestController extends Controller
             ->whereKeyNot($user->id);
 
         if ($user->isProgramCoordinator()) {
-            $department = optional($user->employee)->department;
-            $peopleQuery->whereHas('employee', fn ($query) => $query->where('department', $department));
+            $department = (optional($user->employee)->program ?? "__unassigned__");
+            $peopleQuery->whereHas('employee', fn ($query) => $query->where('program', $department));
         }
 
         $people = $canCreateRequests ? $peopleQuery->orderBy('username')->get() : collect();
@@ -92,7 +92,7 @@ class DocumentRequestController extends Controller
             'custom_category_id' => ['nullable', Rule::exists('document_categories', 'category_id')->whereNull('owner_id')->whereNotNull('created_by')->where('is_active', true)],
             'recipient_ids' => ['required', 'array', 'min:1'],
             'recipient_ids.*' => ['integer', Rule::exists('users', 'id')->where('status', 'Active')],
-            'course_id' => ['nullable', Rule::exists('courses', 'id')->where('is_active', true)],
+            'course_id' => ['nullable', Rule::exists('courses', 'id')->where('is_active', true)->whereIn('program', \App\Models\Program::codes())],
             'destination_type' => ['nullable', Rule::in(['tg', 'lb', 'tos', 'toq'])],
             'exam_period' => ['nullable', Rule::in(['prelims', 'midterms', 'finals'])],
             'school_year_id' => ['nullable', 'exists:school_years,id'],
@@ -105,10 +105,10 @@ class DocumentRequestController extends Controller
         abort_if($recipientIds->isEmpty(), 422, 'Choose at least one other employee.');
 
         if ($request->user()->isProgramCoordinator()) {
-            $department = optional($request->user()->employee)->department;
+            $department = (optional($request->user()->employee)->program ?? "__unassigned__");
             $accessibleCount = User::query()
                 ->whereIn('id', $recipientIds)
-                ->whereHas('employee', fn ($query) => $query->where('department', $department))
+                ->whereHas('employee', fn ($query) => $query->where('program', $department))
                 ->count();
             if ($accessibleCount !== $recipientIds->count()) {
                 throw ValidationException::withMessages(['recipient_ids' => 'Choose recipients from your department only.']);
@@ -147,7 +147,12 @@ class DocumentRequestController extends Controller
             }
 
             $hierarchy = app(AcademicHierarchyService::class);
-            $course = Course::find($validated['course_id']);
+            $course = Course::active()->findOrFail($validated['course_id']);
+            $matchingPrograms = User::whereIn('id', $recipientIds)
+                ->whereHas('employee', fn ($query) => $query->where('program', $course->program))->count();
+            if ($matchingPrograms !== $recipientIds->count()) {
+                throw ValidationException::withMessages(['course_id' => 'The course must belong to every recipient’s current program.']);
+            }
             $schoolYear = SchoolYear::find($validated['school_year_id']);
             $subjectLabel = $course?->code.' — '.$course?->title;
             $destination = null;

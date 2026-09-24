@@ -9,8 +9,8 @@ class CourseSeeder extends Seeder
 {
     public function run(): void
     {
-        $this->seedDepartment(Course::DEPT_IT, 'ite_subjects');
-        $this->seedDepartment(Course::DEPT_ENGINEERING, 'engineering_subjects');
+        // Courses are entered through Course Catalog using verified curriculum data.
+        // Never regenerate courses or repopulate intentionally empty programs here.
     }
 
     private function seedDepartment(string $department, string $configKey): void

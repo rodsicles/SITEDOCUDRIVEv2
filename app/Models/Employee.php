@@ -15,6 +15,7 @@ class Employee extends Model
         'user_id',
         'employee_no',
         'full_name',
+        'program',
         'department',
         'position',
         'hire_date',
@@ -23,6 +24,15 @@ class Employee extends Model
     protected $casts = [
         'hire_date' => 'date',
     ];
+
+    protected static function booted(): void
+    {
+        static::saving(function (Employee $employee) {
+            if ($employee->program) $employee->department = Program::DEPARTMENT_NAME;
+        });
+    }
+
+    public function academicProgram() { return $this->belongsTo(Program::class, 'program', 'code'); }
 
     public function user()
     {

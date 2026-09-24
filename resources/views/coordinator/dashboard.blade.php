@@ -164,7 +164,7 @@
                 <tr>
                     <th>Name</th>
                     <th>Email</th>
-                    <th>Department</th>
+                    <th>Program</th>
                     <th>Status</th>
                 </tr>
             </thead>
@@ -173,7 +173,7 @@
                 <tr>
                     <td><strong>{{ $faculty->employee->full_name ?? 'N/A' }}</strong></td>
                     <td>{{ $faculty->email }}</td>
-                    <td>{{ $faculty->employee->department ?? 'N/A' }}</td>
+                    <td>{{ $faculty->employee->program ?? 'N/A' }}</td>
                     <td>
                         <span class="badge badge-success">{{ $faculty->status }}</span>
                     </td>

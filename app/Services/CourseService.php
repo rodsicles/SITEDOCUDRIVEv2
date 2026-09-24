@@ -11,14 +11,14 @@ class CourseService
 {
     public function listAll(?string $departmentFilter = null, ?string $search = null): Collection
     {
-        $query = Course::query()->ordered();
+        $query = Course::query()->whereIn('program', \App\Models\Program::codes())->ordered();
 
         if ($departmentFilter === 'inactive') {
             $query->where('is_active', false);
         } elseif ($departmentFilter && $departmentFilter !== 'all') {
             $department = self::slugToDepartment($departmentFilter);
             if ($department) {
-                $query->where('department', $department);
+                $query->where('program', $department);
             }
         }
 
@@ -38,7 +38,7 @@ class CourseService
      */
     public function listForDepartment(string $department, ?string $filter = 'all', ?string $search = null): Collection
     {
-        $query = Course::query()->ordered()->where('department', $department);
+        $query = Course::query()->ordered()->where('program', $department);
 
         if ($filter === 'inactive') {
             $query->where('is_active', false);
@@ -57,32 +57,25 @@ class CourseService
 
     public static function slugToDepartment(?string $slug): ?string
     {
-        return match ($slug) {
-            'it' => Course::DEPT_IT,
-            'engineering' => Course::DEPT_ENGINEERING,
-            default => null,
-        };
+        foreach (\App\Models\Program::codes() as $code) if (strtolower($code) === strtolower((string) $slug)) return $code;
+        return null;
     }
 
     public static function departmentToSlug(?string $department): ?string
     {
-        return match ($department) {
-            Course::DEPT_IT => 'it',
-            Course::DEPT_ENGINEERING => 'engineering',
-            default => null,
-        };
+        return $department ? strtolower($department) : null;
     }
 
     public function create(array $data, int $deanUserId): Course
     {
         $code = strtoupper(trim($data['code']));
-        $department = $data['department'];
+        $department = $data['program'];
         $title = trim($data['title']);
 
         $course = Course::create([
             'code' => $code,
             'title' => $title,
-            'department' => $department,
+            'program' => $department,
             'is_active' => true,
             'sort_order' => (int) (Course::max('sort_order') ?? 0) + 1,
         ]);
@@ -124,6 +117,7 @@ class CourseService
 
     public function reactivate(Course $course, int $deanUserId): void
     {
+        abort_unless(in_array($course->program, \App\Models\Program::codes(), true), 422, 'Legacy courses require an explicit program mapping before activation.');
         $course->update(['is_active' => true]);
 
         DashboardLog::create([
@@ -136,9 +130,6 @@ class CourseService
 
     public static function departments(): array
     {
-        return [
-            Course::DEPT_IT => 'Information Technology',
-            Course::DEPT_ENGINEERING => 'Engineering',
-        ];
+        return \App\Models\Program::labels();
     }
 }

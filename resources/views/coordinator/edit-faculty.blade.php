@@ -71,11 +71,27 @@
                 </div>
 
                 <div class="form-group">
-                    <label class="form-label">Department</label>
-                    <input type="text" class="form-control" value="{{ auth()->user()->employee->department ?? 'N/A' }}" disabled>
-                    <input type="hidden" name="department" value="{{ auth()->user()->employee->department }}">
+                    <label class="form-label">Program</label>
+                    <input type="text" class="form-control" value="{{ \App\Models\Program::OPTIONS[auth()->user()->employee->program] ?? (auth()->user()->employee->program ?? 'N/A') }}" disabled>
+                    <input type="hidden" name="program" value="{{ auth()->user()->employee->program }}">
                     <small class="modern-help-text">
-                        <i class="fas fa-info-circle"></i> Auto-assigned to your department
+                        <i class="fas fa-info-circle"></i> Auto-assigned to your program
+                    </small>
+                </div>
+
+                <div class="form-group">
+                    <label class="form-label">Position</label>
+                    <input type="text" name="position" class="form-control"
+                           value="{{ old('position', $employee->position) }}"
+                           maxlength="100" placeholder="e.g. Faculty Employee">
+                </div>
+
+                <div class="form-group">
+                    <label class="form-label">Hire date</label>
+                    <input type="date" name="hire_date" class="form-control"
+                           value="{{ old('hire_date', optional($employee->hire_date)->format('Y-m-d')) }}">
+                    <small class="text-gray-600 dark:text-gray-400 text-xs mt-1.5 block">
+                        Years of service updates from this date.
                     </small>
                 </div>
             </div>
@@ -91,33 +107,12 @@
             @if(isset($courses) && $courses->isNotEmpty())
             <div class="form-group">
                 <label class="form-label">Assigned Courses / Subjects</label>
-                <small class="text-xs text-gray-500 dark:text-gray-400 block mb-2">
-                    Update the subjects this faculty member handles.
-                </small>
-                <div class="course-picker-wrap">
-                    <div class="course-picker-toolbar">
-                        <input type="text" id="editFacultyCourseSearch" class="course-search-input"
-                               placeholder="Search by code or title..." autocomplete="off">
-                        <span class="course-selected-count" id="editFacultySelectedCount">0 selected</span>
-                        <button type="button" class="course-picker-clear" id="editFacultyCourseClear">Clear</button>
-                    </div>
-                    <div class="course-picker-body">
-                        <div class="course-checkbox-grid" id="editFacultyCourseGrid">
-                            @foreach($courses as $course)
-                            @php
-                                $currentIds = old('course_ids', $assignedCourseIds ?? []);
-                                $checked    = in_array($course->id, (array)$currentIds);
-                            @endphp
-                            <label class="course-checkbox-item {{ $checked ? 'selected' : '' }}">
-                                <input type="checkbox" name="course_ids[]" value="{{ $course->id }}"
-                                       {{ $checked ? 'checked' : '' }}>
-                                <span><strong>{{ $course->code }}</strong> &ndash; {{ $course->title }}</span>
-                            </label>
-                            @endforeach
-                        </div>
-                        <p class="course-no-results" id="editFacultyNoResults">No matching courses.</p>
-                    </div>
-                </div>
+                @include('partials.course-assignment-picker', [
+                    'pickerId' => 'editFaculty',
+                    'courses' => $courses,
+                    'selectedIds' => old('course_ids', $assignedCourseIds ?? []),
+                    'hint' => 'Update the subjects this faculty member handles. Defaults to the current school term; unlock to include other terms.',
+                ])
             </div>
             @endif
 
@@ -132,53 +127,7 @@
         </form>
 
         @if(isset($courses) && $courses->isNotEmpty())
-        <script>
-        (function() {
-            const gridEl   = document.getElementById('editFacultyCourseGrid');
-            const searchEl = document.getElementById('editFacultyCourseSearch');
-            const countEl  = document.getElementById('editFacultySelectedCount');
-            const noResEl  = document.getElementById('editFacultyNoResults');
-            const clearEl  = document.getElementById('editFacultyCourseClear');
-
-            function updateCount() {
-                const n = gridEl ? gridEl.querySelectorAll('input:checked').length : 0;
-                if (countEl) countEl.textContent = n + ' selected';
-            }
-
-            if (gridEl) {
-                gridEl.querySelectorAll('.course-checkbox-item').forEach(function(label) {
-                    label.querySelector('input').addEventListener('change', function() {
-                        label.classList.toggle('selected', this.checked);
-                        updateCount();
-                    });
-                });
-                updateCount();
-            }
-
-            if (searchEl && gridEl) {
-                searchEl.addEventListener('input', function() {
-                    const q = this.value.trim().toLowerCase();
-                    let visible = 0;
-                    gridEl.querySelectorAll('.course-checkbox-item').forEach(function(item) {
-                        const match = q === '' || item.textContent.toLowerCase().includes(q);
-                        item.classList.toggle('course-hidden', !match);
-                        if (match) visible++;
-                    });
-                    if (noResEl) noResEl.classList.toggle('visible', visible === 0);
-                });
-            }
-
-            if (clearEl && gridEl) {
-                clearEl.addEventListener('click', function() {
-                    gridEl.querySelectorAll('input:checked').forEach(function(cb) {
-                        cb.checked = false;
-                        cb.closest('.course-checkbox-item').classList.remove('selected');
-                    });
-                    updateCount();
-                });
-            }
-        })();
-        </script>
+            @include('partials.course-assignment-guide-script')
         @endif
     </div>
 

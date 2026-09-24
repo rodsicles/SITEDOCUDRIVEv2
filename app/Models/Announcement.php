@@ -18,7 +18,7 @@ class Announcement extends Model
         'body',
         'is_pinned',
         'visibility',
-        'department',
+        'program',
         'expires_at',
     ];
 
@@ -61,9 +61,9 @@ class Announcement extends Model
             $q->where('visibility', 'All')
               ->orWhere('visibility', $user->role->role_name);
         })->where(function ($q) use ($user) {
-            $q->where('department', 'All');
-            if ($user->employee && $user->employee->department) {
-                $q->orWhere('department', $user->employee->department);
+            $q->where('program', 'All');
+            if ($user->employee && $user->employee->program) {
+                $q->orWhere('program', $user->employee->program);
             }
         });
     }
@@ -88,11 +88,11 @@ class Announcement extends Model
                     $r->where('role_name', $this->visibility);
                 });
             })
-            ->when($this->department && $this->department !== 'All', function ($q) {
+            ->when($this->program && $this->program !== 'All', function ($q) {
                 $q->whereHas('employee', function ($e) {
-                    $e->where('department', $this->department);
+                    $e->where('program', $this->program);
                 });
             })
-            ->with(['employee:user_id,full_name,department', 'role:role_id,role_name']);
+            ->with(['employee:user_id,full_name,program', 'role:role_id,role_name']);
     }
 }

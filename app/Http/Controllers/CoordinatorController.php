@@ -59,7 +59,7 @@ class CoordinatorController extends Controller
         }
 
         return $query->whereHas('employee', function ($q) use ($dept) {
-            $q->where('department', $dept);
+            $q->where('program', $dept);
         });
     }
 
@@ -70,7 +70,7 @@ class CoordinatorController extends Controller
     {
         $dept = $this->requireCoordinatorDepartment();
 
-        if ($employee->department && $employee->department !== $dept) {
+        if (!$employee->program || $employee->program !== $dept) {
             abort(403, 'You do not have access to faculty members outside your department.');
         }
     }
@@ -176,14 +176,14 @@ class CoordinatorController extends Controller
             'username'     => 'required|string|unique:users,username|max:20',
             'password'     => 'required|string|min:8|max:40',
             'full_name'    => 'required|string|max:45',
-            'department'   => 'required|in:Engineering,Information Technology',
+            'program'   => 'required|in:BLIS,BSEnSE,BSIT,BSCpE',
             'course_ids'   => 'nullable|array',
-            'course_ids.*' => 'integer|exists:courses,id',
+            'course_ids.*' => ['integer', \Illuminate\Validation\Rule::exists('courses', 'id')->where('program', $request->input('program'))->where('is_active', true)],
         ]);
 
         // Enforce coordinator can only create faculty in their own department
-        if ($coordDept && $validated['department'] !== $coordDept) {
-            return back()->withErrors(['department' => 'You can only create faculty members in your department (' . $coordDept . ').'])
+        if ($coordDept && $validated['program'] !== $coordDept) {
+            return back()->withErrors(['program' => 'You can only create faculty members in your department (' . $coordDept . ').'])
                 ->withInput();
         }
 
@@ -309,7 +309,7 @@ class CoordinatorController extends Controller
 
         $this->verifyDepartmentAccess($employee);
 
-        $courses           = \App\Models\Course::active()->forDepartment($employee->department)->ordered()->get();
+        $courses           = \App\Models\Course::active()->forDepartment($employee->program)->ordered()->get();
         $assignedCourseIds = $employee->user->assignedCourses->pluck('id')->all();
 
         return view('coordinator.edit-faculty', compact('employee', 'courses', 'assignedCourseIds'));
@@ -332,15 +332,17 @@ class CoordinatorController extends Controller
         $validated = $request->validate([
             'full_name'    => 'required|string|max:45',
             'employee_no'  => 'nullable|string|max:20|unique:employees,employee_no,' . $employee->employee_id . ',employee_id',
-            'department'   => 'required|in:Information Technology,Engineering',
+            'program'   => 'required|in:BLIS,BSEnSE,BSIT,BSCpE',
             'email'        => 'nullable|email|max:45',
+            'position'     => 'nullable|string|max:100',
+            'hire_date'    => 'nullable|date|before_or_equal:today',
             'course_ids'   => 'nullable|array',
-            'course_ids.*' => 'integer|exists:courses,id',
+            'course_ids.*' => ['integer', \Illuminate\Validation\Rule::exists('courses', 'id')->where('program', $request->input('program'))->where('is_active', true)],
         ]);
 
         // Enforce coordinator can only set department to their own
-        if ($coordDept && $validated['department'] !== $coordDept) {
-            return back()->withErrors(['department' => 'You can only assign faculty to your department (' . $coordDept . ').'])
+        if ($coordDept && $validated['program'] !== $coordDept) {
+            return back()->withErrors(['program' => 'You can only assign faculty to your department (' . $coordDept . ').'])
                 ->withInput();
         }
 

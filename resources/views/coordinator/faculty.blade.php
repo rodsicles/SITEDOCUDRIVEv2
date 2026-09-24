@@ -21,7 +21,7 @@
                     <th>Employee No.</th>
                     <th>Full Name</th>
                     <th>Email</th>
-                    <th>Department</th>
+                    <th>Program</th>
                     <th>Action</th>
                     <th>Status</th>
                 </tr>
@@ -32,7 +32,7 @@
                     <td><strong>{{ $faculty->employee->employee_no ?? 'N/A' }}</strong></td>
                     <td>{{ $faculty->employee->full_name ?? 'N/A' }}</td>
                     <td>{{ $faculty->email }}</td>
-                    <td>{{ $faculty->employee->department ?? 'N/A' }}</td>
+                    <td>{{ $faculty->employee->program ?? 'N/A' }}</td>
                     <td>
                         <a href="{{ route('coordinator.faculty-profile', $faculty->employee->employee_id) }}" class="btn btn-primary text-xs px-4 py-2">
                             <i class="fas fa-eye"></i> View Profile

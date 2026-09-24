@@ -24,7 +24,7 @@
     $guideWelcomeSub = $isDean
         ? 'This guide covers Dean tools: approvals, faculty oversight, documents, announcements, analytics, and archives. Follow the steps below for your dashboard.'
         : ($isCoordinator
-            ? 'This guide covers Program Coordinator features for your department. Follow the steps below to use your dashboard effectively.'
+            ? 'This guide covers Program Coordinator features for your program. Follow the steps below to use your dashboard effectively.'
             : ($isSecretary
                 ? 'This guide covers Secretary features that support Dean office operations. Follow the steps below to use your dashboard effectively.'
                 : 'This guide covers Faculty features for tasks, uploads, and approvals. Follow the steps below to use your dashboard effectively.'));
@@ -162,7 +162,7 @@
         <li>Check <strong>My Tasks</strong> and recent updates assigned to you.</li>
         <li>Open shortcuts from the dashboard when you need to upload files or view pending submissions.</li>
         @elseif($isCoordinator)
-        <li>Review department overview widgets and use quick links such as <strong>Post Announcement</strong> when needed.</li>
+        <li>Review program overview widgets and use quick links such as <strong>Post Announcement</strong> when needed.</li>
         @else
         <li>Use <strong>Show/Hide</strong> toggles on dashboard sections to expand or collapse details.</li>
         <li>From the Dean dashboard, use <strong>Create New Task</strong> to assign work across roles.</li>
@@ -202,7 +202,7 @@
         <li>Click <strong>Activity Log</strong> in the sidebar.</li>
         <li>Browse entries to see <strong>who</strong> performed an action, <strong>what</strong> changed, and <strong>when</strong> it happened.</li>
         @if($isDeanOrSecretary)
-        <li>Use this page to review department-wide activity and audit important changes.</li>
+        <li>Use this page to review program-wide activity and audit important changes.</li>
         @else
         <li>Use this page to review your own recent actions and track your work history.</li>
         @endif
@@ -248,7 +248,7 @@
     </ol>
     <div class="guide-tip"><i class="fas fa-lightbulb mr-1"></i> <strong>Tip:</strong>
         @if($isDean || $isCoordinator)
-            Pin important Dean or department notices so they stay at the top of the feed.
+            Pin important Dean or program notices so they stay at the top of the feed.
         @else
             Faculty and Secretary users can read announcements but cannot post them unless your role includes that button.
         @endif
@@ -293,19 +293,19 @@
     </div>
     <p class="guide-intro">
         @if($isDean)
-            Faculty Members is your directory of department instructors. Open a profile to review details and browse that faculty member's document tree.
+            Faculty Members is your directory of program instructors. Open a profile to review details and browse that faculty member's document tree.
         @else
-            Faculty Members lists employee accounts in your department.
+            Faculty Members lists employee accounts in your program.
         @endif
     </p>
     <ol class="guide-steps">
         <li>Click <strong>Faculty Members</strong> in the sidebar.</li>
-        <li>Browse the directory for employee number, name, email, department, and status.</li>
+        <li>Browse the directory for employee number, name, email, program, and status.</li>
         <li>Click <strong>View Profile</strong> to open a faculty member's full record.</li>
         @if($isDean)
         <li>On the profile, use <strong>Browse by Folder</strong> (Expand all / Collapse all) to inspect Teaching Guides and Exam Questionnaires. Each file shows its <strong>file name</strong>, status, folder path, and date.</li>
         <li>Click <strong>Edit</strong> on a profile to update employee information.</li>
-        <li>Use <strong>search or filters</strong> to find someone by name or department.</li>
+        <li>Use <strong>search or filters</strong> to find someone by name or program.</li>
         @elseif($isCoordinator)
         <li>Coordinators can view profiles but manage accounts through the Dean when changes are required.</li>
         @else
@@ -332,19 +332,19 @@
         </h3>
     </div>
     @if($isCoordinator)
-    <p class="guide-intro">The Course Catalog lists courses for your department only (Information Technology or Engineering). You have the same add, rename, remove, and restore controls as the Dean, scoped to your program.</p>
+    <p class="guide-intro">The Course Catalog lists courses for your assigned program. BLIS, BSEnSE, BSIT and BSCpE may have empty catalogs until official courses are added. Coordinators manage courses only within their program.</p>
     <ol class="guide-steps">
         <li>Click <strong>Course Catalog</strong> in the sidebar under Management.</li>
-        <li>Add a course with <strong>course code</strong> and <strong>title</strong>. Your department is fixed automatically.</li>
-        <li>Use tabs: <strong>All courses</strong>, your <strong>department name</strong>, or <strong>Inactive</strong> for removed courses.</li>
+        <li>Add a course with <strong>course code</strong> and <strong>title</strong>. Your program is fixed automatically.</li>
+        <li>Use tabs: <strong>All courses</strong>, your <strong>program name</strong>, or <strong>Inactive</strong> for removed courses.</li>
         <li>Search by code or title, then use the <strong>⋮</strong> menu to <strong>Rename</strong>, <strong>Remove</strong>, or <strong>Restore</strong> a course.</li>
     </ol>
     @else
-    <p class="guide-intro">The Course Catalog defines ITE and Engineering courses used when faculty and coordinators upload teaching guides and exam questionnaires.</p>
+    <p class="guide-intro">The Course Catalog defines verified courses for BLIS, BSEnSE, BSIT and BSCpE. Empty programs remain available without placeholder courses.</p>
     <ol class="guide-steps">
         <li>Click <strong>Course Catalog</strong> in the sidebar.</li>
-        <li>Add a course with <strong>course code</strong>, <strong>title</strong>, and <strong>department</strong>, then click <strong>Add Course</strong>.</li>
-        <li>Filter by department or search by code/title to find existing entries.</li>
+        <li>Add a course with <strong>course code</strong>, <strong>title</strong>, and <strong>program</strong>, then click <strong>Add Course</strong>.</li>
+        <li>Filter by program or search by code/title to find existing entries.</li>
         <li>Edit or deactivate courses from the list when offerings change.</li>
     </ol>
     @endif
@@ -361,14 +361,14 @@
             Analytics
         </h3>
     </div>
-    <p class="guide-intro">Analytics provides charts and summaries for department activity, tasks, and document trends.</p>
+    <p class="guide-intro">Analytics provides charts and summaries for program activity, tasks, and document trends.</p>
     <ol class="guide-steps">
         <li>Click <strong>Analytics</strong> in the sidebar.</li>
         <li>Review charts for task completion, uploads, and faculty activity.</li>
         <li>Hover over chart segments for detailed values.</li>
-        <li>Apply any available <strong>date or department filters</strong> to focus the view.</li>
+        <li>Apply any available <strong>date or program filters</strong> to focus the view.</li>
     </ol>
-    <div class="guide-tip"><i class="fas fa-lightbulb mr-1"></i> <strong>Tip:</strong> Use Analytics at month-end to review overall department performance.</div>
+    <div class="guide-tip"><i class="fas fa-lightbulb mr-1"></i> <strong>Tip:</strong> Use Analytics at month-end to review overall program performance.</div>
 </div>
 @endif
 
@@ -391,9 +391,9 @@
         <li>Open folders using the cards or breadcrumb trail until you reach the correct upload location.</li>
         @if($isFaculty)
         <li>For <strong>Teaching Guides</strong> and <strong>Exam Questionnaires</strong>, navigate to the correct school year → semester → subject (and assessment type for exams), then upload. Submissions stay <strong>pending</strong> until the Dean approves them.</li>
-        <li>For personal or department files, use <strong>Academics</strong> or <strong>Custom Folders</strong> as appropriate.</li>
+        <li>For personal or program files, use <strong>Academics</strong> or <strong>Custom Folders</strong> as appropriate.</li>
         @elseif($isDean)
-        <li>Review shared Teaching Guides and Exam Questionnaires folders, upload department files when needed, and assign recipients when prompted.</li>
+        <li>Review shared Teaching Guides and Exam Questionnaires folders, upload program files when needed, and assign recipients when prompted.</li>
         <li>Use <strong>Recent</strong>, <strong>Favorites</strong>, and filters (uploader/date) to find files quickly across the library.</li>
         <li>Use <strong>Custom Folders</strong> for general Dean office files.</li>
         @else
@@ -459,7 +459,7 @@
         <li>Click <strong>Reject</strong>, enter a required reason, and submit. The faculty member is notified to revise and re-upload.</li>
     </ol>
     @elseif($isCoordinator)
-    <p class="guide-intro">Upload and manage teaching guides for your department. You can also browse approved guides shared in your program.</p>
+    <p class="guide-intro">Upload and manage teaching guides for your program. You can also browse approved guides shared in your program.</p>
     <ol class="guide-steps">
         <li>Open <strong>Teaching Guides</strong> in the sidebar.</li>
         <li>Use the upload form: enter a <strong>title</strong>, pick the <strong>school year, semester, and subject</strong>, select <strong>recipients</strong>, and attach PDF or Word files.</li>
@@ -476,7 +476,7 @@
         <li>Approved guides appear in the list with <strong>View</strong> and <strong>Download</strong>. The folder path under each title links back to Documents.</li>
     </ol>
     @endif
-    <div class="guide-tip"><i class="fas fa-lightbulb mr-1"></i> <strong>Tip:</strong> Only approved teaching guides are visible to the wider department library.</div>
+    <div class="guide-tip"><i class="fas fa-lightbulb mr-1"></i> <strong>Tip:</strong> Only approved teaching guides are visible to the wider program library.</div>
 </div>
 
 {{-- ===== EXAM QUESTIONNAIRES ===== --}}
@@ -500,7 +500,7 @@
         <li>Approved questionnaires become available in the shared library; rejected ones return to the uploader for correction.</li>
     </ol>
     @elseif($isCoordinator)
-    <p class="guide-intro">Upload and manage exam questionnaires for your department using the academic hierarchy.</p>
+    <p class="guide-intro">Upload and manage exam questionnaires for your program using the academic hierarchy.</p>
     <ol class="guide-steps">
         <li>Open <strong>Exam Questionnaires</strong> in the sidebar.</li>
         <li>Complete the upload form with title, school year, semester, subject, exam type, recipients, and files.</li>
@@ -558,7 +558,7 @@
     <p class="guide-intro">Your Profile contains personal and professional information visible to administrators.</p>
     <ol class="guide-steps">
         <li>Click your <strong>name or avatar</strong> at the top-right of the screen.</li>
-        <li>View your name, department, position, and contact details.</li>
+        <li>View your name, program, position, and contact details.</li>
         <li>Click <strong>Edit Profile</strong> to update your email or contact number.</li>
         <li>To change your <strong>password</strong>, use the Change Password section: enter your current password, then your new password, and save.</li>
         <li>Performance review entries appear on your profile when recorded by administrators.</li>

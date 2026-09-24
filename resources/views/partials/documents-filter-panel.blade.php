@@ -9,7 +9,7 @@
     $searchSchoolYears = $searchSchoolYears ?? collect();
     $search = request('search', request('name', ''));
     $scope = request('scope', 'folder');
-    $filterKeys = ['uploaded_by','department','course_id','school_year_id','semester','status','file_type','date_from','date_to','managed_category_id'];
+    $filterKeys = ['uploaded_by','program','course_id','school_year_id','semester','status','file_type','date_from','date_to','managed_category_id'];
     $activeCount = collect($filterKeys)->filter(fn ($key) => request()->filled($key))->count();
     $showFilters = $activeCount > 0;
 @endphp
@@ -50,7 +50,7 @@
         @if($search !== '')<input type="hidden" name="search" value="{{ $search }}">@endif
         <label>Uploaded by<select name="uploaded_by"><option value="">Anyone I can access</option>@foreach($uploaders as $uploader)<option value="{{ $uploader->id }}" @selected((string)request('uploaded_by') === (string)$uploader->id)>{{ $uploader->employee->full_name ?? $uploader->username }}</option>@endforeach</select></label>
         @if(auth()->user()->isDean() || auth()->user()->isSecretary())
-        <label>Department<select name="department"><option value="">All departments</option>@foreach($searchDepartments as $department)<option value="{{ $department }}" @selected(request('department') === $department)>{{ $department }}</option>@endforeach</select></label>
+        <label>Program<select name="program"><option value="">All programs</option>@foreach($searchDepartments as $department)<option value="{{ $department }}" @selected(request('program') === $department)>{{ $department }}</option>@endforeach</select></label>
         @endif
         <label>Course<select name="course_id"><option value="">All accessible courses</option>@foreach($searchCourses as $course)<option value="{{ $course->id }}" @selected((string)request('course_id') === (string)$course->id)>{{ $course->code }} — {{ $course->title }}</option>@endforeach</select></label>
         <label>School year<select name="school_year_id"><option value="">All school years</option>@foreach($searchSchoolYears as $year)<option value="{{ $year->id }}" @selected((string)request('school_year_id') === (string)$year->id)>{{ $year->name ?? ($year->start_year.'–'.$year->end_year) }}</option>@endforeach</select></label>

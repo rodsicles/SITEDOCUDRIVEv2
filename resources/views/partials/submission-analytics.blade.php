@@ -51,21 +51,20 @@
             </div>
             @if(auth()->user()->isDean() || auth()->user()->isSecretary())
             <div class="submission-analytics-filters__field">
-                <label class="submission-analytics-filters__label" for="submission-department">
-                    <i class="fas fa-building"></i> Department
+                <label class="submission-analytics-filters__label" for="submission-program">
+                    <i class="fas fa-building"></i> Program
                 </label>
-                <select id="submission-department" name="department" class="submission-analytics-filters__select">
-                    <option value="">All departments</option>
-                    <option value="Information Technology" @selected(($filters['department'] ?? '') === 'Information Technology')>Information Technology</option>
-                    <option value="Engineering" @selected(($filters['department'] ?? '') === 'Engineering')>Engineering</option>
+                <select id="submission-program" name="program" class="submission-analytics-filters__select">
+                    <option value="">All programs</option>
+                    @foreach(\App\Models\Program::labels() as $code => $label)<option value="{{ $code }}" @selected(($filters['program'] ?? '') === $code)>{{ $label }}</option>@endforeach
                 </select>
             </div>
             @elseif(auth()->user()->isProgramCoordinator())
             <div class="submission-analytics-filters__field">
                 <label class="submission-analytics-filters__label">
-                    <i class="fas fa-building"></i> Department
+                    <i class="fas fa-building"></i> Program
                 </label>
-                <input type="text" class="submission-analytics-filters__input submission-analytics-filters__input--readonly" value="{{ $filters['department'] ?? '—' }}" readonly>
+                <input type="text" class="submission-analytics-filters__input submission-analytics-filters__input--readonly" value="{{ $filters['program'] ?? '—' }}" readonly>
             </div>
             @endif
             <div class="submission-analytics-filters__actions">
@@ -109,7 +108,7 @@
                             <td>
                                 <div>
                                     <strong>{{ $row['name'] }}</strong>
-                                    <div class="text-xs text-gray-500 dark:text-gray-400">{{ $row['department'] }}</div>
+                                    <div class="text-xs text-gray-500 dark:text-gray-400">{{ $row['program'] }}</div>
                                 </div>
                             </td>
                             <td>

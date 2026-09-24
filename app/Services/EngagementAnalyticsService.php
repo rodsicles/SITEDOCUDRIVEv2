@@ -30,29 +30,29 @@ class EngagementAnalyticsService
             }
 
             $facultyLeaderboard = $this->buildLeaderboard(
-                $this->scopedUserIds($viewer, $filters['department'], 'Faculty Employee'),
+                $this->scopedUserIds($viewer, $filters['program'], 'Faculty Employee'),
                 $dateRange,
                 $viewer
             );
 
             $coordinatorLeaderboard = $this->buildLeaderboard(
-                $this->scopedUserIds($viewer, $filters['department'], 'Program Coordinator'),
+                $this->scopedUserIds($viewer, $filters['program'], 'Program Coordinator'),
                 $dateRange,
                 $viewer
             );
 
             $inactiveUsers = $this->findInactiveUsers(
-                $this->scopedUserIds($viewer, $filters['department']),
+                $this->scopedUserIds($viewer, $filters['program']),
                 $dateRange
             );
 
             $weeklyTrend = $this->aggregateWeeklyTrend(
-                $this->scopedUserIds($viewer, $filters['department']),
+                $this->scopedUserIds($viewer, $filters['program']),
                 $dateRange
             );
 
             $activityBreakdown = $this->aggregateActivityBreakdown(
-                $this->scopedUserIds($viewer, $filters['department']),
+                $this->scopedUserIds($viewer, $filters['program']),
                 $dateRange
             );
 
@@ -71,7 +71,7 @@ class EngagementAnalyticsService
     protected function buildFacultyEngagement(User $viewer, array $filters, array $dateRange): array
     {
         $userId = $viewer->id;
-        $department = optional($viewer->employee)->department;
+        $department = (optional($viewer->employee)->program ?? "__unassigned__");
 
         $myStats = $this->userActivityStats($userId, $dateRange, $filters['school_year_id']);
 
@@ -79,7 +79,7 @@ class EngagementAnalyticsService
             ->where('id', '!=', $userId)
             ->where('status', 'Active')
             ->whereHas('role', fn ($q) => $q->where('role_name', 'Faculty Employee'))
-            ->when($department, fn ($q) => $q->whereHas('employee', fn ($eq) => $eq->where('department', $department)))
+            ->when($department, fn ($q) => $q->whereHas('employee', fn ($eq) => $eq->where('program', $department)))
             ->pluck('id')
             ->all();
 
@@ -237,7 +237,7 @@ class EngagementAnalyticsService
             return [
                 'rank' => $index + 1,
                 'name' => $user?->employee?->full_name ?? $user?->username ?? 'Unknown',
-                'department' => $user?->employee?->department ?? '—',
+                'program' => $user?->employee?->program ?? '—',
                 'actions' => (int) $row->action_count,
                 'logins' => (int) ($loginCounts[$row->user_id] ?? 0),
                 'uploads' => (int) ($uploadCounts[$row->user_id] ?? 0),
@@ -269,7 +269,7 @@ class EngagementAnalyticsService
             ->get()
             ->map(fn ($user) => [
                 'name' => $user->employee?->full_name ?? $user->username ?? 'Unknown',
-                'department' => $user->employee?->department ?? '—',
+                'program' => $user->employee?->program ?? '—',
                 'last_activity' => DashboardLog::where('user_id', $user->id)
                     ->orderByDesc('log_date')
                     ->value('log_date'),
@@ -355,7 +355,7 @@ class EngagementAnalyticsService
         }
 
         if ($department) {
-            $query->whereHas('employee', fn ($q) => $q->where('department', $department));
+            $query->whereHas('employee', fn ($q) => $q->where('program', $department));
         }
 
         return $query->pluck('id')->all();
@@ -386,10 +386,10 @@ class EngagementAnalyticsService
             $schoolYear = $active?->start_year ?? AcademicYear::currentStartYear();
         }
 
-        $department = $filters['department'] ?? null;
+        $department = $filters['program'] ?? null;
         if ($viewer->isProgramCoordinator() || $viewer->isFaculty()) {
-            $department = optional($viewer->employee)->department;
-        } elseif ($department && !in_array($department, ['Information Technology', 'Engineering'], true)) {
+            $department = (optional($viewer->employee)->program ?? "__unassigned__");
+        } elseif ($department && !in_array($department, \App\Models\Program::codes(), true)) {
             $department = null;
         }
 
@@ -397,7 +397,7 @@ class EngagementAnalyticsService
             'school_year' => $schoolYear,
             'academic_year' => AcademicYear::rangeString($schoolYear),
             'school_year_id' => SchoolYear::where('start_year', $schoolYear)->value('id'),
-            'department' => $department,
+            'program' => $department,
         ];
     }
 
@@ -415,9 +415,9 @@ class EngagementAnalyticsService
         $parts = [AcademicYear::label((int) $filters['school_year'])];
 
         if ($viewer->isDean() || $viewer->isSecretary()) {
-            $parts[] = $filters['department'] ?: 'All Departments';
-        } elseif ($viewer->isProgramCoordinator() && $filters['department']) {
-            $parts[] = $filters['department'];
+            $parts[] = $filters['program'] ?: 'All Departments';
+        } elseif ($viewer->isProgramCoordinator() && $filters['program']) {
+            $parts[] = $filters['program'];
         } elseif ($viewer->isFaculty()) {
             $parts[] = 'Your activity';
         }

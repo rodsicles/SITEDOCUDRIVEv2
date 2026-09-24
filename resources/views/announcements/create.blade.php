@@ -50,11 +50,10 @@
                 </div>
 
                 <div class="form-group">
-                    <label class="form-label" for="department">Department <span class="text-red-500">*</span></label>
-                    <select name="department" id="department" class="form-control">
-                        <option value="All" {{ old('department') === 'All' ? 'selected' : '' }}>All Departments</option>
-                        <option value="Engineering" {{ old('department') === 'Engineering' ? 'selected' : '' }}>Engineering</option>
-                        <option value="Information Technology" {{ old('department') === 'Information Technology' ? 'selected' : '' }}>Information Technology</option>
+                    <label class="form-label" for="program">Program <span class="text-red-500">*</span></label>
+                    <select name="program" id="program" class="form-control">
+                        <option value="All" {{ old('program') === 'All' ? 'selected' : '' }}>All Programs</option>
+                        @foreach(\App\Models\Program::labels() as $code => $label)<option value="{{ $code }}" @selected(old('program', $employee->program ?? null) === $code)>{{ $label }}</option>@endforeach
                     </select>
                 </div>
             </div>

@@ -99,7 +99,7 @@
                             <label class="form-label">Visibility <span class="text-red-500">*</span></label>
                             <select name="visibility" class="form-control" required>
                                 <option value="Public" selected>Public (visible to all)</option>
-                                <option value="Department">Department Only</option>
+                                <option value="Department">Program Only</option>
                                 <option value="Private">Private (only me and invitees)</option>
                             </select>
                         </div>

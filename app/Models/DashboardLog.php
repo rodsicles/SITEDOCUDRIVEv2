@@ -73,7 +73,7 @@ class DashboardLog extends Model
                         ->orWhereHas('user', function ($subQ) use ($coordinatorDept) {
                             $subQ->where('role_id', 3)
                                 ->whereHas('employee', function ($empQ) use ($coordinatorDept) {
-                                    $empQ->where('department', $coordinatorDept);
+                                    $empQ->where('program', $coordinatorDept);
                                 });
                         });
                 });
@@ -143,7 +143,7 @@ class DashboardLog extends Model
                     ->orWhereHas('user', function ($subQ) use ($coordinatorDept) {
                         $subQ->where('role_id', 3)
                             ->whereHas('employee', function ($empQ) use ($coordinatorDept) {
-                                $empQ->where('department', $coordinatorDept);
+                                $empQ->where('program', $coordinatorDept);
                             });
                     });
             });

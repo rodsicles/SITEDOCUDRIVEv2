@@ -15,7 +15,7 @@ class DeanCourseController extends Controller
 
     public function index(Request $request)
     {
-        $departmentFilter = $request->query('department', 'all');
+        $departmentFilter = $request->query('program', 'all');
         $search = $request->query('search');
 
         $courses = $this->courseService->listAll($departmentFilter, $search);
@@ -31,11 +31,11 @@ class DeanCourseController extends Controller
         $validated = $request->validate([
             'code' => ['required', 'string', 'max:20', 'regex:/^[A-Za-z]{2,4}\d{2,4}$/'],
             'title' => 'required|string|max:150',
-            'department' => ['required', Rule::in($departments)],
+            'program' => ['required', Rule::in($departments)],
         ]);
 
         $exists = Course::where('code', strtoupper($validated['code']))
-            ->where('department', $validated['department'])
+            ->where('program', $validated['program'])
             ->exists();
 
         if ($exists) {
@@ -57,12 +57,12 @@ class DeanCourseController extends Controller
         $newCode = strtoupper(trim($validated['code']));
 
         $duplicate = Course::where('code', $newCode)
-            ->where('department', $course->department)
+            ->where('program', $course->program)
             ->where('id', '!=', $course->id)
             ->exists();
 
         if ($duplicate) {
-            return back()->with('error', "Course code {$newCode} already exists in {$course->department}.");
+            return back()->with('error', "Course code {$newCode} already exists in {$course->program}.");
         }
 
         $this->courseService->rename($course, $newCode, trim($validated['title']), auth()->id());

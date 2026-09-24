@@ -14,7 +14,7 @@
         'id' => (int) $u->id,
         'name' => $u->employee->full_name ?? $u->username,
         'role' => $u->role->role_name ?? '',
-        'department' => $u->employee->department ?? '',
+        'program' => $u->employee->program ?? '',
     ])->values();
     $oldAssigneeIds = collect(old('assignee_ids', []))->map(fn ($id) => (int) $id)->filter()->values()->all();
 @endphp
@@ -35,28 +35,26 @@
                 <label class="form-label" for="assignment_scope">Assign To</label>
                 <select name="assignment_scope" id="assignment_scope" class="form-control" required>
                     <option value="individual" @selected(old('assignment_scope', 'individual') === 'individual')>Selected faculty / coordinators</option>
-                    <option value="department_it" @selected(old('assignment_scope') === 'department_it')>All Information Technology</option>
-                    <option value="department_engineering" @selected(old('assignment_scope') === 'department_engineering')>All Engineering</option>
-                    <option value="department_site" @selected(old('assignment_scope') === 'department_site')>Whole SITE (IT + Engineering)</option>
+                    @foreach(\App\Models\Program::codes() as $code)<option value="program_{{ $code }}" @selected(old('assignment_scope') === 'program_'.$code)>All {{ $code }}</option>@endforeach
+                    <option value="department_site" @selected(old('assignment_scope') === 'department_site')>Whole department (all four programs)</option>
                 </select>
                 <small class="text-gray-500 dark:text-gray-400 block mt-1">
-                    Department options assign one copy of this task to every active faculty and coordinator in that group.
+                    Program options assign one copy of this task to every active faculty and coordinator in that group.
                 </small>
             </div>
 
             <div class="form-group task-assignee-picker-wrap" id="assigneePickerGroup">
-                <label class="form-label" for="assignee_filter_department">Department</label>
-                <select id="assignee_filter_department" class="form-control" aria-label="Filter faculty by department">
-                    <option value="">Choose department to browse faculty</option>
-                    <option value="{{ \App\Support\TaskAssigneeResolver::DEPARTMENT_IT }}">{{ \App\Support\TaskAssigneeResolver::DEPARTMENT_IT }}</option>
-                    <option value="{{ \App\Support\TaskAssigneeResolver::DEPARTMENT_ENGINEERING }}">{{ \App\Support\TaskAssigneeResolver::DEPARTMENT_ENGINEERING }}</option>
+                <label class="form-label" for="assignee_filter_department">Program</label>
+                <select id="assignee_filter_department" class="form-control" aria-label="Filter faculty by program">
+                    <option value="">Choose program to browse faculty</option>
+                    @foreach(\App\Models\Program::labels() as $code => $label)<option value="{{ $code }}">{{ $label }}</option>@endforeach
                 </select>
 
                 <div class="task-assignee-picker mt-3">
                     <div class="task-assignee-picker__panel">
                         <div class="task-assignee-picker__panel-head">
                             <span>Available</span>
-                            <span class="task-assignee-picker__hint" id="assigneeAvailableHint">Select a department</span>
+                            <span class="task-assignee-picker__hint" id="assigneeAvailableHint">Select a program</span>
                         </div>
                         <div class="task-assignee-picker__list" id="assigneeAvailableList" role="listbox" aria-label="Available faculty and coordinators"></div>
                     </div>
@@ -86,7 +84,7 @@
                 <div id="assigneeHiddenInputs" class="sr-only" aria-hidden="true"></div>
 
                 <small class="text-gray-500 dark:text-gray-400 block mt-2">
-                    Choose a department, pick people from the left, then use the arrow to add them to Selected assignees.
+                    Choose a program, pick people from the left, then use the arrow to add them to Selected assignees.
                 </small>
                 @error('assignee_ids')
                     <p class="text-red-600 text-sm mt-1">{{ $message }}</p>
@@ -203,7 +201,7 @@ document.addEventListener('DOMContentLoaded', function () {
     function usersForDepartment(dept) {
         if (!dept) return [];
         return allUsers.filter(function (u) {
-            return u.department === dept && !selectedIds.has(u.id);
+            return u.program === dept && !selectedIds.has(u.id);
         });
     }
 
@@ -215,10 +213,10 @@ document.addEventListener('DOMContentLoaded', function () {
         addAllBtn.disabled = true;
 
         if (!dept) {
-            availableHint.textContent = 'Select a department';
+            availableHint.textContent = 'Select a program';
             var placeholder = document.createElement('p');
             placeholder.className = 'task-assignee-picker__placeholder';
-            placeholder.textContent = 'Choose Information Technology or Engineering above.';
+            placeholder.textContent = 'Choose a program above.';
             availableList.appendChild(placeholder);
             return;
         }
@@ -229,7 +227,7 @@ document.addEventListener('DOMContentLoaded', function () {
         if (pool.length === 0) {
             var empty = document.createElement('p');
             empty.className = 'task-assignee-picker__placeholder';
-            empty.textContent = 'Everyone in this department is already selected, or none are listed.';
+            empty.textContent = 'Everyone in this program is already selected, or none are listed.';
             availableList.appendChild(empty);
             return;
         }
@@ -300,7 +298,7 @@ document.addEventListener('DOMContentLoaded', function () {
 
             var meta = document.createElement('span');
             meta.className = 'task-assignee-picker__item-meta';
-            meta.textContent = roleShort(user.role) + ' · ' + (user.department || '');
+            meta.textContent = roleShort(user.role) + ' · ' + (user.program || '');
 
             var removeIcon = document.createElement('span');
             removeIcon.className = 'task-assignee-picker__remove';

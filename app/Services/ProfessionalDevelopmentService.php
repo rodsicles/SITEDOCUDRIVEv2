@@ -34,8 +34,8 @@ class ProfessionalDevelopmentService
             ->join('users', 'professional_developments.user_id', '=', 'users.id')
             ->join('employees', 'users.id', '=', 'employees.user_id')
             ->where('users.role_id', 3)
-            ->selectRaw('employees.full_name, employees.department, professional_developments.user_id, COUNT(*) as total_trainings, SUM(professional_developments.hours) as total_hours')
-            ->groupBy('professional_developments.user_id', 'employees.full_name', 'employees.department')
+            ->selectRaw('employees.full_name, employees.program, professional_developments.user_id, COUNT(*) as total_trainings, SUM(professional_developments.hours) as total_hours')
+            ->groupBy('professional_developments.user_id', 'employees.full_name', 'employees.program')
             ->orderByDesc('total_trainings')
             ->get();
     }

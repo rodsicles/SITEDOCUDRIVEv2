@@ -23,7 +23,7 @@ class SubmissionAnalyticsService
         $cacheKey = $this->cacheKey($viewer, $filters);
 
         return Cache::remember($cacheKey, now()->addMinutes(10), function () use ($viewer, $filters) {
-            $facultyIds = $this->scopedFacultyIds($viewer, $filters['department']);
+            $facultyIds = $this->scopedFacultyIds($viewer, $filters['program']);
             $counts = $this->aggregateFacultyCounts($facultyIds, $filters);
             $monthly = $this->aggregateMonthlyTrend($facultyIds, $filters);
 
@@ -67,12 +67,12 @@ class SubmissionAnalyticsService
             $semester = null;
         }
 
-        $department = $filters['department'] ?? null;
+        $department = $filters['program'] ?? null;
         if ($viewer->isProgramCoordinator()) {
-            $department = optional($viewer->employee)->department;
+            $department = (optional($viewer->employee)->program ?? "__unassigned__");
         } elseif ($viewer->isFaculty()) {
-            $department = optional($viewer->employee)->department;
-        } elseif ($department && !in_array($department, ['Information Technology', 'Engineering'], true)) {
+            $department = (optional($viewer->employee)->program ?? "__unassigned__");
+        } elseif ($department && !in_array($department, \App\Models\Program::codes(), true)) {
             $department = null;
         }
 
@@ -81,7 +81,7 @@ class SubmissionAnalyticsService
             'academic_year' => AcademicYear::rangeString($schoolYear),
             'school_year_id' => SchoolYear::where('start_year', $schoolYear)->value('id'),
             'semester' => $semester,
-            'department' => $department,
+            'program' => $department,
         ];
     }
 
@@ -108,7 +108,7 @@ class SubmissionAnalyticsService
             ->where('status', 'Active');
 
         if ($department) {
-            $query->whereHas('employee', fn ($q) => $q->where('department', $department));
+            $query->whereHas('employee', fn ($q) => $q->where('program', $department));
         }
 
         return $query->pluck('id')->all();
@@ -263,7 +263,7 @@ class SubmissionAnalyticsService
 
             return collect([[
                 'name' => $user->employee?->full_name ?? $user->username ?? 'You',
-                'department' => $user->employee?->department ?? '—',
+                'program' => $user->employee?->program ?? '—',
                 'avg_response_days' => $taskResponseTimes->get($viewer->id),
                 'read_rate' => $readRates->get($viewer->id, 0),
                 'submissions' => $submissions,
@@ -279,7 +279,7 @@ class SubmissionAnalyticsService
             return [
                 'user_id' => $id,
                 'name' => $user->employee?->full_name ?? $user->username ?? 'Unknown',
-                'department' => $user->employee?->department ?? '—',
+                'program' => $user->employee?->program ?? '—',
                 'avg_response_days' => $taskResponseTimes->get($id),
                 'read_rate' => $readRates->get($id, 0),
                 'submissions' => ($submissionMap->get($id)['count'] ?? 0),
@@ -339,9 +339,9 @@ class SubmissionAnalyticsService
         }
 
         if ($viewer->isDean() || $viewer->isSecretary()) {
-            $parts[] = $filters['department'] ?: 'All Departments';
-        } elseif ($viewer->isProgramCoordinator() && $filters['department']) {
-            $parts[] = $filters['department'];
+            $parts[] = $filters['program'] ?: 'All Departments';
+        } elseif ($viewer->isProgramCoordinator() && $filters['program']) {
+            $parts[] = $filters['program'];
         } elseif ($viewer->isFaculty()) {
             $parts[] = 'Your submissions';
         }

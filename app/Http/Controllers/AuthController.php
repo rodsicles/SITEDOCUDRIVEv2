@@ -222,7 +222,7 @@ class AuthController extends Controller
             'email'      => 'nullable|email|max:255',
             'password'   => 'required|string|min:8|max:40',
             'role_id'    => 'required|in:1,2,3,4',
-            'department' => 'required|in:Engineering,Information Technology',
+            'program' => 'required|in:BLIS,BSEnSE,BSIT,BSCpE',
         ]);
 
         $user = User::create([
@@ -240,7 +240,7 @@ class AuthController extends Controller
             'user_id'     => $user->id,
             'employee_no' => strtoupper(substr($validated['username'], 0, 4)) . str_pad($user->id, 3, '0', STR_PAD_LEFT),
             'full_name'   => $validated['name'],
-            'department'  => $validated['department'],
+            'program'  => $validated['program'],
             'position'    => $roleNames[(int) $validated['role_id']],
             'hire_date'   => now()->toDateString(),
         ]);

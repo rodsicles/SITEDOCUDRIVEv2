@@ -12,11 +12,7 @@ class EmployeeNumberGenerator
 
     public function departmentCode(string $department): string
     {
-        return match ($department) {
-            'Information Technology' => 'IT',
-            'Engineering' => 'ENGR',
-            default => 'GEN',
-        };
+        return in_array($department, \App\Models\Program::codes(), true) ? strtoupper($department) : 'GEN';
     }
 
     /**
@@ -53,9 +49,6 @@ class EmployeeNumberGenerator
      */
     public function previewMap(string $role): array
     {
-        return [
-            'Information Technology' => $this->next('Information Technology', $role),
-            'Engineering' => $this->next('Engineering', $role),
-        ];
+        return collect(\App\Models\Program::codes())->mapWithKeys(fn ($program) => [$program => $this->next($program, $role)])->all();
     }
 }

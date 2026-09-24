@@ -3,7 +3,7 @@
 @section('title', 'Course Catalog - Program Coordinator')
 
 @section('page-title', 'Course Catalog')
-@section('page-subtitle', 'Manage ' . ($department ?? 'department') . ' courses for faculty uploads')
+@section('page-subtitle', 'Manage ' . ($department ?? 'program') . ' courses for faculty uploads')
 
 @section('sidebar')
     @include('partials.coordinator-sidebar')

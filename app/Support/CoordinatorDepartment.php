@@ -15,16 +15,16 @@ class CoordinatorDepartment
             return null;
         }
 
-        $dept = trim((string) optional($user->employee)->department);
+        $dept = trim((string) optional($user->employee)->program);
 
-        return $dept !== '' ? $dept : null;
+        return in_array($dept, \App\Models\Program::codes(), true) ? $dept : null;
     }
 
     public static function require(User $user): string
     {
         $dept = self::name($user);
         if (!$dept) {
-            abort(403, 'Your account has no department assigned. Contact the Dean to update your profile.');
+            abort(403, 'Your account has no current program assigned. Contact the Dean to update your profile.');
         }
 
         return $dept;
@@ -38,7 +38,7 @@ class CoordinatorDepartment
         }
 
         return Course::query()
-            ->where('department', $department)
+            ->where('program', $department)
             ->pluck('code')
             ->map(fn (string $code) => strtolower($code))
             ->all();
@@ -88,6 +88,8 @@ class CoordinatorDepartment
         // Faculty with explicitly assigned courses → only show their assigned subject folders
         if ($viewer->isFaculty()) {
             $assignedCodes = $viewer->assignedCourses()
+                ->where('courses.program', $department)
+                ->where('courses.is_active', true)
                 ->pluck('courses.code')
                 ->map(fn (string $c) => strtolower($c))
                 ->all();

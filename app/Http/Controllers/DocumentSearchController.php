@@ -15,7 +15,7 @@ class DocumentSearchController extends Controller
         $filters = $request->validate([
             'q' => ['nullable', 'string', 'max:150'],
             'employee_id' => ['nullable', 'integer'],
-            'department' => ['nullable', 'string', 'max:100'],
+            'program' => ['nullable', 'string', 'max:100'],
             'course_id' => ['nullable', 'integer'],
             'school_year_id' => ['nullable', 'integer'],
             'semester' => ['nullable', 'string', 'max:30'],
@@ -38,7 +38,7 @@ class DocumentSearchController extends Controller
         return redirect()->route($route, array_filter([
             'search' => $filters['q'] ?? null,
             'uploaded_by' => $filters['employee_id'] ?? null,
-            'department' => $filters['department'] ?? null,
+            'program' => $filters['program'] ?? null,
             'course_id' => $filters['course_id'] ?? null,
             'school_year_id' => $filters['school_year_id'] ?? null,
             'semester' => $filters['semester'] ?? null,
@@ -56,7 +56,7 @@ class DocumentSearchController extends Controller
         $validated = $request->validate(['name' => ['required', 'string', 'max:80'], 'filters' => ['required', 'array']]);
         SavedDocumentSearch::updateOrCreate(
             ['user_id' => $request->user()->id, 'name' => $validated['name']],
-            ['filters' => collect($validated['filters'])->only(['q','employee_id','department','course_id','school_year_id','semester','status','type','date_from','date_to'])->filter(fn ($value) => $value !== null && $value !== '')->all()]
+            ['filters' => collect($validated['filters'])->only(['q','employee_id','program','course_id','school_year_id','semester','status','type','date_from','date_to'])->filter(fn ($value) => $value !== null && $value !== '')->all()]
         );
         return back()->with('success', 'Search saved.');
     }

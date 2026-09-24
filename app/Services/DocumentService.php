@@ -258,8 +258,8 @@ class DocumentService
             $query->where('uploaded_by', $uploadedBy);
         }
 
-        if (!empty($queryParams['department'])) {
-            $query->whereHas('uploader.employee', fn ($q) => $q->where('department', $queryParams['department']));
+        if (!empty($queryParams['program'])) {
+            $query->whereHas('uploader.employee', fn ($q) => $q->where('program', $queryParams['program']));
         }
 
         if (!empty($queryParams['course_id']) && ($course = Course::find($queryParams['course_id']))) {
@@ -341,9 +341,9 @@ class DocumentService
 
     public function getSearchFilterOptions(User $user): array
     {
-        $department = optional($user->employee)->department;
+        $department = optional($user->employee)->program;
         $departments = $user->isDean() || $user->isSecretary()
-            ? \App\Models\Employee::query()->whereNotNull('department')->distinct()->orderBy('department')->pluck('department')
+            ? collect(\App\Models\Program::codes())
             : collect([$department])->filter();
 
         $courses = Course::active()->ordered();
@@ -750,7 +750,7 @@ class DocumentService
 
         if ($user->isProgramCoordinator()) {
             $department = \App\Support\CoordinatorDepartment::require($user);
-            $query->whereHas('employee', fn ($e) => $e->where('department', $department));
+            $query->whereHas('employee', fn ($e) => $e->where('program', $department));
         }
 
         return $query

@@ -3,7 +3,7 @@
 @section('title', 'Analytics - Coordinator')
 
 @section('page-title', 'Data Analytics')
-@section('page-subtitle', 'Department engagement and submission insights')
+@section('page-subtitle', 'Program engagement and submission insights')
 
 @section('sidebar')
     @include('partials.coordinator-sidebar')

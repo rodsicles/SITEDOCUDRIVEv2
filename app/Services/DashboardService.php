@@ -44,8 +44,8 @@ class DashboardService
         } elseif ($user->isProgramCoordinator()) {
             $overdue = Task::where('assigned_to', $userId)->whereNotNull('due_date')->whereDate('due_date', '<', today())->where('status', '!=', 'Completed')->count();
             $urgent = ['tone'=>$overdue > 0 ? 'urgent' : 'clear','title'=>$overdue > 0 ? "{$overdue} overdue ".($overdue === 1 ? 'task' : 'tasks') : 'No overdue assigned work','detail'=>$overdue > 0 ? 'Finish or update these assignments before other work.' : 'Your assigned tasks are currently within their deadlines.','url'=>route('coordinator.tasks'),'action'=>'Open tasks'];
-            $department = optional($user->employee)->department;
-            $faculty = User::where('role_id', 3)->when($department, fn ($q) => $q->whereHas('employee', fn ($e) => $e->where('department', $department)))->count();
+            $department = (optional($user->employee)->program ?? "__unassigned__");
+            $faculty = User::where('role_id', 3)->when($department, fn ($q) => $q->whereHas('employee', fn ($e) => $e->where('program', $department)))->count();
             $positive = ['tone'=>'positive','title'=>"{$faculty} faculty in your department",'detail'=>'Use this directory for focused follow-up and document coordination.','url'=>route('coordinator.faculty'),'action'=>'View faculty'];
         } else {
             $overdue = Task::where('assigned_to', $userId)->whereNotNull('due_date')->whereDate('due_date', '<', today())->where('status', '!=', 'Completed')->count();
@@ -83,13 +83,13 @@ class DashboardService
     public function getCoordinatorStats(int $userId): array
     {
         $user = User::with('employee')->find($userId);
-        $dept = optional($user->employee)->department;
+        $dept = (optional($user->employee)->program ?? "__unassigned__");
 
         return Cache::remember("coordinator_stats_{$userId}_{$dept}", now()->addMinutes(5), function () use ($userId, $dept) {
             $facultyQuery = User::where('role_id', 3);
             if ($dept) {
                 $facultyQuery->whereHas('employee', function ($q) use ($dept) {
-                    $q->where('department', $dept);
+                    $q->where('program', $dept);
                 });
             }
 
@@ -591,7 +591,7 @@ class DashboardService
     {
         return Cache::remember("coordinator_document_analytics_{$userId}", now()->addMinutes(5), function () use ($userId) {
             $user = User::with('employee')->find($userId);
-            $coordinatorDept = optional($user->employee)->department;
+            $coordinatorDept = (optional($user->employee)->program ?? "__unassigned__");
 
             // Build scoped query: own docs + faculty docs from same department
             $scopedIds = Document::where(function ($q) use ($userId, $coordinatorDept) {
@@ -600,7 +600,7 @@ class DashboardService
                     $q->orWhereHas('uploader', function ($sq) use ($coordinatorDept) {
                         $sq->where('role_id', 3)
                            ->whereHas('employee', function ($eq) use ($coordinatorDept) {
-                               $eq->where('department', $coordinatorDept);
+                               $eq->where('program', $coordinatorDept);
                            });
                     });
                 }

@@ -2,7 +2,7 @@
 
 @section('title', 'Pending Teaching Guides - Coordinator')
 @section('page-title', 'Pending Teaching Guides')
-@section('page-subtitle', 'Review and approve teaching guide submissions from your department faculty')
+@section('page-subtitle', 'Review and approve teaching guide submissions from your program faculty')
 
 @section('sidebar')
     @include('partials.coordinator-sidebar')
@@ -20,7 +20,7 @@
 
         <p class="px-4 pt-2 pb-0 text-xs text-gray-500 dark:text-gray-400 mb-0">
             <i class="fas fa-info-circle mr-1"></i>
-            You only see submissions from faculty in your department. Upload new files from <strong>Documents → Teaching Guides</strong>.
+            You only see submissions from faculty in your program. Upload new files from <strong>Documents → Teaching Guides</strong>.
         </p>
 
         <div class="submission-toolbar pt-3">
@@ -113,7 +113,7 @@
                 </tr>
                 @empty
                 <tr>
-                    <td colspan="9" class="text-center text-gray-500 dark:text-gray-400 py-8">No teaching guides found for your department.</td>
+                    <td colspan="9" class="text-center text-gray-500 dark:text-gray-400 py-8">No teaching guides found for your program.</td>
                 </tr>
                 @endforelse
             </tbody>

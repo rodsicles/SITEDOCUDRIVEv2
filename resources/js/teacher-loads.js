@@ -1,5 +1,11 @@
 const root = document.getElementById('teacher-load-workspace');
 
+document.querySelector('.tl-filters-toggle')?.addEventListener('click', (event) => {
+    const filters = document.getElementById('tl-filters');
+    const collapsed = filters.classList.toggle('is-collapsed-mobile');
+    event.currentTarget.setAttribute('aria-expanded', collapsed ? 'false' : 'true');
+});
+
 if (root && document.getElementById('tl-dialog')) {
     const $ = (selector, context = document) => context.querySelector(selector);
     const $$ = (selector, context = document) => [...context.querySelectorAll(selector)];

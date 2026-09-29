@@ -60,7 +60,7 @@
                                   title="{{ optional($employee->user)->isOnline() ? 'Online' : 'Offline' }}"></span>
                             {{ $employee->full_name }}
                         </td>
-                        <td>{{ \App\Models\Program::OPTIONS[$employee->program] ?? ($employee->program ?? 'N/A') }}</td>
+                        <td>@include('partials.program-name', ['program' => $employee->program])</td>
                         <td>
                             <span class="badge badge-info">{{ $employee->user->role->role_name ?? ($employee->position ?? 'N/A') }}</span>
                         </td>
@@ -107,7 +107,7 @@
                     <tr>
                         <td><strong>{{ $employee->employee_no ?? 'N/A' }}</strong></td>
                         <td>{{ $employee->full_name }}</td>
-                        <td>{{ \App\Models\Program::OPTIONS[$employee->program] ?? ($employee->program ?? 'N/A') }}</td>
+                        <td>@include('partials.program-name', ['program' => $employee->program])</td>
                         <td>
                             <span class="badge badge-info">{{ $employee->user->role->role_name ?? ($employee->position ?? 'N/A') }}</span>
                         </td>

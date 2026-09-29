@@ -24,7 +24,11 @@
         @endif
     </header>
 
-    <form class="tl-filters" method="GET">
+    @php $activeLoadFilters = collect(['program', 'school_year_id', 'semester', 'employee_id'])->filter(fn ($key) => filled($filters[$key] ?? null))->count(); @endphp
+    <button type="button" class="btn tl-filters-toggle" aria-controls="tl-filters" aria-expanded="{{ $activeLoadFilters ? 'true' : 'false' }}">
+        <i class="fas fa-sliders-h"></i> Filters @if($activeLoadFilters)<span class="tl-filters-count">{{ $activeLoadFilters }}</span>@endif
+    </button>
+    <form class="tl-filters {{ $activeLoadFilters ? '' : 'is-collapsed-mobile' }}" id="tl-filters" method="GET">
         @if(auth()->user()->isDean())
         <label>Program<select name="program" class="form-control"><option value="">All programs</option>
             @foreach(\App\Models\Program::codes() as $code)<option value="{{ $code }}" @selected(($filters['program'] ?? '') === $code)>{{ $code }}</option>@endforeach
@@ -54,7 +58,7 @@
         <tbody>
         @forelse($loads as $load)
             <tr>
-                <td>{{ $load->faculty_name }}</td><td>{{ $load->program }}</td>
+                <td>{{ $load->faculty_name }}</td><td>@include('partials.program-name', ['program' => $load->program])</td>
                 <td>{{ $load->academic_year }} · {{ \App\Support\SchoolTerm::label($load->semester) }}</td>
                 <td>{{ rtrim(rtrim(number_format((float)$load->total_units, 2, '.', ''), '0'), '.') }}</td>
                 <td>{{ rtrim(rtrim(number_format((float)$load->total_load, 3, '.', ''), '0'), '.') }}</td>

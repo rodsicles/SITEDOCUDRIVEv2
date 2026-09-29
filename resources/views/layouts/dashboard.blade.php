@@ -17,7 +17,7 @@
 
     <div class="flex min-h-screen">
         <!-- Sidebar Overlay (mobile) -->
-        <div id="sidebarOverlay" class="fixed inset-0 bg-black/50 z-[999] hidden md:hidden"></div>
+        <div id="sidebarOverlay" class="fixed inset-0 bg-black/50 z-[999] hidden"></div>
 
         <!-- Sidebar -->
         <aside id="appSidebar" class="w-64 fixed h-screen overflow-hidden z-[1000] sidebar" aria-label="Primary navigation">
@@ -41,9 +41,9 @@
         <main class="ml-64 flex-1 p-8 w-[calc(100%-16rem)] main-content" id="main-content">
             <!-- Top Bar -->
             <div class="p-4 px-6 mb-4 flex justify-between items-center gap-4 top-bar sticky top-0 z-[300]">
-                <div class="flex items-center gap-3 min-w-0 flex-shrink-0">
+                <div class="top-bar-heading flex items-center gap-3 min-w-0 flex-shrink-0">
                     <!-- Mobile Hamburger Menu -->
-                    <button id="mobileMenuToggle" class="hidden max-md:block top-control text-xl text-gray-800 dark:text-gray-200 cursor-pointer flex-shrink-0" type="button" aria-label="Open navigation menu" aria-controls="appSidebar" aria-expanded="false">
+                    <button id="mobileMenuToggle" class="hidden top-control text-xl text-gray-800 dark:text-gray-200 cursor-pointer flex-shrink-0" type="button" aria-label="Open navigation menu" aria-controls="appSidebar" aria-expanded="false">
                         <i class="fas fa-bars"></i>
                     </button>
                     <div class="min-w-0">
@@ -659,22 +659,72 @@
             sidebarOverlay.addEventListener('click', closeSidebar);
         }
 
-        // Close sidebar on resize to desktop
+        // Must match the drawer breakpoint in app.css (RESPONSIVE LAYER).
         window.addEventListener('resize', () => {
-            if (window.innerWidth >= 768) {
+            if (window.innerWidth >= 1024) {
                 closeSidebar();
             }
         });
 
-        // Auto-wrap data tables for mobile horizontal scrolling
-        document.querySelectorAll('.data-table').forEach(table => {
+        document.addEventListener('keydown', (event) => {
+            if (event.key === 'Escape' && sidebar && sidebar.classList.contains('active')) {
+                closeSidebar();
+                mobileMenuToggle?.focus();
+            }
+        });
+
+        // Tables scroll sideways on tablets and become labelled cards on phones.
+        function prepareDataTable(table) {
+            if (table.dataset.responsiveReady) return;
+            table.dataset.responsiveReady = '1';
             if (!table.parentElement.classList.contains('overflow-x-auto')) {
                 const wrapper = document.createElement('div');
                 wrapper.className = 'overflow-x-auto';
                 table.parentNode.insertBefore(wrapper, table);
                 wrapper.appendChild(table);
             }
+            if (table.hasAttribute('data-no-stack')) return;
+            const labels = Array.from(table.querySelectorAll('thead th')).map((th) => th.textContent.replace(/\s+/g, ' ').trim());
+            if (!labels.length) return;
+            table.classList.add('is-stackable');
+            const labelRows = () => table.querySelectorAll('tbody tr').forEach((row) => {
+                let column = 0;
+                Array.from(row.children).forEach((cell) => {
+                    const span = parseInt(cell.getAttribute('colspan') || '1', 10);
+                    if (span > 1 || row.children.length === 1) {
+                        cell.classList.add('is-full-row');
+                    } else if (!cell.hasAttribute('data-label') && labels[column]) {
+                        cell.setAttribute('data-label', labels[column]);
+                    }
+                    const controls = cell.querySelectorAll('.btn, button');
+                    if (controls.length) {
+                        let rest = cell.textContent;
+                        controls.forEach((control) => { rest = rest.replace(control.textContent, ''); });
+                        cell.classList.toggle('is-actions', rest.trim() === '');
+                    }
+                    column += span;
+                });
+            });
+            labelRows();
+            const body = table.tBodies[0];
+            if (body) new MutationObserver(labelRows).observe(body, { childList: true });
+        }
+        document.querySelectorAll('.category-tabs, .ui-segmented').forEach((row) => {
+            if (row.scrollWidth <= row.clientWidth) return;
+            const current = row.querySelector('.active, [aria-current="page"], [aria-selected="true"], .is-active');
+            if (current) row.scrollLeft = current.offsetLeft - (row.clientWidth - current.offsetWidth) / 2;
         });
+
+        document.querySelectorAll('.data-table').forEach(prepareDataTable);
+        let tableScanQueued = false;
+        new MutationObserver(() => {
+            if (tableScanQueued) return;
+            tableScanQueued = true;
+            requestAnimationFrame(() => {
+                tableScanQueued = false;
+                document.querySelectorAll('.data-table:not([data-responsive-ready])').forEach(prepareDataTable);
+            });
+        }).observe(document.body, { childList: true, subtree: true });
     </script>
 
     @stack('scripts')

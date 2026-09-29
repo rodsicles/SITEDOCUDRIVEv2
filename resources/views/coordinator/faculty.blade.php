@@ -35,7 +35,7 @@
                     <td><strong>{{ $faculty->employee->employee_no ?? 'N/A' }}</strong></td>
                     <td>{{ $faculty->employee->full_name ?? 'N/A' }}</td>
                     <td>{{ $faculty->email }}</td>
-                    <td>{{ \App\Models\Program::OPTIONS[$faculty->employee->program ?? ''] ?? ($faculty->employee->program ?? 'N/A') }}</td>
+                    <td>@include('partials.program-name', ['program' => $faculty->employee->program ?? null])</td>
                     <td>
                         <a href="{{ route('coordinator.faculty-profile', $faculty->employee->employee_id) }}" class="btn btn-primary text-xs px-4 py-2">
                             <i class="fas fa-eye"></i> View Profile

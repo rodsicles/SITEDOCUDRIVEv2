@@ -134,248 +134,34 @@
 
     <!-- Tab 2: Create Coordinator -->
     <div class="tab-content" id="createCoordContent" hidden>
-        <div class="content-card employee-account-card">
-            <div class="card-header">
-                <div>
-                    <h3 class="card-title">Create coordinator account</h3>
-                    <p class="employee-account-card__intro">Enter employee details and set their sign-in credentials.</p>
-                </div>
-            </div>
-
-            @if($errors->any() && session('_form') === 'coordinator')
-                <div class="alert alert-error">
-                    <strong><i class="fas fa-exclamation-circle"></i> Validation Errors:</strong>
-                    <ul class="mt-2 ml-5">
-                        @foreach($errors->all() as $error)
-                            <li>{{ $error }}</li>
-                        @endforeach
-                    </ul>
-                </div>
-            @endif
-
-            <form action="{{ route('dean.store-coordinator') }}" method="POST" class="account-form">
-                @csrf
-                <input type="hidden" name="_form" value="coordinator">
-
-                <div class="account-form__grid">
-                    <div class="account-form__col">
-                        <div class="ui-form-section">
-                            <h4 class="ui-form-section__title">Employee details</h4>
-                            <div class="form-group">
-                                <label class="form-label">Full Name *</label>
-                                <input type="text" name="full_name" class="form-control" placeholder="Enter full name" required maxlength="45" value="{{ old('_form') === 'coordinator' ? old('full_name') : '' }}">
-                            </div>
-                            <div class="form-group">
-                                <label class="form-label">Program *</label>
-                                <select id="coordinatorDepartment" name="program" class="form-control" required>
-                                    <option value="">Select Program</option>
-                                    @foreach(\App\Models\Program::labels() as $code => $label)<option value="{{ $code }}" @selected(old('program', $employee->program ?? null) === $code)>{{ $label }}</option>@endforeach
-                                </select>
-                            </div>
-                            <div class="form-group">
-                                <label class="form-label">Employee Number</label>
-                                <input type="text" id="coordinatorEmployeeNo" class="form-control bg-gray-100 dark:bg-gray-800" value="" placeholder="Select program first" readonly disabled>
-                                <small class="text-xs text-gray-500 dark:text-gray-400 mt-1">Auto-generated per program (e.g. SITE-IT-COOR001). Existing numbers are not changed.</small>
-                            </div>
-                        </div>
-                    </div>
-                    <div class="account-form__col">
-                        <div class="ui-form-section">
-                            <h4 class="ui-form-section__title">Account access</h4>
-                            <div class="form-group">
-                                <label class="form-label">Username *</label>
-                                <input type="text" name="username" class="form-control" autocomplete="off" autocapitalize="none" spellcheck="false" placeholder="Choose a username" required maxlength="20" value="{{ old('_form') === 'coordinator' ? old('username') : '' }}">
-                            </div>
-                            <div class="form-group">
-                                <label class="form-label">Password *</label>
-                                <input type="password" name="password" class="form-control" autocomplete="new-password" placeholder="Minimum 8 characters" required minlength="8" maxlength="40">
-                            </div>
-                        </div>
-                    </div>
-                </div>
-
-                <div class="account-form__courses form-group" id="coordCourseSection" hidden>
-                    <label class="form-label">Assigned Courses / Subjects</label>
-                    <small class="text-xs text-gray-500 dark:text-gray-400 block mb-2">Select the subjects this coordinator will handle. Defaults to the current school term.</small>
-                    <div class="course-assignment-guide" data-course-guide="coordCourses" data-default-term="{{ \App\Support\SchoolTerm::current() }}">
-                        <div class="course-guide-bar">
-                            <div class="course-guide-bar__term">
-                                <label class="course-guide-label" for="coordCourseTerm">Current term</label>
-                                <select id="coordCourseTerm" class="form-control course-guide-term" data-guide-term>
-                                    @foreach(\App\Support\SchoolTerm::labels() as $value => $label)
-                                        <option value="{{ $value }}" @selected($value === \App\Support\SchoolTerm::current())>{{ $label }}</option>
-                                    @endforeach
-                                </select>
-                            </div>
-                            <div class="course-guide-bar__years" role="group" aria-label="Year level filter">
-                                <span class="course-guide-label">Year</span>
-                                <div class="course-guide-year-chips">
-                                    <button type="button" class="course-guide-chip is-active" data-guide-year="" aria-pressed="true">All</button>
-                                    @for($y = 1; $y <= 4; $y++)
-                                        <button type="button" class="course-guide-chip" data-guide-year="{{ $y }}" aria-pressed="false">{{ $y }}Y</button>
-                                    @endfor
-                                </div>
-                            </div>
-                            <label class="course-guide-unlock">
-                                <input type="checkbox" data-guide-unlock>
-                                <span>Also show courses from other terms</span>
-                            </label>
-                        </div>
-                        <div class="course-picker-wrap">
-                            <div class="course-picker-toolbar">
-                                <input type="text" id="coordCourseSearch" class="course-search-input" data-guide-search placeholder="Search by code or title..." autocomplete="off">
-                                <span class="course-selected-count" id="coordSelectedCount" data-guide-count>0 selected</span>
-                                <button type="button" class="course-picker-clear" id="coordCourseClear" data-guide-clear title="Clear selection">Clear</button>
-                            </div>
-                            <div class="course-picker-body">
-                                <div id="coordCourseList" class="course-checkbox-grid" data-guide-grid>
-                                    <span class="course-section-empty">Select a program first.</span>
-                                </div>
-                                <p class="course-no-results" id="coordNoResults" data-guide-empty>No matching courses for this term filter.</p>
-                            </div>
-                        </div>
-                    </div>
-                    <p id="coordCourseError" class="text-xs text-red-600 dark:text-red-400 mt-1 hidden"></p>
-                </div>
-
-                <div class="account-form__actions">
-                    <button type="submit" class="btn btn-success">
-                        <i class="fas fa-user-tie"></i> Create Coordinator Account
-                    </button>
-                    <button type="button" class="btn btn-secondary" onclick="switchTab('list')">
-                        <i class="fas fa-times"></i> Cancel
-                    </button>
-                </div>
-            </form>
-        </div>
+        @include('partials.account-create-form', [
+            'formKey' => 'coordinator',
+            'action' => route('dean.store-coordinator'),
+            'coursesUrl' => route('dean.courses.by-program'),
+            'numberPreview' => $coordinatorNumberPreview ?? [],
+            'title' => 'Create coordinator account',
+            'intro' => 'Enter employee details, set sign-in credentials, and assign subjects.',
+            'submitLabel' => 'Create Coordinator Account',
+            'submitIcon' => 'fa-user-tie',
+            'cancelOnclick' => "switchTab('list')",
+            'numberExample' => 'SITE-IT-COOR001',
+        ])
     </div>
 
     <!-- Tab 3: Create Faculty -->
     <div class="tab-content" id="createFacultyContent" hidden>
-        <div class="content-card employee-account-card">
-            <div class="card-header">
-                <div>
-                    <h3 class="card-title">Create faculty account</h3>
-                    <p class="employee-account-card__intro">Enter employee details, set sign-in credentials, and assign subjects.</p>
-                </div>
-            </div>
-
-            @if($errors->any() && session('_form') === 'faculty')
-                <div class="alert alert-error">
-                    <strong><i class="fas fa-exclamation-circle"></i> Validation Errors:</strong>
-                    <ul class="mt-2 ml-5">
-                        @foreach($errors->all() as $error)
-                            <li>{{ $error }}</li>
-                        @endforeach
-                    </ul>
-                </div>
-            @endif
-
-            <form action="{{ route('dean.store-faculty') }}" method="POST" class="account-form">
-                @csrf
-                <input type="hidden" name="_form" value="faculty">
-
-                <div class="account-form__grid">
-                    <div class="account-form__col">
-                        <div class="ui-form-section">
-                            <h4 class="ui-form-section__title">Employee details</h4>
-                            <div class="form-group">
-                                <label class="form-label">Full Name *</label>
-                                <input type="text" name="full_name" class="form-control" placeholder="Enter full name" required maxlength="45" value="{{ old('_form') === 'faculty' ? old('full_name') : '' }}">
-                            </div>
-                            <div class="form-group">
-                                <label class="form-label">Program *</label>
-                                <select id="facultyDepartment" name="program" class="form-control" required>
-                                    <option value="">Select Program</option>
-                                    @foreach(\App\Models\Program::labels() as $code => $label)<option value="{{ $code }}" @selected(old('program', $employee->program ?? null) === $code)>{{ $label }}</option>@endforeach
-                                </select>
-                            </div>
-                            <div class="form-group">
-                                <label class="form-label" for="facultyType">Faculty Type *</label>
-                                <select id="facultyType" name="faculty_type" class="form-control" required>
-                                    <option value="">Select Faculty Type</option>
-                                    @foreach(\App\Models\Employee::FACULTY_TYPES as $value => $label)
-                                        <option value="{{ $value }}" @selected(old('_form') === 'faculty' && old('faculty_type') === $value)>{{ $label }}</option>
-                                    @endforeach
-                                </select>
-                                <small class="text-xs text-gray-500 dark:text-gray-400 mt-1">Shared faculty keeps one home program while teaching assigned subjects.</small>
-                            </div>
-                            <div class="form-group">
-                                <label class="form-label">Employee Number</label>
-                                <input type="text" id="facultyEmployeeNo" class="form-control bg-gray-100 dark:bg-gray-800" value="" placeholder="Select program first" readonly disabled>
-                                <small class="text-xs text-gray-500 dark:text-gray-400 mt-1">Auto-generated per program (e.g. SITE-IT-FAC001). Existing numbers are not changed.</small>
-                            </div>
-                        </div>
-                    </div>
-                    <div class="account-form__col">
-                        <div class="ui-form-section">
-                            <h4 class="ui-form-section__title">Account access</h4>
-                            <div class="form-group">
-                                <label class="form-label">Username *</label>
-                                <input type="text" name="username" class="form-control" autocomplete="off" autocapitalize="none" spellcheck="false" placeholder="Choose a username" required maxlength="20" value="{{ old('_form') === 'faculty' ? old('username') : '' }}">
-                            </div>
-                            <div class="form-group">
-                                <label class="form-label">Password *</label>
-                                <input type="password" name="password" class="form-control" autocomplete="new-password" placeholder="Minimum 8 characters" required minlength="8" maxlength="40">
-                            </div>
-                        </div>
-                    </div>
-                </div>
-
-                <div class="account-form__courses form-group" id="facultyCourseSection" hidden>
-                    <label class="form-label">Assigned Courses / Subjects *</label>
-                    <small class="text-xs text-gray-500 dark:text-gray-400 block mb-2">Select subjects for the current school term. Unlock to include other terms. At least one is required.</small>
-                    <div class="course-assignment-guide" data-course-guide="facultyCourses" data-default-term="{{ \App\Support\SchoolTerm::current() }}">
-                        <div class="course-guide-bar">
-                            <div class="course-guide-bar__term">
-                                <label class="course-guide-label" for="facultyCourseTerm">Current term</label>
-                                <select id="facultyCourseTerm" class="form-control course-guide-term" data-guide-term>
-                                    @foreach(\App\Support\SchoolTerm::labels() as $value => $label)
-                                        <option value="{{ $value }}" @selected($value === \App\Support\SchoolTerm::current())>{{ $label }}</option>
-                                    @endforeach
-                                </select>
-                            </div>
-                            <div class="course-guide-bar__years" role="group" aria-label="Year level filter">
-                                <span class="course-guide-label">Year</span>
-                                <div class="course-guide-year-chips">
-                                    <button type="button" class="course-guide-chip is-active" data-guide-year="" aria-pressed="true">All</button>
-                                    @for($y = 1; $y <= 4; $y++)
-                                        <button type="button" class="course-guide-chip" data-guide-year="{{ $y }}" aria-pressed="false">{{ $y }}Y</button>
-                                    @endfor
-                                </div>
-                            </div>
-                            <label class="course-guide-unlock">
-                                <input type="checkbox" data-guide-unlock>
-                                <span>Also show courses from other terms</span>
-                            </label>
-                        </div>
-                        <div class="course-picker-wrap">
-                            <div class="course-picker-toolbar">
-                                <input type="text" id="facultyCourseSearch" class="course-search-input" data-guide-search placeholder="Search by code or title..." autocomplete="off">
-                                <span class="course-selected-count" id="facultySelectedCount" data-guide-count>0 selected</span>
-                                <button type="button" class="course-picker-clear" id="facultyCourseClear" data-guide-clear title="Clear selection">Clear</button>
-                            </div>
-                            <div class="course-picker-body">
-                                <div id="facultyCourseList" class="course-checkbox-grid" data-guide-grid>
-                                    <span class="course-section-empty">Select a program first.</span>
-                                </div>
-                                <p class="course-no-results" id="facultyNoResults" data-guide-empty>No matching courses for this term filter.</p>
-                            </div>
-                        </div>
-                    </div>
-                    <p id="facultyCourseError" class="text-xs text-red-600 dark:text-red-400 mt-1 hidden"></p>
-                </div>
-
-                <div class="account-form__actions">
-                    <button type="submit" class="btn btn-success">
-                        <i class="fas fa-user-plus"></i> Create Faculty Account
-                    </button>
-                    <button type="button" class="btn btn-secondary" onclick="switchTab('list')">
-                        <i class="fas fa-times"></i> Cancel
-                    </button>
-                </div>
-            </form>
-        </div>
+        @include('partials.account-create-form', [
+            'formKey' => 'faculty',
+            'action' => route('dean.store-faculty'),
+            'coursesUrl' => route('dean.courses.by-program'),
+            'numberPreview' => $facultyNumberPreview ?? [],
+            'title' => 'Create faculty account',
+            'intro' => 'Enter employee details, set sign-in credentials, and assign subjects.',
+            'submitLabel' => 'Create Faculty Account',
+            'submitIcon' => 'fa-user-plus',
+            'cancelOnclick' => "switchTab('list')",
+            'numberExample' => 'SITE-IT-FAC001',
+        ])
     </div>
 
     </div>
@@ -412,7 +198,7 @@
             window.history.replaceState({}, '', url);
         }
 
-        // Auto-open correct tab on validation errors
+        // Reopen the form that failed validation so its restored input and subjects are visible.
         @if($errors->any() && old('_form') === 'coordinator')
             document.addEventListener('DOMContentLoaded', () => switchTab('createCoord'));
         @elseif($errors->any() && old('_form') === 'faculty')
@@ -428,113 +214,22 @@
             }
         });
 
-        const employeeNumberPreview = {
-            coordinator: @json($coordinatorNumberPreview ?? []),
-            faculty: @json($facultyNumberPreview ?? []),
-        };
-
-        function updateEmployeeNumberPreview(formKey) {
-            const deptSelect = document.getElementById(formKey + 'Department');
-            const noInput = document.getElementById(formKey + 'EmployeeNo');
-            if (!deptSelect || !noInput) return;
-
-            const dept = deptSelect.value;
-            const previews = employeeNumberPreview[formKey] || {};
-
-            if (!dept || !previews[dept]) {
-                noInput.value = '';
-                noInput.placeholder = 'Select program first';
-                noInput.disabled = true;
-                return;
-            }
-
-            noInput.value = previews[dept];
-            noInput.placeholder = '';
-            noInput.disabled = false;
-        }
-
-        ['coordinator', 'faculty'].forEach(formKey => {
-            const deptSelect = document.getElementById(formKey + 'Department');
-            if (deptSelect) {
-                deptSelect.addEventListener('change', () => updateEmployeeNumberPreview(formKey));
-                updateEmployeeNumberPreview(formKey);
-            }
-        });
-
         // Prevent double submit
-        document.querySelectorAll('form').forEach(form => {
-            form.addEventListener('submit', function() {
+        document.querySelectorAll('form[data-account-form]').forEach(form => {
+            form.addEventListener('submit', function(e) {
+                if (e.defaultPrevented) return;
                 const btn = this.querySelector('button[type="submit"]');
                 if (btn && !btn.disabled) {
+                    btn.dataset.original = btn.innerHTML;
                     btn.disabled = true;
                     btn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Creating...';
                     setTimeout(() => {
                         btn.disabled = false;
-                        btn.innerHTML = btn.dataset.original || btn.innerHTML;
+                        btn.innerHTML = btn.dataset.original;
                     }, 5000);
                 }
             });
         });
-
-        // ── Course Assignment AJAX + guided term filter (Dean create forms) ──
-        const coursesByDeptUrl = @json(route('dean.courses.by-program'));
-
-        function loadCourses(dept, guideRoot, sectionEl, errorEl) {
-            if (!dept) {
-                sectionEl.hidden = true;
-                return;
-            }
-            const grid = guideRoot.querySelector('[data-guide-grid]');
-            if (grid) {
-                grid.innerHTML = '<span class="course-section-empty"><i class="fas fa-spinner fa-spin mr-1"></i>Loading courses...</span>';
-            }
-            sectionEl.hidden = false;
-            errorEl.classList.add('hidden');
-            window.CourseAssignmentGuide.bindRoot(guideRoot);
-            fetch(coursesByDeptUrl + '?dept=' + encodeURIComponent(dept))
-                .then(function (res) { return res.json(); })
-                .then(function (courses) {
-                    window.CourseAssignmentGuide.renderCourses(guideRoot, courses, []);
-                })
-                .catch(function () {
-                    if (grid) {
-                        grid.innerHTML = '<span class="course-section-empty" style="color:#dc2626">Failed to load courses. Please try again.</span>';
-                    }
-                });
-        }
-
-        document.getElementById('facultyDepartment')?.addEventListener('change', function() {
-            loadCourses(
-                this.value,
-                document.querySelector('[data-course-guide="facultyCourses"]'),
-                document.getElementById('facultyCourseSection'),
-                document.getElementById('facultyCourseError')
-            );
-        });
-
-        document.getElementById('coordinatorDepartment')?.addEventListener('change', function() {
-            loadCourses(
-                this.value,
-                document.querySelector('[data-course-guide="coordCourses"]'),
-                document.getElementById('coordCourseSection'),
-                document.getElementById('coordCourseError')
-            );
-        });
-
-        document.querySelector('form[action*="store-faculty"]')?.addEventListener('submit', function(e) {
-            const section = document.getElementById('facultyCourseSection');
-            if (section && !section.hidden) {
-                const checked = section.querySelectorAll('input[type="checkbox"]:checked');
-                if (checked.length === 0) {
-                    e.preventDefault();
-                    const err = document.getElementById('facultyCourseError');
-                    err.textContent = 'Please assign at least one course to this faculty member.';
-                    err.classList.remove('hidden');
-                    section.scrollIntoView({ behavior: 'instant', block: 'center' });
-                }
-            }
-        });
-        // ─────────────────────────────────────────────────────────────────────
     </script>
     @include('partials.course-assignment-guide-script')
 @endsection

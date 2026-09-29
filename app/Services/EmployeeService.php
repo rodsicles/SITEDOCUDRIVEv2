@@ -58,7 +58,7 @@ class EmployeeService
             DashboardLog::create([
                 'user_id' => $creatorUserId,
                 'target_user_id' => $user->id,
-                'activity' => 'Created coordinator account: ' . $validated['full_name'],
+                'activity' => $this->accountCreatedActivity('Program Coordinator', $validated),
                 'activity_type' => 'account_created',
                 'visibility' => 'dean',
             ]);
@@ -111,7 +111,7 @@ class EmployeeService
             DashboardLog::create([
                 'user_id' => $creatorUserId,
                 'target_user_id' => $user->id,
-                'activity' => 'Created faculty account: ' . $validated['full_name'],
+                'activity' => $this->accountCreatedActivity('Faculty Employee', $validated),
                 'activity_type' => 'account_created',
                 'visibility' => 'coordinator',
             ]);
@@ -134,7 +134,7 @@ class EmployeeService
         try {
             $employee->update([
                 'full_name' => $validated['full_name'],
-                'employee_no' => $validated['employee_no'],
+                'employee_no' => array_key_exists('employee_no', $validated) ? $validated['employee_no'] : $employee->employee_no,
                 'program' => $validated['program'],
                 'faculty_type' => $validated['faculty_type'] ?? $employee->faculty_type,
                 'position' => $validated['position'] ?? $employee->position,
@@ -201,7 +201,7 @@ class EmployeeService
         try {
             $employee->update([
                 'full_name' => $validated['full_name'],
-                'employee_no' => $validated['employee_no'],
+                'employee_no' => array_key_exists('employee_no', $validated) ? $validated['employee_no'] : $employee->employee_no,
                 'program' => $validated['program'],
                 'faculty_type' => $validated['faculty_type'] ?? $employee->faculty_type,
                 'position' => $validated['position'] ?? $employee->position,
@@ -390,6 +390,19 @@ class EmployeeService
     {
         $generator = app(EmployeeNumberGenerator::class);
         $validated['employee_no'] = $generator->next($validated['program'], $role);
+    }
+
+    private function accountCreatedActivity(string $roleName, array $validated): string
+    {
+        $line = sprintf(
+            'Created %s account: %s · Program: %s · Subjects: %s',
+            $roleName,
+            $validated['full_name'],
+            $validated['program'],
+            \App\Support\CourseAssignment::summary($validated['course_ids'] ?? [])
+        );
+
+        return \Illuminate\Support\Str::limit($line, 250);
     }
 
     private function validateProgramAssignments(array $data): void

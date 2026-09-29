@@ -26,6 +26,8 @@ class Course extends Model
     protected $casts = [
         'is_active' => 'boolean',
         'year_level' => 'integer',
+        'lecture_units' => 'float',
+        'lab_units' => 'float',
     ];
 
     protected static function booted(): void

@@ -36,7 +36,7 @@
             </div>
 
             <div class="mt-6 border-t border-gray-200 dark:border-gray-700 pt-4">
-                <button type="button" class="btn btn-danger border-0" onclick="document.getElementById('archiveModal').classList.remove('hidden')">
+                <button type="button" class="btn btn-danger border-0" data-dialog-open="archiveModal">
                     <i class="fas fa-archive"></i> Archive This School Year
                 </button>
                 <p class="text-xs text-gray-500 dark:text-gray-400 mt-2">
@@ -137,25 +137,32 @@
         @endif
     </div>
 
-    {{-- Archive Modal --}}
-    <div id="archiveModal" class="hidden fixed inset-0 bg-black bg-opacity-50 z-50 flex items-center justify-center p-4">
-        <div class="bg-white dark:bg-[#1e1e1e] rounded-lg shadow-xl max-w-lg w-full">
-            <div class="p-6">
-                <h3 class="text-lg font-bold text-gray-800 dark:text-white mb-4">
-                    <i class="fas fa-archive text-red-500 mr-2"></i>Archive School Year
-                </h3>
+    {{-- Archive dialog --}}
+    <dialog id="archiveModal" class="ui-dialog ui-dialog--danger" aria-labelledby="archiveModalTitle" aria-describedby="archiveModalWarning">
+        <form action="{{ route('dean.archives.archive') }}" method="POST" id="archiveForm" class="ui-dialog__form" data-request-guard>
+            @csrf
+            <header class="ui-dialog__head">
+                <div>
+                    <h2 id="archiveModalTitle" class="ui-dialog__title"><i class="fas fa-archive" aria-hidden="true"></i> Archive school year</h2>
+                    <p class="ui-dialog__subtitle">Close {{ $activeSchoolYear->name }} and start a new school year.</p>
+                </div>
+                <button type="button" class="ui-dialog__close" data-dialog-close aria-label="Close">&times;</button>
+            </header>
 
-                <div class="bg-yellow-50 dark:bg-yellow-900/20 border border-yellow-200 dark:border-yellow-800 rounded p-3 mb-4">
-                    <p class="text-sm text-yellow-800 dark:text-yellow-200">
-                        <i class="fas fa-exclamation-triangle mr-1"></i>
-                        <strong>Warning:</strong> This action archives all documents from the current school year and only <strong>approved</strong> teaching guides and exam questionnaires. Pending and rejected submissions are <strong>not</strong> archived—they remain active for the new school year. User-created folders are archived with the year. The system will start fresh with empty default folders.
-                    </p>
+            <div class="ui-dialog__body">
+                <div class="ui-callout" id="archiveModalWarning">
+                    <strong><i class="fas fa-exclamation-triangle mr-1" aria-hidden="true"></i> What happens when you archive</strong>
+                    <ul>
+                        <li>All documents from the current school year are archived.</li>
+                        <li>Only <strong>approved</strong> teaching guides and exam questionnaires are archived.</li>
+                        <li>Pending and rejected submissions are <strong>not</strong> archived; they stay active for the new school year.</li>
+                        <li>User-created folders move to the archive, and the new year starts with empty default folders.</li>
+                    </ul>
                 </div>
 
-                {{-- In-modal validation errors --}}
-                @if($errors->any())
-                <div class="bg-red-50 dark:bg-red-900/20 border border-red-200 dark:border-red-800 rounded p-3 mb-4">
-                    <ul class="text-sm text-red-700 dark:text-red-300 list-disc list-inside">
+                @if($errors->any() && ! old('confirm_phrase'))
+                <div class="ui-dialog__error" role="alert">
+                    <ul>
                         @foreach($errors->all() as $error)
                             <li>{{ $error }}</li>
                         @endforeach
@@ -163,191 +170,83 @@
                 </div>
                 @endif
 
-                <form action="{{ route('dean.archives.archive') }}" method="POST" id="archiveForm" data-request-guard>
-                    @csrf
-                    <div class="space-y-4">
-                        <div>
-                            <label class="text-sm font-semibold text-gray-600 dark:text-gray-300 block mb-1">Archive Name</label>
-                            <input type="text" name="archive_name" value="{{ old('archive_name', $activeSchoolYear->name) }}" class="form-control" required maxlength="50">
-                            <p class="text-xs text-gray-400 mt-1">Name for the archived school year</p>
-                        </div>
-                        <div>
-                            <label class="text-sm font-semibold text-gray-600 dark:text-gray-300 block mb-1">New School Year Name</label>
-                            <input type="text" name="new_name" value="{{ old('new_name', 'S.Y. ' . $suggestedStartYear . '-' . ($suggestedStartYear + 1)) }}" class="form-control" required maxlength="50">
-                        </div>
-                        <div>
-                            <label class="text-sm font-semibold text-gray-600 dark:text-gray-300 block mb-1">New School Year Start</label>
-                            <input type="number" name="new_start_year" value="{{ old('new_start_year', $suggestedStartYear) }}" class="form-control" required min="2020" max="2099">
-                            <p class="text-xs text-gray-400 mt-1">The start year of the new school year (e.g. {{ $suggestedStartYear }} for {{ $suggestedStartYear }}-{{ $suggestedStartYear + 1 }})</p>
-                        </div>
-                    </div>
+                <div class="ui-dialog__field">
+                    <label for="archive_name">Archive name</label>
+                    <input type="text" name="archive_name" id="archive_name" value="{{ old('archive_name', $activeSchoolYear->name) }}" class="form-control" required maxlength="50">
+                    <small>Name for the archived school year.</small>
+                </div>
+                <div class="ui-dialog__field">
+                    <label for="new_name">New school year name</label>
+                    <input type="text" name="new_name" id="new_name" value="{{ old('new_name', 'S.Y. ' . $suggestedStartYear . '-' . ($suggestedStartYear + 1)) }}" class="form-control" required maxlength="50">
+                </div>
+                <div class="ui-dialog__field">
+                    <label for="new_start_year">New school year start</label>
+                    <input type="number" name="new_start_year" id="new_start_year" value="{{ old('new_start_year', $suggestedStartYear) }}" class="form-control" required min="2020" max="2099" inputmode="numeric">
+                    <small>The start year of the new school year (e.g. {{ $suggestedStartYear }} for {{ $suggestedStartYear }}-{{ $suggestedStartYear + 1 }}).</small>
+                </div>
 
-                    <p class="text-xs text-gray-400 dark:text-gray-500 mt-4">
-                        <i class="fas fa-info-circle mr-1"></i>This may take a few seconds. Please click only once and do not refresh the page.
-                    </p>
-
-                    <div class="flex justify-end gap-3 mt-4">
-                        <button type="button" id="archiveCancelBtn" class="btn bg-gray-200 dark:bg-gray-700 text-gray-700 dark:text-gray-300" onclick="document.getElementById('archiveModal').classList.add('hidden')">
-                            Cancel
-                        </button>
-                        <button type="submit" id="archiveSubmitBtn" class="btn btn-danger border-0" onclick="return confirm('Are you absolutely sure? This cannot be undone.')">
-                            <i class="fas fa-archive"></i> Confirm Archive
-                        </button>
-                    </div>
-                </form>
+                <label class="ui-dialog__ack">
+                    <input type="checkbox" data-ack-for="archiveSubmitBtn">
+                    <span>I understand this closes the current school year and cannot be undone from this screen.</span>
+                </label>
+                <p class="ui-dialog__note"><i class="fas fa-info-circle mr-1" aria-hidden="true"></i>This may take a few seconds. Click once and don’t refresh the page.</p>
             </div>
-        </div>
-    </div>
 
-    @if($errors->any())
-    <script>
-        document.addEventListener('DOMContentLoaded', function () {
-            document.getElementById('archiveModal').classList.remove('hidden');
-        });
-    </script>
-    @endif
+            <footer class="ui-dialog__foot">
+                <button type="button" class="btn btn-secondary" data-dialog-close>Cancel</button>
+                <button type="submit" id="archiveSubmitBtn" class="btn btn-danger border-0" disabled>
+                    <i class="fas fa-archive" aria-hidden="true"></i> Confirm archive
+                </button>
+            </footer>
+        </form>
+    </dialog>
 
     @if($allowArchiveHardDelete)
-    <div id="archiveDeleteModal" class="hidden fixed inset-0 bg-black bg-opacity-50 z-[60] flex items-center justify-center p-4">
-        <div class="bg-white dark:bg-[#1e1e1e] rounded-lg shadow-xl max-w-lg w-full">
-            <div class="p-6">
-                <h3 class="text-lg font-bold text-red-600 dark:text-red-400 mb-2">
-                    <i class="fas fa-trash-alt mr-2"></i>Permanently delete archived school year
-                </h3>
-                <p class="text-sm text-gray-600 dark:text-gray-300 mb-4">
-                    This wipes <strong id="archiveDeleteYearLabel"></strong> and every document, teaching guide, exam questionnaire, and folder tagged to that archive. Cannot be undone.
-                </p>
+    <dialog id="archiveDeleteModal" class="ui-dialog ui-dialog--danger" aria-labelledby="archiveDeleteTitle">
+        <form action="" method="POST" id="archiveDeleteForm" class="ui-dialog__form" data-request-guard data-typed-confirm="DELETE PERMANENTLY">
+            @csrf
+            <header class="ui-dialog__head">
+                <div>
+                    <h2 id="archiveDeleteTitle" class="ui-dialog__title"><i class="fas fa-trash-alt" aria-hidden="true"></i> Permanently delete archive</h2>
+                    <p class="ui-dialog__subtitle">This cannot be undone.</p>
+                </div>
+                <button type="button" class="ui-dialog__close" data-dialog-close aria-label="Close">&times;</button>
+            </header>
+
+            <div class="ui-dialog__body">
+                <div class="ui-callout">
+                    This wipes <strong data-year-label></strong> and every document, teaching guide, exam questionnaire, and folder tagged to that archive. Storage files are deleted.
+                </div>
 
                 @if($errors->has('confirm_name') || $errors->has('confirm_phrase') || $errors->has('error'))
-                <div class="bg-red-50 dark:bg-red-900/20 border border-red-200 dark:border-red-800 rounded p-3 mb-4">
-                    <ul class="text-sm text-red-700 dark:text-red-300 list-disc list-inside">
+                <div class="ui-dialog__error" role="alert">
+                    <ul>
                         @foreach(['confirm_name', 'confirm_phrase', 'error'] as $field)
-                            @error($field)
-                                <li>{{ $message }}</li>
-                            @enderror
+                            @error($field)<li>{{ $message }}</li>@enderror
                         @endforeach
                     </ul>
                 </div>
                 @endif
+                <p class="ui-dialog__error" data-inline-error role="alert" hidden></p>
 
-                <form action="" method="POST" id="archiveDeleteForm" data-request-guard>
-                    @csrf
-                    <div class="space-y-4">
-                        <div>
-                            <label class="form-label" for="confirm_name">Type the school year name exactly</label>
-                            <input type="text" name="confirm_name" id="confirm_name" class="form-control" value="{{ old('confirm_name') }}" autocomplete="off" required maxlength="50">
-                        </div>
-                        <div>
-                            <label class="form-label" for="confirm_phrase">Type DELETE PERMANENTLY</label>
-                            <input type="text" name="confirm_phrase" id="confirm_phrase" class="form-control" placeholder="DELETE PERMANENTLY" autocomplete="off" required maxlength="50">
-                        </div>
-                    </div>
-                    <div class="flex justify-end gap-3 mt-6">
-                        <button type="button" class="btn bg-gray-200 dark:bg-gray-700 text-gray-700 dark:text-gray-300" onclick="closeArchiveDeleteModal()">Cancel</button>
-                        <button type="button" class="btn btn-danger border-0" onclick="submitArchiveDelete()">
-                            <i class="fas fa-trash-alt"></i> Delete permanently
-                        </button>
-                    </div>
-                </form>
+                <div class="ui-dialog__field">
+                    <label for="confirm_name">Type the school year name exactly</label>
+                    <input type="text" name="confirm_name" id="confirm_name" class="form-control" value="{{ old('confirm_name') }}" autocomplete="off" required maxlength="50">
+                </div>
+                <div class="ui-dialog__field">
+                    <label for="confirm_phrase">Type DELETE PERMANENTLY</label>
+                    <input type="text" name="confirm_phrase" id="confirm_phrase" class="form-control" placeholder="DELETE PERMANENTLY" autocomplete="off" required maxlength="50">
+                </div>
             </div>
-        </div>
-    </div>
 
-    <script>
-    (function () {
-        var deleteModal = document.getElementById('archiveDeleteModal');
-        if (!deleteModal) {
-            return;
-        }
-
-        var deleteForm = document.getElementById('archiveDeleteForm');
-        var deleteLabel = document.getElementById('archiveDeleteYearLabel');
-        var deleteExpectedName = '';
-
-        function openArchiveDeleteModal(url, name) {
-            deleteExpectedName = name || '';
-            if (deleteLabel) {
-                deleteLabel.textContent = deleteExpectedName;
-            }
-            if (deleteForm) {
-                deleteForm.action = url || '';
-            }
-            deleteModal.classList.remove('hidden');
-        }
-
-        function closeArchiveDeleteModal() {
-            deleteModal.classList.add('hidden');
-        }
-
-        window.closeArchiveDeleteModal = closeArchiveDeleteModal;
-
-        document.addEventListener('click', function (event) {
-            var openBtn = event.target.closest('.js-archive-delete-open');
-            if (openBtn) {
-                event.preventDefault();
-                event.stopPropagation();
-                openArchiveDeleteModal(
-                    openBtn.getAttribute('data-delete-url'),
-                    openBtn.getAttribute('data-delete-name')
-                );
-            }
-        });
-
-        window.submitArchiveDelete = function () {
-            if (!deleteForm) {
-                return;
-            }
-
-            var nameInput = deleteForm.querySelector('[name="confirm_name"]');
-            var phraseInput = deleteForm.querySelector('[name="confirm_phrase"]');
-
-            if (nameInput && nameInput.value.trim() !== deleteExpectedName) {
-                if (typeof Swal !== 'undefined') {
-                    Swal.fire({ title: 'Name mismatch', text: 'Type the school year name exactly as shown.', icon: 'error', confirmButtonColor: '#028a0f', customClass: { popup: 'swal-flat' } });
-                } else {
-                    alert('School year name does not match.');
-                }
-                return;
-            }
-
-            if (phraseInput && phraseInput.value.trim() !== 'DELETE PERMANENTLY') {
-                if (typeof Swal !== 'undefined') {
-                    Swal.fire({ title: 'Confirmation required', text: 'Type DELETE PERMANENTLY in all caps.', icon: 'error', confirmButtonColor: '#028a0f', customClass: { popup: 'swal-flat' } });
-                } else {
-                    alert('Type DELETE PERMANENTLY to confirm.');
-                }
-                return;
-            }
-
-            var message = 'This will permanently delete the entire archived school year and all linked files. This cannot be undone.';
-            if (typeof Swal !== 'undefined') {
-                Swal.fire({
-                    title: 'Delete archived school year?',
-                    text: message,
-                    icon: 'warning',
-                    showCancelButton: true,
-                    confirmButtonColor: '#dc2626',
-                    cancelButtonColor: '#6b7280',
-                    confirmButtonText: 'Yes, delete permanently',
-                    customClass: { popup: 'swal-flat' }
-                }).then(function (result) {
-                    if (result.isConfirmed) {
-                        deleteForm.submit();
-                    }
-                });
-            } else if (confirm(message)) {
-                deleteForm.submit();
-            }
-        };
-
-        @if(old('confirm_phrase') && str_contains(strtoupper((string) old('confirm_phrase')), 'DELETE') && $errors->any())
-        document.addEventListener('DOMContentLoaded', function () {
-            openArchiveDeleteModal('', @json(old('confirm_name')));
-            deleteExpectedName = @json(old('confirm_name'));
-        });
-        @endif
-    })();
-    </script>
+            <footer class="ui-dialog__foot">
+                <button type="button" class="btn btn-secondary" data-dialog-close>Cancel</button>
+                <button type="submit" class="btn btn-danger border-0">
+                    <i class="fas fa-trash-alt" aria-hidden="true"></i> Delete permanently
+                </button>
+            </footer>
+        </form>
+    </dialog>
     @endif
 
     @if($archivedYears->isNotEmpty())
@@ -358,107 +257,89 @@
 @push('scripts')
 <script>
 (function () {
-    var restoreModal = document.getElementById('archiveRestoreModal');
-    if (!restoreModal) {
-        return;
-    }
-
-    var restoreForm = document.getElementById('archiveRestoreForm');
-    var restoreLabel = document.getElementById('archiveRestoreYearLabel');
-    var restoreExpectedName = '';
-
-    function openArchiveRestoreModal(url, name) {
-        restoreExpectedName = name || '';
-        if (restoreLabel) {
-            restoreLabel.textContent = restoreExpectedName;
+    function openDialog(dialog, options) {
+        if (!dialog) return;
+        options = options || {};
+        var form = dialog.querySelector('form');
+        if (form && options.url) form.action = options.url;
+        if (options.name !== undefined) {
+            dialog.dataset.expectedName = options.name || '';
+            dialog.querySelectorAll('[data-year-label]').forEach(function (el) { el.textContent = options.name || ''; });
         }
-        if (restoreForm) {
-            restoreForm.action = url || '';
-        }
-        restoreModal.classList.remove('hidden');
-    }
-
-    function closeArchiveRestoreModal() {
-        restoreModal.classList.add('hidden');
+        var inlineError = dialog.querySelector('[data-inline-error]');
+        if (inlineError) inlineError.hidden = true;
+        if (!dialog.open) dialog.showModal();
+        var first = dialog.querySelector('.ui-dialog__body input:not([type=hidden]):not([type=checkbox])');
+        if (first) first.focus();
     }
 
     document.addEventListener('click', function (event) {
-        var openBtn = event.target.closest('.js-archive-restore-open');
-        if (openBtn) {
-            event.preventDefault();
-            event.stopPropagation();
-            openArchiveRestoreModal(
-                openBtn.getAttribute('data-restore-url'),
-                openBtn.getAttribute('data-restore-name')
-            );
+        var closer = event.target.closest('[data-dialog-close]');
+        if (closer && closer.closest('dialog')) {
+            closer.closest('dialog').close();
             return;
         }
-
-        if (event.target === restoreModal) {
-            closeArchiveRestoreModal();
+        var opener = event.target.closest('[data-dialog-open]');
+        if (opener) {
+            event.preventDefault();
+            openDialog(document.getElementById(opener.getAttribute('data-dialog-open')));
+            return;
+        }
+        var restore = event.target.closest('.js-archive-restore-open');
+        if (restore) {
+            event.preventDefault();
+            openDialog(document.getElementById('archiveRestoreModal'), { url: restore.dataset.restoreUrl, name: restore.dataset.restoreName });
+            return;
+        }
+        var destroy = event.target.closest('.js-archive-delete-open');
+        if (destroy) {
+            event.preventDefault();
+            openDialog(document.getElementById('archiveDeleteModal'), { url: destroy.dataset.deleteUrl, name: destroy.dataset.deleteName });
         }
     });
 
-    var restoreCancelBtn = document.getElementById('archiveRestoreCancelBtn');
-    if (restoreCancelBtn) {
-        restoreCancelBtn.addEventListener('click', closeArchiveRestoreModal);
-    }
-
-    var restoreSubmitBtn = document.getElementById('archiveRestoreSubmitBtn');
-    if (restoreSubmitBtn) {
-        restoreSubmitBtn.addEventListener('click', function () {
-            if (!restoreForm) {
-                return;
-            }
-
-            var nameInput = restoreForm.querySelector('[name="confirm_name"]');
-            var phraseInput = restoreForm.querySelector('[name="confirm_phrase"]');
-
-            if (nameInput && nameInput.value.trim() !== restoreExpectedName) {
-                if (typeof Swal !== 'undefined') {
-                    Swal.fire({ title: 'Name mismatch', text: 'Type the school year name exactly as shown.', icon: 'error', confirmButtonColor: '#028a0f', customClass: { popup: 'swal-flat' } });
-                } else {
-                    alert('School year name does not match.');
-                }
-                return;
-            }
-
-            if (phraseInput && phraseInput.value.trim() !== 'RESTORE AS ACTIVE') {
-                if (typeof Swal !== 'undefined') {
-                    Swal.fire({ title: 'Confirmation required', text: 'Type RESTORE AS ACTIVE in all caps.', icon: 'error', confirmButtonColor: '#028a0f', customClass: { popup: 'swal-flat' } });
-                } else {
-                    alert('Type RESTORE AS ACTIVE to confirm.');
-                }
-                return;
-            }
-
-            var message = 'Restore this school year as active? The current active year and its data will be removed. Analytics will sync to the restored year.';
-            if (typeof Swal !== 'undefined') {
-                Swal.fire({
-                    title: 'Restore school year?',
-                    text: message,
-                    icon: 'warning',
-                    showCancelButton: true,
-                    confirmButtonColor: '#028a0f',
-                    cancelButtonColor: '#6b7280',
-                    confirmButtonText: 'Yes, restore as active',
-                    customClass: { popup: 'swal-flat' }
-                }).then(function (result) {
-                    if (result.isConfirmed) {
-                        restoreForm.submit();
-                    }
-                });
-            } else if (confirm(message)) {
-                restoreForm.submit();
-            }
-        });
-    }
-
-    @if(old('confirm_phrase') && str_contains(strtoupper((string) old('confirm_phrase')), 'RESTORE') && $errors->any())
-    document.addEventListener('DOMContentLoaded', function () {
-        openArchiveRestoreModal('', @json(old('confirm_name')));
-        restoreExpectedName = @json(old('confirm_name'));
+    document.querySelectorAll('[data-ack-for]').forEach(function (box) {
+        var target = document.getElementById(box.getAttribute('data-ack-for'));
+        if (!target) return;
+        var sync = function () { target.disabled = !box.checked; };
+        box.addEventListener('change', sync);
+        sync();
     });
+
+    // Typed confirmations are checked inline; browser pop-ups would render behind a modal <dialog>.
+    document.querySelectorAll('form[data-typed-confirm]').forEach(function (form) {
+        form.addEventListener('submit', function (event) {
+            var dialog = form.closest('dialog');
+            var expectedName = dialog ? (dialog.dataset.expectedName || '') : '';
+            var phrase = form.getAttribute('data-typed-confirm');
+            var nameInput = form.querySelector('[name="confirm_name"]');
+            var phraseInput = form.querySelector('[name="confirm_phrase"]');
+            var error = form.querySelector('[data-inline-error]');
+            var message = '';
+            if (expectedName && nameInput && nameInput.value.trim() !== expectedName) {
+                message = 'The school year name doesn’t match. Type it exactly as shown: ' + expectedName;
+                nameInput.focus();
+            } else if (phraseInput && phraseInput.value.trim() !== phrase) {
+                message = 'Type ' + phrase + ' in capital letters to confirm.';
+                phraseInput.focus();
+            }
+            if (message) {
+                event.preventDefault();
+                event.stopImmediatePropagation();
+                if (error) { error.textContent = message; error.hidden = false; }
+            }
+        }, true);
+    });
+
+    @if($errors->any())
+        @php $retryYear = $archivedYears->firstWhere('name', old('confirm_name')); @endphp
+        @if(old('confirm_phrase') && str_contains(strtoupper((string) old('confirm_phrase')), 'RESTORE'))
+            openDialog(document.getElementById('archiveRestoreModal'), { name: @json(old('confirm_name')), url: @json($retryYear ? route('dean.archives.restore', $retryYear) : null) });
+        @elseif(old('confirm_phrase') && str_contains(strtoupper((string) old('confirm_phrase')), 'DELETE'))
+            openDialog(document.getElementById('archiveDeleteModal'), { name: @json(old('confirm_name')), url: @json($retryYear && $allowArchiveHardDelete ? route('dean.archives.destroy', $retryYear) : null) });
+        @else
+            openDialog(document.getElementById('archiveModal'));
+        @endif
     @endif
 })();
 </script>

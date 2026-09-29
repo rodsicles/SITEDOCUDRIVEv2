@@ -24,8 +24,7 @@
             <div class="login-portal-brand">
                 <img src="{{ asset('images/site-logo.png') }}" alt="SITE Logo" class="login-portal-brand-logo">
                 <div class="login-portal-brand-text">
-                    <h1 class="login-portal-brand-title">School of Information Technology and Engineering</h1>
-                    <p class="login-portal-brand-subtitle">St. Paul University Philippines</p>
+                    <span class="login-portal-brand-title login-portal-brand-title--portal">Employee portal</span>
                 </div>
             </div>
 
@@ -43,10 +42,13 @@
             <aside class="login-auth-identity" aria-label="SITE DocuDrive information">
                 <div class="login-auth-identity__brand">
                     <img src="{{ asset('images/site-logo.png') }}" alt="" class="login-auth-identity__logo" aria-hidden="true">
-                    <span class="login-auth-identity__eyebrow">Employee portal</span>
+                    <div class="login-auth-identity__school">
+                        <strong>School of Information Technology and Engineering</strong>
+                        <span>St. Paul University Philippines</span>
+                    </div>
                 </div>
                 <div class="login-auth-identity__content">
-                    <h2>SITE DocuDrive</h2>
+                    <h1>SITE DocuDrive</h1>
                     <p class="login-auth-identity__subtitle">Employee Document Management System</p>
                     <p class="login-auth-identity__description">
                         Secure access to institutional documents, submissions, reviews, and academic records.
@@ -59,11 +61,6 @@
             </aside>
 
             <div class="login-auth-form-panel">
-                <div class="login-auth-mobile-brand" aria-hidden="true">
-                    <img src="{{ asset('images/site-logo.png') }}" alt="">
-                    <span>SITE DocuDrive</span>
-                </div>
-
                 <div class="login-auth-heading">
                     <p class="login-auth-heading__eyebrow">Employee access</p>
                     <h2 id="loginTitle">Sign in</h2>

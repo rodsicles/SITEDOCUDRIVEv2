@@ -80,7 +80,7 @@
 
                 <div class="form-group">
                     <label class="form-label">Program *</label>
-                    <select name="program" class="form-control" required>
+                    <select id="editEmpProgram" name="program" class="form-control" required>
                         <option value="">Select Program</option>
                         @foreach(\App\Models\Program::labels() as $code => $label)<option value="{{ $code }}" @selected(old('program', $employee->program ?? null) === $code)>{{ $label }}</option>@endforeach
                     </select>
@@ -121,19 +121,17 @@
             </div>
 
             {{-- Course / Subject Assignment (Faculty & Coordinator only) --}}
-            @if(isset($allCourses) && $allCourses->isNotEmpty())
-            <div class="form-group">
-                <label class="form-label">Assigned Courses / Subjects</label>
+            @if(in_array($employee->user->role_id, [2, 3], true))
+                @php $editProgram = old('program', $employee->program); @endphp
                 @include('partials.course-assignment-picker', [
                     'pickerId' => 'editEmp',
-                    'courses' => $allCourses,
+                    'program' => $editProgram,
+                    'courses' => $editProgram === $employee->program ? $allCourses : null,
                     'selectedIds' => old('course_ids', $assignedCourseIds ?? []),
-                    'hint' => 'Update which courses this employee handles. Defaults to the current school term; unlock to include other terms. Changing program above then saving will refresh courses on the next edit.',
+                    'programSelect' => 'editEmpProgram',
+                    'coursesUrl' => route('dean.courses.by-program'),
+                    'hint' => 'Update which subjects this employee handles. Defaults to the current school term; unlock to include other terms. Changing the program reloads this list.',
                 ])
-                <small class="text-xs text-gray-500 dark:text-gray-400 mt-1 block">
-                    Leave all unchecked to remove course restrictions (shows all program courses).
-                </small>
-            </div>
             @endif
 
             <div class="flex gap-4 mt-6">
@@ -188,7 +186,7 @@
     </div>
     @endif
 
-    @if(isset($allCourses) && $allCourses->isNotEmpty())
+    @if(in_array($employee->user->role_id, [2, 3], true))
         @include('partials.course-assignment-guide-script')
     @endif
 

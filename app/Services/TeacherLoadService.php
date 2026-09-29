@@ -11,10 +11,44 @@ class TeacherLoadService
 {
     public function facultyQuery(User $actor)
     {
-        $query = Employee::whereIn('program', Program::codes())
-            ->whereHas('user', fn ($q) => $q->where('status', 'Active')->whereHas('role', fn ($r) => $r->where('role_name', 'Faculty Employee')));
-        if (!$actor->isDean()) $query->where('program', $actor->employee?->program ?? '__unassigned__');
+        $query = Employee::query()
+            ->whereIn('program', Program::codes())
+            ->whereHas('user', function ($q) {
+                $q->where('status', 'Active')
+                    ->whereHas('role', fn ($r) => $r->whereIn('role_name', ['Faculty Employee', 'Program Coordinator']));
+            });
+
+        if (! $actor->isDean()) {
+            $query->where('program', $actor->employee?->program ?? '__unassigned__');
+        }
+
         return $query;
+    }
+
+    /**
+     * Faculty employees and program coordinators available for Teacher’s Load selection.
+     * Includes people with zero assigned courses (tagged in the UI).
+     */
+    public function selectableFaculty(User $actor)
+    {
+        $people = $this->facultyQuery($actor)
+            ->with(['user.role'])
+            ->orderBy('full_name')
+            ->get(['employee_id', 'full_name', 'program', 'user_id']);
+
+        $counts = DB::table('faculty_courses')
+            ->whereIn('user_id', $people->pluck('user_id')->filter()->all())
+            ->selectRaw('user_id, COUNT(*) as aggregate')
+            ->groupBy('user_id')
+            ->pluck('aggregate', 'user_id');
+
+        return $people->each(function (Employee $person) use ($counts) {
+            $roleName = $person->user?->role?->role_name ?? 'Faculty Employee';
+            $assigned = (int) ($counts[$person->user_id] ?? 0);
+            $person->setAttribute('role_label', $roleName === 'Program Coordinator' ? 'Program Coordinator' : 'Faculty');
+            $person->setAttribute('assigned_courses_count', $assigned);
+            $person->setAttribute('has_assigned_courses', $assigned > 0);
+        });
     }
 
     public function assignedCourses(Employee $faculty, string $semester)
@@ -22,7 +56,10 @@ class TeacherLoadService
         // Existing assignments are not year-specific; never fall back to unassigned catalog courses.
         return $faculty->user->assignedCourses()->where('courses.program', $faculty->program)
             ->where('is_active', true)->where(fn ($q) => $q->where('semester', $semester)->orWhereNull('semester'))
-            ->orderBy('code')->get(['courses.id', 'code', 'title']);
+            ->orderBy('code')->get(array_merge(
+                ['courses.id', 'code', 'title'],
+                \App\Support\CourseUnits::available() ? ['lecture_units', 'lab_units'] : []
+            ));
     }
 
     public function validate(User $actor, array $input, ?TeacherLoad $load = null, bool $finalizing = false): array
@@ -53,7 +90,7 @@ class TeacherLoadService
         ])->validate();
 
         $faculty = $this->facultyQuery($actor)->find($data['employee_id']);
-        abort_unless($faculty, 403, 'Choose an active faculty member within your program.');
+        abort_unless($faculty, 403, 'Choose an active faculty member or program coordinator within your scope.');
         $year = SchoolYear::findOrFail($data['school_year_id']);
         if ($year->isArchived()) throw ValidationException::withMessages(['school_year_id' => 'Archived school years are read-only.']);
         if ($load && ((int) $load->employee_id !== (int) $faculty->employee_id || (int) $load->school_year_id !== (int) $year->id || $load->semester !== $data['semester'])) {

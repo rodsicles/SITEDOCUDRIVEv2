@@ -4,7 +4,6 @@ namespace App\Support;
 
 /**
  * Official SITE program course lists with year/term metadata.
- * BSEnSE and BSIT 4th-Year 2nd Sem are intentionally omitted until provided.
  */
 class ProgramCurricula
 {
@@ -17,6 +16,7 @@ class ProgramCurricula
             'BLIS' => self::blis(),
             'BSCpE' => self::bscpe(),
             'BSIT' => self::bsit(),
+            'BSEnSE' => self::bsense(),
         ];
     }
 
@@ -126,7 +126,6 @@ class ProgramCurricula
             [1, '2nd', 'ITE104', 'Information Management'],
             [1, 'Summer', 'ITE105', 'Discrete Mathematics'],
             [2, '1st', 'ITE106', 'Data Structures and Algorithm'],
-            [2, '1st', 'ITE114', 'Free Elective 1 (Accounting Process)'],
             [2, '1st', 'ITE107', 'Object Oriented Programming'],
             [2, '1st', 'ITE108', 'Web Systems and Technologies'],
             [2, '1st', 'ITE109', 'Advanced Database System'],
@@ -134,6 +133,7 @@ class ProgramCurricula
             [2, '2nd', 'ITE111', 'Application Development and Emerging Technologies'],
             [2, '2nd', 'ITE112', 'Quantitative Methods'],
             [2, '2nd', 'ITE113', 'Human Computer Interaction'],
+            [2, 'Summer', 'ITE114', 'Free Elective 1 (Accounting Process)'],
             [3, '1st', 'ITE118', 'Elective 1 (Platform Technologies)'],
             [3, '1st', 'ITE119', 'System Integration and Architecture'],
             [3, '1st', 'ITE115', 'Information Assurance and Security'],
@@ -151,7 +151,62 @@ class ProgramCurricula
             [4, '1st', 'ITE129', 'Free Elective 3 (Project Management)'],
             [4, '1st', 'ITE130', 'Elective 4 (Data Mining)'],
             [4, '1st', 'ITE131', 'Certification Exam'],
-            // 4th Year — 2nd Semester: pending curriculum data
+            [4, '2nd', 'ITE132', 'Practicum (International/National/Local)'],
+        ]);
+    }
+
+    /** @return list<array{code: string, title: string, year_level: int, semester: string}> */
+    private static function bsense(): array
+    {
+        return self::rows([
+            [1, '1st', 'ENGGMAT1', 'Calculus 1 (DC)'],
+            [1, '1st', 'CHEM1set', 'Chemistry for Engineers'],
+            [1, '1st', 'ENSE101', 'Sanitary Engineering Orientation'],
+            [1, '2nd', 'ENGGMAT2', 'Calculus 2 (IC)'],
+            [1, '2nd', 'PHY1set', 'Physics for Engineers (Calculus Based)'],
+            [1, 'Summer', 'ENGG101', 'Engineering Drawings & Plans'],
+            [2, '1st', 'ENGGMAT3', 'Differential Equations'],
+            [2, '1st', 'CE101', 'Statics of Rigid Bodies'],
+            [2, '1st', 'CE102', 'Fundamentals of Surveying'],
+            [2, '1st', 'ENGG102', 'Computer Fundamentals and Programming'],
+            [2, '2nd', 'ENGG103', 'Engineering Economy'],
+            [2, '2nd', 'ENGGEO1', 'Engineering Geology'],
+            [2, '2nd', 'ENGG105', 'Dynamics of Rigid Bodies'],
+            [2, '2nd', 'ENGG106', 'Mechanics of Deformable Bodies'],
+            [2, '2nd', 'ENGG102A', 'Computer Aided Drafting'],
+            [2, 'Summer', 'ENGGMAT4', 'Engineering Data Analysis'],
+            [2, 'Summer', 'ENSE102', 'Environmental and Sanitary Chemistry'],
+            [3, '1st', 'ENSE103', 'Environmental Science & Engineering'],
+            [3, '1st', 'ENGGMAT5', 'Numerical Solutions to Engineering Problems'],
+            [3, '1st', 'ENGG112', 'Construction Materials and Testing'],
+            [3, '1st', 'ENGG114', 'Structural Theory'],
+            [3, '1st', 'ENGG110', 'Basic Mechanical Engineering'],
+            [3, '1st', 'ENGG111', 'Basic Electrical Engineering'],
+            [3, '1st', 'ENSE104', 'Microbiology & Parasitology for Environmental Engrs'],
+            [3, '2nd', 'ENGG119', 'Construction Methods & Project Management'],
+            [3, '2nd', 'ENGG115', 'Principles of Reinforced/Prestressed Concrete'],
+            [3, '2nd', 'ENGG116', 'Hydraulics'],
+            [3, '2nd', 'ENGG117', 'Hydrology'],
+            [3, '2nd', 'ENGG109', 'Engineering Management'],
+            [3, '2nd', 'ENSE105', 'Public Health Engineering'],
+            [3, '2nd', 'CPE308', 'Occupational Health & Safety'],
+            [3, 'Summer', 'ENSE117', 'On-The-Job Training – 240 Hours'],
+            [4, '1st', 'ENGG107', 'Technopreneurship 101'],
+            [4, '1st', 'ENGG118', 'Geotechnical Engineering 1 (Soil Mechanics)'],
+            [4, '1st', 'ENSE107', 'Environmental Planning, Laws & Impact Assessment'],
+            [4, '1st', 'ENSE108', 'Water Supply Planning & Development'],
+            [4, '1st', 'ENSE109', 'Sewerage & Urban Drainage'],
+            [4, '1st', 'ENSE110', 'Sanitary Science, Fire Protection & Plumbing'],
+            [4, '1st', 'ENSE111', 'SE Project 1'],
+            [4, '2nd', 'ENSE112', 'SE Laws, Contracts & Ethics'],
+            [4, '2nd', 'ENSE113', 'Environmental Engineering Laboratory'],
+            [4, '2nd', 'ENSE114', 'Planning & Design in EnSE'],
+            [4, '2nd', 'ENSE115', 'Water Purification Process Design'],
+            [4, '2nd', 'ENSE116', 'Sewage & Industrial Wastewater Treatment'],
+            [4, '2nd', 'ENSE117A', 'Solid & Hazardous Waste Engineering'],
+            [4, '2nd', 'ENSE118', 'SE Project 2'],
+            [5, '1st', 'ENGG120', 'Integrating Course 1'],
+            [5, '1st', 'ENSE119', 'Integrating Course 2'],
         ]);
     }
 

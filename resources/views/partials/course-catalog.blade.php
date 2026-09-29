@@ -31,6 +31,8 @@
     }
 
     $dept = $departmentFilter;
+    $hasUnitColumns = \Illuminate\Support\Facades\Schema::hasColumn('courses', 'lecture_units')
+        && \Illuminate\Support\Facades\Schema::hasColumn('courses', 'lab_units');
 @endphp
 
 <div class="content-card mb-6">
@@ -149,6 +151,21 @@
                              role="menu"
                              hidden>
                             <button type="button"
+                                    class="course-catalog-popover-item course-catalog-view-btn"
+                                    data-id="{{ $course->id }}"
+                                    data-code="{{ $course->code }}"
+                                    data-title="{{ $course->title }}"
+                                    data-program="{{ $course->program }}"
+                                    data-program-label="{{ \App\Models\Program::OPTIONS[$course->program] ?? ($course->program ?? '—') }}"
+                                    data-status="{{ $course->is_active ? 'Active' : 'Removed' }}"
+                                    data-year="{{ $course->year_level ? $course->year_level.' Year' : '—' }}"
+                                    data-semester="{{ $course->semester ? (\App\Support\SchoolTerm::label($course->semester) ?: $course->semester) : '—' }}"
+                                    data-lec="{{ $hasUnitColumns ? ($course->lecture_units ?? '—') : '' }}"
+                                    data-lab="{{ $hasUnitColumns ? ($course->lab_units ?? '—') : '' }}"
+                                    role="menuitem">
+                                <i class="fas fa-eye text-xs" aria-hidden="true"></i> View details
+                            </button>
+                            <button type="button"
                                     class="course-catalog-popover-item course-catalog-rename-btn"
                                     data-id="{{ $course->id }}"
                                     data-code="{{ $course->code }}"
@@ -193,9 +210,38 @@
     </div>
 </div>
 
+{{-- Course details Modal --}}
+<div id="courseDetailsModal" class="course-catalog-modal" aria-hidden="true">
+    <div class="bg-white dark:bg-[#1e1e1e] rounded-lg shadow-xl max-w-lg w-full course-catalog-modal__panel" role="dialog" aria-modal="true" aria-labelledby="courseDetailsTitle">
+        <div class="p-6">
+            <div class="flex items-start justify-between gap-3 mb-4">
+                <h3 id="courseDetailsTitle" class="text-lg font-bold text-gray-800 dark:text-white m-0">
+                    <i class="fas fa-book-open mr-2 text-[var(--site-primary,#0d5c3b)]"></i>Course details
+                </h3>
+                <button type="button" id="courseDetailsClose" class="btn bg-gray-200 dark:bg-gray-700 text-gray-700 dark:text-gray-300 text-sm" aria-label="Close">
+                    <i class="fas fa-times" aria-hidden="true"></i>
+                </button>
+            </div>
+            <dl class="course-details-grid">
+                <div><dt>Code</dt><dd id="detailCode">—</dd></div>
+                <div class="course-details-grid__wide"><dt>Title</dt><dd id="detailTitle">—</dd></div>
+                <div><dt>Program</dt><dd id="detailProgram">—</dd></div>
+                <div><dt>Status</dt><dd id="detailStatus">—</dd></div>
+                <div><dt>Year level</dt><dd id="detailYear">—</dd></div>
+                <div><dt>Semester</dt><dd id="detailSemester">—</dd></div>
+                <div id="detailLecWrap" hidden><dt>Lecture units</dt><dd id="detailLec">—</dd></div>
+                <div id="detailLabWrap" hidden><dt>Lab units</dt><dd id="detailLab">—</dd></div>
+            </dl>
+            <div class="flex justify-end mt-6">
+                <button type="button" id="courseDetailsDone" class="btn btn-primary">Close</button>
+            </div>
+        </div>
+    </div>
+</div>
+
 {{-- Rename Modal --}}
-<div id="renameModal" class="fixed inset-0 bg-black bg-opacity-50 z-50 p-4">
-    <div class="bg-white dark:bg-[#1e1e1e] rounded-lg shadow-xl max-w-md w-full">
+<div id="renameModal" class="course-catalog-modal" aria-hidden="true">
+    <div class="bg-white dark:bg-[#1e1e1e] rounded-lg shadow-xl max-w-md w-full course-catalog-modal__panel">
         <div class="p-6">
             <h3 class="text-lg font-bold text-gray-800 dark:text-white mb-4">
                 <i class="fas fa-pen mr-2 text-blue-500"></i>Rename Course
@@ -230,7 +276,20 @@
 <script>
 document.addEventListener('DOMContentLoaded', function () {
     var renameModal = document.getElementById('renameModal');
+    var detailsModal = document.getElementById('courseDetailsModal');
     var updateRouteBase = @json($updateRouteBase);
+
+    function openModal(modal) {
+        if (!modal) return;
+        modal.classList.add('is-open');
+        modal.setAttribute('aria-hidden', 'false');
+    }
+
+    function closeModal(modal) {
+        if (!modal) return;
+        modal.classList.remove('is-open');
+        modal.setAttribute('aria-hidden', 'true');
+    }
 
     function closePopover(popover, toggleBtn) {
         if (!popover) return;
@@ -278,9 +337,50 @@ document.addEventListener('DOMContentLoaded', function () {
     document.addEventListener('keydown', function (e) {
         if (e.key === 'Escape') {
             closeAllPopovers();
-            if (renameModal) renameModal.classList.remove('is-open');
+            closeModal(renameModal);
+            closeModal(detailsModal);
         }
     });
+
+    document.querySelectorAll('.course-catalog-view-btn').forEach(function (btn) {
+        btn.addEventListener('click', function (e) {
+            e.stopPropagation();
+            closeAllPopovers();
+            document.getElementById('detailCode').textContent = btn.dataset.code || '—';
+            document.getElementById('detailTitle').textContent = btn.dataset.title || '—';
+            document.getElementById('detailProgram').textContent = (btn.dataset.program || '')
+                ? ((btn.dataset.programLabel || btn.dataset.program) + (btn.dataset.programLabel && btn.dataset.program ? ' (' + btn.dataset.program + ')' : ''))
+                : '—';
+            document.getElementById('detailStatus').textContent = btn.dataset.status || '—';
+            document.getElementById('detailYear').textContent = btn.dataset.year || '—';
+            document.getElementById('detailSemester').textContent = btn.dataset.semester || '—';
+
+            var lecWrap = document.getElementById('detailLecWrap');
+            var labWrap = document.getElementById('detailLabWrap');
+            if (btn.dataset.lec !== undefined && btn.dataset.lec !== '') {
+                document.getElementById('detailLec').textContent = btn.dataset.lec;
+                document.getElementById('detailLab').textContent = btn.dataset.lab || '—';
+                lecWrap.hidden = false;
+                labWrap.hidden = false;
+            } else {
+                lecWrap.hidden = true;
+                labWrap.hidden = true;
+            }
+            openModal(detailsModal);
+        });
+    });
+
+    ['courseDetailsClose', 'courseDetailsDone'].forEach(function (id) {
+        var el = document.getElementById(id);
+        if (el && detailsModal) {
+            el.addEventListener('click', function () { closeModal(detailsModal); });
+        }
+    });
+    if (detailsModal) {
+        detailsModal.addEventListener('click', function (e) {
+            if (e.target === detailsModal) closeModal(detailsModal);
+        });
+    }
 
     document.querySelectorAll('.course-catalog-rename-btn').forEach(function (btn) {
         btn.addEventListener('click', function (e) {
@@ -289,17 +389,17 @@ document.addEventListener('DOMContentLoaded', function () {
             document.getElementById('renameCode').value = btn.dataset.code;
             document.getElementById('renameTitle').value = btn.dataset.title;
             document.getElementById('renameForm').action = updateRouteBase + '/' + btn.dataset.id;
-            if (renameModal) renameModal.classList.add('is-open');
+            openModal(renameModal);
         });
     });
 
     var cancelBtn = document.getElementById('renameModalCancel');
     if (cancelBtn && renameModal) {
         cancelBtn.addEventListener('click', function () {
-            renameModal.classList.remove('is-open');
+            closeModal(renameModal);
         });
         renameModal.addEventListener('click', function (e) {
-            if (e.target === renameModal) renameModal.classList.remove('is-open');
+            if (e.target === renameModal) closeModal(renameModal);
         });
     }
 });

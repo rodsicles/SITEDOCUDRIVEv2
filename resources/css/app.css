@@ -1376,7 +1376,8 @@ body {
     padding: 0;
 }
 
-#renameModal {
+#renameModal,
+.course-catalog-modal {
     display: none;
     position: fixed;
     inset: 0;
@@ -1387,8 +1388,282 @@ body {
     background: rgba(0, 0, 0, 0.5);
 }
 
-#renameModal.is-open {
+#renameModal.is-open,
+.course-catalog-modal.is-open {
     display: flex;
+}
+
+/* ── Shared dialog (native <dialog>) ─────────────────────────────────── */
+html:has(dialog.ui-dialog[open]) {
+    overflow: hidden;
+}
+dialog.ui-dialog {
+    padding: 0;
+    margin: auto;
+    width: min(560px, calc(100vw - 32px));
+    max-width: calc(100vw - 32px);
+    max-height: calc(100dvh - 32px);
+    border: 1px solid #cfdcd5;
+    border-top: 3px solid var(--site-primary, #0d5c3b);
+    background: #fff;
+    color: #1f2d27;
+    box-shadow: 0 18px 48px rgba(15, 35, 25, 0.16);
+}
+dialog.ui-dialog[open] {
+    display: flex;
+    flex-direction: column;
+}
+dialog.ui-dialog::backdrop {
+    background: rgba(226, 234, 230, 0.72);
+}
+dialog.ui-dialog.ui-dialog--danger {
+    border-top-color: #b42318;
+}
+.ui-dialog__form {
+    display: flex;
+    flex-direction: column;
+    min-height: 0;
+    flex: 1 1 auto;
+}
+.ui-dialog__head {
+    display: flex;
+    align-items: flex-start;
+    justify-content: space-between;
+    gap: 12px;
+    padding: 16px 20px;
+    border-bottom: 1px solid #e3ebe6;
+    flex-shrink: 0;
+}
+.ui-dialog__title {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    margin: 0;
+    font-size: 1rem;
+    font-weight: 700;
+    color: #1f2d27;
+}
+.ui-dialog--danger .ui-dialog__title i {
+    color: #b42318;
+}
+.ui-dialog__subtitle {
+    margin: 4px 0 0;
+    font-size: 0.78rem;
+    color: #5f7268;
+}
+.ui-dialog__close {
+    flex-shrink: 0;
+    width: 32px;
+    height: 32px;
+    border: 1px solid transparent;
+    background: none;
+    color: #556b60;
+    font-size: 1.25rem;
+    line-height: 1;
+    cursor: pointer;
+}
+.ui-dialog__close:hover {
+    border-color: #cfdcd5;
+    color: #1f2d27;
+}
+.ui-dialog__close:focus-visible,
+.ui-dialog__foot .btn:focus-visible {
+    outline: 2px solid var(--site-primary, #0d5c3b);
+    outline-offset: 2px;
+}
+.ui-dialog__body {
+    flex: 1 1 auto;
+    min-height: 0;
+    padding: 16px 20px;
+    overflow-y: auto;
+    overscroll-behavior: contain;
+    -webkit-overflow-scrolling: touch;
+}
+.ui-dialog__body > * + * {
+    margin-top: 14px;
+}
+.ui-dialog__foot {
+    display: flex;
+    justify-content: flex-end;
+    flex-wrap: wrap;
+    gap: 10px;
+    padding: 12px 20px;
+    border-top: 1px solid #e3ebe6;
+    background: #f6f9f7;
+    flex-shrink: 0;
+}
+.ui-dialog__foot .btn:disabled {
+    opacity: 0.55;
+    cursor: not-allowed;
+}
+.ui-dialog__field label {
+    display: block;
+    margin-bottom: 4px;
+    font-size: 0.8rem;
+    font-weight: 600;
+    color: #33473d;
+}
+.ui-dialog__field small {
+    display: block;
+    margin-top: 4px;
+    font-size: 0.72rem;
+    color: #6b7c73;
+}
+.ui-dialog__note {
+    font-size: 0.75rem;
+    color: #6b7c73;
+}
+.ui-dialog__error {
+    padding: 8px 10px;
+    border: 1px solid #f1b8b0;
+    background: #fff4f2;
+    color: #8a2a1f;
+    font-size: 0.8rem;
+}
+.ui-dialog__error ul {
+    margin: 0;
+    padding-left: 18px;
+}
+.ui-callout {
+    padding: 10px 12px;
+    border: 1px solid #e8d49b;
+    border-left: 3px solid #b7791f;
+    background: #fffaf0;
+    color: #5c4411;
+    font-size: 0.82rem;
+    line-height: 1.5;
+}
+.ui-callout strong {
+    color: #4a360b;
+}
+.ui-callout ul {
+    margin: 6px 0 0;
+    padding-left: 18px;
+}
+.ui-callout li + li {
+    margin-top: 3px;
+}
+.ui-dialog__ack {
+    display: flex;
+    align-items: flex-start;
+    gap: 8px;
+    padding: 10px 12px;
+    border: 1px solid #e3ebe6;
+    background: #f6f9f7;
+    font-size: 0.82rem;
+    color: #33473d;
+    cursor: pointer;
+}
+.ui-dialog__ack input {
+    margin-top: 3px;
+    accent-color: #b42318;
+}
+.dark dialog.ui-dialog {
+    background: #1b211e;
+    color: #e5ece8;
+    border-color: #33403a;
+}
+.dark dialog.ui-dialog::backdrop {
+    background: rgba(10, 14, 12, 0.62);
+}
+.dark .ui-dialog__title,
+.dark .ui-dialog__field label {
+    color: #eef4f0;
+}
+.dark .ui-dialog__head,
+.dark .ui-dialog__foot {
+    border-color: #33403a;
+}
+.dark .ui-dialog__foot,
+.dark .ui-dialog__ack {
+    background: #151a17;
+    border-color: #33403a;
+    color: #d5e0da;
+}
+.dark .ui-dialog__subtitle,
+.dark .ui-dialog__note,
+.dark .ui-dialog__field small {
+    color: #9fb0a7;
+}
+.dark .ui-callout {
+    background: #2a2412;
+    border-color: #5a4b22;
+    border-left-color: #d69e2e;
+    color: #f1dfae;
+}
+.dark .ui-callout strong {
+    color: #fbe7b5;
+}
+.dark .ui-dialog__error {
+    background: #3a1c18;
+    border-color: #6b2c24;
+    color: #f7c4bb;
+}
+@media (max-width: 640px) {
+    dialog.ui-dialog {
+        width: calc(100vw - 16px);
+        max-width: calc(100vw - 16px);
+        max-height: calc(100dvh - 16px);
+    }
+    .ui-dialog__head,
+    .ui-dialog__body,
+    .ui-dialog__foot {
+        padding-left: 14px;
+        padding-right: 14px;
+    }
+    .ui-dialog__foot {
+        flex-direction: column-reverse;
+    }
+    .ui-dialog__foot .btn {
+        width: 100%;
+        justify-content: center;
+    }
+}
+
+.course-details-grid {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 0.85rem 1rem;
+    margin: 0;
+}
+
+.course-details-grid > div {
+    margin: 0;
+}
+
+.course-details-grid__wide {
+    grid-column: 1 / -1;
+}
+
+.course-details-grid dt {
+    margin: 0 0 0.2rem;
+    font-size: 0.7rem;
+    font-weight: 700;
+    letter-spacing: 0.04em;
+    text-transform: uppercase;
+    color: #6b7280;
+}
+
+.course-details-grid dd {
+    margin: 0;
+    font-size: 0.92rem;
+    font-weight: 600;
+    color: #111827;
+    line-height: 1.35;
+}
+
+.dark .course-details-grid dt {
+    color: #9ca3af;
+}
+
+.dark .course-details-grid dd {
+    color: #f3f4f6;
+}
+
+@media (max-width: 480px) {
+    .course-details-grid {
+        grid-template-columns: 1fr;
+    }
 }
 
 .badge-success {
@@ -8420,6 +8695,14 @@ a.doc-sort-item:hover,
     font-style: italic;
     grid-column: 1 / -1;
 }
+.course-section-empty.is-error {
+    color: #dc2626;
+    font-style: normal;
+}
+.course-assignment-guide.is-empty .course-guide-bar,
+.course-assignment-guide.is-empty .course-picker-toolbar {
+    display: none;
+}
 
 /* ── Document Copy Modal ──────────────────────────────────────────────── */
 .copy-doc-modal-backdrop {
@@ -10978,12 +11261,16 @@ textarea:disabled {
 
 .login-auth-form .login-portal-submit,
 .dark .login-auth-form .login-portal-submit {
-    width: 100%;
-    min-height: 3rem;
-    margin: 0;
-    padding: 0.75rem 1rem;
+    width: fit-content;
+    min-width: 9.5rem;
+    max-width: 100%;
+    min-height: 2.55rem;
+    margin: 0.35rem auto 0;
+    padding: 0.55rem 1.25rem;
     display: flex;
-    justify-content: space-between;
+    align-items: center;
+    justify-content: center;
+    gap: 0.55rem;
     color: #ffffff !important;
     background: var(--site-primary) !important;
     border: 1px solid var(--site-primary) !important;
@@ -11150,6 +11437,181 @@ textarea:disabled {
 
     .login-portal-footer__divider {
         display: none;
+    }
+}
+
+/* Sign-in branding: portal label in the header, school identity in the panel */
+.login-portal-brand-title.login-portal-brand-title--portal {
+    font-size: 0.8rem;
+    font-weight: 700;
+    letter-spacing: 0.12em;
+    text-transform: uppercase;
+}
+
+.login-auth-identity__brand {
+    align-items: flex-start;
+}
+
+.login-auth-identity__logo {
+    flex-shrink: 0;
+}
+
+.login-auth-identity__school {
+    display: flex;
+    flex-direction: column;
+    gap: 0.2rem;
+    min-width: 0;
+}
+
+.login-auth-identity__school strong {
+    color: #ffffff;
+    font-size: 0.86rem;
+    font-weight: 700;
+    line-height: 1.3;
+    overflow-wrap: anywhere;
+}
+
+.login-auth-identity__school span {
+    color: rgba(255, 255, 255, 0.72);
+    font-size: 0.74rem;
+    line-height: 1.35;
+}
+
+.login-auth-identity__content h1 {
+    margin: 0;
+    color: #ffffff;
+    font-size: clamp(1.8rem, 3vw, 2.4rem);
+    line-height: 1.1;
+    letter-spacing: -0.035em;
+}
+
+/* Tablets (iPad portrait / small laptops): keep two columns, tighten spacing */
+@media (min-width: 768px) and (max-width: 1024px) {
+    .login-portal-main {
+        padding: 2rem 1.25rem;
+    }
+
+    .login-auth-shell {
+        grid-template-columns: minmax(15rem, 0.42fr) minmax(0, 0.58fr);
+        width: min(100%, 52rem);
+        min-height: 30rem;
+    }
+
+    .login-auth-identity,
+    .login-auth-form-panel {
+        padding: 1.75rem;
+    }
+}
+
+/* Phones and narrow tablets: stack a compact identity band above the form */
+@media (max-width: 767px) {
+    .login-portal-main {
+        justify-content: flex-start;
+        padding: 1rem;
+    }
+
+    .login-auth-shell {
+        display: flex;
+        flex-direction: column;
+        width: 100%;
+        max-width: 32rem;
+        min-height: 0;
+    }
+
+    .login-auth-identity {
+        display: flex;
+        gap: 1rem;
+        padding: 1.25rem;
+        border-right: 0;
+        border-bottom: 1px solid var(--site-sidebar-strong);
+    }
+
+    .login-auth-identity__logo {
+        width: 2.5rem;
+        height: 2.5rem;
+    }
+
+    .login-auth-identity__content {
+        margin: 0;
+    }
+
+    .login-auth-identity__content h1 {
+        font-size: 1.45rem;
+    }
+
+    .login-auth-identity__subtitle {
+        margin-top: 0.3rem;
+        font-size: 0.82rem;
+    }
+
+    .login-auth-identity__description,
+    .login-auth-identity__security,
+    .login-auth-mobile-brand {
+        display: none !important;
+    }
+
+    .login-auth-form-panel {
+        padding: 1.5rem 1.25rem;
+    }
+
+    .login-auth-heading {
+        margin-bottom: 1.25rem;
+    }
+
+    .login-auth-heading h2 {
+        font-size: 1.5rem;
+    }
+
+    .login-auth-form .login-portal-submit,
+    .dark .login-auth-form .login-portal-submit {
+        min-height: 2.75rem;
+    }
+}
+
+@media (max-width: 380px) {
+    .login-portal-header-inner {
+        padding: 0 0.75rem;
+    }
+
+    .login-auth-identity {
+        padding: 1rem;
+    }
+
+    .login-auth-identity__school strong {
+        font-size: 0.8rem;
+    }
+
+    .login-auth-form-panel {
+        padding: 1.25rem 1rem;
+    }
+
+    .login-auth-form .login-portal-row {
+        flex-wrap: wrap;
+    }
+}
+
+/* Phones in landscape: avoid wasting the short viewport */
+@media (max-height: 560px) and (orientation: landscape) {
+    .login-portal-header,
+    .dark .login-portal-header,
+    .login-portal-header-inner {
+        min-height: 3.25rem;
+    }
+
+    .login-portal-main {
+        padding: 0.75rem 1rem;
+    }
+
+    .login-auth-shell {
+        min-height: 0;
+    }
+
+    .login-auth-identity__description {
+        display: none;
+    }
+
+    .login-auth-heading {
+        margin-bottom: 1rem;
     }
 }
 

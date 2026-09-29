@@ -29,7 +29,7 @@ class TeacherLoadController extends Controller
             if (!empty($filters[$key])) $loads->where($key, $filters[$key]);
         }
         $loads = $loads->orderByDesc('created_at')->paginate(20)->withQueryString();
-        $faculty = $manager ? $this->service->facultyQuery($viewer)->orderBy('full_name')->get(['employee_id', 'full_name', 'program']) : collect();
+        $faculty = $manager ? $this->service->selectableFaculty($viewer) : collect();
         $years = SchoolYear::orderByDesc('start_year')->get();
         return view('teacher-loads.index', compact('loads', 'faculty', 'years', 'manager', 'filters'));
     }
@@ -48,8 +48,19 @@ class TeacherLoadController extends Controller
     {
         $this->manager($request);
         $data = $request->validate(['employee_id' => 'required|integer', 'semester' => ['required', Rule::in(SchoolTerm::options())]]);
-        $faculty = $this->service->facultyQuery($request->user())->findOrFail($data['employee_id']);
-        return response()->json(['courses' => $this->service->assignedCourses($faculty, $data['semester']), 'program' => $faculty->program, 'department' => 'SITE', 'employment_status' => $faculty->facultyTypeLabel()]);
+        $faculty = $this->service->facultyQuery($request->user())->with('user.role')->findOrFail($data['employee_id']);
+        $courses = $this->service->assignedCourses($faculty, $data['semester']);
+        $roleName = $faculty->user?->role?->role_name ?? 'Faculty Employee';
+
+        return response()->json([
+            'courses' => $courses,
+            'program' => $faculty->program,
+            'department' => 'SITE',
+            'employment_status' => $faculty->facultyTypeLabel(),
+            'role_label' => $roleName === 'Program Coordinator' ? 'Program Coordinator' : 'Faculty',
+            'has_assigned_courses' => $courses->isNotEmpty() || $faculty->user->assignedCourses()->exists(),
+            'assigned_courses_count' => $courses->count(),
+        ]);
     }
 
     public function show(Request $request, int $id)
@@ -105,8 +116,26 @@ class TeacherLoadController extends Controller
             ->setOptions(['isRemoteEnabled' => false, 'isPhpEnabled' => false, 'defaultFont' => 'DejaVu Serif']);
         $pdf->render();
         $pdf->getDomPDF()->getCanvas()->page_text(478, 814, 'Page {PAGE_NUM} of {PAGE_COUNT}', $pdf->getDomPDF()->getFontMetrics()->getFont('DejaVu Serif'), 8);
-        $filename = 'teacher-load-'.($load->id ?? 'preview').'.pdf';
+        $filename = $this->pdfFilename($load);
         $response = $inline ? $pdf->stream($filename) : $pdf->download($filename);
         return $response->header('Cache-Control', 'private, no-store');
+    }
+
+    private function pdfFilename(TeacherLoad $load): string
+    {
+        $slug = static function (?string $value): string {
+            $clean = preg_replace('/[^\p{L}\p{N}]+/u', '_', trim((string) $value)) ?: '';
+            return trim($clean, '_') ?: 'Teacher';
+        };
+
+        $parts = array_filter([
+            $slug($load->faculty_name),
+            $slug($load->program),
+            $slug($load->semester),
+            $slug(str_replace(['/', '–', '—'], '-', (string) $load->academic_year)),
+            'Teachers_Load',
+        ]);
+
+        return implode('_', $parts).'.pdf';
     }
 }

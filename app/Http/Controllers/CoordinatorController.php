@@ -8,13 +8,17 @@ use App\Models\Task;
 use App\Models\DashboardLog;
 use App\Models\Document;
 use App\Models\DocumentView;
+use App\Models\Program;
 use App\Services\DashboardService;
 use App\Services\DocumentService;
 use App\Services\FolderService;
 use App\Services\TaskService;
 use App\Services\EmployeeService;
 use App\Support\CoordinatorDepartment;
+use App\Support\CourseAssignment;
+use App\Support\EmployeeNumberGenerator;
 use Illuminate\Http\Request;
+use Illuminate\Validation\Rule;
 use Illuminate\Support\Facades\DB;
 
 class CoordinatorController extends Controller
@@ -45,33 +49,22 @@ class CoordinatorController extends Controller
     }
 
     /**
-     * Scope a user query to only include faculty from the coordinator's department.
+     * Faculty across every SITE program. Coordinators manage faculty department-wide.
      */
     private function scopedFacultyQuery()
     {
-        $dept = $this->getCoordinatorDepartment();
-
-        $query = User::with('employee')
-            ->where('role_id', 3);
-
-        if (!$dept) {
-            return $query->whereRaw('1 = 0');
-        }
-
-        return $query->whereHas('employee', function ($q) use ($dept) {
-            $q->where('program', $dept);
-        });
+        return User::with('employee')
+            ->where('role_id', 3)
+            ->whereHas('employee', fn ($q) => $q->whereIn('program', Program::codes()));
     }
 
     /**
-     * Verify that a faculty employee belongs to the coordinator's department.
+     * Verify that a faculty employee belongs to one of the SITE programs.
      */
     private function verifyDepartmentAccess(Employee $employee): void
     {
-        $dept = $this->requireCoordinatorDepartment();
-
-        if (!$employee->program || $employee->program !== $dept) {
-            abort(403, 'You do not have access to faculty members outside your department.');
+        if (!in_array($employee->program, Program::codes(), true)) {
+            abort(403, 'You do not have access to faculty members outside the SITE department.');
         }
     }
 
@@ -146,8 +139,6 @@ class CoordinatorController extends Controller
 
     public function faculty()
     {
-        $this->requireCoordinatorDepartment();
-
         $facultyMembers = $this->scopedFacultyQuery()
             ->latest('created_at')
             ->paginate(15);
@@ -156,47 +147,21 @@ class CoordinatorController extends Controller
 
     public function createFaculty()
     {
-        $dept = $this->requireCoordinatorDepartment();
-        $nextFacultyNo = $dept
-            ? app(\App\Support\EmployeeNumberGenerator::class)->next($dept, \App\Support\EmployeeNumberGenerator::ROLE_FACULTY)
-            : '';
+        $facultyNumberPreview = app(EmployeeNumberGenerator::class)->previewMap(EmployeeNumberGenerator::ROLE_FACULTY);
+        $defaultProgram = $this->getCoordinatorDepartment();
 
-        $courses = $dept
-            ? \App\Models\Course::active()->forDepartment($dept)->ordered()->get()
-            : collect();
-
-        return view('coordinator.create-faculty', compact('nextFacultyNo', 'dept', 'courses'));
+        return view('coordinator.create-faculty', compact('facultyNumberPreview', 'defaultProgram'));
     }
 
     public function storeFaculty(Request $request)
     {
-        $coordDept = $this->requireCoordinatorDepartment();
-
         $validated = $request->validate([
             'username'     => 'required|string|unique:users,username|max:20',
             'password'     => 'required|string|min:8|max:40',
             'full_name'    => 'required|string|max:45',
-            'program'   => 'required|in:BLIS,BSEnSE,BSIT,BSCpE',
+            'program'      => ['required', Rule::in(Program::codes())],
             'faculty_type' => 'required|in:full_time,shared',
-            'course_ids'   => 'nullable|array',
-            'course_ids.*' => ['integer', \Illuminate\Validation\Rule::exists('courses', 'id')->where('program', $request->input('program'))->where('is_active', true)],
-        ]);
-
-        // Enforce coordinator can only create faculty in their own department
-        if ($coordDept && $validated['program'] !== $coordDept) {
-            return back()->withErrors(['program' => 'You can only create faculty members in your department (' . $coordDept . ').'])
-                ->withInput();
-        }
-
-        // Enforce coordinator can only assign courses from their own department
-        if (!empty($validated['course_ids'])) {
-            $validCourseIds = \App\Models\Course::active()
-                ->forDepartment($coordDept)
-                ->whereIn('id', $validated['course_ids'])
-                ->pluck('id')
-                ->all();
-            $validated['course_ids'] = $validCourseIds;
-        }
+        ] + CourseAssignment::rules($request->input('program'), true), CourseAssignment::messages());
 
         try {
             $this->employeeService->createFaculty($validated, auth()->id());
@@ -298,6 +263,11 @@ class CoordinatorController extends Controller
         return redirect()->back()->with('success', $message);
     }
 
+    public function coursesByProgram(Request $request)
+    {
+        return response()->json(CourseAssignment::coursesFor($request->query('dept')));
+    }
+
     public function editFaculty($id)
     {
         $employee = Employee::with(['user.role', 'user.assignedCourses'])
@@ -310,7 +280,7 @@ class CoordinatorController extends Controller
 
         $this->verifyDepartmentAccess($employee);
 
-        $courses           = \App\Models\Course::active()->forDepartment($employee->program)->ordered()->get();
+        $courses           = CourseAssignment::coursesFor($employee->program);
         $assignedCourseIds = $employee->user->assignedCourses->pluck('id')->all();
 
         return view('coordinator.edit-faculty', compact('employee', 'courses', 'assignedCourseIds'));
@@ -328,34 +298,15 @@ class CoordinatorController extends Controller
 
         $this->verifyDepartmentAccess($employee);
 
-        $coordDept = $this->getCoordinatorDepartment();
-
         $validated = $request->validate([
             'full_name'    => 'required|string|max:45',
             'employee_no'  => 'nullable|string|max:20|unique:employees,employee_no,' . $employee->employee_id . ',employee_id',
-            'program'   => 'required|in:BLIS,BSEnSE,BSIT,BSCpE',
+            'program'      => ['required', Rule::in(Program::codes())],
             'faculty_type' => 'required|in:full_time,shared',
             'email'        => 'nullable|email|max:45',
             'position'     => 'nullable|string|max:100',
             'hire_date'    => 'nullable|date|before_or_equal:today',
-            'course_ids'   => 'nullable|array',
-            'course_ids.*' => ['integer', \Illuminate\Validation\Rule::exists('courses', 'id')->where('program', $request->input('program'))->where('is_active', true)],
-        ]);
-
-        // Enforce coordinator can only set department to their own
-        if ($coordDept && $validated['program'] !== $coordDept) {
-            return back()->withErrors(['program' => 'You can only assign faculty to your department (' . $coordDept . ').'])
-                ->withInput();
-        }
-
-        // Ensure submitted courses belong to coordinator's department
-        if (!empty($validated['course_ids'])) {
-            $validated['course_ids'] = \App\Models\Course::active()
-                ->forDepartment($coordDept)
-                ->whereIn('id', $validated['course_ids'])
-                ->pluck('id')
-                ->all();
-        }
+        ] + CourseAssignment::rules($request->input('program')), CourseAssignment::messages());
 
         try {
             $this->employeeService->updateFaculty($employee, $validated, auth()->id());

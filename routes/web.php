@@ -308,6 +308,7 @@ Route::middleware(['auth', 'no.back', 'role:Program Coordinator'])->prefix('coor
     Route::post('/notifications/mark-all-read-json', [CoordinatorController::class, 'markAllNotificationsReadJson'])->middleware('throttle:30,1')->name('notifications.mark-all-read-json');
     
     // Course Catalog (scoped to coordinator department)
+    Route::get('/courses/by-program', [CoordinatorController::class, 'coursesByProgram'])->name('courses.by-program');
     Route::get('/courses', [CoordinatorCourseController::class, 'index'])->name('courses');
     Route::post('/courses', [CoordinatorCourseController::class, 'store'])->name('courses.store');
     Route::patch('/courses/{course}', [CoordinatorCourseController::class, 'update'])->name('courses.update');
@@ -316,6 +317,8 @@ Route::middleware(['auth', 'no.back', 'role:Program Coordinator'])->prefix('coor
 
     // Faculty Management
     Route::get('/faculty', [CoordinatorController::class, 'faculty'])->name('faculty');
+    Route::get('/faculty/create', [CoordinatorController::class, 'createFaculty'])->name('create-faculty');
+    Route::post('/faculty', [CoordinatorController::class, 'storeFaculty'])->middleware('throttle:10,60')->name('store-faculty');
     Route::get('/faculty/{id}/profile', [CoordinatorController::class, 'viewEmployeeProfile'])->name('faculty-profile');
     Route::get('/faculty/{id}/edit', [CoordinatorController::class, 'editFaculty'])->name('edit-faculty');
     Route::patch('/faculty/{id}', [CoordinatorController::class, 'updateFaculty'])->middleware('throttle:10,60')->name('update-faculty');

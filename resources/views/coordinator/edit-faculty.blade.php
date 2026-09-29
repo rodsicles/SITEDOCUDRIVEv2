@@ -71,11 +71,14 @@
                 </div>
 
                 <div class="form-group">
-                    <label class="form-label">Program</label>
-                    <input type="text" class="form-control" value="{{ \App\Models\Program::OPTIONS[auth()->user()->employee->program] ?? (auth()->user()->employee->program ?? 'N/A') }}" disabled>
-                    <input type="hidden" name="program" value="{{ auth()->user()->employee->program }}">
+                    <label class="form-label" for="editFacultyProgram">Program *</label>
+                    <select id="editFacultyProgram" name="program" class="form-control" required>
+                        @foreach(\App\Models\Program::labels() as $code => $label)
+                            <option value="{{ $code }}" @selected(old('program', $employee->program) === $code)>{{ $label }}</option>
+                        @endforeach
+                    </select>
                     <small class="modern-help-text">
-                        <i class="fas fa-info-circle"></i> Auto-assigned to your program
+                        <i class="fas fa-info-circle"></i> Changing the program reloads the subject list below.
                     </small>
                 </div>
 
@@ -112,18 +115,16 @@
                 <small class="text-gray-600 dark:text-gray-400 text-xs mt-1.5 block">Username cannot be changed</small>
             </div>
 
-            {{-- Course / Subject Assignment --}}
-            @if(isset($courses) && $courses->isNotEmpty())
-            <div class="form-group">
-                <label class="form-label">Assigned Courses / Subjects</label>
-                @include('partials.course-assignment-picker', [
-                    'pickerId' => 'editFaculty',
-                    'courses' => $courses,
-                    'selectedIds' => old('course_ids', $assignedCourseIds ?? []),
-                    'hint' => 'Update the subjects this faculty member handles. Defaults to the current school term; unlock to include other terms.',
-                ])
-            </div>
-            @endif
+            @php $editProgram = old('program', $employee->program); @endphp
+            @include('partials.course-assignment-picker', [
+                'pickerId' => 'editFaculty',
+                'program' => $editProgram,
+                'courses' => $editProgram === $employee->program ? $courses : null,
+                'selectedIds' => old('course_ids', $assignedCourseIds ?? []),
+                'programSelect' => 'editFacultyProgram',
+                'coursesUrl' => route('coordinator.courses.by-program'),
+                'hint' => 'Update the subjects this faculty member handles. Defaults to the current school term; unlock to include other terms.',
+            ])
 
             <div class="flex gap-4 mt-6">
                 <button type="submit" class="btn btn-primary">
@@ -135,9 +136,7 @@
             </div>
         </form>
 
-        @if(isset($courses) && $courses->isNotEmpty())
-            @include('partials.course-assignment-guide-script')
-        @endif
+        @include('partials.course-assignment-guide-script')
     </div>
 
 @endsection

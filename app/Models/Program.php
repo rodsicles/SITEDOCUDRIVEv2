@@ -9,7 +9,7 @@ class Program extends Model
     public const DEPARTMENT_NAME = 'School of Information Technology and Engineering';
     public const OPTIONS = [
         'BLIS' => 'Bachelor of Library and Information Science',
-        'BSEnSE' => 'Bachelor of Science in Environmental Science',
+        'BSEnSE' => 'Bachelor of Science in Environmental and Sanitary Engineering',
         'BSIT' => 'Bachelor of Science in Information Technology',
         'BSCpE' => 'Bachelor of Science in Computer Engineering',
     ];

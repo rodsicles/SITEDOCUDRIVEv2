@@ -17,7 +17,7 @@ class ProgramStructureTest extends TestCase
     {
         $this->assertEqualsCanonicalizing(Program::codes(), Program::pluck('code')->all());
         $this->assertSame(1, Program::distinct()->count('department'));
-        $this->assertSame(0, Course::where('program', 'BSEnSE')->count());
+        $this->assertGreaterThan(0, Course::active()->where('program', 'BSEnSE')->where('year_level', 5)->count());
         $this->assertGreaterThan(0, Course::active()->where('program', 'BLIS')->count());
         $this->assertGreaterThan(0, Course::active()->where('program', 'BSCpE')->count());
         $this->assertGreaterThan(0, Course::active()->where('program', 'BSIT')->count());
@@ -35,7 +35,7 @@ class ProgramStructureTest extends TestCase
         }
         foreach ([
             'dean' => ['dean.dashboard', 'dean.analytics', 'dean.employees', 'dean.courses', 'dean.create-task', 'dean.reports'],
-            'coordinator' => ['coordinator.dashboard', 'coordinator.analytics', 'coordinator.faculty', 'coordinator.courses'],
+            'coordinator' => ['coordinator.dashboard', 'coordinator.analytics', 'coordinator.faculty', 'coordinator.create-faculty', 'coordinator.courses'],
             'faculty' => ['faculty.dashboard', 'faculty.analytics', 'faculty.profile', 'faculty.reports'],
         ] as $username => $routes) {
             $this->actingAs(User::where('username', $username)->firstOrFail());
@@ -45,6 +45,7 @@ class ProgramStructureTest extends TestCase
 
     public function test_empty_program_catalog_and_dashboards_work_without_fallback_courses(): void
     {
+        Course::where('program', 'BSEnSE')->delete();
         $coordinator = User::where('username', 'coordinator')->firstOrFail();
         $coordinator->employee->update(['program' => 'BSEnSE']);
         $coordinator->refresh();
@@ -68,11 +69,12 @@ class ProgramStructureTest extends TestCase
 
     public function test_empty_program_allows_accounts_but_rejects_cross_program_assignments(): void
     {
+        Course::where('program', 'BSEnSE')->delete();
         $dean = User::where('username', 'dean')->firstOrFail();
-        $data = ['username' => 'blis-test-faculty', 'password' => 'Test-only-password-2026', 'full_name' => 'Program Test Faculty', 'program' => 'BLIS', 'faculty_type' => 'full_time'];
+        $data = ['username' => 'bsense-test-faculty', 'password' => 'Test-only-password-2026', 'full_name' => 'Program Test Faculty', 'program' => 'BSEnSE', 'faculty_type' => 'full_time'];
         $this->actingAs($dean)->post(route('dean.store-faculty'), $data)->assertSessionHasNoErrors();
         $faculty = User::where('username', $data['username'])->firstOrFail();
-        $this->assertSame('BLIS', $faculty->employee->program);
+        $this->assertSame('BSEnSE', $faculty->employee->program);
         $this->assertSame(0, $faculty->assignedCourses()->count());
         $data['username'] = 'cross-program-test';
         $data['course_ids'] = [Course::active()->where('program', 'BSIT')->firstOrFail()->id];
@@ -88,7 +90,9 @@ class ProgramStructureTest extends TestCase
         $this->assertNotEmpty($blis->json());
         $this->assertArrayHasKey('year_level', $blis->json()[0]);
         $this->assertArrayHasKey('semester', $blis->json()[0]);
-        $this->actingAs($dean)->getJson(route('dean.courses.by-program', ['dept' => 'BSEnSE']))->assertExactJson([]);
+        $bsense = collect($this->actingAs($dean)->getJson(route('dean.courses.by-program', ['dept' => 'BSEnSE']))->assertOk()->json());
+        $this->assertTrue($bsense->contains('code', 'ENSE101'));
+        $this->assertFalse($bsense->contains('code', 'LIS101'));
         $this->post(route('dean.courses.store'), ['code' => 'TEST999', 'title' => 'Test fixture only', 'program' => 'BSIT'])->assertSessionHasNoErrors();
         $course = Course::where('code', 'TEST999')->firstOrFail();
         $this->patch(route('dean.courses.update', $course), ['code' => 'TEST999', 'title' => 'Edited test fixture'])->assertSessionHasNoErrors();

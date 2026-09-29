@@ -6,10 +6,12 @@ body { font-family: 'DejaVu Serif', serif; color: #111; font-size: 10pt; line-he
 .form-number { border: 1px solid #222; padding: 3px 7px; font-size: 8pt; display: inline-block; }
 .masthead { width: 100%; margin-top: 5mm; border-bottom: 1px solid #666; padding-bottom: 7mm; }
 .masthead td { border: 0; vertical-align: middle; }
-.logo-cell { width: 24mm; text-align: right; }
-.logo { width: 17mm; height: 17mm; }
-.school { font-size: 18pt; font-weight: bold; text-align: center; }
-.address { font-size: 11pt; font-weight: normal; }
+.brand { text-align: center; }
+.brand-inner { margin: 0 auto; border-collapse: collapse; }
+.logo-cell { width: 18mm; padding: 0 2.5mm 0 0; text-align: right; }
+.logo { width: 17mm; height: 17mm; display: block; }
+.school { font-size: 18pt; font-weight: bold; text-align: left; line-height: 1.2; padding: 0; }
+.address { font-size: 11pt; font-weight: normal; text-align: left; }
 .office { text-align: center; font-size: 13pt; margin: 4mm 0; font-weight: bold; }
 h1 { font-size: 12pt; text-align: center; margin: 4mm 0 1mm; }
 .term { text-align: center; margin-bottom: 8mm; }
@@ -30,7 +32,10 @@ tr { page-break-inside: avoid; }
 .draft { color: #666; font-size: 8pt; text-align: center; margin-top: 2mm; }
 </style></head><body>
 <div class="form-number">Reg Form – 063</div>
-<table class="masthead"><tr><td class="logo-cell"><img class="logo" src="{{ $logo }}" alt="SPUP logo"></td><td class="school">St. Paul University Philippines<div class="address">Tuguegarao City, Cagayan 3500</div></td></tr></table>
+<table class="masthead"><tr><td class="brand"><table class="brand-inner"><tr>
+<td class="logo-cell"><img class="logo" src="{{ $logo }}" alt="SPUP logo"></td>
+<td class="school">St. Paul University Philippines<div class="address">Tuguegarao City, Cagayan 3500</div></td>
+</tr></table></td></tr></table>
 <div class="office">OFFICE OF THE REGISTRAR</div>
 <h1>TEACHER’S LOAD</h1>
 <div class="term">{{ match($load->semester) { '1st' => 'First Semester', '2nd' => 'Second Semester', default => 'Summer' } }}, AY {{ $load->academic_year }}

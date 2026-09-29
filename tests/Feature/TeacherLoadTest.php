@@ -42,6 +42,49 @@ class TeacherLoadTest extends TestCase
         ];
     }
 
+    public function test_picker_includes_program_coordinators_with_scope_rules(): void
+    {
+        $dean = User::where('username', 'dean')->firstOrFail();
+        $coordinator = User::where('username', 'coordinator')->firstOrFail();
+        $this->assertSame('Program Coordinator', $coordinator->role->role_name);
+
+        $this->actingAs($dean)->get(route('teacher-loads.index'))
+            ->assertOk()
+            ->assertSee('Faculty / Program Coordinator')
+            ->assertSee('Choose faculty or program coordinator')
+            ->assertSee($coordinator->employee->full_name)
+            ->assertSee('No courses assigned yet', false);
+
+        $this->actingAs($coordinator)->get(route('teacher-loads.index'))
+            ->assertOk()
+            ->assertSee($coordinator->employee->full_name);
+
+        $otherProgram = $coordinator->employee->program === 'BSIT' ? 'BLIS' : 'BSIT';
+        $foreign = \App\Models\Employee::query()
+            ->where('program', $otherProgram)
+            ->whereHas('user', fn ($q) => $q->where('status', 'Active')->whereHas('role', fn ($r) => $r->whereIn('role_name', ['Faculty Employee', 'Program Coordinator'])))
+            ->where('employee_id', '!=', $coordinator->employee->employee_id)
+            ->first();
+
+        if ($foreign) {
+            $this->actingAs($coordinator)
+                ->getJson(route('teacher-loads.options', [
+                    'employee_id' => $foreign->employee_id,
+                    'semester' => SchoolTerm::FIRST,
+                ]))
+                ->assertNotFound();
+        }
+
+        $this->actingAs($coordinator)
+            ->getJson(route('teacher-loads.options', [
+                'employee_id' => $coordinator->employee->employee_id,
+                'semester' => SchoolTerm::FIRST,
+            ]))
+            ->assertOk()
+            ->assertJsonPath('role_label', 'Program Coordinator')
+            ->assertJsonPath('has_assigned_courses', false);
+    }
+
     public function test_faculty_creation_saves_full_time_or_shared_classification(): void
     {
         $dean = User::where('username', 'dean')->firstOrFail();
@@ -51,6 +94,7 @@ class TeacherLoadTest extends TestCase
         $this->post(route('dean.store-faculty'), [
             '_form' => 'faculty', 'full_name' => 'Shared Faculty Test', 'program' => 'BSIT',
             'faculty_type' => 'shared', 'username' => 'shared-faculty-test', 'password' => 'Test-password-2026',
+            'course_ids' => [Course::active()->where('program', 'BSIT')->firstOrFail()->id],
         ])->assertRedirect(route('dean.employees'));
 
         $faculty = User::where('username', 'shared-faculty-test')->firstOrFail();
@@ -77,7 +121,10 @@ class TeacherLoadTest extends TestCase
         $this->assertCount(2, $load->items);
 
         $this->postJson(route('teacher-loads.finalize', $load), ['lock_version' => $load->lock_version])->assertOk()->assertJsonPath('status', 'finalized');
-        $this->get(route('teacher-loads.pdf', $load))->assertOk()->assertHeader('content-type', 'application/pdf');
+        $pdf = $this->get(route('teacher-loads.pdf', $load))->assertOk()->assertHeader('content-type', 'application/pdf');
+        $disposition = (string) $pdf->headers->get('content-disposition');
+        $this->assertStringContainsString(str_replace(' ', '_', $faculty->employee->full_name), $disposition);
+        $this->assertStringContainsString('Teachers_Load', $disposition);
     }
 
     public function test_faculty_only_sees_own_finalized_load_and_cannot_modify_it(): void

@@ -14,6 +14,7 @@ use App\Services\EmployeeService;
 use App\Services\FolderService;
 use App\Services\TaskService;
 use App\Services\WeeklyInsightService;
+use App\Support\CourseAssignment;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Cache;
 use Illuminate\Support\Facades\Hash;
@@ -397,10 +398,8 @@ class DeanController extends Controller
             'username'     => 'required|string|unique:users,username|max:20',
             'password'     => 'required|string|min:8|max:40',
             'full_name'    => 'required|string|max:45',
-            'program'   => 'required|in:BLIS,BSEnSE,BSIT,BSCpE',
-            'course_ids'   => 'nullable|array',
-            'course_ids.*' => ['integer', \Illuminate\Validation\Rule::exists('courses', 'id')->where('program', $request->input('program'))->where('is_active', true)],
-        ]);
+            'program'   => ['required', \Illuminate\Validation\Rule::in(\App\Models\Program::codes())],
+        ] + CourseAssignment::rules($request->input('program'), true), CourseAssignment::messages());
 
         try {
             $this->employeeService->createCoordinator($validated, auth()->id());
@@ -417,11 +416,9 @@ class DeanController extends Controller
             'username'     => 'required|string|unique:users,username|max:20',
             'password'     => 'required|string|min:8|max:40',
             'full_name'    => 'required|string|max:45',
-            'program'   => 'required|in:BLIS,BSEnSE,BSIT,BSCpE',
+            'program'   => ['required', \Illuminate\Validation\Rule::in(\App\Models\Program::codes())],
             'faculty_type' => 'required|in:full_time,shared',
-            'course_ids'   => 'nullable|array',
-            'course_ids.*' => ['integer', \Illuminate\Validation\Rule::exists('courses', 'id')->where('program', $request->input('program'))->where('is_active', true)],
-        ]);
+        ] + CourseAssignment::rules($request->input('program'), true), CourseAssignment::messages());
 
         try {
             $this->employeeService->createFaculty($validated, auth()->id());
@@ -437,15 +434,7 @@ class DeanController extends Controller
      */
     public function coursesByDepartment(\Illuminate\Http\Request $request)
     {
-        $dept = $request->query('dept');
-        if (!in_array($dept, \App\Models\Program::codes(), true)) {
-            return response()->json([]);
-        }
-        $courses = \App\Models\Course::active()
-            ->forDepartment($dept)
-            ->ordered()
-            ->get(['id', 'code', 'title', 'year_level', 'semester']);
-        return response()->json($courses);
+        return response()->json(CourseAssignment::coursesFor($request->query('dept')));
     }
 
     public function editEmployee($id)
@@ -456,7 +445,7 @@ class DeanController extends Controller
             abort(403, 'Cannot edit Dean accounts.');
         }
 
-        $allCourses       = \App\Models\Course::active()->forDepartment($employee->program)->ordered()->get();
+        $allCourses       = CourseAssignment::coursesFor($employee->program);
         $assignedCourseIds = $employee->user->assignedCourses->pluck('id')->all();
 
         return view('dean.edit-employee', compact('employee', 'allCourses', 'assignedCourseIds'));
@@ -473,14 +462,12 @@ class DeanController extends Controller
         $validated = $request->validate([
             'full_name'    => 'required|string|max:45',
             'employee_no'  => 'nullable|string|max:20|unique:employees,employee_no,' . $employee->employee_id . ',employee_id',
-            'program'   => 'required|in:BLIS,BSEnSE,BSIT,BSCpE',
+            'program'   => ['required', \Illuminate\Validation\Rule::in(\App\Models\Program::codes())],
             'faculty_type' => 'nullable|in:full_time,shared',
             'email'        => 'nullable|email|max:45',
             'position'     => 'nullable|string|max:100',
             'hire_date'    => 'nullable|date|before_or_equal:today',
-            'course_ids'   => 'nullable|array',
-            'course_ids.*' => ['integer', \Illuminate\Validation\Rule::exists('courses', 'id')->where('program', $request->input('program'))->where('is_active', true)],
-        ]);
+        ] + CourseAssignment::rules($request->input('program')), CourseAssignment::messages());
 
         try {
             $this->employeeService->updateEmployee($employee, $validated, auth()->id());

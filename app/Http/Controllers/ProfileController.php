@@ -15,8 +15,9 @@ class ProfileController extends Controller
         $user = auth()->user();
         $employee = $user->employee;
         $canEditFullName = $user->isDean() || $user->isProgramCoordinator();
+        $canEditEmployeeNo = $user->isDean();
 
-        return view('profile.edit', compact('user', 'employee', 'canEditFullName'));
+        return view('profile.edit', compact('user', 'employee', 'canEditFullName', 'canEditEmployeeNo'));
     }
 
     public function update(Request $request)
@@ -24,37 +25,43 @@ class ProfileController extends Controller
         $user = auth()->user();
         $employee = $user->employee;
         $canEditFullName = $user->isDean() || $user->isProgramCoordinator();
+        $canEditEmployeeNo = $user->isDean();
 
         $rules = [
             // Email is optional (no SMTP wired up) and not enforced unique
             // because the system uses username for identity. Once SMTP lands
             // we may re-introduce uniqueness then.
             'email' => 'nullable|email|max:45',
-            'employee_no' => 'nullable|string|max:15|regex:/^[0-9]*$/|unique:employees,employee_no,'.optional($employee)->employee_id.',employee_id',
-            'program' => 'nullable|in:BLIS,BSEnSE,BSIT,BSCpE',
         ];
 
         if ($canEditFullName) {
             $rules['full_name'] = 'required|string|max:45';
         }
 
-        $validated = $request->validate($rules);
+        if ($canEditEmployeeNo) {
+            $rules['employee_no'] = 'nullable|string|max:20|regex:/^[A-Za-z0-9-]+$/|unique:employees,employee_no,'.optional($employee)->employee_id.',employee_id';
+        }
 
-        $user->update([
-            'email' => $validated['email'] ?: null,
+        $validated = $request->validate($rules, [
+            'employee_no.regex' => 'Employee number may only contain letters, numbers, and dashes.',
         ]);
 
-        $employeeData = [
-            'employee_no' => $validated['employee_no'] ?? null,
-            // Program controls access and can only be reassigned through employee management.
-            'program' => $employee?->program,
-        ];
+        $user->update([
+            'email' => ($validated['email'] ?? null) ?: null,
+        ]);
+
+        // Program and (for non-Dean users) employee number are managed through employee management.
+        $employeeData = [];
+
+        if ($canEditEmployeeNo) {
+            $employeeData['employee_no'] = $validated['employee_no'] ?? null;
+        }
 
         if ($canEditFullName) {
             $employeeData['full_name'] = $validated['full_name'];
         }
 
-        if ($employee) {
+        if ($employee && $employeeData) {
             $employee->update($employeeData);
         }
 

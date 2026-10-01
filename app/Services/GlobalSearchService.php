@@ -3,9 +3,7 @@
 namespace App\Services;
 
 use App\Models\Announcement;
-use App\Models\Document;
 use App\Models\Employee;
-use App\Models\Folder;
 use App\Models\Task;
 use App\Models\User;
 use Illuminate\Support\Collection;
@@ -13,6 +11,10 @@ use Illuminate\Support\Str;
 
 class GlobalSearchService
 {
+    public function __construct(
+        protected DocumentSearchService $documentSearch,
+    ) {}
+
     public function search(User $user, string $query, int $limitPerGroup = 6): array
     {
         $query = trim($query);
@@ -49,43 +51,13 @@ class GlobalSearchService
 
     private function searchDocuments(User $user, string $query, int $limit): Collection
     {
-        $documentsRoute = match (true) {
-            $user->isDean() => 'dean.documents',
-            $user->isProgramCoordinator() => 'coordinator.documents',
-            default => 'faculty.documents',
-        };
-
-        $items = Document::query()
-            ->with(['folder.parent.parent.parent', 'uploader.employee'])
-            ->visibleTo($user)
-            ->onlyApprovedShareable()
-            ->where(function ($q) use ($query) {
-                $q->where('document_title', 'like', "%{$query}%")
-                    ->orWhere('document_type', 'like', "%{$query}%")
-                    ->orWhere('tags', 'like', "%{$query}%")
-                    ->orWhere('subject', 'like', "%{$query}%");
-            })
-            ->latest()
-            ->limit($limit)
-            ->get();
-
-        return $items->map(function (Document $document) use ($documentsRoute, $query) {
-            $path = $this->folderBreadcrumb($document->folder);
-            $tab = $this->tabSlugForFolder($document->folder);
-
-            $params = array_filter([
-                'tab' => $tab,
-                'folder' => $document->folder_id,
-                'search' => $query,
-            ]);
-
-            return [
-                'title' => $document->document_title,
-                'subtitle' => $path ?: 'Uncategorized',
+        return collect($this->documentSearch->globalDocumentHits($user, $query, $limit))
+            ->map(fn (array $row) => [
+                'title' => $row['title'],
+                'subtitle' => ($row['match'] ?? 'Document').' · '.($row['subtitle'] ?? ''),
                 'type' => 'Document',
-                'url' => route($documentsRoute, $params),
-            ];
-        });
+                'url' => $row['url'],
+            ]);
     }
 
     private function searchAnnouncements(User $user, string $query, int $limit): Collection
@@ -213,39 +185,4 @@ class GlobalSearchService
             ]);
     }
 
-    private function folderBreadcrumb(?Folder $folder): string
-    {
-        if (!$folder) {
-            return '';
-        }
-
-        $names = array_map(
-            fn (Folder $f) => $f->folder_name,
-            $folder->getAncestors()
-        );
-        $names[] = $folder->folder_name;
-
-        return implode(' › ', $names);
-    }
-
-    private function tabSlugForFolder(?Folder $folder): string
-    {
-        if (!$folder) {
-            return 'accreditation-and-certifications';
-        }
-
-        $top = $folder;
-        while ($top->parent_id !== null) {
-            if (!$top->relationLoaded('parent')) {
-                $top->load('parent');
-            }
-            $parent = $top->parent;
-            if (!$parent) {
-                break;
-            }
-            $top = $parent;
-        }
-
-        return Str::slug($top->folder_name);
-    }
 }

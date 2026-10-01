@@ -87,14 +87,18 @@ class ProfileController extends Controller
         ]);
 
         $user = auth()->user();
-
-        if ($user->avatar_path) {
-            Storage::disk('public')->delete($user->avatar_path);
-        }
+        $previous = $user->avatar_path;
 
         $path = $request->file('avatar')->store('avatars', 'public');
-
         $user->update(['avatar_path' => $path]);
+
+        if ($previous && $previous !== $path) {
+            try {
+                Storage::disk('public')->delete($previous);
+            } catch (\Throwable $e) {
+                report($e);
+            }
+        }
 
         DashboardLog::create([
             'user_id' => auth()->id(),

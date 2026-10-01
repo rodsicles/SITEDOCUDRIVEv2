@@ -13848,3 +13848,19 @@ html[data-theme="dark"],
 .dark .extra-programs__item {
     background: #1f2937;
 }
+/* Site error dialog */
+.site-error-dialog { position: fixed; inset: 0; z-index: 12000; display: flex; align-items: center; justify-content: center; padding: 1rem; }
+.site-error-dialog[hidden] { display: none !important; }
+.site-error-dialog__backdrop { position: absolute; inset: 0; background: rgba(15, 23, 42, .45); }
+.site-error-dialog__panel { position: relative; width: min(100%, 420px); background: #fff; border: 1px solid #e5e7eb; box-shadow: 0 18px 40px rgba(15, 23, 42, .18); padding: 1.25rem 1.35rem 1.1rem; }
+.site-error-dialog__icon { color: #0d5c3b; font-size: 1.25rem; margin-bottom: .35rem; }
+.site-error-dialog__title { font-size: 1.05rem; font-weight: 700; color: #0d5c3b; margin: 0 0 .45rem; }
+.site-error-dialog__body { font-size: .875rem; line-height: 1.45; color: #374151; margin: 0 0 .75rem; }
+.site-error-dialog__ref { font-size: .75rem; color: #6b7280; margin: 0 0 .85rem; }
+.site-error-dialog__actions { display: flex; gap: .5rem; justify-content: flex-end; flex-wrap: wrap; }
+body.site-error-open { overflow: hidden; }
+.search-palette__empty--error { color: #b45309; }
+.search-result-path, .search-result-match { font-size: .8rem; color: #6b7280; margin: .15rem 0; }
+.search-result-actions { display: flex; flex-direction: column; gap: .35rem; align-self: center; }
+.document-search-primary__row { display: flex; flex-wrap: wrap; gap: .5rem; align-items: center; }
+.document-search-scope-label { font-size: .8rem; color: #6b7280; margin-top: .35rem; }

@@ -1,5 +1,6 @@
 import './bootstrap';
 import './request-guard';
+import './site-request';
 import Swal from 'sweetalert2';
 window.Swal = Swal;
 

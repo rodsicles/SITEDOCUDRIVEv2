@@ -338,7 +338,21 @@ if (root && document.getElementById('tl-dialog')) {
         try {
             const data = payload(); data.id = loadId;
             const response = await fetch(root.dataset.preview, { method: 'POST', credentials: 'same-origin', headers: { 'X-CSRF-TOKEN': csrf, 'X-Requested-With': 'XMLHttpRequest', Accept: 'application/pdf', 'Content-Type': 'application/json' }, body: JSON.stringify(data) });
-            if (!response.ok) { const details = await response.json(); const error = new Error(details.message); error.errors = details.errors; throw error; }
+            const contentType = (response.headers.get('content-type') || '').toLowerCase();
+            if (!response.ok) {
+                let message = 'Preview could not be generated.';
+                if (contentType.includes('application/json')) {
+                    const details = await response.json();
+                    message = details.message || message;
+                    const error = new Error(message);
+                    error.errors = details.errors;
+                    throw error;
+                }
+                throw new Error(message);
+            }
+            if (!contentType.includes('pdf')) {
+                throw new Error('Preview returned an unexpected file type.');
+            }
             if (previewUrl) URL.revokeObjectURL(previewUrl); previewUrl = URL.createObjectURL(await response.blob());
             previewKey = signature;
             $('#tl-pdf-frame').src = previewUrl; $('#tl-pdf-frame').hidden = false; $('#tl-preview-link').href = previewUrl; $('#tl-preview-link').hidden = false; $('#tl-preview-note').textContent = 'Preview reflects the current form.';

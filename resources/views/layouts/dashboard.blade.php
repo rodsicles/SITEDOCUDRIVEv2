@@ -266,18 +266,27 @@
             }, 500);
         });
         
+        let searchRequestId = 0;
         function performSearch(query) {
-            fetch(`/search?q=${encodeURIComponent(query)}`, {
-                headers: {
-                    'X-Requested-With': 'XMLHttpRequest'
+            const requestId = ++searchRequestId;
+            searchResults.innerHTML = '<p class="search-palette__hint">Searching…</p>';
+            const run = window.SiteRequest
+                ? window.SiteRequest.fetchJson('/search?q=' + encodeURIComponent(query))
+                : fetch('/search?q=' + encodeURIComponent(query), { headers: { 'X-Requested-With': 'XMLHttpRequest', Accept: 'application/json' } })
+                    .then(r => r.json()).then(data => ({ ok: true, data: { results: data.results || data } }));
+
+            run.then((result) => {
+                if (requestId !== searchRequestId) return;
+                if (!result.ok) {
+                    searchResults.innerHTML = '<p class="search-palette__empty search-palette__empty--error">Search failed. Try again.</p>';
+                    if (window.SiteRequest) window.SiteRequest.handleFailure(result);
+                    return;
                 }
-            })
-            .then(response => response.json())
-            .then(data => {
-                displaySearchResults(data);
-            })
-            .catch(() => {
-                searchResults.innerHTML = '<p class="search-palette__empty">No results found</p>';
+                const payload = result.data || {};
+                displaySearchResults(payload.results || []);
+            }).catch(() => {
+                if (requestId !== searchRequestId) return;
+                searchResults.innerHTML = '<p class="search-palette__empty search-palette__empty--error">Search failed. Check your connection.</p>';
             });
         }
         
@@ -727,6 +736,8 @@
         }).observe(document.body, { childList: true, subtree: true });
     </script>
 
+    @include('partials.ui-error-dialog')
+
     @stack('scripts')
 
     @auth
@@ -836,8 +847,9 @@
 
                 async function markRead(id, rowEl) {
                     if (!readJsonUrlTemplate || !id) return;
+                    const wasUnread = rowEl && rowEl.classList.contains('notification-dropdown-item--unread');
                     try {
-                        await fetch(readJsonUrlTemplate.replace('__ID__', encodeURIComponent(id)), {
+                        const response = await fetch(readJsonUrlTemplate.replace('__ID__', encodeURIComponent(id)), {
                             method: 'POST',
                             headers: {
                                 'Accept': 'application/json',
@@ -847,12 +859,13 @@
                             },
                             credentials: 'same-origin',
                         });
-                        if (rowEl) {
-                            rowEl.classList.remove('notification-dropdown-item--unread');
-                        }
+                        if (!response.ok) throw new Error('mark read failed');
+                        if (rowEl) rowEl.classList.remove('notification-dropdown-item--unread');
                         await refresh();
                         dropdownLoaded = false;
-                    } catch (e) {}
+                    } catch (e) {
+                        if (wasUnread && rowEl) rowEl.classList.add('notification-dropdown-item--unread');
+                    }
                 }
 
                 if (listEl) {

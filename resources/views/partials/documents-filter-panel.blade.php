@@ -23,8 +23,9 @@
             <i class="fas fa-search" aria-hidden="true"></i>
             <input id="documentUnifiedSearch" name="search" type="search" value="{{ $search }}" placeholder="Search titles, subjects, PDF and Word content…" maxlength="150">
             <select name="scope" aria-label="Search scope">
-                <option value="folder" @selected($scope === 'folder')>Current folder</option>
+                <option value="folder" @selected($scope === 'folder')>Current folder + subfolders</option>
                 <option value="all" @selected($scope === 'all')>All accessible documents</option>
+                <option value="archives" @selected($scope === 'archives')>Archives</option>
             </select>
             <button type="submit" class="btn btn-primary">Search</button>
         </form>

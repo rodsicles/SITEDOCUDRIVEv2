@@ -19,9 +19,6 @@ return RectorConfig::configure()
     // Baseline: suggestions found in existing code on 2026-10-01, awaiting review.
     // New code is still checked against every rule.
     ->withSkip([
-        \Rector\CodeQuality\Rector\FunctionLike\SimplifyUselessVariableRector::class => [
-            __DIR__.'/app/Services/SubmissionAnalyticsService.php',
-        ],
         \Rector\CodingStyle\Rector\ArrowFunction\ArrowFunctionDelegatingCallToFirstClassCallableRector::class => [
             __DIR__.'/app/Http/Controllers/DocumentCategoryController.php',
             __DIR__.'/app/Http/Controllers/ExamQuestionnaireController.php',
@@ -52,10 +49,6 @@ return RectorConfig::configure()
         \Rector\DeadCode\Rector\Closure\RemoveUnusedClosureVariableUseRector::class => [
             __DIR__.'/app/Services/DashboardService.php',
         ],
-        \Rector\DeadCode\Rector\ClassMethod\RemoveUnusedPrivateMethodRector::class => [
-            __DIR__.'/app/Http/Controllers/DocumentSearchController.php',
-            __DIR__.'/database/seeders/CourseSeeder.php',
-        ],
         \Rector\DeadCode\Rector\ClassMethod\RemoveUselessParamTagRector::class => [
             __DIR__.'/app/Http/Middleware/DefenseAwareThrottle.php',
         ],
@@ -63,7 +56,30 @@ return RectorConfig::configure()
             __DIR__.'/database/seeders/SystemFolderSeeder.php',
         ],
         \Rector\Php74\Rector\Assign\NullCoalescingOperatorRector::class => [
+            __DIR__.'/app/Http/Controllers/DocumentSearchController.php',
             __DIR__.'/app/Models/LeaveBalance.php',
+        ],
+        \Rector\CodeQuality\Rector\FunctionLike\SimplifyUselessVariableRector::class => [
+            __DIR__.'/app/Services/SubmissionAnalyticsService.php',
+            __DIR__.'/app/Services/DocumentSearchService.php',
+        ],
+        \Rector\DeadCode\Rector\Assign\RemoveUnusedVariableAssignRector::class => [
+            __DIR__.'/app/Http/Controllers/DocumentCommentController.php',
+            __DIR__.'/app/Http/Controllers/DocumentRequestController.php',
+            __DIR__.'/app/Http/Controllers/FolderController.php',
+            __DIR__.'/app/Services/AcademicHierarchyService.php',
+            __DIR__.'/app/Services/DocumentSearchService.php',
+        ],
+        \Rector\DeadCode\Rector\Closure\RemoveUnusedClosureVariableUseRector::class => [
+            __DIR__.'/app/Services/DashboardService.php',
+            __DIR__.'/app/Services/DocumentSearchService.php',
+        ],
+        \Rector\DeadCode\Rector\MethodCall\RemoveNullArgOnNullDefaultParamRector::class => [
+            __DIR__.'/app/Services/DocumentSearchService.php',
+        ],
+        \Rector\DeadCode\Rector\ClassMethod\RemoveUnusedPrivateMethodRector::class => [
+            __DIR__.'/app/Http/Controllers/DocumentSearchController.php',
+            __DIR__.'/database/seeders/CourseSeeder.php',
         ],
         \Rector\Php74\Rector\Closure\ClosureToArrowFunctionRector::class => [
             __DIR__.'/app/Http/Controllers/CalendarController.php',

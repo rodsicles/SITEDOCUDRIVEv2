@@ -146,6 +146,25 @@ class Folder extends Model
         return $this->slug === self::CUSTOM_FOLDERS_SLUG;
     }
 
+    /** @return list<int> */
+    public static function descendantIdsIncludingSelf(int $folderId): array
+    {
+        $ids = [$folderId];
+        $frontier = [$folderId];
+
+        while ($frontier !== []) {
+            $children = self::query()->whereIn('parent_id', $frontier)->pluck('folder_id')->all();
+            $children = array_values(array_diff($children, $ids));
+            if ($children === []) {
+                break;
+            }
+            $ids = array_merge($ids, $children);
+            $frontier = $children;
+        }
+
+        return $ids;
+    }
+
     public function isCustomSubfolder(): bool
     {
         if ($this->is_system) {

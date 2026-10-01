@@ -75,6 +75,7 @@ Route::middleware(['auth', 'no.back'])->group(function () {
     Route::post('/document-search/saved', [DocumentSearchController::class, 'save'])->middleware('throttle:20,60')->name('document-search.saved.store');
     Route::delete('/document-search/saved/{savedSearch}', [DocumentSearchController::class, 'destroy'])->name('document-search.saved.destroy');
     Route::post('/document-search/duplicate', [DocumentSearchController::class, 'duplicate'])->middleware('throttle:60,1')->name('document-search.duplicate');
+    Route::post('/document-search/reindex/{documentId}', [DocumentSearchController::class, 'reindex'])->middleware('throttle:30,1')->name('document-search.reindex');
     Route::patch('/folders/{folder}/privacy', [FolderController::class, 'privacy'])->middleware('throttle:20,1')->name('folders.privacy');
 });
 

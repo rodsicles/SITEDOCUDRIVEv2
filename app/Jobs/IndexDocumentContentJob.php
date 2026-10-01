@@ -11,7 +11,8 @@ class IndexDocumentContentJob implements ShouldQueue
 {
     use Queueable;
 
-    public int $tries = 2;
+    public int $tries = 3;
+    public array $backoff = [30, 120, 300];
     public int $timeout = 120;
 
     public function __construct(public int $documentId) {}

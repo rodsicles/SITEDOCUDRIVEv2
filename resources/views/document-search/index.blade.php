@@ -24,15 +24,36 @@
 @endphp
 <div class="search-workspace">
     @if(session('success'))<div class="workflow-alert workflow-alert--success" role="status"><i class="fas fa-check-circle"></i>{{ session('success') }}</div>@endif
+    @unless($migrationReady ?? true)
+        <div class="workflow-alert workflow-alert--warning" role="status"><i class="fas fa-database"></i> Coordinator extra-program access requires the <code>employee_programs</code> migration. Run <code>php artisan migrate --force</code> on this environment before assigning “Also handles” programs.</div>
+    @endunless
     <form method="GET" action="{{ route('document-search.index') }}" class="document-search-form">
-        <div class="document-search-primary"><label for="documentQuery">Search document content</label><div><i class="fas fa-search"></i><input id="documentQuery" name="q" value="{{ $searchTerm }}" placeholder="Search a phrase, title, subject, or tag…" autofocus><button class="btn btn-primary">Search</button></div></div>
-        <details class="document-search-filters" {{ collect($filters)->except(['q','saved'])->filter()->isNotEmpty() ? 'open' : '' }}>
+        <div class="document-search-primary">
+            <label for="documentQuery">Search documents</label>
+            <div class="document-search-primary__row">
+                <i class="fas fa-search"></i>
+                <input id="documentQuery" name="q" value="{{ $searchTerm }}" placeholder="Titles, subjects, tags, folders, PDF and Word content…" maxlength="150" autofocus>
+                <select name="scope" aria-label="Search scope">
+                    <option value="all" @selected(($filters['scope'] ?? 'all') === 'all')>All accessible (current filters)</option>
+                    <option value="archives" @selected(($filters['scope'] ?? '') === 'archives')>Archives</option>
+                </select>
+                <button class="btn btn-primary">Search</button>
+            </div>
+            @php
+                $scopeLabel = match ($filters['scope'] ?? 'all') {
+                    'archives' => 'Archives',
+                    default => 'All documents you can access',
+                };
+            @endphp
+            <p class="document-search-scope-label">Scope: <strong>{{ $scopeLabel }}</strong>@if(($filters['scope'] ?? '') === 'archives' && empty($filters['school_year_id'])) — pick an archived school year below.@endif</p>
+        </div>
+        <details class="document-search-filters" {{ collect($filters)->except(['q','saved','scope'])->filter()->isNotEmpty() ? 'open' : '' }}>
             <summary><i class="fas fa-sliders"></i> Advanced filters <span>Employee, program, course, term, status, type, and date</span></summary>
             <div class="document-search-filter-grid">
                 <label>Employee<select name="employee_id"><option value="">All employees</option>@foreach($employees as $person)<option value="{{ $person->id }}" @selected((string)($filters['employee_id'] ?? '') === (string)$person->id)>{{ $person->employee->full_name ?? $person->username }}</option>@endforeach</select></label>
-                <label>Program<select name="program"><option value="">All programs</option>@foreach(\App\Models\Program::labels() as $code => $label)<option value="{{ $code }}" @selected(($filters['program'] ?? '') === $code)>{{ $label }}</option>@endforeach</select></label>
+                <label>Program<select name="program"><option value="">All programs</option>@foreach(($programOptions ?? collect()) as $code)<option value="{{ $code }}" @selected(($filters['program'] ?? '') === $code)>{{ $code }} — {{ \App\Models\Program::OPTIONS[$code] ?? $code }}</option>@endforeach</select></label>
                 <label>Course<select name="course_id"><option value="">All courses</option>@foreach($courses as $course)<option value="{{ $course->id }}" @selected((string)($filters['course_id'] ?? '') === (string)$course->id)>{{ $course->code }} — {{ $course->title }}</option>@endforeach</select></label>
-                <label>School year<select name="school_year_id"><option value="">All school years</option>@foreach($schoolYears as $year)<option value="{{ $year->id }}" @selected((string)($filters['school_year_id'] ?? '') === (string)$year->id)>{{ $year->name }}</option>@endforeach</select></label>
+                <label>School year<select name="school_year_id"><option value="">@if(($filters['scope'] ?? '') === 'archives')Select archived year@else All school years @endif</option>@if(($filters['scope'] ?? '') === 'archives')@foreach($archivedSchoolYears ?? [] as $year)<option value="{{ $year->id }}" @selected((string)($filters['school_year_id'] ?? '') === (string)$year->id)>{{ $year->name }} (archived)</option>@endforeach @else @foreach($schoolYears as $year)<option value="{{ $year->id }}" @selected((string)($filters['school_year_id'] ?? '') === (string)$year->id)>{{ $year->name }}</option>@endforeach @endif</select></label>
                 <label>Semester<select name="semester"><option value="">All semesters</option><option value="1st" @selected(($filters['semester'] ?? '') === '1st')>1st semester</option><option value="2nd" @selected(($filters['semester'] ?? '') === '2nd')>2nd semester</option></select></label>
                 <label>Compliance status<select name="status"><option value="">All statuses</option>@foreach(['pending','submitted','changes_requested','approved'] as $status)<option value="{{ $status }}" @selected(($filters['status'] ?? '') === $status)>{{ str($status)->replace('_',' ')->title() }}</option>@endforeach</select></label>
                 <label>File type<select name="type"><option value="">All file types</option><option value="pdf" @selected(($filters['type'] ?? '') === 'pdf')>PDF</option><option value="doc" @selected(($filters['type'] ?? '') === 'doc')>Word</option><option value="image" @selected(($filters['type'] ?? '') === 'image')>Image</option></select></label>
@@ -53,8 +74,13 @@
         @forelse($documents as $document)
         <article class="search-result-row">
             <div class="search-result-icon"><i class="fas {{ str_contains(strtolower((string) $document->document_type), 'pdf') ? 'fa-file-pdf' : (str_contains(strtolower((string) $document->document_type), 'doc') ? 'fa-file-word' : 'fa-file') }}"></i></div>
-            <div class="search-result-copy"><h3><a href="{{ $viewRoute($document->document_id) }}">{!! $highlight($document->document_title) !!}</a></h3>@if($document->requested_origin_label)<span class="requested-origin-badge"><i class="fas fa-clipboard-check"></i>{{ $document->requested_origin_label }}</span>@endif @if($document->search_excerpt)<p>{!! $highlight($document->search_excerpt) !!}</p>@elseif($searchTerm)<p class="search-result-unindexed">No extracted-text match. The title or metadata matched.</p>@endif<div><span>{{ $document->uploader->employee->full_name ?? $document->uploader->username }}</span><span>{{ $document->subject ?: $document->category ?: 'Document' }}</span><span>{{ strtoupper($document->document_type ?: 'FILE') }}</span><span>{{ $document->created_at->format('M d, Y') }}</span>@if($document->searchIndex?->index_status === 'no_text')<span>OCR found no readable text</span>@elseif(!$document->searchIndex)<span>Awaiting content index</span>@endif</div></div>
-            <a href="{{ $viewRoute($document->document_id) }}" class="btn btn-secondary"><i class="fas fa-arrow-right"></i> Open</a>
+            <div class="search-result-copy"><h3><a href="{{ $viewRoute($document->document_id) }}">{!! $highlight($document->document_title) !!}</a></h3>@if($document->search_folder_path ?? null)<p class="search-result-path"><i class="fas fa-folder-open"></i> {{ $document->search_folder_path }}</p>@endif @if($document->requested_origin_label)<span class="requested-origin-badge"><i class="fas fa-clipboard-check"></i>{{ $document->requested_origin_label }}</span>@endif @if($searchTerm && ($document->search_match_label ?? null))<p class="search-result-match">{{ $document->search_match_label }}</p>@endif @if($document->search_excerpt)<p>{!! $highlight($document->search_excerpt) !!}</p>@elseif($searchTerm)<p class="search-result-unindexed">No extracted-text snippet. Metadata matched your search.</p>@endif<div><span>{{ $document->uploader->employee->full_name ?? $document->uploader->username }}</span><span>{{ $document->subject ?: $document->category ?: 'Document' }}</span><span>{{ strtoupper($document->document_type ?: 'FILE') }}</span><span>{{ $document->created_at->format('M d, Y') }}</span>@if($document->searchIndex?->index_status === 'failed')<span>Indexing failed</span>@elseif($document->searchIndex?->index_status === 'no_text')<span>OCR found no readable text</span>@elseif(!$document->searchIndex || $document->searchIndex?->index_status === 'pending')<span>Indexing pending</span>@endif</div></div>
+            <div class="search-result-actions">
+                <a href="{{ $viewRoute($document->document_id) }}" class="btn btn-secondary"><i class="fas fa-eye"></i> Preview</a>
+                @if($document->folder_id && ($documentsRoute = ($viewer->isProgramCoordinator() ? 'coordinator' : ($viewer->isFaculty() ? 'faculty' : 'dean')).'.documents'))
+                    <a href="{{ route($documentsRoute, array_filter(['folder' => $document->folder_id, 'tab' => request('tab')])) }}" class="btn btn-secondary"><i class="fas fa-folder"></i> Folder</a>
+                @endif
+            </div>
         </article>
         @empty
             @include('partials.ui.empty-state', ['title' => 'No matching documents', 'text' => 'Try a shorter phrase or remove one of the advanced filters.'])

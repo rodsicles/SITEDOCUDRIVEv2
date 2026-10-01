@@ -22,6 +22,7 @@ use Illuminate\Support\Facades\Hash;
 class DeanController extends Controller
 {
     use \App\Http\Controllers\Concerns\HandlesUploadExceptions;
+    use \App\Http\Controllers\Concerns\PreventsDuplicateUpload;
     use \App\Http\Controllers\Concerns\ManagesUserNotifications;
     use \App\Http\Controllers\Concerns\ValidatesDocumentUpload;
 
@@ -348,6 +349,10 @@ class DeanController extends Controller
 
     public function uploadDocument(Request $request)
     {
+        if ($duplicate = $this->rejectDuplicateUpload($request)) {
+            return $duplicate;
+        }
+
         $validated = $this->validateDocumentUpload($request);
         $recipientIds = $validated['recipient_ids'] ?? [];
 

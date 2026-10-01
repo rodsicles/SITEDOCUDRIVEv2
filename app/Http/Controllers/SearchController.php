@@ -16,11 +16,23 @@ class SearchController extends Controller
         $query = trim((string) $request->get('q', ''));
 
         if (mb_strlen($query) < 3) {
-            return response()->json([]);
+            return response()->json(['ok' => true, 'results' => []]);
         }
 
-        return response()->json(
-            $this->globalSearch->search(auth()->user(), $query)
-        );
+        try {
+            return response()->json([
+                'ok' => true,
+                'results' => $this->globalSearch->search($request->user(), $query),
+            ]);
+        } catch (\Throwable $e) {
+            report($e);
+
+            return \App\Support\ApiError::json(
+                $request,
+                'Search is temporarily unavailable. Please try again.',
+                503,
+                'search_failed',
+            );
+        }
     }
 }

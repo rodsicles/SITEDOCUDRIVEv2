@@ -29,6 +29,7 @@ class DocumentService
         protected TeachingGuideSyncService $teachingGuideSync,
         protected ExamQuestionnaireSyncService $examQuestionnaireSync,
         protected NotificationService $notificationService,
+        protected DocumentSearchService $documentSearch,
     ) {}
     /**
      * Document categories available in the system (must match documents.category ENUM).
@@ -121,15 +122,7 @@ class DocumentService
 
         $term = trim((string) ($queryParams['search'] ?? $queryParams['name'] ?? ''));
         $page = $query->paginate($perPage)->withQueryString();
-        $page->getCollection()->transform(function (Document $document) use ($term) {
-            $content = (string) $document->searchIndex?->content_text;
-            $position = $term !== '' ? mb_stripos($content, $term) : false;
-            $start = $position === false ? 0 : max(0, $position - 90);
-            $document->search_excerpt = $term !== '' && $content !== ''
-                ? ($start > 0 ? '…' : '').Str::limit(mb_substr($content, $start, 240), 240)
-                : '';
-            return $document;
-        });
+        $page->getCollection()->transform(fn (Document $document) => $this->documentSearch->decorateResult($document, $term));
 
         return $page;
     }
@@ -152,20 +145,14 @@ class DocumentService
             return [];
         }
 
-        $params = $queryParams;
-        unset($params['search'], $params['name'], $params['page']);
-
-        $query = $this->buildDocumentListQuery($user, $categoryFilter, $folderFilter, $params, applyTextSearch: false);
-
-        return $query
-            ->where('document_title', 'like', '%'.$term.'%')
-            ->orderBy('document_title')
-            ->limit($limit * 3)
-            ->pluck('document_title')
-            ->unique()
-            ->take($limit)
-            ->values()
-            ->all();
+        return $this->documentSearch->suggestTitles(
+            $user,
+            $categoryFilter,
+            is_numeric($folderFilter) ? (int) $folderFilter : null,
+            $queryParams,
+            $term,
+            $limit,
+        );
     }
 
     protected function buildDocumentListQuery(
@@ -175,69 +162,23 @@ class DocumentService
         array $queryParams,
         bool $applyTextSearch = true,
     ): Builder {
+        $filters = $this->documentSearch->normalizeFilters($user, $queryParams);
+        if (!$applyTextSearch) {
+            $filters['q'] = '';
+        }
+
+        $scope = $filters['scope'] ?? DocumentSearchService::SCOPE_FOLDER;
+        $folderId = null;
+        if ($scope === DocumentSearchService::SCOPE_FOLDER && $folderFilter !== null) {
+            $folderId = $folderFilter === 'uncategorized' ? 0 : (int) $folderFilter;
+            $filters['folder_id'] = $folderId;
+        }
+
         $query = Document::getFilteredDocuments($user, $categoryFilter)
             ->with('searchIndex')
             ->onlyApprovedShareable();
 
-        if (!empty($queryParams['managed_category_id'])) {
-            $query->where('category_id', (int) $queryParams['managed_category_id']);
-        }
-
-        if ($folderFilter !== null) {
-            if ($folderFilter === 'uncategorized') {
-                $query->whereNull('folder_id');
-            } else {
-                $folderIds = [(int) $folderFilter];
-                $childIds = Folder::where('parent_id', $folderFilter)->pluck('folder_id')->toArray();
-                $folderIds = array_merge($folderIds, $childIds);
-                if (!empty($childIds)) {
-                    $grandchildIds = Folder::whereIn('parent_id', $childIds)->pluck('folder_id')->toArray();
-                    $folderIds = array_merge($folderIds, $grandchildIds);
-                }
-                $query->whereIn('folder_id', $folderIds);
-            }
-        }
-
-        if ($applyTextSearch) {
-            $name = $queryParams['name'] ?? $queryParams['search'] ?? null;
-            if ($name) {
-                $query->where(function ($q) use ($name) {
-                    $q->where('document_title', 'like', "%{$name}%")
-                        ->orWhere('subject', 'like', "%{$name}%")
-                        ->orWhere('tags', 'like', "%{$name}%")
-                        ->orWhereHas('searchIndex', fn ($index) => $index->where('content_text', 'like', "%{$name}%"));
-                });
-            }
-
-            $title = $queryParams['title'] ?? null;
-            if ($title) {
-                $query->where('document_title', 'like', "%{$title}%");
-            }
-        }
-
-        $fileType = $queryParams['file_type'] ?? null;
-        if ($fileType === 'pdf') {
-            $query->where(function ($q) {
-                $q->where('file_path', 'like', '%.pdf')
-                    ->orWhere('document_type', 'like', '%pdf%');
-            });
-        } elseif ($fileType === 'word') {
-            $query->where(function ($q) {
-                $q->where(function ($inner) {
-                    $inner->where('file_path', 'like', '%.doc')
-                        ->orWhere('file_path', 'like', '%.docx');
-                })->orWhere('document_type', 'like', '%doc%');
-            });
-        } elseif ($fileType === 'image') {
-            $query->where(function ($q) {
-                $q->whereIn('document_type', ['image', 'jpg', 'jpeg', 'png', 'gif', 'webp'])
-                    ->orWhere('file_path', 'like', '%.jpg')
-                    ->orWhere('file_path', 'like', '%.jpeg')
-                    ->orWhere('file_path', 'like', '%.png')
-                    ->orWhere('file_path', 'like', '%.gif')
-                    ->orWhere('file_path', 'like', '%.webp');
-            });
-        }
+        $this->documentSearch->applyFilters($query, $user, $filters, $categoryFilter, $folderId);
 
         $sizeRange = $queryParams['size_range'] ?? null;
         if ($sizeRange === 'small') {
@@ -258,64 +199,9 @@ class DocumentService
             $query->where('uploaded_by', $uploadedBy);
         }
 
-        if (!empty($queryParams['program'])) {
-            $query->whereHas('uploader.employee', fn ($q) => $q->where('program', $queryParams['program']));
-        }
-
-        if (!empty($queryParams['course_id']) && ($course = Course::find($queryParams['course_id']))) {
-            $query->where('subject', 'like', '%'.$course->code.'%');
-        }
-
-        if (!empty($queryParams['school_year_id'])) {
-            $query->where('school_year_id', $queryParams['school_year_id']);
-        }
-
-        if (!empty($queryParams['semester'])) {
-            $query->whereHas('folder', fn ($q) => $q->where('folder_name', 'like', $queryParams['semester'].'%'));
-        }
-
-        if (!empty($queryParams['status'])) {
-            $query->whereHas('requestSubmissions', fn ($q) => $q->where('status', $queryParams['status']));
-        }
-
-        $dateFrom = $queryParams['date_from'] ?? null;
-        if ($dateFrom) {
-            $query->whereDate('created_at', '>=', $dateFrom);
-        }
-
-        $dateTo = $queryParams['date_to'] ?? null;
-        if ($dateTo) {
-            $query->whereDate('created_at', '<=', $dateTo);
-        }
-
-        $academicYearStart = AcademicYear::startYearFromQuery($queryParams['academic_year'] ?? null);
-        if ($academicYearStart) {
-            $hierarchy = app(AcademicHierarchyService::class);
-            $endYear = $academicYearStart + 1;
-            $folderIds = array_merge(
-                $hierarchy->folderIdsForSchoolYear('tg', $academicYearStart),
-                $hierarchy->folderIdsForSchoolYear('eq', $academicYearStart),
-            );
-            $folderIds = array_merge(
-                $folderIds,
-                Folder::where('is_system', true)
-                    ->where(function ($q) use ($academicYearStart, $endYear) {
-                        $q->where('slug', 'like', "%{$academicYearStart}-{$endYear}%")
-                            ->orWhere('folder_name', 'like', "%{$academicYearStart}-{$endYear}%");
-                    })
-                    ->pluck('folder_id')
-                    ->all()
-            );
-            $folderIds = array_values(array_unique(array_filter($folderIds)));
-            if (!empty($folderIds)) {
-                $query->whereIn('folder_id', $folderIds);
-            }
-        } else {
-            $activeId = SchoolYear::activeId();
-            $query->where(function ($q) use ($activeId) {
-                $q->where('school_year_id', $activeId)
-                    ->orWhereNull('school_year_id');
-            });
+        $title = $queryParams['title'] ?? null;
+        if ($title) {
+            $query->where('document_title', 'like', "%{$title}%");
         }
 
         return $query;
@@ -341,20 +227,13 @@ class DocumentService
 
     public function getSearchFilterOptions(User $user): array
     {
-        $programs = \App\Support\CourseCatalog::programsForUser($user);
-        $departments = $programs === null
-            ? collect(\App\Models\Program::codes())
-            : collect($programs)->filter(fn ($code) => in_array($code, \App\Models\Program::codes(), true))->values();
-
-        $courses = Course::active()->ordered();
-        if ($user->isProgramCoordinator() || $user->isFaculty()) {
-            $courses->forDepartment($departments->all());
-        }
+        $options = $this->documentSearch->filterOptions($user);
 
         return [
-            'searchDepartments' => $departments,
-            'searchCourses' => $courses->get(),
-            'searchSchoolYears' => SchoolYear::orderByDesc('start_year')->get(),
+            'searchDepartments' => $options['programs'],
+            'searchCourses' => $options['courses'],
+            'searchSchoolYears' => $options['schoolYears'],
+            'archivedSchoolYears' => $options['archivedSchoolYears'],
         ];
     }
 
@@ -653,35 +532,48 @@ class DocumentService
             }
 
             $filename = time() . '_' . $index . '_' . $file->hashName();
-            UploadStorage::putFileAs('documents', $file, $filename);
+            $storedRelative = 'documents/' . $filename;
+            try {
+                UploadStorage::putFileAs('documents', $file, $filename);
 
-            $document = Document::create([
-                'uploaded_by' => $userId,
-                'folder_id' => $validated['folder_id'] ?? null,
-                'document_title' => $title,
-                'subject' => $subject,
-                'file_path' => 'documents/' . $filename,
-                'file_size' => (int) ($file->getSize() ?? 0),
-                'document_type' => $validated['document_type'],
-                'category' => $category,
-                'category_id' => $folder?->document_category_id,
-                'school_year_id' => SchoolYear::activeId(),
-                'tags' => in_array($category, Document::SHAREABLE_CATEGORIES, true) ? '' : $tags,
-            ]);
+                $document = \Illuminate\Support\Facades\DB::transaction(function () use ($userId, $validated, $title, $subject, $storedRelative, $file, $category, $folder, $tags, $recipientIds) {
+                    $document = Document::create([
+                        'uploaded_by' => $userId,
+                        'folder_id' => $validated['folder_id'] ?? null,
+                        'document_title' => $title,
+                        'subject' => $subject,
+                        'file_path' => $storedRelative,
+                        'file_size' => (int) ($file->getSize() ?? 0),
+                        'document_type' => $validated['document_type'],
+                        'category' => $category,
+                        'category_id' => $folder?->document_category_id,
+                        'school_year_id' => SchoolYear::activeId(),
+                        'tags' => in_array($category, Document::SHAREABLE_CATEGORIES, true) ? '' : $tags,
+                    ]);
 
-            if (!empty($recipientIds)) {
-                $document->recipients()->sync($recipientIds);
+                    if (!empty($recipientIds)) {
+                        $document->recipients()->sync($recipientIds);
+                    }
+
+                    $realPath = $file->getRealPath();
+                    DocumentSearchIndex::updateOrCreate(
+                        ['document_id' => $document->document_id],
+                        ['file_hash' => $realPath ? (hash_file('sha256', $realPath) ?: null) : null, 'index_status' => 'pending']
+                    );
+
+                    return $document;
+                });
+
+                IndexDocumentContentJob::dispatch($document->document_id)->afterResponse();
+                $lastDocumentId = (int) $document->document_id;
+                $uploadedCount++;
+            } catch (\Throwable $e) {
+                if (UploadStorage::exists($storedRelative)) {
+                    UploadStorage::delete($storedRelative);
+                }
+                report($e);
+                continue;
             }
-
-            $realPath = $file->getRealPath();
-            DocumentSearchIndex::updateOrCreate(
-                ['document_id' => $document->document_id],
-                ['file_hash' => $realPath ? (hash_file('sha256', $realPath) ?: null) : null, 'index_status' => 'pending']
-            );
-            IndexDocumentContentJob::dispatch($document->document_id)->afterResponse();
-
-            $lastDocumentId = (int) $document->document_id;
-            $uploadedCount++;
         }
 
         $primaryTitle = $customTitle !== ''

@@ -126,6 +126,12 @@
                 <dt>Program</dt>
                 <dd>{{ \App\Models\Program::OPTIONS[$employee->program] ?? ($employee->program ?? 'N/A') }}</dd>
             </div>
+            @if($employee->user->isProgramCoordinator() && ($extraPrograms = $employee->extraProgramCodes()))
+                <div class="employee-record__field">
+                    <dt>Also handles</dt>
+                    <dd>{{ implode(', ', $extraPrograms) }}</dd>
+                </div>
+            @endif
             <div class="employee-record__field">
                 <dt>Position</dt>
                 <dd>{{ $employee->position }}</dd>

@@ -61,8 +61,8 @@ class DocumentRequestController extends Controller
             ->whereKeyNot($user->id);
 
         if ($user->isProgramCoordinator()) {
-            $department = (optional($user->employee)->program ?? "__unassigned__");
-            $peopleQuery->whereHas('employee', fn ($query) => $query->where('program', $department));
+            $programs = \App\Support\CourseCatalog::programsForUser($user);
+            $peopleQuery->whereHas('employee', fn ($query) => $query->whereIn('program', $programs));
         }
 
         $people = $canCreateRequests ? $peopleQuery->orderBy('username')->get() : collect();
@@ -105,13 +105,13 @@ class DocumentRequestController extends Controller
         abort_if($recipientIds->isEmpty(), 422, 'Choose at least one other employee.');
 
         if ($request->user()->isProgramCoordinator()) {
-            $department = (optional($request->user()->employee)->program ?? "__unassigned__");
+            $programs = \App\Support\CourseCatalog::programsForUser($request->user());
             $accessibleCount = User::query()
                 ->whereIn('id', $recipientIds)
-                ->whereHas('employee', fn ($query) => $query->where('program', $department))
+                ->whereHas('employee', fn ($query) => $query->whereIn('program', $programs))
                 ->count();
             if ($accessibleCount !== $recipientIds->count()) {
-                throw ValidationException::withMessages(['recipient_ids' => 'Choose recipients from your department only.']);
+                throw ValidationException::withMessages(['recipient_ids' => 'Choose recipients from the programs you handle only.']);
             }
         }
 

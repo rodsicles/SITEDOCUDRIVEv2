@@ -399,7 +399,7 @@ class DeanController extends Controller
             'password'     => 'required|string|min:8|max:40',
             'full_name'    => 'required|string|max:45',
             'program'   => ['required', \Illuminate\Validation\Rule::in(\App\Models\Program::codes())],
-        ] + CourseAssignment::rules($request->input('program'), true), CourseAssignment::messages());
+        ] + self::extraProgramRules() + CourseAssignment::rules($request->input('program'), true), CourseAssignment::messages());
 
         try {
             $this->employeeService->createCoordinator($validated, auth()->id());
@@ -408,6 +408,14 @@ class DeanController extends Controller
             \Log::error('Coordinator creation error: ' . $e->getMessage());
             return back()->withErrors(['error' => 'Failed to create coordinator account. Please try again.'])->withInput();
         }
+    }
+
+    private static function extraProgramRules(): array
+    {
+        return [
+            'extra_programs' => ['nullable', 'array'],
+            'extra_programs.*' => ['string', 'distinct', \Illuminate\Validation\Rule::in(\App\Models\Program::codes())],
+        ];
     }
 
     public function storeFaculty(Request $request)
@@ -467,7 +475,7 @@ class DeanController extends Controller
             'email'        => 'nullable|email|max:45',
             'position'     => 'nullable|string|max:100',
             'hire_date'    => 'nullable|date|before_or_equal:today',
-        ] + CourseAssignment::rules($request->input('program')), CourseAssignment::messages());
+        ] + self::extraProgramRules() + CourseAssignment::rules($request->input('program')), CourseAssignment::messages());
 
         try {
             $this->employeeService->updateEmployee($employee, $validated, auth()->id());

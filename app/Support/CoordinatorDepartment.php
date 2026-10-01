@@ -30,21 +30,55 @@ class CoordinatorDepartment
         return $dept;
     }
 
-    /** @return list<string> */
-    public static function courseCodes(?string $department): array
+    /**
+     * Home program first, then the extra programs the Dean assigned.
+     * Empty when the user is not a coordinator or has no valid home program.
+     *
+     * @return list<string>
+     */
+    public static function programs(?User $user): array
     {
-        if (!$department) {
+        $home = self::name($user);
+        if (!$home) {
+            return [];
+        }
+
+        return array_values(array_unique([$home, ...$user->employee->extraProgramCodes()]));
+    }
+
+    /** @return list<string> */
+    public static function requirePrograms(User $user): array
+    {
+        self::require($user);
+
+        return self::programs($user);
+    }
+
+    public static function handles(?User $user, ?string $program): bool
+    {
+        return $program !== null && in_array($program, self::programs($user), true);
+    }
+
+    /**
+     * @param  string|list<string>|null  $department
+     * @return list<string>
+     */
+    public static function courseCodes(string|array|null $department): array
+    {
+        $programs = array_values(array_filter((array) $department));
+        if ($programs === []) {
             return [];
         }
 
         return Course::query()
-            ->where('program', $department)
+            ->whereIn('program', $programs)
             ->pluck('code')
             ->map(fn (string $code) => strtolower($code))
             ->all();
     }
 
-    public static function folderMatchesDepartment(Folder $folder, ?string $department): bool
+    /** @param string|list<string>|null $department */
+    public static function folderMatchesDepartment(Folder $folder, string|array|null $department): bool
     {
         if (!$department) {
             return false;
@@ -76,7 +110,7 @@ class CoordinatorDepartment
             return $folders;
         }
 
-        $department = CourseCatalog::departmentForUser($viewer);
+        $department = CourseCatalog::programsForUser($viewer);
         if (!$department) {
             if ($viewer->isProgramCoordinator() || $viewer->isFaculty()) {
                 return collect();
@@ -88,7 +122,7 @@ class CoordinatorDepartment
         // Faculty with explicitly assigned courses → only show their assigned subject folders
         if ($viewer->isFaculty()) {
             $assignedCodes = $viewer->assignedCourses()
-                ->where('courses.program', $department)
+                ->whereIn('courses.program', $department)
                 ->where('courses.is_active', true)
                 ->pluck('courses.code')
                 ->map(fn (string $c) => strtolower($c))

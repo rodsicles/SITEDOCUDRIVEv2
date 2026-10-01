@@ -122,12 +122,8 @@ class GlobalSearchService
         if ($user->isFaculty()) {
             $usersQuery->where('id', $user->id);
         } elseif ($user->isProgramCoordinator()) {
-            $dept = (optional($user->employee)->program ?? "__unassigned__");
-            if ($dept) {
-                $usersQuery->whereHas('employee', fn ($e) => $e->where('program', $dept));
-            } else {
-                $usersQuery->where('id', $user->id);
-            }
+            $programs = \App\Support\CourseCatalog::programsForUser($user);
+            $usersQuery->whereHas('employee', fn ($e) => $e->whereIn('program', $programs));
         }
 
         return $usersQuery
@@ -166,10 +162,7 @@ class GlobalSearchService
             });
 
         if ($user->isProgramCoordinator()) {
-            $dept = (optional($user->employee)->program ?? "__unassigned__");
-            if ($dept) {
-                $employeeQuery->where('program', $dept);
-            }
+            $employeeQuery->whereIn('program', \App\Support\CourseCatalog::programsForUser($user));
         }
 
         return $employeeQuery

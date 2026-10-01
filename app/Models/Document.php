@@ -178,10 +178,7 @@ class Document extends Model
             $uploader = $this->relationLoaded('uploader') ? $this->uploader : $this->uploader()->with('employee')->first();
 
             if ($uploader && ($uploader->isFaculty() || (int) $uploader->role_id === 3)) {
-                $coordinatorDept = optional($user->employee)->program;
-                $uploaderDept = optional($uploader->employee)->program;
-
-                return $coordinatorDept && $uploaderDept && $coordinatorDept === $uploaderDept;
+                return \App\Support\CoordinatorDepartment::handles($user, optional($uploader->employee)->program);
             }
 
             return false;
@@ -292,16 +289,16 @@ class Document extends Model
         }
 
         if ($user->isProgramCoordinator()) {
-            $coordinatorDept = optional($user->employee)->program;
+            $coordinatorPrograms = \App\Support\CoordinatorDepartment::programs($user);
 
-            return $query->where(function ($q) use ($user, $coordinatorDept) {
+            return $query->where(function ($q) use ($user, $coordinatorPrograms) {
                 $q->where('uploaded_by', $user->id)
                     ->orWhereHas('recipients', fn ($r) => $r->where('users.id', $user->id));
 
-                if ($coordinatorDept) {
-                    $q->orWhereHas('uploader', function ($subQ) use ($coordinatorDept) {
+                if ($coordinatorPrograms) {
+                    $q->orWhereHas('uploader', function ($subQ) use ($coordinatorPrograms) {
                         $subQ->whereHas('role', fn ($r) => $r->where('role_name', 'Faculty Employee'))
-                            ->whereHas('employee', fn ($empQ) => $empQ->where('program', $coordinatorDept));
+                            ->whereHas('employee', fn ($empQ) => $empQ->whereIn('program', $coordinatorPrograms));
                     });
                 }
             });

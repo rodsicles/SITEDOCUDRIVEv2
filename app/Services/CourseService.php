@@ -36,9 +36,10 @@ class CourseService
     /**
      * List courses for a single department (Program Coordinator scope).
      */
-    public function listForDepartment(string $department, ?string $filter = 'all', ?string $search = null): Collection
+    /** @param string|list<string> $department */
+    public function listForDepartment(string|array $department, ?string $filter = 'all', ?string $search = null): Collection
     {
-        $query = Course::query()->ordered()->where('program', $department);
+        $query = Course::query()->ordered()->whereIn('program', (array) $department);
 
         if ($filter === 'inactive') {
             $query->where('is_active', false);

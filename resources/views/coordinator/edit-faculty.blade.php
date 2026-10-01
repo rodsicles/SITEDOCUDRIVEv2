@@ -73,8 +73,8 @@
                 <div class="form-group">
                     <label class="form-label" for="editFacultyProgram">Program *</label>
                     <select id="editFacultyProgram" name="program" class="form-control" required>
-                        @foreach(\App\Models\Program::labels() as $code => $label)
-                            <option value="{{ $code }}" @selected(old('program', $employee->program) === $code)>{{ $label }}</option>
+                        @foreach(\App\Models\Program::labels() as $code => $programLabel)
+                            <option value="{{ $code }}" @selected(old('program', $employee->program) === $code)>{{ $programLabel }}</option>
                         @endforeach
                     </select>
                     <small class="modern-help-text">
@@ -92,8 +92,8 @@
                 <div class="form-group">
                     <label class="form-label">Faculty Type *</label>
                     <select name="faculty_type" class="form-control" required>
-                        @foreach(\App\Models\Employee::FACULTY_TYPES as $value => $label)
-                            <option value="{{ $value }}" @selected(old('faculty_type', $employee->faculty_type ?? 'full_time') === $value)>{{ $label }}</option>
+                        @foreach(\App\Models\Employee::FACULTY_TYPES as $value => $typeLabel)
+                            <option value="{{ $value }}" @selected(old('faculty_type', $employee->faculty_type ?? 'full_time') === $value)>{{ $typeLabel }}</option>
                         @endforeach
                     </select>
                 </div>

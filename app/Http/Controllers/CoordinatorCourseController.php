@@ -17,8 +17,9 @@ class CoordinatorCourseController extends Controller
     public function index(Request $request)
     {
         $department = $this->coordinatorDepartment();
+        $programs = $this->coordinatorPrograms();
         $deptSlug = CourseService::departmentToSlug($department);
-        $allowedFilters = ['all', 'inactive', $deptSlug];
+        $allowedFilters = ['all', 'inactive', ...array_map(CourseService::departmentToSlug(...), $programs)];
         $requested = $request->query('program');
         $departmentFilter = $requested === null
             ? $deptSlug
@@ -26,12 +27,15 @@ class CoordinatorCourseController extends Controller
 
         $filter = $departmentFilter === 'inactive' ? 'inactive' : 'all';
         $search = $request->query('search');
+        $listed = CourseService::slugToDepartment($departmentFilter) ?? $programs;
 
-        $courses = $this->courseService->listForDepartment($department, $filter, $search);
+        $courses = $this->courseService->listForDepartment($listed, $filter, $search);
+        $departments = array_intersect_key(CourseService::departments(), array_flip($programs));
 
         return view('coordinator.courses', compact(
             'courses',
             'department',
+            'departments',
             'departmentFilter',
             'deptSlug',
             'search',
@@ -41,12 +45,15 @@ class CoordinatorCourseController extends Controller
     public function store(Request $request)
     {
         $department = $this->coordinatorDepartment();
+        $programs = $this->coordinatorPrograms();
 
         $validated = $request->validate([
             'code' => ['required', 'string', 'max:20', 'regex:/^[A-Za-z]{2,4}\d{2,4}$/'],
             'title' => 'required|string|max:150',
+            'program' => [count($programs) > 1 ? 'required' : 'nullable', Rule::in($programs)],
         ]);
 
+        $department = $validated['program'] ?? $department;
         $validated['program'] = $department;
 
         $exists = Course::where('code', strtoupper($validated['code']))
@@ -114,10 +121,18 @@ class CoordinatorCourseController extends Controller
         return $dept;
     }
 
+    /** @return list<string> */
+    private function coordinatorPrograms(): array
+    {
+        $this->coordinatorDepartment();
+
+        return CoordinatorDepartment::programs(auth()->user());
+    }
+
     private function authorizeCourse(Course $course): void
     {
-        if ($course->program !== $this->coordinatorDepartment()) {
-            abort(403, 'You do not have access to courses outside your department.');
+        if (!in_array($course->program, $this->coordinatorPrograms(), true)) {
+            abort(403, 'You do not have access to courses outside the programs you handle.');
         }
     }
 }

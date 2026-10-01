@@ -82,7 +82,7 @@
                     <label class="form-label">Program *</label>
                     <select id="editEmpProgram" name="program" class="form-control" required>
                         <option value="">Select Program</option>
-                        @foreach(\App\Models\Program::labels() as $code => $label)<option value="{{ $code }}" @selected(old('program', $employee->program ?? null) === $code)>{{ $label }}</option>@endforeach
+                        @foreach(\App\Models\Program::labels() as $code => $programLabel)<option value="{{ $code }}" @selected(old('program', $employee->program ?? null) === $code)>{{ $programLabel }}</option>@endforeach
                     </select>
                 </div>
 
@@ -97,8 +97,8 @@
                 <div class="form-group">
                     <label class="form-label">Faculty Type *</label>
                     <select name="faculty_type" class="form-control" required>
-                        @foreach(\App\Models\Employee::FACULTY_TYPES as $value => $label)
-                            <option value="{{ $value }}" @selected(old('faculty_type', $employee->faculty_type ?? 'full_time') === $value)>{{ $label }}</option>
+                        @foreach(\App\Models\Employee::FACULTY_TYPES as $value => $typeLabel)
+                            <option value="{{ $value }}" @selected(old('faculty_type', $employee->faculty_type ?? 'full_time') === $value)>{{ $typeLabel }}</option>
                         @endforeach
                     </select>
                 </div>
@@ -113,6 +113,15 @@
                     </small>
                 </div>
             </div>
+
+            @if($employee->user->isProgramCoordinator())
+                @include('partials.extra-programs-field', [
+                    'fieldId' => 'editEmpExtraPrograms',
+                    'programSelect' => 'editEmpProgram',
+                    'selected' => old('extra_programs', $employee->extraProgramCodes()),
+                    'homeProgram' => old('program', $employee->program),
+                ])
+            @endif
 
             <div class="form-group">
                 <label class="form-label">Username (Read-only)</label>

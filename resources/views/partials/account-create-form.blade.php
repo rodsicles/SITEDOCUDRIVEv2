@@ -58,18 +58,26 @@
                         <label class="form-label" for="{{ $prefix }}Department">Program *</label>
                         <select id="{{ $prefix }}Department" name="program" class="form-control" required>
                             <option value="">Select Program</option>
-                            @foreach(Program::labels() as $code => $label)
-                                <option value="{{ $code }}" @selected($program === $code)>{{ $label }}</option>
+                            @foreach(Program::labels() as $code => $programLabel)
+                                <option value="{{ $code }}" @selected($program === $code)>{{ $programLabel }}</option>
                             @endforeach
                         </select>
                     </div>
+                    @unless($isFaculty)
+                        @include('partials.extra-programs-field', [
+                            'fieldId' => $prefix.'ExtraPrograms',
+                            'programSelect' => $prefix.'Department',
+                            'selected' => $isOld ? (array) old('extra_programs', []) : [],
+                            'homeProgram' => $program,
+                        ])
+                    @endunless
                     @if($isFaculty)
                         <div class="form-group">
                             <label class="form-label" for="{{ $prefix }}Type">Faculty Type *</label>
                             <select id="{{ $prefix }}Type" name="faculty_type" class="form-control" required>
                                 <option value="">Select Faculty Type</option>
-                                @foreach(Employee::FACULTY_TYPES as $value => $label)
-                                    <option value="{{ $value }}" @selected($isOld && old('faculty_type') === $value)>{{ $label }}</option>
+                                @foreach(Employee::FACULTY_TYPES as $value => $typeLabel)
+                                    <option value="{{ $value }}" @selected($isOld && old('faculty_type') === $value)>{{ $typeLabel }}</option>
                                 @endforeach
                             </select>
                             <small class="text-xs text-gray-500 dark:text-gray-400 mt-1">Shared faculty keeps one home program while teaching assigned subjects.</small>

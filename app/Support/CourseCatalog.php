@@ -22,6 +22,24 @@ class CourseCatalog
         return in_array($dept, \App\Models\Program::codes(), true) ? $dept : '__unassigned__';
     }
 
+    /**
+     * Programs whose subjects the user works with; null means every program (Dean/Secretary).
+     *
+     * @return list<string>|null
+     */
+    public static function programsForUser(?User $user): ?array
+    {
+        if (!$user || $user->isDeanOrSecretary()) {
+            return null;
+        }
+
+        if ($user->isProgramCoordinator()) {
+            return CoordinatorDepartment::programs($user) ?: ['__unassigned__'];
+        }
+
+        return [self::departmentForUser($user)];
+    }
+
     /** @return list<string> */
     public static function labelsForUser(?User $user): array
     {
@@ -53,8 +71,8 @@ class CourseCatalog
     public static function queryForUser(?User $user)
     {
         $query = Course::active()->ordered();
-        $program = self::departmentForUser($user);
-        if ($program) $query->where('program', $program);
+        $programs = self::programsForUser($user);
+        if ($programs !== null) $query->forDepartment($programs);
 
         // Faculty with explicitly assigned courses → show ONLY those subjects
         if ($user && $user->isFaculty()) {
@@ -62,12 +80,6 @@ class CourseCatalog
             if ($assignedIds->isNotEmpty()) {
                 return $query->whereIn('id', $assignedIds);
             }
-        }
-
-        // Everyone else (Dean, Secretary, Coordinator): scope by department as before
-        $dept = self::departmentForUser($user);
-        if ($dept) {
-            $query->forDepartment($dept);
         }
 
         return $query;

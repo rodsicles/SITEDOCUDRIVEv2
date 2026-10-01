@@ -40,6 +40,38 @@ class Employee extends Model
 
     public function academicProgram() { return $this->belongsTo(Program::class, 'program', 'code'); }
 
+    /** Programs a coordinator handles in addition to their home program. */
+    public function extraPrograms()
+    {
+        return $this->hasMany(EmployeeProgram::class, 'employee_id', 'employee_id');
+    }
+
+    /** @return list<string> */
+    public function extraProgramCodes(): array
+    {
+        $extra = $this->extraPrograms->pluck('program')->all();
+
+        return array_values(array_filter(
+            Program::codes(),
+            fn (string $code) => $code !== $this->program && in_array($code, $extra, true)
+        ));
+    }
+
+    /** @param list<string> $codes */
+    public function syncExtraPrograms(array $codes): void
+    {
+        $codes = array_values(array_unique(array_filter(
+            $codes,
+            fn ($code) => is_string($code) && $code !== $this->program && in_array($code, Program::codes(), true)
+        )));
+
+        $this->extraPrograms()->whereNotIn('program', $codes)->delete();
+        foreach ($codes as $code) {
+            $this->extraPrograms()->firstOrCreate(['program' => $code]);
+        }
+        $this->unsetRelation('extraPrograms');
+    }
+
     public function facultyTypeLabel(): string
     {
         return self::FACULTY_TYPES[$this->faculty_type] ?? 'Full-Time Faculty';

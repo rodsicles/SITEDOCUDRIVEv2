@@ -50,6 +50,7 @@ class EmployeeService
                 'position' => 'Program Coordinator',
                 'hire_date' => now(),
             ]);
+            $employee->syncExtraPrograms($validated['extra_programs'] ?? []);
 
             if (!empty($validated['course_ids'])) {
                 $user->assignedCourses()->sync($validated['course_ids']);
@@ -207,6 +208,9 @@ class EmployeeService
                 'position' => $validated['position'] ?? $employee->position,
                 'hire_date' => $validated['hire_date'] ?? $employee->hire_date,
             ]);
+            if ((int) $employee->user->role_id === 2) {
+                $employee->syncExtraPrograms($validated['extra_programs'] ?? []);
+            }
 
             $employee->user->update([
                 'name' => $validated['full_name'],

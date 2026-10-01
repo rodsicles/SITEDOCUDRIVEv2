@@ -25,7 +25,7 @@
     } else {
         $deptLinks = [
             ['label' => 'All courses', 'value' => 'all'],
-            ...collect(\App\Models\Program::codes())->map(fn ($code) => ['label' => $code, 'value' => strtolower($code)])->all(),
+            ...collect(array_keys($departments))->map(fn ($code) => ['label' => $code, 'value' => strtolower($code)])->all(),
             ['label' => 'Inactive', 'value' => 'inactive'],
         ];
     }
@@ -60,7 +60,7 @@
                 <label class="form-label">Program <span class="text-red-500">*</span></label>
                 <select name="program" class="form-control" required>
                     @foreach($departments as $value => $label)
-                        <option value="{{ $value }}" @selected(old('program') === $value)>{{ $label }}</option>
+                        <option value="{{ $value }}" @selected(old('program', CourseService::slugToDepartment($departmentFilter)) === $value)>{{ $label }}</option>
                     @endforeach
                 </select>
             </div>

@@ -44,13 +44,15 @@ class Course extends Model
         return $query->where('is_active', true)->whereIn('program', Program::codes());
     }
 
-    public function scopeForDepartment($query, ?string $department)
+    /** @param string|list<string>|null $department */
+    public function scopeForDepartment($query, string|array|null $department)
     {
-        if (!$department) {
+        $programs = array_values(array_filter((array) $department));
+        if ($programs === []) {
             return $query->whereRaw('1 = 0');
         }
 
-        return $query->where('program', $department);
+        return $query->whereIn('program', $programs);
     }
 
     public function scopeOrdered($query)

@@ -175,6 +175,22 @@ class User extends Authenticatable
         return $this->role->role_name === 'Secretary';
     }
 
+    /**
+     * The user's own program, plus any extra programs a coordinator handles.
+     *
+     * @return list<string>
+     */
+    public function handledPrograms(): array
+    {
+        if ($this->isProgramCoordinator()) {
+            return \App\Support\CoordinatorDepartment::programs($this);
+        }
+
+        $program = optional($this->employee)->program;
+
+        return $program ? [$program] : [];
+    }
+
     public function isDeanOrSecretary()
     {
         return $this->isDean() || $this->isSecretary();

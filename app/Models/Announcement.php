@@ -62,8 +62,8 @@ class Announcement extends Model
               ->orWhere('visibility', $user->role->role_name);
         })->where(function ($q) use ($user) {
             $q->where('program', 'All');
-            if ($user->employee && $user->employee->program) {
-                $q->orWhere('program', $user->employee->program);
+            if ($programs = $user->handledPrograms()) {
+                $q->orWhereIn('program', $programs);
             }
         });
     }
@@ -90,7 +90,8 @@ class Announcement extends Model
             })
             ->when($this->program && $this->program !== 'All', function ($q) {
                 $q->whereHas('employee', function ($e) {
-                    $e->where('program', $this->program);
+                    $e->where('program', $this->program)
+                        ->orWhereHas('extraPrograms', fn ($p) => $p->where('program', $this->program));
                 });
             })
             ->with(['employee:user_id,full_name,program', 'role:role_id,role_name']);

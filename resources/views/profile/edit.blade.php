@@ -106,6 +106,12 @@
                         <dt>Program</dt>
                         <dd><i class="fas fa-lock" aria-hidden="true"></i> {{ $programLabel ? $programCode.' — '.$programLabel : 'Not assigned' }}</dd>
                     </div>
+                    @if($user->isProgramCoordinator() && $employee && ($extraPrograms = $employee->extraProgramCodes()))
+                        <div>
+                            <dt>Also handles</dt>
+                            <dd><i class="fas fa-lock" aria-hidden="true"></i> {{ implode(', ', $extraPrograms) }}</dd>
+                        </div>
+                    @endif
                     @unless($canEditEmployeeNo)
                         <div>
                             <dt>Employee number</dt>

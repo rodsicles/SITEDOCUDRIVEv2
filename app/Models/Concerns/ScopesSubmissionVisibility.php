@@ -7,7 +7,7 @@ use Illuminate\Database\Eloquent\Builder;
 
 /**
  * Dean/Secretary: all submissions.
- * Program Coordinator: own + faculty in same department.
+ * Program Coordinator: own + faculty in the programs they handle.
  * Faculty: own uploads only (+ explicit recipients when applicable).
  */
 trait ScopesSubmissionVisibility
@@ -26,16 +26,16 @@ trait ScopesSubmissionVisibility
         $submitterRelation = $this->submissionSubmitterRelation();
 
         if ($viewer->isProgramCoordinator()) {
-            $dept = optional($viewer->employee)->program;
-            if (!$dept) {
+            $programs = \App\Support\CoordinatorDepartment::programs($viewer);
+            if (!$programs) {
                 return $query->whereRaw('1 = 0');
             }
 
-            return $query->where(function ($q) use ($viewer, $dept, $ownerColumn, $submitterRelation) {
+            return $query->where(function ($q) use ($viewer, $programs, $ownerColumn, $submitterRelation) {
                 $q->where($ownerColumn, $viewer->id)
-                    ->orWhereHas($submitterRelation, function ($subQ) use ($dept) {
+                    ->orWhereHas($submitterRelation, function ($subQ) use ($programs) {
                         $subQ->whereHas('role', fn ($r) => $r->where('role_name', 'Faculty Employee'))
-                            ->whereHas('employee', fn ($e) => $e->where('program', $dept));
+                            ->whereHas('employee', fn ($e) => $e->whereIn('program', $programs));
                     });
             });
         }
@@ -68,17 +68,12 @@ trait ScopesSubmissionVisibility
                 return true;
             }
 
-            $dept = optional($viewer->employee)->program;
-            if (!$dept) {
-                return false;
-            }
-
             $submitter = $this->{$this->submissionSubmitterRelation()};
             if (!$submitter || !$submitter->isFaculty()) {
                 return false;
             }
 
-            return optional($submitter->employee)->program === $dept;
+            return \App\Support\CoordinatorDepartment::handles($viewer, optional($submitter->employee)->program);
         }
 
         if ($ownerId === (int) $viewer->id) {

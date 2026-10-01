@@ -59,7 +59,7 @@ class DashboardLog extends Model
             // Dean sees everything
             $query->latest('log_date');
         } elseif ($user->role_id === 2) { // Program Coordinator
-            $coordinatorDept = \App\Support\CoordinatorDepartment::name($user);
+            $coordinatorDept = \App\Support\CoordinatorDepartment::programs($user);
 
             if (!$coordinatorDept) {
                 $query->where(function ($q) use ($user) {
@@ -73,7 +73,7 @@ class DashboardLog extends Model
                         ->orWhereHas('user', function ($subQ) use ($coordinatorDept) {
                             $subQ->where('role_id', 3)
                                 ->whereHas('employee', function ($empQ) use ($coordinatorDept) {
-                                    $empQ->where('program', $coordinatorDept);
+                                    $empQ->whereIn('program', $coordinatorDept);
                                 });
                         });
                 });
@@ -128,7 +128,7 @@ class DashboardLog extends Model
         }
 
         if ($user->role_id === 2) {
-            $coordinatorDept = \App\Support\CoordinatorDepartment::name($user);
+            $coordinatorDept = \App\Support\CoordinatorDepartment::programs($user);
 
             if (!$coordinatorDept) {
                 return $query->where(function ($q) use ($user) {
@@ -143,7 +143,7 @@ class DashboardLog extends Model
                     ->orWhereHas('user', function ($subQ) use ($coordinatorDept) {
                         $subQ->where('role_id', 3)
                             ->whereHas('employee', function ($empQ) use ($coordinatorDept) {
-                                $empQ->where('program', $coordinatorDept);
+                                $empQ->whereIn('program', $coordinatorDept);
                             });
                     });
             });

@@ -69,7 +69,7 @@ class SubmissionAnalyticsService
 
         $department = $filters['program'] ?? null;
         if ($viewer->isProgramCoordinator()) {
-            $department = (optional($viewer->employee)->program ?? "__unassigned__");
+            $department = \App\Support\CoordinatorDepartment::handles($viewer, $department) ? $department : null;
         } elseif ($viewer->isFaculty()) {
             $department = (optional($viewer->employee)->program ?? "__unassigned__");
         } elseif ($department && !in_array($department, \App\Models\Program::codes(), true)) {
@@ -92,6 +92,7 @@ class SubmissionAnalyticsService
         return 'submission_analytics_' . md5(json_encode([
             'role' => $role,
             'user' => $viewer->id,
+            'programs' => \App\Support\CoordinatorDepartment::programs($viewer),
             'filters' => $filters,
         ]));
     }
@@ -107,8 +108,9 @@ class SubmissionAnalyticsService
             ->whereHas('role', fn ($q) => $q->where('role_name', 'Faculty Employee'))
             ->where('status', 'Active');
 
-        if ($department) {
-            $query->whereHas('employee', fn ($q) => $q->where('program', $department));
+        $programs = $department ? [$department] : \App\Support\CourseCatalog::programsForUser($viewer);
+        if ($programs !== null) {
+            $query->whereHas('employee', fn ($q) => $q->whereIn('program', $programs));
         }
 
         return $query->pluck('id')->all();
@@ -340,8 +342,8 @@ class SubmissionAnalyticsService
 
         if ($viewer->isDean() || $viewer->isSecretary()) {
             $parts[] = $filters['program'] ?: 'All Departments';
-        } elseif ($viewer->isProgramCoordinator() && $filters['program']) {
-            $parts[] = $filters['program'];
+        } elseif ($viewer->isProgramCoordinator()) {
+            $parts[] = $filters['program'] ?: implode(', ', \App\Support\CoordinatorDepartment::programs($viewer));
         } elseif ($viewer->isFaculty()) {
             $parts[] = 'Your submissions';
         }

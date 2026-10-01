@@ -341,14 +341,14 @@ class DocumentService
 
     public function getSearchFilterOptions(User $user): array
     {
-        $department = optional($user->employee)->program;
-        $departments = $user->isDean() || $user->isSecretary()
+        $programs = \App\Support\CourseCatalog::programsForUser($user);
+        $departments = $programs === null
             ? collect(\App\Models\Program::codes())
-            : collect([$department])->filter();
+            : collect($programs)->filter(fn ($code) => in_array($code, \App\Models\Program::codes(), true))->values();
 
         $courses = Course::active()->ordered();
         if ($user->isProgramCoordinator() || $user->isFaculty()) {
-            $courses->forDepartment($department);
+            $courses->forDepartment($departments->all());
         }
 
         return [
@@ -749,8 +749,8 @@ class DocumentService
             ->whereHas('role', fn ($q) => $q->where('role_name', 'Faculty Employee'));
 
         if ($user->isProgramCoordinator()) {
-            $department = \App\Support\CoordinatorDepartment::require($user);
-            $query->whereHas('employee', fn ($e) => $e->where('program', $department));
+            $programs = \App\Support\CoordinatorDepartment::requirePrograms($user);
+            $query->whereHas('employee', fn ($e) => $e->whereIn('program', $programs));
         }
 
         return $query

@@ -13798,3 +13798,53 @@ html[data-theme="dark"],
     .profile-panel__foot .btn { width: 100%; justify-content: center; }
     .profile-panel__status { margin: 0; text-align: center; }
 }
+/* ---------------------------------------------------------------
+   COORDINATOR "ALSO HANDLES" PROGRAMS
+   --------------------------------------------------------------- */
+.extra-programs {
+    border: 0;
+    padding: 0;
+    margin: 0 0 1rem;
+    min-width: 0;
+}
+.extra-programs__optional {
+    font-weight: 400;
+    color: var(--text-muted, #6b7280);
+}
+.extra-programs__list {
+    display: grid;
+    gap: 1px;
+    background: var(--border-color, #e5e7eb);
+    border: 1px solid var(--border-color, #e5e7eb);
+    margin-bottom: .4rem;
+}
+.extra-programs__item {
+    display: flex;
+    align-items: flex-start;
+    gap: .6rem;
+    padding: .55rem .75rem;
+    background: var(--card-bg, #fff);
+    cursor: pointer;
+    font-size: .85rem;
+    line-height: 1.35;
+}
+.extra-programs__item[hidden] {
+    display: none;
+}
+.extra-programs__item input {
+    margin-top: .15rem;
+    accent-color: #0d5c3b;
+    flex-shrink: 0;
+}
+.extra-programs__item:has(input:checked) {
+    background: rgba(13, 92, 59, .06);
+}
+.extra-programs__item strong {
+    color: #0d5c3b;
+}
+.extra-programs__name {
+    color: var(--text-muted, #6b7280);
+}
+.dark .extra-programs__item {
+    background: #1f2937;
+}

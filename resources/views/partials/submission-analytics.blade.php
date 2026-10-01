@@ -60,11 +60,19 @@
                 </select>
             </div>
             @elseif(auth()->user()->isProgramCoordinator())
+            @php $coordinatorPrograms = \App\Support\CoordinatorDepartment::programs(auth()->user()); @endphp
             <div class="submission-analytics-filters__field">
-                <label class="submission-analytics-filters__label">
+                <label class="submission-analytics-filters__label" for="submission-program">
                     <i class="fas fa-building"></i> Program
                 </label>
-                <input type="text" class="submission-analytics-filters__input submission-analytics-filters__input--readonly" value="{{ $filters['program'] ?? '—' }}" readonly>
+                @if(count($coordinatorPrograms) > 1)
+                <select id="submission-program" name="program" class="submission-analytics-filters__select">
+                    <option value="">All my programs</option>
+                    @foreach($coordinatorPrograms as $code)<option value="{{ $code }}" @selected(($filters['program'] ?? '') === $code)>{{ $code }}</option>@endforeach
+                </select>
+                @else
+                <input type="text" class="submission-analytics-filters__input submission-analytics-filters__input--readonly" value="{{ $coordinatorPrograms[0] ?? '—' }}" readonly>
+                @endif
             </div>
             @endif
             <div class="submission-analytics-filters__actions">

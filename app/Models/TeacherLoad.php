@@ -22,7 +22,7 @@ class TeacherLoad extends Model
     {
         if ($viewer->isDean()) return $query;
         if ($viewer->isProgramCoordinator()) {
-            return $query->where('program', $viewer->employee?->program ?? '__unassigned__');
+            return $query->whereIn('program', \App\Support\CourseCatalog::programsForUser($viewer));
         }
         if ($viewer->isFaculty()) {
             return $query->where('employee_id', $viewer->employee?->employee_id ?? 0)->where('status', 'finalized');

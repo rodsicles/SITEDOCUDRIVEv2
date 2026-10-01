@@ -19,7 +19,7 @@ class TeacherLoadService
             });
 
         if (! $actor->isDean()) {
-            $query->where('program', $actor->employee?->program ?? '__unassigned__');
+            $query->whereIn('program', \App\Support\CourseCatalog::programsForUser($actor) ?? ['__unassigned__']);
         }
 
         return $query;

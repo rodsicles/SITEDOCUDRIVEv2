@@ -203,7 +203,7 @@ Pulled from archived guides so those files are no longer required reading. Re-ve
 
 **Official reading order:** `docs/SETUP.md` (clone) → `docs/AGENTS.md` (workflow) → this guide (behavior) → `docs/AGENTDESIGN.md` (UI) → named PHP/Blade/JS files. Employee-facing help is `resources/views/user-guide.blade.php`. Category deploy/rollback is `docs/runbooks/dynamic-categories-deployment.md`. Folder map: `docs/README.md`.
 
-**Archive policy:** files under `docs/archive/legacy/` are historical copies. They are not competing instructions. **No archived file was deleted.** Do not delete them unless the user approves the exact list. Vendor/package docs and licenses are outside this map. Ignore missing `MEMORY.md` links inside old files.
+**Archive policy:** files under `docs/archive/legacy/` are historical copies, not competing instructions. On 2026-10-02 the user removed five duplicate guides (`QUICK_START.md`, `SETUP_GUIDE.md`, `IMPLEMENTATION_COMPLETE.md`, `NEW_FEATURES_SUMMARY.md`, `TAILWIND_REFACTORING_GUIDE.md`). Those remain recoverable from Git. Do not delete the remaining archive files unless the user names them. Vendor/package docs and licenses are outside this map. Ignore missing `MEMORY.md` links inside old files.
 
 | Current path | Role |
 |---|---|
@@ -217,9 +217,7 @@ Pulled from archived guides so those files are no longer required reading. Re-ve
 | `docs/runbooks/dynamic-categories-deployment.md` | Category migration/rollback |
 | `docs/archive/legacy/` | Historical Markdown only |
 
-Archived originals (moved, not deleted): old lime `AGENTDESIGN.md`; `MD FOLDERS/` (`UI_COLOR_LATEST_UPDATE.md`, `DOCUMENT_REQUEST_SEARCH.md`, `QUICK_START.md`, `SETUP_GUIDE.md`, `IMPLEMENTATION_COMPLETE.md`, `NEW_FEATURES_SUMMARY.md`, `FEATURES_IMPLEMENTATION_GUIDE.md`, `TAILWIND_REFACTORING_GUIDE.md`, `PERFORMANCE_OPTIMIZATION.md`); `EMP-Dashboard-KnowledgeBase/KNOWLEDGE_BASE.md`.
-
-Those files mix outdated lime/global-CSS rules, sample credentials, and “COMPLETE” claims. Do not copy credentials from them. Git history remains the recovery path if an archived file is later approved for deletion.
+Remaining archive (still in tree): old lime `AGENTDESIGN.md`; `MD FOLDERS/UI_COLOR_LATEST_UPDATE.md`, `DOCUMENT_REQUEST_SEARCH.md`, `FEATURES_IMPLEMENTATION_GUIDE.md`, `PERFORMANCE_OPTIMIZATION.md`; `EMP-Dashboard-KnowledgeBase/KNOWLEDGE_BASE.md`. Git history remains the recovery path. Do not copy credentials from old guides.
 
 ## Change history
 
@@ -238,6 +236,7 @@ Dates below are Git commit dates, not assertions of production deployment. This 
 | 2026-10-01 | `fe62b4a` | Home plus extra handled programs; `employee_programs` migration; assignments configured by Dean |
 | 2026-10-01 | `839a07d` | Shared document search, archive scope and compact error infrastructure; limitations recorded above |
 | 2026-10-02 | `34d1692` | Living docs in `docs/`: `SYSTEM_GUIDE.md`, `AGENTDESIGN.md`, `AGENTS.md`, `SETUP.md`. Legacy Markdown archived. No deletions. |
-| 2026-10-02 | this dark-mode commit | Dark mode tokens remapped to charcoal workspace + green sidebar/accent only. Light `--site-*` values unchanged. Hardcoded white insights, error dialog, search fields, Teacher's Load, calendar, and primary-button lime in `.dark` aligned to tokens. Login dark/light checked in browser; Dean dashboard needs a hard-refresh on a signed-in session. |
+| 2026-10-02 | `49a50a4` | Dark mode tokens remapped to charcoal workspace + green sidebar/accent only. Light `--site-*` values unchanged. |
+| 2026-10-02 | this docs commit | Removed five duplicate archived guides after user deletion in the working tree. Remaining archive files kept. Recoverable from Git. |
 
 Maintenance: after an authorized change, update current behavior first, then append `Date | actual commit or uncommitted | workflow/roles + migration/config + checks/limitations`. Keep Quick Context short, link to code instead of copying implementations, and do not append whole prompts or chat transcripts. For docs-only commits, the baseline remains the latest implementation commit audited; do not chase the document's own commit hash.

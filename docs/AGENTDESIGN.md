@@ -121,7 +121,21 @@ Use the existing Tailwind scale already in the screens: `text-xs` / `text-sm` / 
 
 ## Dark mode
 
-Dark-mode selectors exist. That is not proof every screen has parity. If you touch a view, check existing `dark:` / `.dark` rules on that surface. Do not invent a second palette; keep brand greens and neutrals.
+Dark mode is a **neutral charcoal workspace** with the same green sidebar as light. It is not a green-tinted copy of the light palette.
+
+`html[data-theme="dark"]` / `.dark` remaps `--site-*` surfaces, text, and borders. Light `:root` / `@theme` values stay unchanged.
+
+| Token | Dark value | Role |
+|---|---|---|
+| `--site-sidebar` / `--site-sidebar-strong` | `#083d27` / `#062f1e` | Brand chrome only |
+| `--site-surface-subtle` | `#121416` | Page canvas |
+| `--site-surface` | `#1c1f24` | Cards, top bar, dialogs |
+| `--site-surface-selected` | `#24352c` | Selection |
+| `--site-text` / `--site-heading` | `#e8eaed` / `#f3f5f6` | Neutral type |
+| `--site-muted` / `--site-border` | `#9aa3ab` / `#2c3036` | Secondary / edges |
+| `--site-primary` | `#3d9b6e` | Buttons, active, charts, focus |
+
+Do not paint the workspace or card fills with brand green. Do not add gradients or glass. If a panel is still white or mint in dark, add a dark token override rather than a new palette.
 
 ## Key files
 
@@ -148,6 +162,7 @@ After CSS or Blade visual changes: `npm run build`, then hard-refresh (Ctrl+F5).
 - Infer permission from sidebar styling.
 - Change Coordinator extra-program or private-folder behavior as a “UI cleanup”.
 - Treat leftover `#028a0f` in `app.css` as the target color for new work.
+- Paint dark-mode page/card fills with brand green. Dark surfaces stay charcoal; green is accent and sidebar only.
 
 
 

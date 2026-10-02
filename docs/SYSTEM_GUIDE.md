@@ -142,7 +142,7 @@ UI patterns to follow: `docs/AGENTDESIGN.md`. Token values and cascade: `resourc
 | `--site-surface-selected` | `#edf7f1` | Selection |
 | `--site-border` / `--site-border-strong` | `#d9e2dd` / `#9fb8aa` | Dividers / stronger boundaries |
 
-Font stack: Segoe UI, Tahoma, Geneva, Verdana, system sans-serif. Use semantic status colors for warnings/errors rather than changing the brand. No new lime branding, gradients, or glass chrome. Square corners and disabled transitions are present globally. Preserve visible keyboard focus despite the global suppression of focus shadows. Existing dark selectors require checking; their presence is not proof of complete dark-mode parity.
+Font stack: Segoe UI, Tahoma, Geneva, Verdana, system sans-serif. Use semantic status colors for warnings/errors rather than changing the brand. No new lime branding, gradients, or glass chrome. Square corners and disabled transitions are present globally. Preserve visible keyboard focus despite the global suppression of focus shadows. Dark mode remaps `--site-*` to a charcoal workspace and keeps the green sidebar; see `docs/AGENTDESIGN.md`. Light token values must not change when editing dark.
 
 Shell: grouped dark sidebar, bottom account/photo controls, consistent page title and utilities. Desktop/tablet/mobile layouts share the same visual language. Use compact statistics strips, purposeful sections and readable tables instead of a card around every number. Document screens use breadcrumbs, folder choices, a consolidated toolbar and file list. Keep search scopes obvious.
 
@@ -237,6 +237,7 @@ Dates below are Git commit dates, not assertions of production deployment. This 
 | 2026-10-01 | `983590b` | Profile redesign; Rector dry-run added to test command |
 | 2026-10-01 | `fe62b4a` | Home plus extra handled programs; `employee_programs` migration; assignments configured by Dean |
 | 2026-10-01 | `839a07d` | Shared document search, archive scope and compact error infrastructure; limitations recorded above |
-| 2026-10-02 | this documentation commit | Living docs in `docs/`: `SYSTEM_GUIDE.md`, `AGENTDESIGN.md` (rewritten to current tokens; lime original stays in archive), `AGENTS.md`, `SETUP.md`. Legacy Markdown archived. No application code change and **no deletions**. |
+| 2026-10-02 | `34d1692` | Living docs in `docs/`: `SYSTEM_GUIDE.md`, `AGENTDESIGN.md`, `AGENTS.md`, `SETUP.md`. Legacy Markdown archived. No deletions. |
+| 2026-10-02 | this dark-mode commit | Dark mode tokens remapped to charcoal workspace + green sidebar/accent only. Light `--site-*` values unchanged. Hardcoded white insights, error dialog, search fields, Teacher's Load, calendar, and primary-button lime in `.dark` aligned to tokens. Login dark/light checked in browser; Dean dashboard needs a hard-refresh on a signed-in session. |
 
 Maintenance: after an authorized change, update current behavior first, then append `Date | actual commit or uncommitted | workflow/roles + migration/config + checks/limitations`. Keep Quick Context short, link to code instead of copying implementations, and do not append whole prompts or chat transcripts. For docs-only commits, the baseline remains the latest implementation commit audited; do not chase the document's own commit hash.

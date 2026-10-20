@@ -433,7 +433,7 @@ class DocumentService
      *
      * @return array{count: int, submitted_for_approval: bool}
      */
-    public function uploadDocuments(array $validated, array $files, int $userId, array $recipientIds = []): array
+    public function uploadDocuments(array $validated, array $files, int $userId, array $recipientIds = [], ?int $schoolYearId = null): array
     {
         $tags = !empty($validated['tags']) ? implode(',', array_map('trim', explode(',', $validated['tags']))) : '';
 
@@ -536,7 +536,7 @@ class DocumentService
             try {
                 UploadStorage::putFileAs('documents', $file, $filename);
 
-                $document = \Illuminate\Support\Facades\DB::transaction(function () use ($userId, $validated, $title, $subject, $storedRelative, $file, $category, $folder, $tags, $recipientIds) {
+                $document = \Illuminate\Support\Facades\DB::transaction(function () use ($userId, $validated, $title, $subject, $storedRelative, $file, $category, $folder, $tags, $recipientIds, $schoolYearId) {
                     $document = Document::create([
                         'uploaded_by' => $userId,
                         'folder_id' => $validated['folder_id'] ?? null,
@@ -547,7 +547,7 @@ class DocumentService
                         'document_type' => $validated['document_type'],
                         'category' => $category,
                         'category_id' => $folder?->document_category_id,
-                        'school_year_id' => SchoolYear::activeId(),
+                        'school_year_id' => $schoolYearId ?? SchoolYear::activeId(),
                         'tags' => in_array($category, Document::SHAREABLE_CATEGORIES, true) ? '' : $tags,
                     ]);
 
@@ -809,9 +809,11 @@ class DocumentService
         if (!$source->canView($actor)) {
             abort(403, 'Unauthorized to copy this document.');
         }
+        abort_if($source->schoolYear?->isArchived(), 422, 'Archived files stay in their school year.');
 
         if ($destinationFolderId) {
             $destination = Folder::visibleTo($actor)->findOrFail($destinationFolderId);
+            abort_if($destination->schoolYear?->isArchived(), 422, 'Use the Archive page for archived folders.');
             abort_if($destination->document_category_id && !$destination->managedCategory?->is_active, 422, 'This category is inactive.');
         }
 

@@ -113,7 +113,7 @@ class ExamQuestionnaireSyncService
             'subject' => $subjectLabel,
             'exam_type' => $examType,
             'submission_type' => $this->submissionTypeFromFolder($folder),
-            'school_year_id' => SchoolYear::activeId(),
+            'school_year_id' => $folder->school_year_id ?? SchoolYear::activeId(),
             'semester' => $this->semesterFromFolder($folder),
             'academic_year' => $this->academicYearFromFolder($folder),
             'status' => $status,

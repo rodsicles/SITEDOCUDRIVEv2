@@ -118,6 +118,7 @@ class ExamQuestionnaireController extends Controller
         ]);
 
         $startYear = (int) ($validated['academic_year_start'] ?? AcademicYear::currentStartYear());
+        abort_if(SchoolYear::where('start_year', $startYear)->first()?->isArchived(), 422, 'Add files to an archived year from its Archive page.');
         $semester = $validated['semester'] ?? AcademicYear::currentSemester();
         $academicYear = AcademicYear::rangeString($startYear);
 

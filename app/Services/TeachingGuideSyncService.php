@@ -81,7 +81,7 @@ class TeachingGuideSyncService
             'file_type' => $fileType === 'pdf' ? 'pdf' : 'word',
             'subject' => $subject ?? $title,
             'folder_id' => $folder->folder_id,
-            'school_year_id' => SchoolYear::activeId(),
+            'school_year_id' => $folder->school_year_id ?? SchoolYear::activeId(),
             'semester' => $this->semesterFromFolder($folder),
             'academic_year' => $this->academicYearFromFolder($folder),
             'status' => $status,

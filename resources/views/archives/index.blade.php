@@ -5,7 +5,7 @@
 @section('page-subtitle', 'Browse archived school years')
 
 @section('sidebar')
-    @include('partials.' . $role . '-sidebar')
+    @include('partials.' . ($sidebarRole ?? $role) . '-sidebar')
 @endsection
 
 @section('content')

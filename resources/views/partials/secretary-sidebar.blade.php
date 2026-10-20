@@ -19,6 +19,9 @@
         <a href="{{ route('dean.documents') }}" class="menu-item {{ request()->routeIs('dean.documents') ? 'active' : '' }}">
             <i class="fas fa-folder"></i> Documents
         </a>
+        <a href="{{ route('dean.archives.list') }}" class="menu-item {{ request()->routeIs('dean.archives.*') ? 'active' : '' }}">
+            <i class="fas fa-box-archive"></i> Archives
+        </a>
         <a href="{{ route('dean.teaching-guides.index') }}" class="menu-item {{ request()->routeIs('dean.teaching-guides.*') ? 'active' : '' }}">
             <i class="fas fa-book-open"></i> Pending Teaching Guides
             @if(($pendingTeachingGuidesCount ?? 0) > 0)

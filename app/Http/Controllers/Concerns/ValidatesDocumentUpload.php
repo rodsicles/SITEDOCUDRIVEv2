@@ -29,9 +29,11 @@ trait ValidatesDocumentUpload
         $user = auth()->user();
 
         if ($request->boolean('guided_upload')) {
-            $destination = app(\App\Http\Controllers\UploadDestinationController::class)->describe(
-                $user, $folderId, app(\App\Services\FolderService::class), $hierarchy
-            );
+            $destination = $request->routeIs('archive-contents.*')
+                ? app(\App\Services\ArchiveContentService::class)->describe($request->route('year'), $user, $folderId)
+                : app(\App\Http\Controllers\UploadDestinationController::class)->describe(
+                    $user, $folderId, app(\App\Services\FolderService::class), $hierarchy
+                );
             if (!$destination['uploadable']) {
                 throw \Illuminate\Validation\ValidationException::withMessages([
                     'folder_id' => 'Choose a valid upload destination.',
@@ -41,6 +43,10 @@ trait ValidatesDocumentUpload
 
         if ($folder && ! $folder->canBeViewedBy($user)) {
             abort(404);
+        }
+
+        if ($folder?->schoolYear?->isArchived() && ! $request->routeIs('archive-contents.*')) {
+            throw \Illuminate\Validation\ValidationException::withMessages(['folder_id' => 'Add files to an archived year from its Archive page.']);
         }
 
         if ($folder?->document_category_id && !$folder->managedCategory?->is_active) {

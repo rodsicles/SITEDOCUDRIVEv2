@@ -29,6 +29,7 @@ use App\Http\Controllers\PasswordResetRequestController;
 use App\Http\Controllers\ReportController;
 use App\Http\Controllers\DocumentRequestController;
 use App\Http\Controllers\DocumentSearchController;
+use App\Http\Controllers\ArchiveContentController;
 
 // Authentication Routes
 Route::get('/', [AuthController::class, 'showLogin'])->name('login');
@@ -77,6 +78,18 @@ Route::middleware(['auth', 'no.back'])->group(function () {
     Route::post('/document-search/duplicate', [DocumentSearchController::class, 'duplicate'])->middleware('throttle:60,1')->name('document-search.duplicate');
     Route::post('/document-search/reindex/{documentId}', [DocumentSearchController::class, 'reindex'])->middleware('throttle:30,1')->name('document-search.reindex');
     Route::patch('/folders/{folder}/privacy', [FolderController::class, 'privacy'])->middleware('throttle:20,1')->name('folders.privacy');
+});
+
+// Late additions to an archived school year retain its year tag and current role permissions.
+Route::middleware(['auth', 'no.back'])->prefix('archive-contents/{year}')->name('archive-contents.')->group(function () {
+    Route::get('/destinations', [ArchiveContentController::class, 'destinations'])->name('destinations');
+    Route::post('/subjects', [ArchiveContentController::class, 'subject'])->middleware('throttle:30,1')->name('subjects');
+    Route::post('/documents', [ArchiveContentController::class, 'upload'])->middleware('throttle:6,60')->name('upload');
+    Route::post('/folders', [ArchiveContentController::class, 'createFolder'])->middleware('throttle:30,60')->name('folders.store');
+    Route::patch('/folders/{folder}', [ArchiveContentController::class, 'renameFolder'])->middleware('throttle:30,60')->name('folders.rename');
+    Route::patch('/documents/{document}', [ArchiveContentController::class, 'renameDocument'])->middleware('throttle:60,1')->name('documents.rename');
+    Route::patch('/teaching-guides/{guide}', [ArchiveContentController::class, 'renameGuide'])->middleware('throttle:60,1')->name('guides.rename');
+    Route::patch('/exam-questionnaires/{questionnaire}', [ArchiveContentController::class, 'renameQuestionnaire'])->middleware('throttle:60,1')->name('questionnaires.rename');
 });
 
 // Teaching Guides: open or create subject folder (TG/LB) from semester picker

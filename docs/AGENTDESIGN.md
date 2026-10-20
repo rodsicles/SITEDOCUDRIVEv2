@@ -110,6 +110,7 @@ Use these instead of inventing parallel widgets.
 
 - Explorer / tree: `partials/folder-tree.blade.php`, `folder-explorer.blade.php`, `documents-filter-panel.blade.php`
 - Guided upload: `partials/document-upload-dialog.blade.php` — keep destination-then-files.
+- Archive browsing: `resources/views/archives/show.blade.php` reuses the guided upload dialog with archive-specific destinations. Keep its folder toolbar, inline rename controls, and "Added later" badges within the existing square, token-based visual language.
 - Do not restyle `partials/folder-tree-upload-form.blade.php` unless the user named that file.
 - Teacher’s Load: `resources/css/teacher-loads.css`, `resources/js/teacher-loads.js`, `resources/views/teacher-loads/`
 

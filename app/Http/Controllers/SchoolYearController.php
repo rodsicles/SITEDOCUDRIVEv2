@@ -8,6 +8,7 @@ use App\Models\SchoolYear;
 use App\Models\TeachingGuide;
 use App\Services\SchoolYearArchiveDeletionService;
 use App\Services\SchoolYearService;
+use App\Services\ArchiveContentService;
 use App\Support\AcademicYear;
 use App\Support\CoordinatorDepartment;
 use Illuminate\Http\Request;
@@ -205,7 +206,7 @@ class SchoolYearController extends Controller
     /**
      * Browse an archived school year's content (all roles).
      */
-    public function show($id)
+    public function show($id, ArchiveContentService $archiveContent)
     {
         $schoolYear = SchoolYear::findOrFail($id);
         $user = auth()->user();
@@ -218,9 +219,20 @@ class SchoolYearController extends Controller
             return redirect()->route('dean.archives.index');
         }
 
+        $canAddToArchive = $archiveContent->canAdd($user);
+        $selectedArchiveFolder = request()->filled('folder') && $canAddToArchive
+            ? $archiveContent->folderOrFail($schoolYear, (int) request('folder'), $user)
+            : null;
+        $archiveFolders = $canAddToArchive
+            ? $archiveContent->folders($schoolYear, $user, $selectedArchiveFolder?->folder_id)
+            : collect();
+
         $documentsQuery = Document::where('school_year_id', $schoolYear->id)
             ->visibleTo($user)
             ->with('uploader.employee', 'folder');
+        if ($selectedArchiveFolder) {
+            $documentsQuery->whereIn('folder_id', Folder::descendantIdsIncludingSelf($selectedArchiveFolder->folder_id));
+        }
 
         $archiveSearch = trim((string) request('q', ''));
 
@@ -233,7 +245,11 @@ class SchoolYearController extends Controller
         $teachingGuidesQuery = TeachingGuide::where('school_year_id', $schoolYear->id)
             ->approved()
             ->visibleTo($user)
+            ->where(fn ($q) => $q->whereNull('folder_id')->orWhereHas('folder', fn ($folder) => $folder->visibleTo($user)))
             ->with('uploader.employee');
+        if ($selectedArchiveFolder) {
+            $teachingGuidesQuery->whereIn('folder_id', Folder::descendantIdsIncludingSelf($selectedArchiveFolder->folder_id));
+        }
 
         if ($archiveSearch !== '') {
             $this->applyArchiveTeachingGuideSearch($teachingGuidesQuery, $archiveSearch);
@@ -244,7 +260,11 @@ class SchoolYearController extends Controller
         $examQuestionnairesQuery = ExamQuestionnaire::where('school_year_id', $schoolYear->id)
             ->approved()
             ->visibleTo($user)
+            ->where(fn ($q) => $q->whereDoesntHave('document')->orWhereHas('document', fn ($document) => $document->visibleTo($user)))
             ->with('submitter.employee');
+        if ($selectedArchiveFolder) {
+            $examQuestionnairesQuery->whereHas('document', fn ($q) => $q->whereIn('folder_id', Folder::descendantIdsIncludingSelf($selectedArchiveFolder->folder_id)));
+        }
 
         if ($archiveSearch !== '') {
             $this->applyArchiveExamQuestionnaireSearch($examQuestionnairesQuery, $archiveSearch);
@@ -253,9 +273,11 @@ class SchoolYearController extends Controller
         $examQuestionnaires = $examQuestionnairesQuery->latest()->paginate(20)->withQueryString();
 
         $role = $this->getViewRole();
+        $sidebarRole = $user->isSecretary() ? 'secretary' : $role;
 
         return view('archives.show', compact(
-            'schoolYear', 'documents', 'teachingGuides', 'examQuestionnaires', 'role', 'archiveSearch'
+            'schoolYear', 'documents', 'teachingGuides', 'examQuestionnaires', 'role', 'archiveSearch',
+            'canAddToArchive', 'archiveFolders', 'selectedArchiveFolder', 'sidebarRole'
         ));
     }
 
@@ -279,8 +301,9 @@ class SchoolYearController extends Controller
             ->get();
 
         $role = $this->getViewRole();
+        $sidebarRole = $user->isSecretary() ? 'secretary' : $role;
 
-        return view('archives.index', compact('archivedYears', 'role'));
+        return view('archives.index', compact('archivedYears', 'role', 'sidebarRole'));
     }
 
     private function getViewRole(): string

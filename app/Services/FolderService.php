@@ -266,6 +266,7 @@ class FolderService
         $document = Document::findOrFail($documentId);
 
         abort_unless($document->canView(User::findOrFail($userId)), 404);
+        abort_if($document->schoolYear?->isArchived(), 422, 'Archived files stay in their school year.');
 
         if ($document->uploaded_by !== $userId) {
             abort(403, 'Unauthorized action.');
@@ -273,6 +274,7 @@ class FolderService
 
         if ($folderId) {
             $destination = Folder::visibleTo(User::findOrFail($userId))->findOrFail($folderId);
+            abort_if($destination->schoolYear?->isArchived(), 422, 'Use the Archive page for archived folders.');
             abort_if($destination->is_private && (int) $destination->privacy_owner_id !== $userId, 403);
             abort_if($destination->document_category_id && !$destination->managedCategory?->is_active, 422, 'This category is inactive.');
         }
@@ -316,6 +318,8 @@ class FolderService
                     $query->where('user_id', $userId)->orWhere('is_system', true);
                 })
                 ->firstOrFail();
+
+            abort_if($parent->schoolYear?->isArchived(), 422, 'Create folders in an archived year from its Archive page.');
 
             abort_unless($parent->canBeViewedBy(User::findOrFail($userId)), 404);
             if ($parent->document_category_id) {

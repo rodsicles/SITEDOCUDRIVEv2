@@ -124,6 +124,7 @@ class TeachingGuideController extends Controller
         if (!$folder) {
             return back()->with('error', 'Could not create folder structure. Please contact the administrator.');
         }
+        abort_if($folder->schoolYear?->isArchived(), 422, 'Add files to an archived year from its Archive page.');
 
         $recipientIds = array_values(array_unique(array_map('intval', $validated['recipient_ids'])));
         $quotaService = app(\App\Services\StorageQuotaService::class);

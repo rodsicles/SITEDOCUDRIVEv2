@@ -1,7 +1,7 @@
 <div id="documentUploadDialog" class="modal-overlay destination-picker-modal" hidden role="dialog" aria-modal="true" aria-labelledby="documentUploadTitle">
     <div class="modal-card destination-picker-card document-upload-card">
         <div class="modal-header destination-picker-header">
-            <div><h2 id="documentUploadTitle" class="modal-title">Upload Document</h2><p id="documentUploadStep">Choose a destination</p></div>
+            <div><h2 id="documentUploadTitle" class="modal-title">{{ isset($archiveYear) ? 'Add files to '.$archiveYear->name : 'Upload Document' }}</h2><p id="documentUploadStep">Choose a destination</p></div>
             <button type="button" class="modal-close" data-upload-close aria-label="Close upload"><i class="fas fa-times" aria-hidden="true"></i></button>
         </div>
         <div class="modal-body destination-picker-body">
@@ -18,7 +18,7 @@
                 <div id="uploadFolderChoices" class="upload-picker-choices" aria-live="polite"></div>
                 <div class="upload-picker-selection"><span id="uploadDestinationHint">Choose a category to begin.</span><button type="button" id="uploadFavorite" class="btn btn-sm btn-secondary" hidden>Save favorite</button></div>
             </section>
-            <form id="documentUploadForm" action="{{ route($role . '.upload-document') }}" method="POST" enctype="multipart/form-data" data-custom-submit hidden>
+            <form id="documentUploadForm" action="{{ isset($archiveYear) ? route('archive-contents.upload', $archiveYear) : route($role . '.upload-document') }}" method="POST" enctype="multipart/form-data" data-custom-submit hidden>
                 @csrf
                 <input type="hidden" name="folder_id" id="uploadDestinationId">
                 <input type="hidden" name="guided_upload" value="1">
@@ -50,8 +50,9 @@ document.addEventListener('DOMContentLoaded', () => {
     const picker = byId('uploadDestinationStep');
     const useButton = byId('useUploadDestination');
     const submit = byId('submitGuidedUpload');
-    const storageKey = @json('document-upload-destinations-'.auth()->id());
-    const endpoint = @json(route('upload-destinations.index'));
+    const storageKey = @json('document-upload-destinations-'.auth()->id().(isset($archiveYear) ? '-archive-'.$archiveYear->id : ''));
+    const endpoint = @json(isset($archiveYear) ? route('archive-contents.destinations', $archiveYear) : route('upload-destinations.index'));
+    const subjectEndpoint = @json(isset($archiveYear) ? route('archive-contents.subjects', $archiveYear) : route('upload-destinations.subject'));
     let state = null, selected = null, busy = false, loading = false, sequence = 0, previousOverflow = '';
     let shortcuts = {recent: [], favorites: []};
     try { const saved = JSON.parse(localStorage.getItem(storageKey)); if (saved) for (const key of ['recent', 'favorites']) shortcuts[key] = Array.isArray(saved[key]) ? saved[key].filter(Number.isInteger).slice(0, 10) : []; } catch (_) {}
@@ -85,7 +86,7 @@ document.addEventListener('DOMContentLoaded', () => {
     function render(data) {
         state = data;
         const crumbs = byId('uploadBreadcrumbs'); crumbs.replaceChildren();
-        crumbs.append(button('All categories', () => browse(null)));
+        crumbs.append(button(@json(isset($archiveYear) ? 'All archive folders' : 'All categories'), () => browse(null)));
         if (data.folder) crumbs.append(button('← Back', () => browse(data.breadcrumbs.at(-2)?.id || null)));
         data.breadcrumbs.forEach(folder => crumbs.append(button(folder.name, () => browse(folder.id))));
         byId('uploadFolderSearch').value = '';
@@ -111,7 +112,7 @@ document.addEventListener('DOMContentLoaded', () => {
         if (loading || !state?.folder) return;
         loading = true; error('');
         try {
-            const response = await fetch(@json(route('upload-destinations.subject')), {method: 'POST', headers: {'Content-Type': 'application/json', Accept: 'application/json', 'X-CSRF-TOKEN': form.querySelector('[name="_token"]').value}, body: JSON.stringify({folder: state.folder.id, subject})});
+            const response = await fetch(subjectEndpoint, {method: 'POST', headers: {'Content-Type': 'application/json', Accept: 'application/json', 'X-CSRF-TOKEN': form.querySelector('[name="_token"]').value}, body: JSON.stringify({folder: state.folder.id, subject})});
             if (!response.ok) throw new Error('Unable to open this course. Please try again.');
             const data = await response.json(); await browse(data.id);
         } catch (e) { error(e.message); } finally { loading = false; }
@@ -136,7 +137,7 @@ document.addEventListener('DOMContentLoaded', () => {
         previousOverflow = document.body.style.overflow; document.body.style.overflow = 'hidden';
         modal.hidden = false; modal.classList.add('active'); showStep(!!selected);
         modal.querySelector('[data-upload-close]').focus();
-        if (!selected) browse(@json(isset($currentFolder) ? $currentFolder?->folder_id : null), true);
+        if (!selected) browse(@json(isset($archiveYear) ? $selectedArchiveFolder?->folder_id : (isset($currentFolder) ? $currentFolder?->folder_id : null)), true);
     });
     function close() { if (busy) return; ++sequence; loading = false; modal.hidden = true; modal.classList.remove('active'); document.body.style.overflow = previousOverflow; byId('openDocumentUpload').focus(); }
     modal.querySelectorAll('[data-upload-close]').forEach(item => item.addEventListener('click', close));

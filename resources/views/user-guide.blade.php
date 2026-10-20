@@ -130,6 +130,7 @@
             <a href="#guide-documents" class="guide-toc-item"><span class="guide-toc-num">9</span> Documents</a>
             <a href="#guide-teaching" class="guide-toc-item"><span class="guide-toc-num">10</span> Pending Teaching Guides</a>
             <a href="#guide-exams" class="guide-toc-item"><span class="guide-toc-num">11</span> Pending Exam Questionnaires</a>
+            <a href="#guide-archives" class="guide-toc-item"><span class="guide-toc-num">12</span> Archives</a>
         @else
             <a href="#guide-dashboard" class="guide-toc-item"><span class="guide-toc-num">1</span> Dashboard</a>
             <a href="#guide-tasks" class="guide-toc-item"><span class="guide-toc-num">2</span> Tasks</a>
@@ -414,7 +415,7 @@
 </div>
 
 {{-- ===== RECYCLE BIN ===== --}}
-@if($isFaculty || $isCoordinator || $isDean)
+@if($isFaculty || $isCoordinator || $isDean || $isSecretary)
 <div id="guide-recycle-bin" class="content-card">
     <div class="card-header">
         <h3 class="card-title"><i class="fas fa-recycle mr-2"></i>
@@ -524,7 +525,7 @@
 <div id="guide-archives" class="content-card">
     <div class="card-header">
         <h3 class="card-title"><i class="fas fa-box-archive mr-2"></i>
-            @if($isFaculty) 11. @elseif($isCoordinator) 13. @else 13. @endif
+            @if($isFaculty) 11. @elseif($isCoordinator) 13. @elseif($isSecretary) 12. @else 13. @endif
             Archives
         </h3>
     </div>
@@ -535,17 +536,18 @@
         <li>Review the <strong>current school year</strong> counts (approved TG/EQ totals) before archiving.</li>
         <li>When a term ends, click <strong>Archive This School Year</strong>, confirm the archive name, and submit. Pending and rejected submissions are not archived.</li>
         <li>Browse archived years and click <strong>Browse</strong>. Use <strong>Search this school year</strong> to find files within that archive only.</li>
+        <li>To add late files, open an archived year, choose <strong>Add files</strong>, select an archive destination, then choose files. Create a folder there when needed. Rename an eligible file or folder from its archive row.</li>
     </ol>
     @else
     <p class="guide-intro">Archives store completed school years with official documents and approved teaching guides and exam questionnaires only.</p>
     <ol class="guide-steps">
         <li>Click <strong>Archives</strong> in the sidebar.</li>
         <li>Select an archived school year and click <strong>Browse</strong>.</li>
-        <li>View or download files from that year. You cannot upload into archived years.</li>
+        <li>View or download files from that year. To add late files, use <strong>Add files</strong> on the archive page, select a destination, and then choose files. You can create an archive folder and rename eligible files or folders there.</li>
         <li>Use <strong>Search this school year</strong> on the browse page to filter within that archive only.</li>
     </ol>
     @endif
-    <div class="guide-tip"><i class="fas fa-lightbulb mr-1"></i> <strong>Tip:</strong> Coordinators and faculty should finish uploading for the term before the Dean archives the school year.</div>
+    <div class="guide-tip"><i class="fas fa-lightbulb mr-1"></i> <strong>Tip:</strong> Academic files added later still follow their usual approval process. The approved archive list updates after review.</div>
 </div>
 @endif
 

@@ -6,6 +6,8 @@ This file replaces the archived lime-era design notes. Do not follow `docs/archi
 
 Source of visual truth is compiled CSS and Blade, not screenshots: `resources/css/app.css` plus existing feature CSS. If this document and the CSS disagree, record the discrepancy; do not silently “fix” the whole stylesheet unless that is the task.
 
+Latest workflow UI reference: **`86cd234` (2026-10-21)**, including the profile teaching summary from `788be16` and archive actions from `77c2ad8`. These changes reuse the approved palette and shared components; they do not establish a new color theme. Production/browser verification is not implied by this reference.
+
 ## How this folder works
 
 
@@ -67,6 +69,8 @@ Dark green grouped sidebar, account controls at the bottom, consistent page titl
 
 Documents: breadcrumbs, folder choice, consolidated toolbar, file list. Search scopes must stay obvious.
 
+The shared document scope bar labels its starred-file link **Favorite documents**, with a star icon and count (including zero). Reuse the existing `browse=favorites` view rather than adding a duplicate sidebar item or separate favorites page. Its heading explains that favorites span folders and categories; existing access checks still apply.
+
 Login: split identity / sign-in. School branding stays in the identity panel; “Employee portal” in the header. Do not restyle login unless the user asked.
 
 Profile: `profile-panel` tabs (details / password), not the old uneven password grid. File: `resources/views/profile/edit.blade.php`.
@@ -117,6 +121,17 @@ Use these instead of inventing parallel widgets.
 - Teacher’s Load: `resources/css/teacher-loads.css`, `resources/js/teacher-loads.js`, `resources/views/teacher-loads/`
 - Correction actions use native `dialog.ui-dialog`: Teacher's Load revise/void/discard/delete confirmations, request-management dialogs, and Course Catalog edits. Require a clear reason for lifecycle changes; keep destructive confirmation buttons semantic. Published history is shown in compact tables. Do not place a complex management form inside a document upload modal.
 
+### Current correction screens
+
+| Screen | Current UI and behavior to preserve | Source |
+|---|---|---|
+| Profile teaching summary | Subject code/title first; section and published schedule only when available. Existing unscheduled assignments remain visible without fabricated timetable fields. Unpublished revisions are hidden. Voiding removes the published schedule, not the account's subject assignments. | `resources/views/partials/teaching-assignment-summary.blade.php` |
+| Teacher's Load | Managers see Edit draft, Revise/Edit revision, Discard revision, Void/Prepare replacement, Delete draft, and History when allowed by status/year. Native compact confirmations collect reasons; the existing wide editor handles actual load rows. Faculty see published/void records and history, never revision drafts. | `resources/views/teacher-loads/index.blade.php`, `history.blade.php`, `resources/js/teacher-loads.js` |
+| Document request management | Sent requests link to a separate management page. Native dialogs edit details/deadlines, add/reinstate recipients, exempt, cancel, or reopen. Show parent request status separately from recipient review status; retain submissions and show readable change history. Field values survive validation errors. | `resources/views/document-requests/manage.blade.php` |
+| Course Catalog | Edit course uses native `dialog.ui-dialog` for code/title, year level, semester, and lecture/lab units. Keep labels associated with controls, close/Cancel visible, and failed values recoverable. Change history is a separate table; inactive courses use Restore rather than permanent deletion. | `resources/views/partials/course-catalog.blade.php`, `course-metadata-fields.blade.php`, `resources/views/courses/history.blade.php` |
+
+Reasons are required for load lifecycle/request-management actions. Course metadata edits record before/after values without a required reason field. Do not label every history entry as an approval. A saved load revision is still unpublished until finalization; its presence must not replace the published profile/PDF.
+
 
 
 ## Typography and spacing
@@ -154,6 +169,10 @@ Do not paint the workspace or card fills with brand green. Do not add gradients 
 | `resources/views/partials/document-upload-dialog.blade.php` | Guided upload                    |
 | `resources/views/partials/ui-error-dialog.blade.php`        | Compact errors                   |
 | `resources/js/site-request.js`                              | Shared fetch / error mapping     |
+| `resources/views/partials/teaching-assignment-summary.blade.php` | Shared profile/load subject list |
+| `resources/views/document-requests/manage.blade.php`        | Request management and change history |
+| `resources/views/partials/course-catalog.blade.php`          | Course actions and edit dialog |
+| `resources/views/teacher-loads/history.blade.php`            | Saved published load revisions |
 
 
 After CSS or Blade visual changes: `npm run build`, then hard-refresh (Ctrl+F5).

@@ -213,8 +213,8 @@
         <section class="doc-current-files" aria-label="{{ $browseMode === 'favorites' ? 'Favorite documents' : 'Recent documents' }}">
             <div class="doc-folder-head">
                 <div>
-                    <h2>{{ $browseMode === 'favorites' ? 'Favorites' : 'Recent files' }}</h2>
-                    <p>{{ $scopedDocuments->count() }} {{ $scopedDocuments->count() === 1 ? 'document' : 'documents' }}</p>
+                    <h2>{{ $browseMode === 'favorites' ? 'Favorite documents' : 'Recent files' }}</h2>
+                    <p>{{ $scopedDocuments->count() }} {{ $scopedDocuments->count() === 1 ? 'document' : 'documents' }}{{ $browseMode === 'favorites' ? ' · Your starred files across folders and categories' : '' }}</p>
                 </div>
             </div>
             @include('partials.documents-list-table', [

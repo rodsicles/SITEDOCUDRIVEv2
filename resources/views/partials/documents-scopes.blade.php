@@ -23,8 +23,10 @@
         </a>
         <a href="{{ route($docsRoute, array_merge($scopeBase, ['browse' => 'favorites'])) }}"
            class="{{ $browseMode === 'favorites' ? 'is-active' : '' }}"
+           title="Open your favorite documents across folders and categories"
            @if($browseMode === 'favorites') aria-current="page" @endif>
-            Favorites{{ $favoriteCount ? ' · '.$favoriteCount : '' }}
+            <i class="fas fa-star" aria-hidden="true"></i>
+            Favorite documents ({{ $favoriteCount }})
         </a>
     </nav>
     @if($canUpload ?? false)
@@ -39,11 +41,11 @@
         @if($browseMode === 'recent')
             Files you opened recently, across folders.
         @elseif($browseMode === 'favorites')
-            Files you starred for quick return.
+            Your starred documents across folders and categories. Access permissions still apply.
         @elseif(isset($currentFolder) && $currentFolder)
             Files in this folder.
         @else
-            Choose a folder below, or switch scope to Recent or Favorites.
+            Choose a folder below, or open Recent or Favorite documents.
         @endif
     </p>
     @endif

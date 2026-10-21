@@ -2,7 +2,7 @@
 
 ## Quick Context
 
-Last source audit: **2026-10-02, Asia/Manila**. Implementation baseline: **`839a07d`**, following **`fe62b4a`**. This is a source review, not confirmation of the deployed database, workers, or browser behavior.
+Latest source review: **2026-10-21, Asia/Manila**. Implementation baseline: **`86cd234`**, including **`788be16`** and **`77c2ad8`**. This review covers the recent workflow changes; the earlier broad baseline was `839a07d`. Both V2 and V3 `main` were successfully pushed to `86cd234` in this session. Production deployment, migration execution, workers, and browser behavior remain unverified.
 
 SITE DocuDrive is the employee document and academic-workflow portal for the School of Information Technology and Engineering, St. Paul University Philippines. It uses Laravel 12 / PHP 8.2+, Blade, Tailwind 4, Vite 7, and JavaScript. Dependencies and scripts are authoritative in `composer.json` and `package.json`.
 
@@ -12,6 +12,7 @@ SITE DocuDrive is the employee document and academic-workflow portal for the Sch
 - Current UI: dark-green sidebar, white surfaces, pale green-gray workspace, square controls, restrained borders, Segoe UI. Read the design section before adding styles.
 - Shared document search is implemented in `DocumentSearchService`; compact errors use `SiteRequest` and `ui-error-dialog`. Some requested edge cases remain incomplete: see Known gaps.
 - Upload, document-request, review, archive, and Teacher's Load flows are distinct. Approval rules and saved records must survive UI edits.
+- Latest workflows: late archive additions; current teaching assignments on profiles; published load revisions/voiding/history; author-managed request corrections; editable course term/year/units with history. The last three need `2026_10_21_000001_add_workflow_correction_history` before use. Existing subject assignments remain year-independent; no schedules were invented or backfilled.
 - `origin` is V3 and `v2` is the V2 repository in this checkout. V2 is the user-described deployed repository. Verify remotes and deployment status before release actions; a local commit is not deployment evidence.
 - Living documentation lives under `docs/`: this guide (behavior), `docs/AGENTDESIGN.md` (UI), `docs/AGENTS.md` (workflow), `docs/SETUP.md` (install). Do not follow `docs/archive/legacy/` as current instructions.
 - Read only the relevant section below. Update this guide after implementation changes; do not copy private employee records, secrets, or logs into it.
@@ -23,10 +24,12 @@ SITE DocuDrive is the employee document and academic-workflow portal for the Sch
 | Access / programs / accounts | Permissions and accounts | `app/Support/CoordinatorDepartment.php`, `app/Services/EmployeeService.php`, `routes/web.php` |
 | Files / folders / uploads | Documents and submissions | `app/Services/DocumentService.php`, `app/Services/FolderService.php` |
 | Search / OCR | Search and indexing | `app/Services/DocumentSearchService.php`, `app/Services/GlobalSearchService.php` |
-| Requests / compliance | Document requests | `app/Http/Controllers/DocumentRequestController.php` |
-| Teaching workload | Teacher's Load | `app/Services/TeacherLoadService.php`, `resources/js/teacher-loads.js` |
+| Requests / compliance / corrections | Document requests | `app/Http/Controllers/DocumentRequestController.php`, `app/Services/DocumentRequestManagementService.php` |
+| Teaching workload / revisions | Teacher's Load | `app/Services/TeacherLoadService.php`, `resources/js/teacher-loads.js` |
+| Profile subjects / timetable | Teacher's Load | `app/Services/TeachingAssignmentService.php`, `resources/views/partials/teaching-assignment-summary.blade.php` |
+| Course term / units / edit history | Permissions and accounts | `app/Support/CourseInput.php`, `app/Services/CourseService.php`, `app/Http/Controllers/CourseHistoryController.php` |
 | Dashboard / tasks / communication | Daily operations | `app/Services/DashboardService.php`, `routes/web.php` |
-| History / school years | Archives and audit trail | `app/Services/SchoolYearService.php`, `app/Models/DashboardLog.php` |
+| History / school years / late additions | Archives and audit trail | `app/Services/SchoolYearService.php`, `app/Services/ArchiveContentService.php`, `app/Models/DashboardLog.php` |
 | Layout / colors / modal / profile | UI design and `docs/AGENTDESIGN.md` | `resources/css/app.css`, `resources/views/layouts/dashboard.blade.php` |
 | Failures / recovery | Error handling | `resources/js/site-request.js`, `app/Support/ApiError.php` |
 | Setup / deploy / tests | Operations and verification | `docs/SETUP.md`, `composer.json`, `phpunit.xml`, `routes/console.php` |
@@ -40,7 +43,7 @@ SITE DocuDrive is the employee document and academic-workflow portal for the Sch
 | Dean | Broad employee, document, review, and administrative access; creates Coordinators and Faculty and assigns extra handled programs. Privacy still applies. |
 | Secretary | Shares many `/dean` routes through `role:Dean,Secretary`, but individual controller checks can be stricter. Do not assume universal Dean equivalence. Teacher's Load manager checks explicitly name Dean and Coordinator. |
 | Program Coordinator | Manages permitted Faculty/program resources using home plus extra programs. Can create Faculty; cannot infer permission to create Coordinators or use system administration merely from expanded program scope. |
-| Faculty Employee | Personal work, assigned tasks and subjects, permitted requests and shared documents; own finalized teaching loads. |
+| Faculty Employee | Personal work, assigned tasks and subjects, received requests and shared documents; own published/void teaching loads and saved revision history. No access to unpublished load revisions. |
 
 Sources: `routes/web.php`, `app/Models/User.php`, `app/Models/Document.php`, `app/Models/Folder.php`, and `app/Models/Concerns/ScopesSubmissionVisibility.php`. Specific endpoint checks are authoritative for exceptions.
 
@@ -58,6 +61,8 @@ Daily flow: select category → browse folder hierarchy → select destination �
 
 Built-in categories include Accreditation and Certifications, Event Letters, Academics, Teaching Guides, and Exam Questionnaires. Managed categories also use stable `category_id` associations while legacy category values remain supported.
 
+The shared Documents scope bar provides a **Favorite documents (count)** link with a star icon. It opens the existing `browse=favorites` list across folders and categories, not just the current folder. Favorites are personal to the signed-in user and `DocumentService::getFavoriteDocuments()` filters each document through `canView()`; a favorite never grants extra access. Star/unstar actions remain in the file rows. No separate favorites sidebar/page or migration is needed.
+
 Dynamic category rules: personal categories are owner-scoped; system-wide categories are managed through authorized administration. Scope is immutable. Renaming preserves associations. Deactivation keeps existing records browsable but blocks new incoming content. Category management has no permanent-delete action. See `docs/runbooks/dynamic-categories-deployment.md` for the rollback caveat.
 
 The guided upload dialog is `resources/views/partials/document-upload-dialog.blade.php`; keep its approved destination-selection flow. Client/server validation limits ordinary batches to up to three files, 10 MB per file. Teaching Guide/Exam Questionnaire destinations accept PDF/Word; other permitted destinations support configured image types. Storage quota checks are additional constraints.
@@ -68,7 +73,7 @@ Normal academic submissions have pending/approved/rejected review flows. Dean/Se
 
 Privacy is enforced through folder/category ownership and document visibility. Before changing lock behavior, inspect `FolderService` propagation to descendants and category ownership. A private folder must not become visible merely because an actor handles more programs. Missing privacy-schema fallbacks exist and are not proof that an unmigrated deployment is safe.
 
-Document versions are handled by `DocumentVersionService`; preview/download responses use storage and naming helpers. Do not confuse a version snapshot with a duplicate submission or a school-year archive.
+Document versioning currently has two paths: ordinary preview replacement uses `DocumentService::uploadNewVersion`, while request corrections use `DocumentVersionService`. Their authorization, linked academic-file synchronization, approval, and search-index handling are not identical; see Known gaps. Preview/download responses use storage and naming helpers. Do not confuse a version snapshot with a duplicate submission or a school-year archive.
 
 ## Search and indexing
 
@@ -92,9 +97,9 @@ SHA-256 `file_hash` values are stored during upload/index for duplicate-file war
 
 ## Document requests
 
-Employees create requests for eligible recipients, choose requirements/destination, and set due dates. Recipient eligibility and academic course constraints are enforced by the current controller; one department does not make every employee/course automatically eligible.
+Dean/Coordinator create requests for eligible recipients, choose requirements/destination, and set due dates. Faculty receive and submit requests; they cannot create/manage requests through the current endpoints. Recipient eligibility and academic course constraints are enforced by the current controller; one department does not make every employee/course automatically eligible.
 
-Each recipient tracks independent pending, submitted, changes_requested, or approved status. Submission is separate from requester review. Request approvals can synchronize Teaching Guide/Exam Questionnaire records and their final destination. Corrections require meaningful feedback. Requests generate notifications and activity records.
+Each recipient tracks independent pending, submitted, changes_requested, approved, or exempt status. The parent request is open, completed, or cancelled. Submission is separate from requester review. Request approvals can synchronize Teaching Guide/Exam Questionnaire records and their final destination. Corrections require meaningful feedback. Requests generate notifications and activity records.
 
 Source: `app/Http/Controllers/DocumentRequestController.php` and its models/views. General requests can target active system categories; personal categories are not cross-account submission destinations. Preserve assignment restrictions and file authorization when altering recipient or destination pickers.
 
@@ -156,7 +161,7 @@ Shell: grouped dark sidebar, bottom account/photo controls, consistent page titl
 
 Forms: align labels and controls, show validation next to the relevant field, distinguish fixed account details from editable inputs, and preserve entered values on recoverable failures. Login is a split identity/sign-in layout; school/university branding appears in the identity panel and Employee portal in the header. Profile now uses the `profile-panel` components, not the old uneven password grid.
 
-Modals: use shared shell/header/body/footer patterns, visible close action, bounded scrolling and restrained backdrop. Keep upload destination and file-entry steps intact. Teacher's Load needs its wider dedicated workspace. Compact error dialog is 420px maximum width, with approximately 1.05rem title and .875rem body text, two-action capacity, and a subtle shadow. Do not apply that small width to complex forms.
+Modals: use shared shell/header/body/footer patterns, visible close action, bounded scrolling and restrained backdrop. Course edits, request-management actions, and load lifecycle confirmations use native `dialog.ui-dialog`; management/history pages remain separate from upload. Keep upload destination and file-entry steps intact. Teacher's Load retains its wider dedicated editing workspace. Compact error dialog is 420px maximum width, with approximately 1.05rem title and .875rem body text, two-action capacity, and a subtle shadow. Do not apply that small width to complex forms.
 
 ## Error handling
 
@@ -174,11 +179,13 @@ Scheduled tasks in `routes/console.php`: academic folders on August 10, recycle 
 
 Important migrations include managed categories (`2026_09_23_000001_add_managed_document_categories`) and extra Coordinator programs (`2026_10_01_000001_create_employee_programs_table`). Inspect all pending migrations, including historical data-changing ones, before production execution. Category rollback deliberately rejects removal when managed records exist; prefer a forward fix or coordinated database/application/storage recovery.
 
+Release `86cd234` requires `database/migrations/2026_10_21_000001_add_workflow_correction_history.php`. It adds `teacher_load_revisions`, `document_request_changes`, and `course_changes`; published-load revision/draft/void fields; request concurrency and exemption fields; and course concurrency/manual-unit flags. It does not seed employee assignments or schedules. Earlier Teacher's Load, request, and course-unit migrations must already be present. See [the release checklist](SETUP.md#workflow-corrections-release-86cd234). Production execution has not been verified. Rolling this migration back removes the new history/draft data; use a reviewed forward fix rather than rollback for an ordinary UI problem.
+
 `2026_09_10_000001_ensure_it_dean_account` resets the `dean` username, profile fields, and password when it runs. Do not include it in a blanket production migrate unless that account reset is intended. Prefer path-specific artisan migrate for unrelated feature tables when that migration is still pending on purpose.
 
 `composer test` clears configuration, runs Rector in dry-run mode, and runs Laravel tests. **Never run `composer test` on Laravel Cloud / production MySQL.** `phpunit.xml` uses in-memory SQLite, array cache/session/mail, and synchronous queues. `npm run build` builds frontend assets. Some MySQL-only behavior may be skipped; read the reported reason and do not count skips as passing verification. `tests/Feature/CoordinatorProgramsTest.php`, `DocumentSearchAuthorizationTest.php`, `TeacherLoadTest.php`, and `ProgramStructureTest.php` are useful entry points.
 
-This documentation pass did not run application tests, migrations, production commands, or authenticated browser checks. It changes documentation only. Historical test totals from chat are not current results.
+Implementation verification for `86cd234`: `php artisan test` reported **94 passed, 1 existing MySQL-only skip (718 assertions)**; Vite build and a targeted Rector dry-run over the touched workflow services/controllers passed. Entry points include `DocumentRequestManagementTest`, `CourseMetadataTest`, `TeacherLoadTest`, `ProfileEditTest`, and `ArchiveContentTest`. This documentation refresh verifies paths, links, factual claims, and the diff only; it does not rerun application tests, execute migrations, or verify production/browser behavior.
 
 ## Extracted ops notes
 
@@ -205,6 +212,9 @@ Pulled from archived guides so those files are no longer required reading. Re-ve
 - New shared error infrastructure does not prove every fetch caller handles network errors, modal nesting, or session redirects consistently.
 - Folder privacy scopes inspect stored folder privacy flags; descendant/category propagation and migration readiness require direct verification. Do not assert blanket privacy guarantees from one helper alone.
 - Version/report storage cleanup and stale indexing-job behavior still require dedicated failure-path verification; the latest commit does not establish all earlier prompt requirements as complete.
+- The October 21 audit's account/session and permission findings are still open: deactivation lacks an explicit ongoing active-status/session-revocation gate; Reports and Professional Development have broader Coordinator checks than handled-program scoping; Recycle Bin listing/restore needs a private-folder authorization review. These were not included in approved items 1/3/5.
+- Ordinary document replacement still has a separate path from request corrections. Consolidating approval, file-mirror, authorization, and indexing behavior remains outstanding; workflow corrections in `86cd234` did not fix that path.
+- Only audit feature items **1 (load corrections), 3 (request management), and 5 (catalog editing)** were approved and implemented. Term-specific assignments, task editing/reassignment/cancellation, sharing-management controls, report corrections, and expanded folder/training recovery remain recommendations, not shipped functions.
 - Production migrations, OCR binaries, scheduler/worker health, fresh browser checks and remote deployment state were not verified in this pass.
 
 ## Documentation map
@@ -245,9 +255,11 @@ Dates below are Git commit dates, not assertions of production deployment. This 
 | 2026-10-01 | `839a07d` | Shared document search, archive scope and compact error infrastructure; limitations recorded above |
 | 2026-10-02 | `34d1692` | Living docs in `docs/`: `SYSTEM_GUIDE.md`, `AGENTDESIGN.md`, `AGENTS.md`, `SETUP.md`. Legacy Markdown archived. No deletions. |
 | 2026-10-02 | `49a50a4` | Dark mode tokens remapped to charcoal workspace + green sidebar/accent only. Light `--site-*` values unchanged. |
-| 2026-10-02 | this docs commit | Removed five duplicate archived guides after user deletion in the working tree. Remaining archive files kept. Recoverable from Git. |
-| 2026-10-19 | uncommitted | Archived-year late uploads, folders, and rename actions with year-bound endpoints and existing academic approval; no migration. Local verification: 83 passed, 1 MySQL-only skip, Vite build and Blade cache passed. Production and browser behavior not verified. |
-| 2026-10-21 | uncommitted | Current teaching assignments on own Faculty/Coordinator profile and scoped Teacher's Load views; existing assignments need no schedule/backfill, published schedules come from the current finalized load. Added manager subject-editor links and bulk subject rows with empty schedules. No migration. Profile/TeacherLoad tests: 14 passed; build passed. Browser/deployment not verified. |
-| 2026-10-21 | uncommitted | Approved audit items 1/3/5: published Teacher's Load revisions/history/voiding and draft removal; author-managed requests with deadline edits, recipients, exemptions, cancellation/reopening and change history; scoped Course Catalog metadata edits/history and protected manual unit values. Requires `2026_10_21_000001_add_workflow_correction_history` before use. No production migration run. Local verification: 94 passed, 1 existing MySQL-only skip; Vite build and targeted workflow Rector check passed. Browser/deployment not verified. |
+| 2026-10-02 | `bbb45f0` | Removed five duplicate archived Markdown guides. Remaining archive files kept. Recoverable from Git. |
+| 2026-10-21 | `77c2ad8` | Archived-year late uploads, folders, and rename actions with year-bound endpoints and existing academic approval; no migration. Local verification: 83 passed, 1 MySQL-only skip; Vite build passed. Production/browser behavior unverified. |
+| 2026-10-21 | `788be16` | Current teaching assignments on own Faculty/Coordinator profile and scoped Teacher's Load views; existing assignments need no schedule/backfill, published schedules come from the current finalized load. Manager subject-editor links and bulk subject rows with empty schedules. No migration. Profile/TeacherLoad tests: 14 passed; build passed. Browser/deployment unverified. |
+| 2026-10-21 | `86cd234` | Approved audit items 1/3/5: load revisions/history/voiding and draft removal; author-managed request corrections; scoped course metadata edits/history and protected manual units. Requires `2026_10_21_000001_add_workflow_correction_history`. Local verification: 94 passed, 1 existing MySQL-only skip; Vite build and targeted Rector check passed. Pushed to V2/V3 main; deployment/migration execution unverified. |
+| 2026-10-21 | uncommitted (docs only) | Refreshed source baseline, verified release IDs, topic routing, modal guidance, schema/release instructions, and the boundary between implemented corrections and unapproved audit recommendations. Checked documentation paths/links and diff; no application or production operations. |
+| 2026-10-21 | uncommitted | Made the shared Favorite documents navigation explicit with a star, count, and cross-folder explanation for Dean, Coordinator, and Faculty. Reuses existing personal favorites and authorization; no migration. Vite build and Blade compilation passed; browser behavior not verified. |
 
 Maintenance: after an authorized change, update current behavior first, then append `Date | actual commit or uncommitted | workflow/roles + migration/config + checks/limitations`. Keep Quick Context short, link to code instead of copying implementations, and do not append whole prompts or chat transcripts. For docs-only commits, the baseline remains the latest implementation commit audited; do not chase the document's own commit hash.

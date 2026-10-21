@@ -115,6 +115,7 @@ Use these instead of inventing parallel widgets.
 - Archive browsing: `resources/views/archives/show.blade.php` reuses the guided upload dialog with archive-specific destinations. Keep its folder toolbar, inline rename controls, and "Added later" badges within the existing square, token-based visual language.
 - Do not restyle `partials/folder-tree-upload-form.blade.php` unless the user named that file.
 - Teacher’s Load: `resources/css/teacher-loads.css`, `resources/js/teacher-loads.js`, `resources/views/teacher-loads/`
+- Correction actions use native `dialog.ui-dialog`: Teacher's Load revise/void/discard/delete confirmations, request-management dialogs, and Course Catalog edits. Require a clear reason for lifecycle changes; keep destructive confirmation buttons semantic. Published history is shown in compact tables. Do not place a complex management form inside a document upload modal.
 
 
 

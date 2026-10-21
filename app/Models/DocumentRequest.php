@@ -11,9 +11,11 @@ class DocumentRequest extends Model
         'destination_folder_id',
         'program', 'school_year_id', 'semester', 'due_at',
         'allow_late_submission', 'status',
+        'lock_version',
     ];
 
     protected $casts = [
+        'lock_version' => 'integer',
         'due_at' => 'datetime',
         'allow_late_submission' => 'boolean',
     ];
@@ -23,6 +25,7 @@ class DocumentRequest extends Model
     public function destinationFolder() { return $this->belongsTo(Folder::class, 'destination_folder_id', 'folder_id'); }
     public function schoolYear() { return $this->belongsTo(SchoolYear::class); }
     public function recipients() { return $this->hasMany(DocumentRequestRecipient::class); }
+    public function changes() { return $this->hasMany(DocumentRequestChange::class)->latest('id'); }
 
     public function scopeVisibleTo($query, User $user)
     {

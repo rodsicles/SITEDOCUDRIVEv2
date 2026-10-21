@@ -171,4 +171,86 @@ class TeacherLoadTest extends TestCase
         $coordinator->employee->syncExtraPrograms([]);
         $this->get(route('teacher-loads.index', ['employee_id' => $faculty->employee->employee_id]))->assertNotFound();
     }
+
+    public function test_revision_keeps_published_schedule_until_finalized_and_retains_history(): void
+    {
+        [$dean, $faculty, $course] = $this->setupFaculty();
+        $payload = $this->payload($faculty, $course);
+        $id = $this->actingAs($dean)->postJson(route('teacher-loads.store'), $payload)->assertCreated()->json('id');
+        $load = TeacherLoad::findOrFail($id);
+        $this->postJson(route('teacher-loads.finalize', $id), ['lock_version' => $load->lock_version])->assertOk();
+        $load->refresh();
+        $this->post(route('teacher-loads.change', $id), ['action' => 'revise', 'lock_version' => $load->lock_version, 'reason' => 'Room changed for next week'])->assertRedirect();
+        $load->refresh();
+        $this->post(route('teacher-loads.change', $id), ['action' => 'revise', 'lock_version' => $load->lock_version, 'reason' => 'Duplicate revision attempt'])->assertStatus(409);
+        $payload['lock_version'] = $load->lock_version;
+        $payload['items'][0]['schedules'][0]['room'] = 'New Room 204';
+        $this->patchJson(route('teacher-loads.update', $id), $payload)->assertOk()->assertJsonPath('editing_revision', true);
+        $load->refresh();
+        $this->assertSame('LR 103', $load->items()->first()->schedules[0]['room']);
+        $this->actingAs($faculty)->getJson(route('teacher-loads.show', $id))->assertOk()
+            ->assertDontSee('New Room 204')->assertJsonMissingPath('revision_draft');
+        $this->actingAs($dean)->postJson(route('teacher-loads.finalize', $id), ['lock_version' => $load->lock_version])->assertOk();
+        $load->refresh();
+        $this->assertSame(2, $load->revision_number);
+        $this->assertSame('New Room 204', $load->items()->first()->schedules[0]['room']);
+        $revision = $load->revisions()->firstOrFail();
+        $this->assertSame('LR 103', $revision->snapshot['items'][0]['schedules'][0]['room']);
+        $this->actingAs($faculty)->get(route('teacher-loads.history', $id))->assertOk()->assertSee('Room changed for next week');
+        $this->get(route('teacher-loads.revision-pdf', [$id, $revision->id]))->assertOk()->assertHeader('content-type', 'application/pdf');
+    }
+
+    public function test_void_discard_and_delete_actions_are_versioned_and_restricted(): void
+    {
+        [$dean, $faculty, $course] = $this->setupFaculty();
+        $id = $this->actingAs($dean)->postJson(route('teacher-loads.store'), $this->payload($faculty, $course))->assertCreated()->json('id');
+        $load = TeacherLoad::findOrFail($id);
+        $data = ['action' => 'delete-draft', 'lock_version' => $load->lock_version, 'reason' => 'Created for the wrong employee'];
+        $this->actingAs($faculty)->postJson(route('teacher-loads.change', $id), $data)->assertForbidden();
+        $this->actingAs($dean)->post(route('teacher-loads.change', $id), $data)->assertRedirect();
+        $this->assertDatabaseMissing('teacher_loads', ['id' => $id]);
+        $id = $this->postJson(route('teacher-loads.store'), $this->payload($faculty, $course))->assertCreated()->json('id');
+        $load = TeacherLoad::findOrFail($id);
+        $this->postJson(route('teacher-loads.finalize', $id), ['lock_version' => $load->lock_version])->assertOk();
+        $load->refresh();
+        $data['lock_version'] = $load->lock_version;
+        $this->postJson(route('teacher-loads.change', $id), $data)->assertStatus(409);
+        $data['action'] = 'revise';
+        $this->post(route('teacher-loads.change', $id), $data)->assertRedirect();
+        $this->postJson(route('teacher-loads.change', $id), $data)->assertStatus(409);
+        $load->refresh();
+        $this->post(route('teacher-loads.change', $id), array_replace($data, ['action' => 'discard', 'lock_version' => $load->lock_version]))->assertRedirect();
+        $load->refresh();
+        $this->assertNull($load->revision_draft);
+        $this->post(route('teacher-loads.change', $id), array_replace($data, ['action' => 'void', 'lock_version' => $load->lock_version]))->assertRedirect();
+        $this->assertSame('void', $load->fresh()->status);
+        $this->actingAs($faculty)->get(route('teacher-loads.history', $id))->assertOk()->assertSee('Voided:');
+        $this->actingAs($dean);
+        $load->refresh();
+        $this->post(route('teacher-loads.change', $id), array_replace($data, ['action' => 'revise', 'lock_version' => $load->lock_version]))->assertRedirect();
+        $load->refresh();
+        $this->postJson(route('teacher-loads.finalize', $id), ['lock_version' => $load->lock_version])->assertOk();
+        $this->assertSame('finalized', $load->fresh()->status);
+        $this->assertSame(2, $load->fresh()->revision_number);
+        $this->assertCount(1, $load->revisions);
+    }
+
+    public function test_revision_actions_honor_extra_programs_and_archive_restrictions(): void
+    {
+        [$dean, $faculty, $course] = $this->setupFaculty();
+        $id = $this->actingAs($dean)->postJson(route('teacher-loads.store'), $this->payload($faculty, $course))->assertCreated()->json('id');
+        $load = TeacherLoad::findOrFail($id);
+        $this->postJson(route('teacher-loads.finalize', $id), ['lock_version' => $load->lock_version])->assertOk();
+        $coordinator = User::where('username', 'coordinator')->firstOrFail();
+        $coordinator->employee->update(['program' => $faculty->employee->program === 'BLIS' ? 'BSIT' : 'BLIS']);
+        $coordinator->employee->syncExtraPrograms([]);
+        $data = ['action' => 'revise', 'reason' => 'Update the assigned room', 'lock_version' => $load->fresh()->lock_version];
+        $this->actingAs($coordinator)->postJson(route('teacher-loads.change', $id), $data)->assertNotFound();
+        $coordinator->employee->syncExtraPrograms([$faculty->employee->program]);
+        $this->post(route('teacher-loads.change', $id), $data)->assertRedirect();
+        $load->schoolYear->update(['archived_at' => now(), 'is_active' => false]);
+        $data['lock_version'] = $load->fresh()->lock_version;
+        $data['action'] = 'discard';
+        $this->postJson(route('teacher-loads.change', $id), $data)->assertUnprocessable();
+    }
 }

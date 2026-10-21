@@ -69,6 +69,8 @@ Route::middleware(['auth', 'no.back'])->group(function () {
     Route::post('/upload-destinations/subject', [\App\Http\Controllers\UploadDestinationController::class, 'subject'])->middleware('throttle:30,1')->name('upload-destinations.subject');
     Route::get('/document-requests', [DocumentRequestController::class, 'index'])->name('document-requests.index');
     Route::post('/document-requests', [DocumentRequestController::class, 'store'])->middleware('throttle:30,60')->name('document-requests.store');
+    Route::get('/document-requests/{documentRequest}/manage', [DocumentRequestController::class, 'manage'])->name('document-requests.manage');
+    Route::patch('/document-requests/{documentRequest}', [DocumentRequestController::class, 'change'])->middleware('throttle:30,1')->name('document-requests.change');
     Route::post('/document-request-recipients/{recipient}/submit', [DocumentRequestController::class, 'submit'])->middleware('throttle:10,60')->name('document-requests.submit');
     Route::post('/document-request-recipients/{recipient}/review', [DocumentRequestController::class, 'review'])->middleware('throttle:30,1')->name('document-requests.review');
 
@@ -102,6 +104,9 @@ Route::middleware(['auth', 'no.back', 'role:Dean,Program Coordinator,Faculty Emp
     Route::get('/{id}', [$controller, 'show'])->whereNumber('id')->name('show');
     Route::patch('/{id}', [$controller, 'update'])->whereNumber('id')->middleware('throttle:30,1')->name('update');
     Route::post('/{id}/finalize', [$controller, 'finalize'])->whereNumber('id')->middleware('throttle:20,1')->name('finalize');
+    Route::post('/{id}/change', [$controller, 'change'])->whereNumber('id')->middleware('throttle:20,1')->name('change');
+    Route::get('/{id}/history', [$controller, 'history'])->whereNumber('id')->name('history');
+    Route::get('/{id}/history/{revision}/pdf', [$controller, 'revisionPdf'])->whereNumber(['id', 'revision'])->name('revision-pdf');
     Route::get('/{id}/pdf', [$controller, 'export'])->whereNumber('id')->middleware('throttle:30,1')->name('pdf');
 });
 
@@ -175,6 +180,9 @@ Route::middleware(['auth', 'no.back'])->prefix('professional-development')->name
 Route::middleware(['auth', 'no.back'])->get('/user-guide', function () {
     return view('user-guide');
 })->name('user-guide');
+
+// Course edit history uses the same program permissions as the catalog.
+Route::middleware(['auth', 'no.back'])->get('/courses/{course}/history', \App\Http\Controllers\CourseHistoryController::class)->name('courses.history');
 
 // Faculty report files (owner, Dean/Secretary, Coordinator)
 Route::middleware(['auth', 'no.back'])->prefix('reports')->name('reports.')->group(function () {

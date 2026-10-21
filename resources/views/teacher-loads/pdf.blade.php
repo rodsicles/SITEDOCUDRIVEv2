@@ -39,7 +39,8 @@ tr { page-break-inside: avoid; }
 <div class="office">OFFICE OF THE REGISTRAR</div>
 <h1>TEACHER’S LOAD</h1>
 <div class="term">{{ match($load->semester) { '1st' => 'First Semester', '2nd' => 'Second Semester', default => 'Summer' } }}, AY {{ $load->academic_year }}
-@if($load->status !== 'finalized')<div class="draft">DRAFT — For review</div>@endif</div>
+@if($load->status !== 'finalized')<div class="draft">{{ $load->status === 'void' ? 'VOID — '.$load->void_reason : 'DRAFT — For review' }}</div>@endif
+<div>Revision {{ $load->revision_number ?? 1 }}</div></div>
 <table class="details">
 <tr><td>Name of Faculty:</td><td><strong>{{ $load->faculty_name }}</strong></td></tr>
 <tr><td>Status:</td><td>{{ $load->employment_status }}</td></tr>

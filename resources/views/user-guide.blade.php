@@ -333,12 +333,12 @@
         </h3>
     </div>
     @if($isCoordinator)
-    <p class="guide-intro">The Course Catalog lists courses for your assigned program. BLIS, BSEnSE, BSIT and BSCpE may have empty catalogs until official courses are added. Coordinators manage courses only within their program.</p>
+    <p class="guide-intro">The Course Catalog lists courses for your home program and any additional programs assigned by the Dean. Manage official course details within these programs.</p>
     <ol class="guide-steps">
         <li>Click <strong>Course Catalog</strong> in the sidebar under Management.</li>
-        <li>Add a course with <strong>course code</strong> and <strong>title</strong>. Your program is fixed automatically.</li>
+        <li>Add a course with <strong>course code</strong> and <strong>title</strong>. Choose a handled program when more than one is available.</li>
         <li>Use tabs: <strong>All courses</strong>, your <strong>program name</strong>, or <strong>Inactive</strong> for removed courses.</li>
-        <li>Search by code or title, then use the <strong>⋮</strong> menu to <strong>Rename</strong>, <strong>Remove</strong>, or <strong>Restore</strong> a course.</li>
+        <li>Use <strong>Edit course</strong> to update the code, title, year level, semester, and lecture/lab units. Open <strong>Change history</strong> to review previous edits. Remove deactivates a course; Restore makes it selectable again.</li>
     </ol>
     @else
     <p class="guide-intro">The Course Catalog defines verified courses for BLIS, BSEnSE, BSIT and BSCpE. Empty programs remain available without placeholder courses.</p>
@@ -346,10 +346,28 @@
         <li>Click <strong>Course Catalog</strong> in the sidebar.</li>
         <li>Add a course with <strong>course code</strong>, <strong>title</strong>, and <strong>program</strong>, then click <strong>Add Course</strong>.</li>
         <li>Filter by program or search by code/title to find existing entries.</li>
-        <li>Edit or deactivate courses from the list when offerings change.</li>
+        <li>Use <strong>Edit course</strong> for code/title, semester, year level, and lecture/lab units. Open <strong>Change history</strong> to see who changed each value. Deactivate or restore courses as offerings change.</li>
     </ol>
     @endif
     <div class="guide-tip"><i class="fas fa-lightbulb mr-1"></i> <strong>Tip:</strong> Keep the catalog updated before each term so upload pickers show the correct subjects.</div>
+</div>
+@endif
+
+{{-- ===== ANALYTICS (Coordinator / Dean / Secretary) ===== --}}
+@if($isDean || $isCoordinator || $isFaculty)
+<div id="guide-corrections" class="content-card">
+    <div class="card-header"><h3 class="card-title">Teaching loads and request corrections</h3></div>
+    @if($isDean || $isCoordinator)
+        <ol class="guide-steps">
+            <li>In <strong>Teacher's Load</strong>, choose <strong>Revise</strong> on a published load and enter a reason. Edit/save the revision, preview it, then finalize. The employee keeps seeing the published schedule until finalization.</li>
+            <li>Use <strong>History</strong> to download earlier published revisions. <strong>Void</strong> withdraws a load while retaining its history; <strong>Prepare replacement</strong> starts a new revision. Only unpublished drafts can be deleted.</li>
+            <li>For requests you created, open <strong>Document Requests → Sent → Manage request</strong>. Edit instructions/deadlines, add recipients, or exempt an outstanding recipient with a reason. Exemptions keep submitted files and can be reinstated with their previous review status.</li>
+            <li><strong>Cancel request</strong> stops further submissions/reviews. Reopen when work should resume, setting a future deadline or allowing late submissions if needed. Existing approved submissions stay approved.</li>
+        </ol>
+    @else
+        <p class="guide-intro">Your published schedule stays available while a manager prepares a revision. Open <strong>History</strong> in Teacher's Load to see earlier published versions. A voided load no longer supplies your current timetable.</p>
+        <p class="guide-intro">Cancelled document requests do not accept uploads. An exemption excuses an outstanding requirement and retains your submitted file. You will be notified when the requester changes or reopens a request.</p>
+    @endif
 </div>
 @endif
 

@@ -21,13 +21,17 @@ class Course extends Model
         'semester',
         'is_active',
         'sort_order',
+        'lecture_units',
+        'lab_units',
     ];
 
     protected $casts = [
+        'lock_version' => 'integer',
         'is_active' => 'boolean',
         'year_level' => 'integer',
         'lecture_units' => 'float',
         'lab_units' => 'float',
+        'units_manually_set' => 'boolean',
     ];
 
     protected static function booted(): void
@@ -38,6 +42,7 @@ class Course extends Model
     }
 
     public function academicProgram() { return $this->belongsTo(Program::class, 'program', 'code'); }
+    public function changes() { return $this->hasMany(CourseChange::class)->latest('id'); }
 
     public function scopeActive($query)
     {

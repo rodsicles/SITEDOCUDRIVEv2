@@ -72,9 +72,19 @@
                 <td>{{ $load->academic_year }} · {{ \App\Support\SchoolTerm::label($load->semester) }}</td>
                 <td>{{ rtrim(rtrim(number_format((float)$load->total_units, 2, '.', ''), '0'), '.') }}</td>
                 <td>{{ rtrim(rtrim(number_format((float)$load->total_load, 3, '.', ''), '0'), '.') }}</td>
-                <td><span class="tl-status {{ $load->status === 'finalized' ? 'tl-final' : '' }}">{{ ucfirst($load->status) }}</span></td>
+                <td><span class="tl-status {{ $load->status === 'finalized' ? 'tl-final' : '' }}">{{ ucfirst($load->status) }}</span>
+                    <small>Revision {{ $load->revision_number }}</small>
+                    @if($manager && $load->revision_draft !== null)<span class="badge badge-warning">Revision in progress</span>@endif
+                    @if($load->void_reason)<p class="tl-note">{{ $load->void_reason }}</p>@endif
+                </td>
                 <td><div class="tl-actions">
-                    @if($manager && $load->status === 'draft')<button type="button" class="btn" data-edit-load="{{ $load->id }}">Edit draft</button>@endif
+                    @if($manager && !$load->schoolYear->isArchived())
+                        @if($load->status === 'draft' || $load->revision_draft !== null)<button type="button" class="btn" data-edit-load="{{ $load->id }}">{{ $load->revision_draft !== null ? 'Edit revision' : 'Edit draft' }}</button>@endif
+                        @foreach($load->status === 'draft' ? ['delete-draft' => 'Delete draft'] : ($load->revision_draft !== null ? ['discard' => 'Discard revision'] : ($load->status === 'finalized' ? ['revise' => 'Revise', 'void' => 'Void'] : ['revise' => 'Prepare replacement'])) as $action => $label)
+                            <button type="button" class="btn btn-secondary" data-load-change="{{ $action }}" data-load-id="{{ $load->id }}" data-load-version="{{ $load->lock_version }}" data-load-label="{{ $label }}">{{ $label }}</button>
+                        @endforeach
+                    @endif
+                    @if($load->status !== 'draft')<a class="btn" href="{{ route('teacher-loads.history', $load) }}">History</a>@endif
                     <a class="btn" href="{{ route('teacher-loads.pdf', ['id' => $load->id, 'inline' => 1]) }}" target="_blank" rel="noopener">View PDF</a>
                     <a class="btn" href="{{ route('teacher-loads.pdf', $load->id) }}"><i class="fas fa-download"></i> Download</a>
                 </div></td>
@@ -88,6 +98,16 @@
 </section>
 
 @if($manager)
+<dialog id="tl-action-dialog" class="ui-dialog" aria-labelledby="tl-action-title">
+    <form method="POST" id="tl-action-form" class="ui-dialog__form" data-request-guard>
+        @csrf
+        <input type="hidden" name="action" id="tl-action-name">
+        <input type="hidden" name="lock_version" id="tl-action-version">
+        <header class="ui-dialog__head"><h2 class="ui-dialog__title" id="tl-action-title">Update teaching load</h2><button type="button" class="btn btn-secondary" data-close-load-action aria-label="Close">&times;</button></header>
+        <div class="ui-dialog__body"><p id="tl-action-description">Published history is retained.</p><label for="tl-action-reason" class="form-label">Reason *</label><textarea id="tl-action-reason" name="reason" class="form-control" rows="3" minlength="5" maxlength="1000" required></textarea></div>
+        <footer class="ui-dialog__foot"><button type="button" class="btn btn-secondary" data-close-load-action>Cancel</button><button type="submit" class="btn btn-primary" id="tl-action-confirm">Confirm</button></footer>
+    </form>
+</dialog>
 <dialog id="tl-dialog" class="tl-dialog" aria-labelledby="tl-dialog-title">
     <header class="tl-modal-head"><div><h2 id="tl-dialog-title">Create Teacher’s Load</h2><p>Prepare one faculty workload for an academic term.</p></div><button type="button" class="tl-icon" id="tl-close" aria-label="Close">×</button></header>
     <ol class="tl-steps" aria-label="Form progress">

@@ -42,7 +42,7 @@
             <label for="requestStatus">Status</label>
             <select id="requestStatus" name="status" onchange="this.form.submit()">
                 <option value="">All statuses</option>
-                @foreach(['pending','submitted','changes_requested','approved'] as $status)
+                @foreach(['pending','submitted','changes_requested','approved','exempt','open','completed','cancelled'] as $status)
                     <option value="{{ $status }}" @selected(request('status') === $status)>{{ str($status)->replace('_', ' ')->title() }}</option>
                 @endforeach
             </select>
@@ -56,10 +56,11 @@
                 <div class="request-row__main">
                     <div class="request-row__heading">
                         <h2>{{ $item->title }}</h2>
+                        @if($item->status !== 'open')<span class="request-status">Request {{ $item->status }}</span>@endif
                         @if($tab === 'received' && $myRecord)
                             <span class="request-status request-status--{{ $myRecord->status }}">{{ str($myRecord->status)->replace('_', ' ')->title() }}</span>
                         @else
-                            <span class="request-status">{{ $item->recipients->where('status', 'approved')->count() }}/{{ $item->recipients->count() }} approved</span>
+                            <span class="request-status">{{ $item->recipients->where('status', 'approved')->count() }}/{{ $item->recipients->where('status', '!=', 'exempt')->count() }} approved</span>
                         @endif
                     </div>
                     <p>{{ $item->instructions ?: 'No additional instructions.' }}</p>
@@ -76,7 +77,7 @@
 
                 @if($tab === 'received' && $myRecord)
                     <div class="request-row__action">
-                        @if(in_array($myRecord->status, ['pending','changes_requested']))
+                        @if($item->status === 'open' && in_array($myRecord->status, ['pending','changes_requested']))
                             @if($myRecord->review_note)<p class="request-review-note"><strong>Correction:</strong> {{ $myRecord->review_note }}</p>@endif
                             <button type="button" class="btn btn-primary request-submit-trigger" data-open-modal="submitRequestModal" data-recipient="{{ $myRecord->id }}" data-title="{{ $item->title }}" data-type="{{ $item->document_type }}">Submit document</button>
                         @elseif($myRecord->document)
@@ -88,7 +89,7 @@
                         @foreach($item->recipients as $record)
                         <div class="request-recipient">
                             <div><strong>{{ $record->recipient->employee->full_name ?? $record->recipient->username }}</strong><span>{{ str($record->status)->replace('_', ' ')->title() }}</span></div>
-                            @if($record->status === 'submitted')
+                            @if($record->status === 'submitted' && $item->status === 'open')
                             <div class="request-review-actions">
                                 @if($record->document)<a href="{{ $viewRoute($record->document->document_id) }}" class="btn btn-secondary"><i class="fas fa-eye"></i> View</a>@endif
                                 <form method="POST" action="{{ route('document-requests.review', $record) }}">@csrf<input type="hidden" name="decision" value="approved"><button class="btn btn-primary">Approve</button></form>
@@ -98,6 +99,9 @@
                         </div>
                         @endforeach
                     </div>
+                    @if($canCreateRequests && (int) $item->requested_by === (int) $viewer->id)
+                        <a class="btn btn-secondary" href="{{ route('document-requests.manage', $item) }}">Manage request</a>
+                    @endif
                 @endif
             </article>
         @empty

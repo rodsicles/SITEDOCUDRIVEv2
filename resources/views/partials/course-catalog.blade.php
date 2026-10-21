@@ -66,6 +66,7 @@
             </div>
             @endif
         </div>
+        @include('partials.course-metadata-fields', ['fieldPrefix' => 'new-course', 'restoreInput' => true])
         <p class="text-xs text-gray-500 dark:text-gray-400 mt-2 mb-3">
             @if($lockedDepartment)
                 Faculty and coordinators in <strong>{{ $lockedDepartment }}</strong> will see this course when uploading to Teaching Guides or Exam Questionnaires.
@@ -170,9 +171,16 @@
                                     data-id="{{ $course->id }}"
                                     data-code="{{ $course->code }}"
                                     data-title="{{ $course->title }}"
+                                    data-year-level="{{ $course->year_level }}"
+                                    data-term="{{ $course->semester }}"
+                                    data-lecture-units="{{ $course->lecture_units }}"
+                                    data-lab-units="{{ $course->lab_units }}"
+                                    data-updated-at="{{ $course->updated_at?->toISOString() }}"
+                                    data-lock-version="{{ $course->lock_version }}"
                                     role="menuitem">
-                                <i class="fas fa-pen text-xs" aria-hidden="true"></i> Rename
+                                <i class="fas fa-pen text-xs" aria-hidden="true"></i> Edit course
                             </button>
+                            <a class="course-catalog-popover-item" role="menuitem" href="{{ route('courses.history', $course) }}">Change history</a>
                             @if($course->is_active)
                             <form action="{{ $destroyRoute($course) }}" method="POST"
                                   onsubmit="return confirm('Remove this course from faculty upload choices?');">
@@ -239,16 +247,17 @@
     </div>
 </div>
 
-{{-- Rename Modal --}}
-<div id="renameModal" class="course-catalog-modal" aria-hidden="true">
-    <div class="bg-white dark:bg-[#1e1e1e] rounded-lg shadow-xl max-w-md w-full course-catalog-modal__panel">
-        <div class="p-6">
-            <h3 class="text-lg font-bold text-gray-800 dark:text-white mb-4">
-                <i class="fas fa-pen mr-2 text-blue-500"></i>Rename Course
-            </h3>
-            <form id="renameForm" method="POST">
+{{-- Edit course --}}
+<dialog id="renameModal" class="ui-dialog" aria-labelledby="editCourseTitle">
+            <form id="renameForm" method="POST" class="ui-dialog__form" data-request-guard>
                 @csrf
                 @method('PATCH')
+                <input type="hidden" name="updated_at" id="courseUpdatedAt">
+                <input type="hidden" name="_course_id" id="editingCourseId">
+                <input type="hidden" name="lock_version" id="editingCourseVersion">
+                <header class="ui-dialog__head"><h2 id="editCourseTitle" class="ui-dialog__title">Edit course</h2><button type="button" class="ui-dialog__close" id="editCourseClose" aria-label="Close">&times;</button></header>
+                <div class="ui-dialog__body">
+                @if($errors->any() && old('_course_id'))<p class="text-red-600" role="alert">{{ $errors->first() }}</p>@endif
                 <div class="space-y-4">
                     <div>
                         <label class="text-sm font-semibold text-gray-600 dark:text-gray-300 block mb-1">Course Code</label>
@@ -259,7 +268,10 @@
                         <input type="text" name="title" id="renameTitle" class="form-control" required maxlength="150">
                     </div>
                 </div>
-                <div class="flex justify-end gap-3 mt-6">
+                @include('partials.course-metadata-fields', ['fieldPrefix' => 'edit-course', 'restoreInput' => false])
+                <p class="text-sm mt-3">Updates are used when selecting subjects. Saved and published loads keep their recorded unit values.</p>
+                </div>
+                <footer class="ui-dialog__foot">
                     <button type="button" id="renameModalCancel"
                             class="btn bg-gray-200 dark:bg-gray-700 text-gray-700 dark:text-gray-300">
                         Cancel
@@ -267,11 +279,9 @@
                     <button type="submit" class="btn btn-primary">
                         <i class="fas fa-check"></i> Save
                     </button>
-                </div>
+                </footer>
             </form>
-        </div>
-    </div>
-</div>
+</dialog>
 
 <script>
 document.addEventListener('DOMContentLoaded', function () {
@@ -281,12 +291,14 @@ document.addEventListener('DOMContentLoaded', function () {
 
     function openModal(modal) {
         if (!modal) return;
+        if (modal instanceof HTMLDialogElement && !modal.open) modal.showModal();
         modal.classList.add('is-open');
         modal.setAttribute('aria-hidden', 'false');
     }
 
     function closeModal(modal) {
         if (!modal) return;
+        if (modal instanceof HTMLDialogElement) modal.close();
         modal.classList.remove('is-open');
         modal.setAttribute('aria-hidden', 'true');
     }
@@ -388,12 +400,32 @@ document.addEventListener('DOMContentLoaded', function () {
             closeAllPopovers();
             document.getElementById('renameCode').value = btn.dataset.code;
             document.getElementById('renameTitle').value = btn.dataset.title;
+            document.getElementById('courseUpdatedAt').value = btn.dataset.updatedAt;
+            document.getElementById('editingCourseId').value = btn.dataset.id;
+            document.getElementById('editingCourseVersion').value = btn.dataset.lockVersion;
+            document.getElementById('edit-course-year_level').value = btn.dataset.yearLevel || '';
+            document.getElementById('edit-course-semester').value = btn.dataset.term || '';
+            document.getElementById('edit-course-lecture_units').value = btn.dataset.lectureUnits || '';
+            document.getElementById('edit-course-lab_units').value = btn.dataset.labUnits || '';
             document.getElementById('renameForm').action = updateRouteBase + '/' + btn.dataset.id;
             openModal(renameModal);
         });
     });
 
     var cancelBtn = document.getElementById('renameModalCancel');
+    document.getElementById('editCourseClose').addEventListener('click', function () { closeModal(renameModal); });
+    @if($errors->any() && old('_course_id'))
+    var failedEdit = document.querySelector('.course-catalog-rename-btn[data-id="{{ (int) old('_course_id') }}"]');
+    if (failedEdit) {
+        failedEdit.click();
+        document.getElementById('renameCode').value = @json(old('code'));
+        document.getElementById('renameTitle').value = @json(old('title'));
+        document.getElementById('edit-course-year_level').value = @json(old('year_level', ''));
+        document.getElementById('edit-course-semester').value = @json(old('semester', ''));
+        document.getElementById('edit-course-lecture_units').value = @json(old('lecture_units', ''));
+        document.getElementById('edit-course-lab_units').value = @json(old('lab_units', ''));
+    }
+    @endif
     if (cancelBtn && renameModal) {
         cancelBtn.addEventListener('click', function () {
             closeModal(renameModal);

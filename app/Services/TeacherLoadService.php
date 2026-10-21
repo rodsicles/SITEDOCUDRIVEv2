@@ -158,10 +158,14 @@ class TeacherLoadService
         return DB::transaction(function () use ($actor, $input, $load) {
             if ($load) {
                 $load = TeacherLoad::visibleTo($actor)->lockForUpdate()->findOrFail($load->id);
-                abort_if($load->status !== 'draft', 409, 'Finalized loads are read-only.');
+                abort_if($load->status !== 'draft' && !(in_array($load->status, ['finalized', 'void'], true) && $load->revision_draft !== null), 409, 'Start a revision before editing a published load.');
                 abort_if((int) ($input['lock_version'] ?? 0) !== $load->lock_version, 409, 'This load changed in another session. Reload it before saving.');
             }
             $data = $this->validate($actor, $input, $load);
+            if ($load && in_array($load->status, ['finalized', 'void'], true)) {
+                $load->update(['revision_draft' => $data, 'lock_version' => $load->lock_version + 1]);
+                return $load->load('items');
+            }
             if ($load) {
                 $load->update($data['header'] + ['lock_version' => $load->lock_version + 1]);
                 $load->items()->delete();
@@ -177,14 +181,66 @@ class TeacherLoadService
     {
         return DB::transaction(function () use ($actor, $load, $version) {
             $load = TeacherLoad::visibleTo($actor)->lockForUpdate()->findOrFail($load->id);
-            abort_if($load->status !== 'draft' || $version !== $load->lock_version, 409, 'This load has changed or is already finalized. Reload it to continue.');
-            $input = $load->toArray();
-            $input['items'] = $load->items->toArray();
+            $revising = in_array($load->status, ['finalized', 'void'], true) && $load->revision_draft !== null;
+            abort_if(($load->status !== 'draft' && !$revising) || $version !== $load->lock_version, 409, 'This load has changed or is already finalized. Reload it to continue.');
+            $input = $revising ? $load->revision_draft['header'] : $load->toArray();
+            $input['items'] = $revising ? $load->revision_draft['items'] : $load->items->toArray();
+            $input['lock_version'] = $load->lock_version;
             $data = $this->validate($actor, $input, $load, true);
-            $load->update($data['header'] + ['status' => 'finalized', 'finalized_at' => now(), 'lock_version' => $load->lock_version + 1]);
+            if ($revising) $this->snapshot($load, $actor, $load->revision_reason);
+            $load->update($data['header'] + ['status' => 'finalized', 'finalized_at' => now(), 'lock_version' => $load->lock_version + 1,
+                'revision_number' => $revising ? $load->revision_number + 1 : $load->revision_number,
+                'revision_draft' => null, 'revision_reason' => null, 'void_reason' => null]);
             $load->items()->delete();
             $load->items()->createMany($data['items']);
+            $this->record($load, $actor, $revising ? 'revision_published' : 'finalized');
             return $load->load('items');
         });
+    }
+
+    public function change(User $actor, int $id, string $action, int $version, string $reason): ?TeacherLoad
+    {
+        abort_unless($actor->isDean() || $actor->isProgramCoordinator(), 403);
+        return DB::transaction(function () use ($actor, $id, $action, $version, $reason) {
+            $load = TeacherLoad::visibleTo($actor)->with('items')->lockForUpdate()->findOrFail($id);
+            abort_if($load->schoolYear->isArchived(), 422, 'Archived teaching loads are read-only.');
+            abort_if($load->lock_version !== $version, 409, 'This load changed. Reload before continuing.');
+            if ($action === 'revise') {
+                abort_unless(in_array($load->status, ['finalized', 'void'], true) && $load->revision_draft === null, 409, 'Only a published or voided load without an open revision can be revised.');
+                $load->update(['revision_draft' => ['header' => $load->attributesToArray(), 'items' => $load->items->toArray()], 'revision_reason' => $reason]);
+            } elseif ($action === 'discard') {
+                abort_unless(in_array($load->status, ['finalized', 'void'], true) && $load->revision_draft !== null, 409, 'No revision draft is open.');
+                $load->update(['revision_draft' => null, 'revision_reason' => null]);
+            } elseif ($action === 'void') {
+                abort_unless($load->status === 'finalized' && $load->revision_draft === null, 409, 'Discard the open revision before voiding a published load.');
+                $this->snapshot($load, $actor, $reason);
+                $load->update(['status' => 'void', 'void_reason' => $reason]);
+            } else {
+                abort_unless($action === 'delete-draft' && $load->status === 'draft' && !$load->finalized_at, 409, 'Only an unpublished draft can be deleted.');
+                $this->record($load, $actor, 'draft_deleted', $reason);
+                $load->delete();
+                return null;
+            }
+            $load->increment('lock_version');
+            $this->record($load, $actor, $action, $reason);
+            return $load->fresh('items');
+        });
+    }
+
+    private function snapshot(TeacherLoad $load, User $actor, string $reason): void
+    {
+        $load->load('items');
+        $load->revisions()->firstOrCreate(['revision_number' => $load->revision_number], ['snapshot' => $load->toArray(), 'changed_by' => $actor->id, 'reason' => $reason]);
+    }
+
+    private function record(TeacherLoad $load, User $actor, string $action, ?string $reason = null): void
+    {
+        \App\Models\DashboardLog::create(['user_id' => $actor->id, 'target_user_id' => $load->employee->user_id,
+            'activity' => \Illuminate\Support\Str::limit("Teacher's Load #{$load->id}: {$action}".($reason ? ' — '.$reason : ''), 250),
+            'activity_type' => 'teacher_load_'.$action, 'visibility' => 'own']);
+        if (in_array($action, ['finalized', 'revision_published', 'void'], true)) {
+            \App\Models\Notification::create(['user_id' => $load->employee->user_id,
+                'message' => "Your Teacher's Load was ".str_replace('_', ' ', $action).'.', 'action_url' => route('teacher-loads.index')]);
+        }
     }
 }

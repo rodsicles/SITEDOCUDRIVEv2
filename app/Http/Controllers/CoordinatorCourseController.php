@@ -47,16 +47,14 @@ class CoordinatorCourseController extends Controller
         $department = $this->coordinatorDepartment();
         $programs = $this->coordinatorPrograms();
 
-        $validated = $request->validate([
-            'code' => ['required', 'string', 'max:20', 'regex:/^[A-Za-z]{2,4}\d{2,4}$/'],
-            'title' => 'required|string|max:150',
+        $validated = $request->validate(\App\Support\CourseInput::rules() + [
             'program' => [count($programs) > 1 ? 'required' : 'nullable', Rule::in($programs)],
         ]);
 
         $department = $validated['program'] ?? $department;
         $validated['program'] = $department;
 
-        $exists = Course::where('code', strtoupper($validated['code']))
+        $exists = Course::whereRaw('UPPER(code) = ?', [strtoupper(trim($validated['code']))])
             ->where('program', $department)
             ->exists();
 
@@ -73,14 +71,11 @@ class CoordinatorCourseController extends Controller
     {
         $this->authorizeCourse($course);
 
-        $validated = $request->validate([
-            'code' => ['required', 'string', 'max:20', 'regex:/^[A-Za-z]{2,4}\d{2,4}$/'],
-            'title' => 'required|string|max:150',
-        ]);
+        $validated = $request->validate(\App\Support\CourseInput::rules());
 
-        $newCode = strtoupper(trim($validated['code']));
+        $newCode = trim($validated['code']);
 
-        $duplicate = Course::where('code', $newCode)
+        $duplicate = Course::whereRaw('UPPER(code) = ?', [strtoupper($newCode)])
             ->where('program', $course->program)
             ->where('id', '!=', $course->id)
             ->exists();
@@ -89,7 +84,7 @@ class CoordinatorCourseController extends Controller
             return back()->with('error', "Course code {$newCode} already exists in {$course->program}.");
         }
 
-        $this->courseService->rename($course, $newCode, trim($validated['title']), auth()->id());
+        $this->courseService->updateDetails($course, $validated, auth()->id());
 
         return back()->with('success', 'Course updated successfully.');
     }

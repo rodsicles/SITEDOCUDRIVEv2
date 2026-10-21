@@ -42,7 +42,9 @@ class DocumentRequestController extends Controller
 
         if ($request->filled('status')) {
             $status = $request->string('status')->value();
-            if ($tab === 'sent') {
+            if (in_array($status, ['open', 'completed', 'cancelled'], true)) {
+                $query->where('status', $status);
+            } elseif ($tab === 'sent') {
                 $query->whereHas('recipients', fn ($q) => $q->where('status', $status));
             } else {
                 $query->whereHas('recipients', fn ($q) => $q->where('user_id', $user->id)->where('status', $status));
@@ -75,7 +77,7 @@ class DocumentRequestController extends Controller
             'courses' => $courses,
             'canCreateRequests' => $canCreateRequests,
             'schoolYears' => SchoolYear::orderByDesc('start_year')->get(),
-            'pendingCount' => DocumentRequestRecipient::where('user_id', $user->id)->whereIn('status', ['pending', 'changes_requested'])->count(),
+            'pendingCount' => DocumentRequestRecipient::where('user_id', $user->id)->whereIn('status', ['pending', 'changes_requested'])->whereHas('request', fn ($q) => $q->where('status', 'open'))->count(),
             'customRequestCategories' => \App\Models\DocumentCategory::whereNotNull('created_by')->whereNull('owner_id')->where('is_active', true)->orderBy('category_name')->get(),
         ]);
     }
@@ -223,7 +225,32 @@ class DocumentRequestController extends Controller
         return redirect()->route('document-requests.index', ['tab' => 'sent'])->with('success', 'Document request sent to '.$recipientIds->count().' employee(s).');
     }
 
+    public function manage(Request $request, DocumentRequest $documentRequest, \App\Services\DocumentRequestManagementService $management)
+    {
+        $management->authorize($request->user(), $documentRequest);
+        $documentRequest->load(['recipients.recipient.employee', 'recipients.document', 'changes.actor.employee', 'course', 'destinationFolder', 'schoolYear']);
+        $people = $management->eligiblePeople($request->user())->orderBy('username')->get();
+        return view('document-requests.manage', compact('documentRequest', 'people'));
+    }
+
+    public function change(Request $request, DocumentRequest $documentRequest, \App\Services\DocumentRequestManagementService $management)
+    {
+        $management->apply($request->user(), $documentRequest, $request->all());
+        return redirect()->route('document-requests.manage', $documentRequest)->with('success', 'Request updated. Existing submissions and change history are retained.');
+    }
+
     public function submit(Request $request, DocumentRequestRecipient $recipient)
+    {
+        return DB::transaction(function () use ($request, $recipient) {
+            $item = DocumentRequest::lockForUpdate()->findOrFail($recipient->document_request_id);
+            $recipient->refresh();
+            $response = $this->submitLocked($request, $recipient);
+            $item->increment('lock_version');
+            return $response;
+        });
+    }
+
+    private function submitLocked(Request $request, DocumentRequestRecipient $recipient)
     {
         abort_unless((int) $recipient->user_id === (int) $request->user()->id, 403);
         $recipient->load(['request.course', 'request.destinationFolder', 'request.requester.role', 'document']);
@@ -334,6 +361,19 @@ class DocumentRequestController extends Controller
 
     public function review(Request $request, DocumentRequestRecipient $recipient)
     {
+        abort_unless((int) $recipient->request->requested_by === (int) $request->user()->id, 403);
+        return DB::transaction(function () use ($request, $recipient) {
+            $item = DocumentRequest::lockForUpdate()->findOrFail($recipient->document_request_id);
+            abort_unless($item->status === 'open', 422, 'Reopen this request before reviewing submissions.');
+            $recipient->refresh();
+            $response = $this->reviewLocked($request, $recipient);
+            $item->increment('lock_version');
+            return $response;
+        });
+    }
+
+    private function reviewLocked(Request $request, DocumentRequestRecipient $recipient)
+    {
         $recipient->load(['request.destinationFolder', 'request.course', 'document']);
         abort_unless((int) $recipient->request->requested_by === (int) $request->user()->id, 403);
         $validated = $request->validate([
@@ -354,7 +394,7 @@ class DocumentRequestController extends Controller
                 'reviewed_by' => $request->user()->id,
             ]);
             $recipient->request->update([
-                'status' => $recipient->request->recipients()->where('id', '!=', $recipient->id)->where('status', '!=', 'approved')->exists()
+                'status' => $recipient->request->recipients()->where('id', '!=', $recipient->id)->whereNotIn('status', ['approved', 'exempt'])->exists()
                     || $validated['decision'] !== 'approved' ? 'open' : 'completed',
             ]);
             Notification::create([

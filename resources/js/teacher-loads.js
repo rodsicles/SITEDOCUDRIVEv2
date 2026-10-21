@@ -10,6 +10,23 @@ if (root && document.getElementById('tl-dialog')) {
     const $ = (selector, context = document) => context.querySelector(selector);
     const $$ = (selector, context = document) => [...context.querySelectorAll(selector)];
     const dialog = $('#tl-dialog');
+    const actionDialog = $('#tl-action-dialog');
+    $$('[data-load-change]').forEach(button => button.addEventListener('click', () => {
+        $('#tl-action-form').action = `${root.dataset.base}/${button.dataset.loadId}/change`;
+        $('#tl-action-name').value = button.dataset.loadChange;
+        $('#tl-action-version').value = button.dataset.loadVersion;
+        $('#tl-action-title').textContent = button.dataset.loadLabel;
+        $('#tl-action-description').textContent = ({
+            revise: 'Prepare a revision. The published timetable remains available until you finalize the replacement.',
+            discard: 'Discard the unpublished revision. The published timetable stays unchanged.',
+            void: 'Withdraw this published load from current teaching assignments. Its saved revision stays in history.',
+            'delete-draft': 'Delete this unpublished draft. This cannot remove a finalized load.',
+        })[button.dataset.loadChange];
+        $('#tl-action-confirm').className = `btn ${['void', 'delete-draft'].includes(button.dataset.loadChange) ? 'btn-danger' : 'btn-primary'}`;
+        $('#tl-action-reason').value = '';
+        actionDialog.showModal();
+    }));
+    $$('[data-close-load-action]').forEach(button => button.addEventListener('click', () => actionDialog.close()));
     const csrf = $('meta[name="csrf-token"]').content;
     const LAST_STEP = 2;
     let step = 0;
@@ -444,7 +461,7 @@ if (root && document.getElementById('tl-dialog')) {
             const url = loadId ? `${root.dataset.base}/${loadId}` : root.dataset.base;
             const data = await api(url, { method: loadId ? 'PATCH' : 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(payload()) });
             loadId = data.id; lockVersion = data.lock_version; dirty = false; $('#tl-save-state').textContent = 'Draft saved';
-            $('#tl-dialog-title').textContent = 'Edit Teacher’s Load'; facultySelect.disabled = $('#tl-year').disabled = semesterSelect.disabled = true;
+            $('#tl-dialog-title').textContent = data.editing_revision ? 'Edit teaching load revision' : 'Edit Teacher’s Load'; facultySelect.disabled = $('#tl-year').disabled = semesterSelect.disabled = true;
             return true;
         } catch (error) { showError(error); return false; } finally { setBusy(false); }
     };
@@ -454,6 +471,7 @@ if (root && document.getElementById('tl-dialog')) {
         try {
             const data = await api(`${root.dataset.base}/${id}`);
             loadId = data.id; lockVersion = data.lock_version; $('#tl-dialog-title').textContent = 'Edit Teacher’s Load';
+            if (data.editing_revision) $('#tl-dialog-title').textContent = 'Edit teaching load revision';
             setFaculty(String(data.employee_id)); $('#tl-year').value = data.school_year_id; semesterSelect.value = data.semester; $('#tl-employment').value = data.employment_status;
             facultySelect.disabled = $('#tl-year').disabled = semesterSelect.disabled = true;
             await loadCourses();

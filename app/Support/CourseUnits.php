@@ -90,6 +90,12 @@ class CourseUnits
                     continue;
                 }
 
+                // An explicit catalog edit takes precedence over the bundled seed values.
+                if ($course->units_manually_set) {
+                    $stats['unchanged']++;
+                    continue;
+                }
+
                 $course->forceFill(['lecture_units' => $lec, 'lab_units' => $lab]);
                 if ($course->isDirty()) {
                     $course->save();

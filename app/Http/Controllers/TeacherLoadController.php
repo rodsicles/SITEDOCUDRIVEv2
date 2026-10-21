@@ -24,7 +24,7 @@ class TeacherLoadController extends Controller
             'semester' => ['nullable', Rule::in(SchoolTerm::options())],
             'employee_id' => ['nullable', 'integer'],
         ]);
-        $loads = TeacherLoad::visibleTo($viewer);
+        $loads = TeacherLoad::visibleTo($viewer)->with('schoolYear');
         foreach (['program', 'school_year_id', 'semester', 'employee_id'] as $key) {
             if (!empty($filters[$key])) $loads->where($key, $filters[$key]);
         }
@@ -78,7 +78,42 @@ class TeacherLoadController extends Controller
 
     public function show(Request $request, int $id)
     {
-        return response()->json($this->find($request, $id))->header('Cache-Control', 'private, no-store');
+        return response()->json($this->editingData($this->find($request, $id), $request))->header('Cache-Control', 'private, no-store');
+    }
+
+    private function editingData(TeacherLoad $load, Request $request): array
+    {
+        $data = $load->toArray();
+        if (($request->user()->isDean() || $request->user()->isProgramCoordinator()) && $load->revision_draft !== null) {
+            $data = array_replace($data, $load->revision_draft['header'], ['items' => $load->revision_draft['items'],
+                'id' => $load->id, 'lock_version' => $load->lock_version, 'editing_revision' => true]);
+        }
+        return $data;
+    }
+
+    public function change(Request $request, int $id)
+    {
+        $this->manager($request);
+        $data = $request->validate(['action' => ['required', Rule::in(['revise', 'discard', 'void', 'delete-draft'])],
+            'lock_version' => 'required|integer|min:1', 'reason' => 'required|string|min:5|max:1000']);
+        $this->service->change($request->user(), $id, $data['action'], $data['lock_version'], trim($data['reason']));
+        return redirect()->route('teacher-loads.index', $request->only(['employee_id', 'semester', 'school_year_id']))->with('success', 'Teaching load updated. Published history has been preserved.');
+    }
+
+    public function history(Request $request, int $id)
+    {
+        $load = $this->find($request, $id)->load('revisions.actor.employee');
+        return view('teacher-loads.history', compact('load'));
+    }
+
+    public function revisionPdf(Request $request, int $id, int $revision)
+    {
+        $load = $this->find($request, $id);
+        $record = $load->revisions()->findOrFail($revision);
+        $snapshot = $record->snapshot;
+        $historical = new TeacherLoad(\Illuminate\Support\Arr::except($snapshot, ['items', 'revisions']));
+        $historical->setRelation('items', collect($snapshot['items'])->map(fn ($item) => new TeacherLoadItem($item)));
+        return $this->pdf($historical, $request->boolean('inline'));
     }
 
     public function store(Request $request)
@@ -95,7 +130,7 @@ class TeacherLoadController extends Controller
     public function update(Request $request, int $id)
     {
         $this->manager($request);
-        return response()->json($this->service->save($request->user(), $request->all(), $this->find($request, $id)));
+        return response()->json($this->editingData($this->service->save($request->user(), $request->all(), $this->find($request, $id)), $request));
     }
 
     public function finalize(Request $request, int $id)
@@ -110,7 +145,7 @@ class TeacherLoadController extends Controller
         $this->manager($request);
         $request->validate(['id' => 'nullable|integer']);
         $existing = $request->filled('id') ? $this->find($request, (int) $request->input('id')) : null;
-        abort_if($existing && $existing->status !== 'draft', 409, 'Use the saved PDF for finalized records.');
+        abort_if($existing && $existing->status !== 'draft' && $existing->revision_draft === null, 409, 'Start a revision before previewing changes to a finalized record.');
         $data = $this->service->validate($request->user(), $request->all(), $existing);
         $load = new TeacherLoad($data['header'] + ['status' => 'draft']);
         $load->setRelation('items', collect($data['items'])->map(fn ($row) => new TeacherLoadItem($row)));
@@ -147,6 +182,7 @@ class TeacherLoadController extends Controller
             $slug($load->semester),
             $slug(str_replace(['/', '–', '—'], '-', (string) $load->academic_year)),
             'Teachers_Load',
+            'Revision_'.($load->revision_number ?? 1),
         ]);
 
         return implode('_', $parts).'.pdf';

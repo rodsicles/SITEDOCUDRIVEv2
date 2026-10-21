@@ -69,7 +69,7 @@ class CourseService
 
     public function create(array $data, int $deanUserId): Course
     {
-        $code = strtoupper(trim($data['code']));
+        $code = trim($data['code']);
         $department = $data['program'];
         $title = trim($data['title']);
 
@@ -79,7 +79,12 @@ class CourseService
             'program' => $department,
             'is_active' => true,
             'sort_order' => (int) (Course::max('sort_order') ?? 0) + 1,
+            ...\Illuminate\Support\Arr::only($data, ['year_level', 'semester', 'lecture_units', 'lab_units']),
         ]);
+
+        if (array_key_exists('lecture_units', $data) || array_key_exists('lab_units', $data)) {
+            $course->forceFill(['units_manually_set' => true])->save();
+        }
 
         DashboardLog::create([
             'user_id' => $deanUserId,
@@ -102,6 +107,26 @@ class CourseService
             'activity_type' => 'course_renamed',
             'visibility' => 'dean',
         ]);
+    }
+
+    public function updateDetails(Course $course, array $data, int $actorId): void
+    {
+        \Illuminate\Support\Facades\DB::transaction(function () use ($course, $data, $actorId) {
+            $locked = Course::lockForUpdate()->findOrFail($course->id);
+            if (isset($data['lock_version'])) abort_if((int) $data['lock_version'] !== $locked->lock_version, 409, 'This course changed. Reload before saving.');
+            if (!empty($data['updated_at'])) {
+                abort_unless($locked->updated_at->toISOString() === $data['updated_at'], 409, 'This course changed in another session. Reload before saving.');
+            }
+            $before = $locked->only(['code', 'title', 'year_level', 'semester', 'lecture_units', 'lab_units']);
+            $locked->fill(\Illuminate\Support\Arr::except($data, ['program', 'updated_at', 'lock_version']));
+            $locked->code = trim($data['code']);
+            $locked->title = trim($data['title']);
+            if (array_key_exists('lecture_units', $data) || array_key_exists('lab_units', $data)) $locked->units_manually_set = true;
+            $locked->lock_version++;
+            $locked->save();
+            \App\Models\CourseChange::create(['course_id' => $locked->id, 'actor_id' => $actorId, 'before' => $before, 'after' => $locked->only(array_keys($before))]);
+            DashboardLog::create(['user_id' => $actorId, 'activity' => \Illuminate\Support\Str::limit("Updated course {$locked->label()} (term, year level and units recorded in course history)", 250), 'activity_type' => 'course_updated', 'visibility' => 'dean']);
+        });
     }
 
     public function deactivate(Course $course, int $deanUserId): void

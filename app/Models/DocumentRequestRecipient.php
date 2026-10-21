@@ -9,6 +9,7 @@ class DocumentRequestRecipient extends Model
     protected $fillable = [
         'document_request_id', 'user_id', 'submitted_document_id', 'status',
         'review_note', 'submitted_at', 'reviewed_at', 'reviewed_by',
+        'previous_status', 'exemption_reason',
     ];
 
     protected $casts = ['submitted_at' => 'datetime', 'reviewed_at' => 'datetime'];

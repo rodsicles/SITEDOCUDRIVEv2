@@ -75,4 +75,6 @@ Implementation checks for this release were 94 tests passed, 1 existing MySQL-on
 
 ## Remotes
 
+Legacy WAMP imports may contain MyISAM tables. Check engine compatibility before adding workflow foreign keys: MyISAM cannot provide transactional rollback or foreign-key guarantees. On October 21 the local upload-related tables were repaired to InnoDB with approval and the workflow migration completed as batch 9; Cloud was not changed. The migration now resumes already-created column groups/tables and installs missing constraints/indexes after interrupted MySQL DDL. Do not delete partially created history tables or reset accounts as a recovery shortcut. Review/approve engine changes on each target host separately.
+
 In this checkout, `origin` is the V3 repository and `v2` is the user-described deployed repository. Confirm remotes before push or release work. A local commit is not deployment evidence.

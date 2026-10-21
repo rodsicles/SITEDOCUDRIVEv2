@@ -105,3 +105,7 @@ dialog.tl-dialog{padding:0;border:1px solid #aec6b9;border-top:3px solid #0d583b
     .tl-review-table{font-size:11px}
     .tl-review-table th,.tl-review-table td{padding:6px 4px}
 }
+
+.tl-error ul{margin:6px 0 0;padding-left:18px}
+.tl-error-link{padding:3px 0;border:0;background:transparent;color:inherit;font:inherit;text-align:left;text-decoration:underline;cursor:pointer}
+.tl-error-link:focus-visible{outline:2px solid var(--site-primary);outline-offset:2px}

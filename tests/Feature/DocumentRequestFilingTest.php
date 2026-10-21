@@ -18,6 +18,66 @@ class DocumentRequestFilingTest extends TestCase
 {
     use RefreshDatabase;
 
+    public function test_past_deadline_returns_clear_error_and_preserves_selected_recipients(): void
+    {
+        $dean = User::where('username', 'dean')->firstOrFail();
+        $faculty = User::where('username', 'faculty')->firstOrFail();
+        $response = $this->actingAs($dean)->from(route('document-requests.index'))->post(route('document-requests.store'), [
+            'title' => 'Deadline validation test', 'request_category' => 'general', 'document_type' => 'pdf',
+            'recipient_ids' => [$faculty->id], 'due_at' => now()->subHour()->format('Y-m-d\TH:i'),
+        ]);
+        $response->assertRedirect(route('document-requests.index'))->assertSessionHasErrors('due_at');
+        $this->assertSame([$faculty->id], session()->getOldInput('recipient_ids'));
+        $this->assertDatabaseMissing('document_requests', ['title' => 'Deadline validation test']);
+        $this->get(route('document-requests.index'))->assertOk()
+            ->assertSee('The deadline has already passed. Choose a future date and time, or leave it blank for no deadline.')
+            ->assertSee('Request not sent. Please correct:')
+            ->assertSee('Done selecting')->assertSee('requestSelectedNames', false)
+            ->assertSee('Deadline validation test');
+    }
+
+    public function test_future_deadline_with_selected_recipient_is_accepted(): void
+    {
+        $dean = User::where('username', 'dean')->firstOrFail();
+        $faculty = User::where('username', 'faculty')->firstOrFail();
+        $this->actingAs($dean)->post(route('document-requests.store'), [
+            'title' => 'Future deadline test', 'request_category' => 'general', 'document_type' => 'pdf',
+            'recipient_ids' => [$faculty->id], 'due_at' => now()->addDay()->format('Y-m-d\TH:i'),
+        ])->assertSessionHasNoErrors()->assertRedirect(route('document-requests.index', ['tab' => 'sent']));
+        $this->assertDatabaseHas('document_requests', ['title' => 'Future deadline test']);
+    }
+
+    public function test_recipient_refresh_includes_new_accounts_and_excludes_inactive_and_self(): void
+    {
+        $dean = User::where('username', 'dean')->firstOrFail();
+        $this->actingAs($dean)->get(route('document-requests.index'))->assertOk();
+        $person = User::factory()->create(['username' => 'recipient-refresh-test', 'status' => 'Active', 'role_id' => User::where('username', 'faculty')->value('role_id')]);
+        $person->employee()->create(['employee_no' => 'RECIPIENT-TEST-001', 'full_name' => 'New Recipient Test', 'program' => 'BSIT', 'position' => 'Faculty Employee', 'hire_date' => now()]);
+
+        $response = $this->getJson(route('document-requests.recipients'))->assertOk();
+        $ids = collect($response->json('people'))->pluck('id');
+        $this->assertTrue($ids->contains($person->id));
+        $this->assertFalse($ids->contains($dean->id));
+        $this->assertStringContainsString('no-store', $response->headers->get('Cache-Control'));
+        $person->update(['status' => 'Inactive']);
+        $this->assertFalse(collect($this->getJson(route('document-requests.recipients'))->assertOk()->json('people'))->pluck('id')->contains($person->id));
+
+        $this->actingAs(User::where('username', 'faculty')->firstOrFail())->getJson(route('document-requests.recipients'))->assertForbidden();
+    }
+
+    public function test_recipient_refresh_honors_coordinator_home_and_extra_programs(): void
+    {
+        $coordinator = User::where('username', 'coordinator')->firstOrFail();
+        $program = collect(\App\Models\Program::codes())->first(fn ($code) => $code !== $coordinator->employee->program);
+        $person = User::factory()->create(['username' => 'recipient-program-test', 'status' => 'Active', 'role_id' => User::where('username', 'faculty')->value('role_id')]);
+        $person->employee()->create(['employee_no' => 'RECIPIENT-TEST-002', 'full_name' => 'Other Program Recipient', 'program' => $program, 'position' => 'Faculty Employee', 'hire_date' => now()]);
+        $this->actingAs($coordinator);
+        $this->assertFalse(collect($this->getJson(route('document-requests.recipients'))->assertOk()->json('people'))->pluck('id')->contains($person->id));
+        $coordinator->employee->syncExtraPrograms([$program]);
+        $coordinator->unsetRelation('employee');
+        $this->assertTrue(collect($this->getJson(route('document-requests.recipients'))->assertOk()->json('people'))->pluck('id')->contains($person->id));
+    }
+
     public function test_dean_sees_category_and_compact_destination_controls(): void
     {
         $dean = User::where('username', 'dean')->firstOrFail();

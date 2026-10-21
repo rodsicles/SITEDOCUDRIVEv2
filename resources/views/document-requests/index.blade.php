@@ -30,7 +30,7 @@
     </div>
 
     @if(session('success'))<div class="workflow-alert workflow-alert--success" role="status"><i class="fas fa-check-circle"></i>{{ session('success') }}</div>@endif
-    @if($errors->any())<div class="workflow-alert workflow-alert--danger" role="alert"><i class="fas fa-circle-exclamation"></i>{{ $errors->first() }}</div>@endif
+    @if($errors->any() && old('request_category') === null)<div class="workflow-alert workflow-alert--danger" role="alert"><i class="fas fa-circle-exclamation"></i>{{ $errors->first() }}</div>@endif
 
     <div class="request-toolbar">
         <nav class="request-tabs" aria-label="Request views">
@@ -117,11 +117,25 @@
         <div class="modal-header"><div><h2 id="createRequestTitle" class="modal-title">New document request</h2><p>Assign one requirement to one or more employees.</p></div><button type="button" class="modal-close" data-close-modal><i class="fas fa-times"></i></button></div>
         <form id="createDocumentRequestForm" method="POST" action="{{ route('document-requests.store') }}">@csrf
             <div class="modal-body request-form-grid">
+                @if($errors->any() && old('request_category') !== null)
+                    <div class="workflow-alert workflow-alert--danger request-form-wide" role="alert" tabindex="-1" id="requestValidationSummary"><strong>Request not sent. Please correct:</strong><ul>@foreach($errors->all() as $message)<li>{{ $message }}</li>@endforeach</ul></div>
+                @endif
                 <div class="form-group request-form-wide"><label class="form-label">Request title *</label><input class="form-control" name="title" value="{{ old('title') }}" maxlength="150" required placeholder="e.g. Updated faculty workload form"></div>
                 <div class="form-group request-form-wide"><label class="form-label">Instructions</label><textarea class="form-control" name="instructions" maxlength="2000" rows="3" placeholder="Explain exactly what must be submitted.">{{ old('instructions') }}</textarea></div>
-                <fieldset class="request-people request-form-wide"><legend>Recipients *</legend><input type="search" class="form-control request-people-search" placeholder="Find an employee…"><div class="request-people-list">@foreach($people as $person)<label data-search="{{ strtolower(($person->employee->full_name ?? $person->username).' '.($person->employee->program ?? '').' '.($person->role->role_name ?? '')) }}"><input type="checkbox" name="recipient_ids[]" value="{{ $person->id }}" data-course-ids='@json($person->assignedCourses->pluck('id')->values())' @checked(in_array($person->id, old('recipient_ids', [])))><span><strong>{{ $person->employee->full_name ?? $person->username }}</strong><small>{{ $person->role->role_name ?? 'Employee' }} · {{ $person->employee->program ?? 'No program' }}</small></span></label>@endforeach</div></fieldset>
+                <fieldset class="request-people request-form-wide"><legend>Recipients *</legend>
+                    <div class="request-recipient-summary"><strong id="requestSelectedCount" role="status" aria-live="polite">No recipients selected</strong><p id="requestSelectedNames">Choose who should submit this document.</p><button type="button" class="btn btn-secondary" id="editRequestRecipients" aria-controls="requestRecipientPicker" aria-expanded="true">Change recipients</button></div>
+                    <div id="requestRecipientPicker">
+                    <label class="sr-only" for="requestPeopleSearch">Find a recipient</label>
+                    <input id="requestPeopleSearch" type="search" class="form-control request-people-search" placeholder="Find an employee by name, username, or program…">
+                    <div class="request-people-list">@foreach($people as $person)<label data-search="{{ strtolower(($person->employee->full_name ?? $person->username).' '.$person->username.' '.($person->employee->program ?? '').' '.($person->role->role_name ?? '')) }}"><input type="checkbox" name="recipient_ids[]" value="{{ $person->id }}" data-course-ids='@json($person->assignedCourses->pluck('id')->values())' @checked(in_array($person->id, old('recipient_ids', [])))><span><strong>{{ $person->employee->full_name ?? $person->username }}</strong><small>{{ $person->role->role_name ?? 'Employee' }} · {{ $person->employee->program ?? 'No program' }}</small></span></label>@endforeach</div>
+                    <div class="flex items-center justify-between gap-2 mt-2"><small id="requestPeopleStatus" role="status" aria-live="polite">{{ $people->count() }} eligible recipients</small><button type="button" class="btn btn-secondary" id="refreshRequestPeople">Refresh recipients</button></div>
+                    <div class="flex items-center justify-between gap-2 mt-2"><small>Select employees, then click Done selecting. This does not send the request.</small><button type="button" class="btn btn-primary" id="doneRequestRecipients">Done selecting</button></div>
+                    </div>
+                    <small id="requestRecipientsError" class="request-field-error" role="alert" hidden>Choose at least one recipient.</small>
+                    @error('recipient_ids')<small class="request-field-error" role="alert">{{ $message }}</small>@enderror
+                </fieldset>
                 <div class="form-group"><label class="form-label">Accepted file type *</label><select id="requestDocumentType" class="form-control" name="document_type" required><option value="any" @selected(old('document_type', 'any') === 'any')>PDF, Word, or image</option><option value="pdf" @selected(old('document_type') === 'pdf')>PDF only</option><option value="word" @selected(old('document_type') === 'word')>Word only</option><option value="image" @selected(old('document_type') === 'image')>Image only</option></select></div>
-                <div class="form-group"><label class="form-label">Due date</label><input class="form-control" type="datetime-local" name="due_at" value="{{ old('due_at') }}" min="{{ now()->addMinute()->format('Y-m-d\TH:i') }}"></div>
+                <div class="form-group"><label class="form-label" for="requestDueAt">Due date &amp; time (optional)</label><input id="requestDueAt" class="form-control" type="datetime-local" name="due_at" value="{{ old('due_at') }}" min="{{ now()->addMinute()->format('Y-m-d\TH:i') }}" aria-describedby="requestDueHint requestDueError" @error('due_at') aria-invalid="true" @enderror><small id="requestDueHint">{{ config('app.timezone') }} time. Choose a future date and time, or leave blank for no deadline.</small><small id="requestDueError" class="request-field-error" role="alert" @if(!$errors->has('due_at')) hidden @endif>{{ $errors->first('due_at') }}</small></div>
                 <div class="form-group request-form-wide"><label class="form-label" for="requestCategory">Request category *</label><select id="requestCategory" class="form-control" name="request_category" required><option value="general" @selected(old('request_category', 'general') === 'general')>General Document</option><option value="teaching_guide" @selected(old('request_category') === 'teaching_guide')>Teaching Guide</option><option value="exam_questionnaire" @selected(old('request_category') === 'exam_questionnaire')>Exam Questionnaire</option></select><small id="requestCategoryHint" class="text-xs text-gray-500">General documents are filed in Uncategorized Files and marked with their request origin.</small></div>
                 <input id="requestCourseId" type="hidden" name="course_id" value="{{ old('course_id') }}">
                 <input id="requestSchoolYearId" type="hidden" name="school_year_id" value="{{ old('school_year_id') }}">
@@ -178,10 +192,94 @@ document.querySelectorAll('[data-open-modal]').forEach(function (button) {
             document.getElementById('changesRequestSubtitle').textContent = 'Send clear feedback to ' + this.dataset.name + '.';
         }
         modal.hidden = false; modal.classList.add('active');
+        if (modal.querySelector('.request-people-list')) { refreshRequestPeople(); updateRequestDueMinimum(); }
     });
 });
 document.querySelectorAll('[data-close-modal]').forEach(function (button) { button.addEventListener('click', function () { var modal = this.closest('.modal-overlay'); modal.classList.remove('active'); modal.hidden = true; }); });
-document.querySelector('.request-people-search')?.addEventListener('input', function () { var q = this.value.toLowerCase(); document.querySelectorAll('.request-people-list label').forEach(function (row) { row.hidden = !row.dataset.search.includes(q); }); });
+var refreshingRequestPeople = false;
+function updateRecipientSummary() {
+    var selected = Array.from(document.querySelectorAll('.request-people-list input:checked'));
+    var count = document.getElementById('requestSelectedCount');
+    if (!count) return;
+    count.textContent = selected.length ? selected.length + ' recipient' + (selected.length === 1 ? '' : 's') + ' selected' : 'No recipients selected';
+    document.getElementById('requestSelectedNames').textContent = selected.length ? selected.map(function (input) { return input.closest('label').querySelector('strong').textContent; }).join(', ') : 'Choose who should submit this document.';
+    if (selected.length) document.getElementById('requestRecipientsError').hidden = true;
+    document.getElementById('doneRequestRecipients').disabled = !selected.length;
+}
+function setRecipientPicker(open) {
+    document.getElementById('requestRecipientPicker').hidden = !open;
+    var button = document.getElementById('editRequestRecipients');
+    button.setAttribute('aria-expanded', String(open));
+    button.textContent = open ? 'Selecting recipients' : 'Change recipients';
+    if (open) document.getElementById('requestPeopleSearch').focus();
+    else button.focus();
+}
+document.getElementById('doneRequestRecipients')?.addEventListener('click', function () { updateRecipientSummary(); setRecipientPicker(false); });
+document.getElementById('editRequestRecipients')?.addEventListener('click', function () { setRecipientPicker(true); });
+var requestClockStart = Date.now();
+var requestServerTime = @json(now()->getTimestampMs());
+function updateRequestDueMinimum() {
+    var input = document.getElementById('requestDueAt');
+    if (!input) return;
+    var parts = new Intl.DateTimeFormat('en-CA', { timeZone: @json(config('app.timezone')), year: 'numeric', month: '2-digit', day: '2-digit', hour: '2-digit', minute: '2-digit', hourCycle: 'h23' }).formatToParts(new Date(requestServerTime + Date.now() - requestClockStart + 60000));
+    var values = Object.fromEntries(parts.map(function (part) { return [part.type, part.value]; }));
+    input.min = values.year + '-' + values.month + '-' + values.day + 'T' + values.hour + ':' + values.minute;
+}
+function validateRequestDue() {
+    var input = document.getElementById('requestDueAt');
+    if (!input) return true;
+    updateRequestDueMinimum();
+    var invalid = Boolean(input.value && input.value < input.min);
+    var error = document.getElementById('requestDueError');
+    error.hidden = !invalid;
+    error.textContent = invalid ? 'This deadline has already passed or is too soon. Choose a later date and time, or clear it for no deadline.' : '';
+    input.setAttribute('aria-invalid', String(invalid));
+    input.setCustomValidity(invalid ? error.textContent : '');
+    return !invalid;
+}
+document.getElementById('requestDueAt')?.addEventListener('input', validateRequestDue);
+document.getElementById('requestDueAt')?.addEventListener('invalid', validateRequestDue);
+function filterRequestPeople() {
+    var search = document.querySelector('.request-people-search');
+    if (!search) return;
+    var q = search.value.toLowerCase().trim();
+    var rows = Array.from(document.querySelectorAll('.request-people-list label'));
+    rows.forEach(function (row) { row.hidden = !row.dataset.search.includes(q); });
+    document.querySelector('.request-people-list').scrollTop = 0;
+    document.getElementById('requestPeopleStatus').textContent = rows.filter(function (row) { return !row.hidden; }).length + ' matching recipients' + (q ? ' — clear search to see all eligible employees.' : '');
+}
+async function refreshRequestPeople() {
+    if (refreshingRequestPeople) return;
+    refreshingRequestPeople = true;
+    var button = document.getElementById('refreshRequestPeople');
+    var status = document.getElementById('requestPeopleStatus');
+    var list = document.querySelector('.request-people-list');
+    button.disabled = true; status.textContent = 'Refreshing recipients…';
+    try {
+        var response = await fetch(@json(route('document-requests.recipients')), { credentials: 'same-origin', cache: 'no-store', headers: { Accept: 'application/json', 'X-Requested-With': 'XMLHttpRequest' } });
+        if (!response.ok) throw new Error('Failed to load recipients');
+        var data = await response.json();
+        if (!Array.isArray(data.people)) throw new Error('Invalid recipient response');
+        var selected = new Set(Array.from(list.querySelectorAll('input:checked')).map(function (input) { return input.value; }));
+        var fragment = document.createDocumentFragment();
+        data.people.forEach(function (person) {
+            var row = document.createElement('label');
+            row.dataset.search = [person.name, person.username, person.program, person.role].join(' ').toLowerCase();
+            var checkbox = document.createElement('input');
+            checkbox.type = 'checkbox'; checkbox.name = 'recipient_ids[]'; checkbox.value = person.id;
+            checkbox.dataset.courseIds = JSON.stringify(person.course_ids); checkbox.checked = selected.has(String(person.id));
+            var text = document.createElement('span'); var name = document.createElement('strong'); var detail = document.createElement('small');
+            name.textContent = person.name; detail.textContent = person.role + ' · ' + person.program;
+            text.append(name, detail); row.append(checkbox, text); fragment.append(row);
+        });
+        list.replaceChildren(fragment); filterRequestPeople(); updateRecipientSummary(); updateRequestCourseChoices();
+    } catch (error) {
+        status.textContent = 'Could not refresh recipients. The previous list is still shown. Click Refresh recipients to retry.';
+    } finally { button.disabled = false; refreshingRequestPeople = false; }
+}
+document.querySelector('.request-people-search')?.addEventListener('input', filterRequestPeople);
+document.getElementById('refreshRequestPeople')?.addEventListener('click', refreshRequestPeople);
+document.querySelector('.request-people-list')?.addEventListener('change', function (event) { if (event.target.matches('input[name="recipient_ids[]"]')) { updateRecipientSummary(); updateRequestCourseChoices(); } });
 
 var requestCourses = @json($courses->mapWithKeys(fn ($course) => [(string) $course->id => $course->code.' — '.$course->title]));
 var requestCategorySelect = document.getElementById('requestCategory');
@@ -346,7 +444,6 @@ function applyRequestCategoryState() {
     }
 }
 
-document.querySelectorAll('.request-people-list input[name="recipient_ids[]"]').forEach(function (checkbox) { checkbox.addEventListener('change', updateRequestCourseChoices); });
 requestCategorySelect?.addEventListener('change', applyRequestCategoryState);
 document.getElementById('generalCategory')?.addEventListener('change', function () {
     document.getElementById('requestCategoryHint').textContent = 'Files will be filed under ' + this.options[this.selectedIndex].text + ' and display their request origin.';
@@ -378,10 +475,10 @@ document.addEventListener('keydown', function (event) { if (event.key === 'Escap
 updateRequestCourseChoices();
 if (generalSchoolYear) generalSchoolYear.value = schoolYearIdInput?.value || '';
 if (generalSemester) generalSemester.value = semesterInput?.value || '';
-if (requestCategorySelect?.value === 'general') {
+if (requestCategorySelect && requestCategorySelect.value === 'general') {
     document.getElementById('generalRequestPeriod').hidden = false;
     document.getElementById('requestDestinationGroup').hidden = true;
-} else {
+} else if (requestCategorySelect) {
     document.getElementById('generalRequestPeriod').hidden = true;
     document.getElementById('requestDestinationGroup').hidden = false;
     if (courseIdInput.value && schoolYearIdInput.value && semesterInput.value && destinationTypeInput.value) {
@@ -395,16 +492,20 @@ if (requestCategorySelect?.value === 'general') {
         }
     }
 }
+if (document.getElementById('requestSelectedCount')) updateRecipientSummary();
 
 @if($errors->any() && old('request_category') !== null)
 var createRequestModal = document.getElementById('createRequestModal');
 if (createRequestModal) {
     createRequestModal.hidden = false;
     createRequestModal.classList.add('active');
+    document.getElementById('requestDueError')?.closest('.form-group').querySelector('[aria-invalid="true"]')?.focus();
 }
 @endif
 
 document.getElementById('createDocumentRequestForm')?.addEventListener('submit', function (event) {
+    if (!validateRequestDue()) { event.preventDefault(); document.getElementById('requestDueAt').reportValidity(); return; }
+    if (!document.querySelector('.request-people-list input:checked')) { event.preventDefault(); setRecipientPicker(true); document.getElementById('requestRecipientsError').hidden = false; return; }
     if (requestCategorySelect?.value !== 'general' && !destinationSummary()) {
         event.preventDefault();
         openDestinationPicker();
@@ -422,6 +523,12 @@ document.getElementById('requestFile')?.addEventListener('change', async functio
     var hash = Array.from(new Uint8Array(await crypto.subtle.digest('SHA-256', await this.files[0].arrayBuffer()))).map(function (b) { return b.toString(16).padStart(2, '0'); }).join('');
     var response = await fetch(@json(route('document-search.duplicate')), {method:'POST',headers:{'Content-Type':'application/json','Accept':'application/json','X-CSRF-TOKEN':document.querySelector('meta[name="csrf-token"]').content},body:JSON.stringify({hash:hash})});
     if (response.ok) { var data = await response.json(); if (data.duplicate) { warning.innerHTML = '<i class="fas fa-triangle-exclamation"></i><span>This appears to duplicate <strong></strong>. You may still submit if a new copy was requested.</span>'; warning.querySelector('strong').textContent = data.document; warning.hidden = false; } }
+});
+document.getElementById('requestSubmitForm')?.addEventListener('submit', function (event) {
+    if (this.dataset.submitting === '1') { event.preventDefault(); return; }
+    this.dataset.submitting = '1';
+    var button = this.querySelector('button[type="submit"]');
+    if (button) { button.disabled = true; button.textContent = 'Submitting…'; }
 });
 </script>
 @endpush

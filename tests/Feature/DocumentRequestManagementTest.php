@@ -25,6 +25,52 @@ class DocumentRequestManagementTest extends TestCase
         return $this->patch(route('document-requests.change', $item), array_replace(['action' => $action, 'reason' => 'Updated office requirements', 'lock_version' => $item->fresh()->lock_version], $extra));
     }
 
+    public function test_successful_upload_and_retry_return_to_list_without_duplicate(): void
+    {
+        [$dean, $faculty, $item] = $this->requestRecord();
+        Storage::fake('local'); Queue::fake(); config(['filesystems.upload_disk' => 'local']);
+        $recipient = $item->recipients()->firstOrFail();
+        $this->actingAs($faculty)->post(route('document-requests.submit', $recipient), [
+            'file' => UploadedFile::fake()->create('report.pdf', 10, 'application/pdf'),
+        ])->assertRedirect(route('document-requests.index', ['tab' => 'received']))->assertSessionHas('success', 'Document submitted successfully.');
+        $documentId = $recipient->fresh()->submitted_document_id;
+        Storage::disk('local')->assertExists(Document::findOrFail($documentId)->file_path);
+        $count = Document::count();
+        $version = $item->fresh()->lock_version;
+        $this->post(route('document-requests.submit', $recipient), [
+            'file' => UploadedFile::fake()->create('duplicate.pdf', 10, 'application/pdf'),
+        ])->assertRedirect(route('document-requests.index', ['tab' => 'received']))->assertSessionHas('success');
+        $this->assertSame($count, Document::count());
+        $this->assertSame($documentId, $recipient->fresh()->submitted_document_id);
+        $this->assertSame($version, $item->fresh()->lock_version);
+        $this->assertCount(1, Storage::disk('local')->allFiles('documents/requests'));
+        $this->actingAs($dean)->post(route('document-requests.submit', $recipient))->assertForbidden();
+    }
+
+    public function test_expired_browser_submission_redirects_with_actionable_message(): void
+    {
+        [$dean, $faculty, $item] = $this->requestRecord();
+        $item->update(['due_at' => now()->subDay(), 'allow_late_submission' => false]);
+        $recipient = $item->recipients()->firstOrFail();
+        $this->actingAs($faculty)->post(route('document-requests.submit', $recipient))
+            ->assertRedirect(route('document-requests.index', ['tab' => 'received']))->assertSessionHasErrors('submission');
+        $this->postJson(route('document-requests.submit', $recipient))->assertUnprocessable()->assertJsonValidationErrors('submission');
+        $this->assertSame('pending', $recipient->fresh()->status);
+        $this->assertNull($recipient->fresh()->submitted_document_id);
+    }
+
+    public function test_workflow_migration_can_resume_without_removing_existing_records(): void
+    {
+        [$dean, $faculty, $item] = $this->requestRecord();
+        \Illuminate\Support\Facades\Schema::table('teacher_load_revisions', fn ($table) => $table->dropForeign(['changed_by']));
+        $migration = require database_path('migrations/2026_10_21_000001_add_workflow_correction_history.php');
+        $migration->up();
+        $this->assertDatabaseHas('document_requests', ['id' => $item->id, 'title' => 'Signed report']);
+        $this->assertSame(1, $item->recipients()->count());
+        $this->assertTrue(collect(\Illuminate\Support\Facades\Schema::getForeignKeys('teacher_load_revisions'))->contains(fn ($key) => $key['columns'] === ['changed_by']));
+        $this->assertTrue(\Illuminate\Support\Facades\Schema::hasIndex('teacher_load_revisions', 'teacher_load_revisions_teacher_load_id_revision_number_unique'));
+    }
+
     public function test_author_can_edit_deadline_add_recipients_cancel_and_reopen_with_history(): void
     {
         [$dean, $faculty, $item] = $this->requestRecord();

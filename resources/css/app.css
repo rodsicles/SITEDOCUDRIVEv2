@@ -10707,6 +10707,10 @@ textarea:disabled {
 .request-modal .request-people-list { max-height: 8rem; }
 .request-people-list label { display: flex; gap: 0.65rem; align-items: center; padding: 0.55rem 0.7rem; border-bottom: 1px solid var(--site-border); cursor: pointer; }
 .request-people-list label:last-child { border-bottom: 0; }
+.request-recipient-summary { padding: 0.65rem; margin-bottom: 0.5rem; border: 1px solid var(--site-border); background: var(--site-surface-selected); color: var(--site-text); font-size: 0.8rem; }
+.request-recipient-summary p { margin: 0.3rem 0 0.5rem; overflow-wrap: anywhere; }
+.request-field-error { display: block; color: var(--site-danger, #b42318); margin-top: 0.35rem; }
+.request-modal [hidden] { display: none !important; }
 .request-people-list label:has(input:checked) { background: var(--site-surface-selected); }
 .request-people-list strong, .request-people-list small { display: block; }
 .request-people-list strong { color: var(--site-text); font-size: 0.75rem; }

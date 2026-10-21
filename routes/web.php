@@ -68,6 +68,7 @@ Route::middleware(['auth', 'no.back'])->group(function () {
     Route::get('/upload-destinations', [\App\Http\Controllers\UploadDestinationController::class, 'index'])->name('upload-destinations.index');
     Route::post('/upload-destinations/subject', [\App\Http\Controllers\UploadDestinationController::class, 'subject'])->middleware('throttle:30,1')->name('upload-destinations.subject');
     Route::get('/document-requests', [DocumentRequestController::class, 'index'])->name('document-requests.index');
+    Route::get('/document-requests/recipients', [DocumentRequestController::class, 'recipients'])->name('document-requests.recipients');
     Route::post('/document-requests', [DocumentRequestController::class, 'store'])->middleware('throttle:30,60')->name('document-requests.store');
     Route::get('/document-requests/{documentRequest}/manage', [DocumentRequestController::class, 'manage'])->name('document-requests.manage');
     Route::patch('/document-requests/{documentRequest}', [DocumentRequestController::class, 'change'])->middleware('throttle:30,1')->name('document-requests.change');

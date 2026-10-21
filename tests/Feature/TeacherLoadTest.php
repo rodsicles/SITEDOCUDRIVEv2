@@ -127,6 +127,36 @@ class TeacherLoadTest extends TestCase
         $this->assertStringContainsString('Teachers_Load', $disposition);
     }
 
+    public function test_finalize_returns_the_missing_schedule_field_and_preserves_draft(): void
+    {
+        [$dean, $faculty, $course] = $this->setupFaculty();
+        $data = $this->payload($faculty, $course);
+        $data['items'][0]['schedules'] = [];
+        $created = $this->actingAs($dean)->postJson(route('teacher-loads.store'), $data)->assertCreated()->json();
+        $load = TeacherLoad::findOrFail($created['id']);
+
+        $this->postJson(route('teacher-loads.finalize', $load), ['lock_version' => $load->lock_version])
+            ->assertUnprocessable()
+            ->assertJsonValidationErrors('items.0.schedules')
+            ->assertJsonPath('errors', ['items.0.schedules' => ['Add at least one schedule before finalizing.']]);
+        $this->assertSame('draft', $load->fresh()->status);
+        $this->assertCount(2, $load->fresh()->items);
+    }
+
+    public function test_finalize_rejects_empty_load_with_actionable_validation(): void
+    {
+        [$dean, $faculty, $course] = $this->setupFaculty();
+        $data = $this->payload($faculty, $course);
+        $data['items'] = [];
+        $created = $this->actingAs($dean)->postJson(route('teacher-loads.store'), $data)->assertCreated()->json();
+        $load = TeacherLoad::findOrFail($created['id']);
+
+        $this->postJson(route('teacher-loads.finalize', $load), ['lock_version' => $load->lock_version])
+            ->assertUnprocessable()->assertJsonValidationErrors('items')
+            ->assertJsonPath('errors.items.0', 'Add at least one subject or additional duty before finalizing.');
+        $this->assertSame('draft', $load->fresh()->status);
+    }
+
     public function test_faculty_only_sees_own_finalized_load_and_cannot_modify_it(): void
     {
         [$dean, $faculty, $course] = $this->setupFaculty();

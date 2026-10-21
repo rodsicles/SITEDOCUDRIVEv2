@@ -53,21 +53,8 @@ class DocumentRequestController extends Controller
 
         $requests = $query->orderByRaw('CASE WHEN due_at IS NULL THEN 1 ELSE 0 END')->orderBy('due_at')->latest('id')->paginate(20)->withQueryString();
         $canCreateRequests = $user->isDean() || $user->isProgramCoordinator();
-        $peopleQuery = User::query()
-            ->with([
-                'employee',
-                'role',
-                'assignedCourses' => fn ($query) => $query->active()->ordered(),
-            ])
-            ->where('status', 'Active')
-            ->whereKeyNot($user->id);
-
-        if ($user->isProgramCoordinator()) {
-            $programs = \App\Support\CourseCatalog::programsForUser($user);
-            $peopleQuery->whereHas('employee', fn ($query) => $query->whereIn('program', $programs));
-        }
-
-        $people = $canCreateRequests ? $peopleQuery->orderBy('username')->get() : collect();
+        $people = $canCreateRequests ? app(\App\Services\DocumentRequestManagementService::class)->eligiblePeople($user)
+            ->with(['assignedCourses' => fn ($query) => $query->active()->ordered()])->orderBy('username')->get() : collect();
         $courses = Course::active()->ordered()->get();
 
         return view('document-requests.index', [
@@ -80,6 +67,22 @@ class DocumentRequestController extends Controller
             'pendingCount' => DocumentRequestRecipient::where('user_id', $user->id)->whereIn('status', ['pending', 'changes_requested'])->whereHas('request', fn ($q) => $q->where('status', 'open'))->count(),
             'customRequestCategories' => \App\Models\DocumentCategory::whereNotNull('created_by')->whereNull('owner_id')->where('is_active', true)->orderBy('category_name')->get(),
         ]);
+    }
+
+    public function recipients(Request $request)
+    {
+        abort_unless($request->user()->isDean() || $request->user()->isProgramCoordinator(), 403);
+        $people = app(\App\Services\DocumentRequestManagementService::class)->eligiblePeople($request->user())
+            ->with(['assignedCourses' => fn ($query) => $query->active()->ordered()])->orderBy('username')->get();
+
+        return response()->json(['people' => $people->map(fn ($person) => [
+            'id' => $person->id,
+            'name' => $person->employee?->full_name ?? $person->username,
+            'username' => $person->username,
+            'program' => $person->employee?->program ?? 'No program',
+            'role' => $person->role?->role_name ?? 'Employee',
+            'course_ids' => $person->assignedCourses->pluck('id')->values(),
+        ])])->header('Cache-Control', 'private, no-store');
     }
 
     public function store(Request $request)
@@ -101,6 +104,10 @@ class DocumentRequestController extends Controller
             'semester' => ['nullable', Rule::in(['1st', '2nd'])],
             'due_at' => ['nullable', 'date', 'after:now'],
             'allow_late_submission' => ['nullable', 'boolean'],
+        ], [
+            'due_at.after' => 'The deadline has already passed. Choose a future date and time, or leave it blank for no deadline.',
+            'due_at.date' => 'Enter a valid deadline date and time, or leave it blank for no deadline.',
+            'recipient_ids.required' => 'Choose at least one recipient, then click Done selecting.',
         ]);
 
         $recipientIds = collect($validated['recipient_ids'])->map(fn ($id) => (int) $id)->unique()->reject(fn ($id) => $id === (int) $request->user()->id);
@@ -241,25 +248,35 @@ class DocumentRequestController extends Controller
 
     public function submit(Request $request, DocumentRequestRecipient $recipient)
     {
-        return DB::transaction(function () use ($request, $recipient) {
-            $item = DocumentRequest::lockForUpdate()->findOrFail($recipient->document_request_id);
-            $recipient->refresh();
-            $response = $this->submitLocked($request, $recipient);
-            $item->increment('lock_version');
-            return $response;
-        });
+        try {
+            return DB::transaction(function () use ($request, $recipient) {
+                $item = DocumentRequest::lockForUpdate()->findOrFail($recipient->document_request_id);
+                $recipient->refresh();
+                abort_unless((int) $recipient->user_id === (int) $request->user()->id, 403);
+                if (in_array($recipient->status, ['submitted', 'approved'], true) && $recipient->submitted_document_id) {
+                    return redirect()->route('document-requests.index', ['tab' => 'received'])
+                        ->with('success', 'Your document was already submitted. No duplicate file was uploaded. Use View submission to check it.');
+                }
+                $response = $this->submitLocked($request, $recipient);
+                $item->increment('lock_version');
+                return $response;
+            });
+        } catch (ValidationException $e) {
+            if ($request->expectsJson()) throw $e;
+            return redirect()->route('document-requests.index', ['tab' => 'received'])->withErrors($e->errors());
+        }
     }
 
     private function submitLocked(Request $request, DocumentRequestRecipient $recipient)
     {
         abort_unless((int) $recipient->user_id === (int) $request->user()->id, 403);
         $recipient->load(['request.course', 'request.destinationFolder', 'request.requester.role', 'document']);
-        abort_if($recipient->request->status !== 'open', 422, 'This request is closed.');
-        abort_if($recipient->request->due_at?->isPast() && !$recipient->request->allow_late_submission, 422, 'The submission deadline has passed.');
-        abort_unless(in_array($recipient->status, ['pending', 'changes_requested'], true), 422, 'This request already has a submission under review.');
+        if ($recipient->request->status !== 'open') throw ValidationException::withMessages(['submission' => 'This request is closed. Contact the requester if it needs to be reopened.']);
+        if ($recipient->request->due_at?->isPast() && !$recipient->request->allow_late_submission) throw ValidationException::withMessages(['submission' => 'The submission deadline has passed. Ask the requester to extend it or allow late submission.']);
+        if (!in_array($recipient->status, ['pending', 'changes_requested'], true)) throw ValidationException::withMessages(['submission' => 'This request is not accepting another submission. Check its current status in the request list.']);
 
         if ($recipient->request->destinationFolder?->document_category_id) {
-            abort_unless($recipient->request->destinationFolder->managedCategory?->is_active, 422, 'This request category is inactive. Contact the requester.');
+            if (!$recipient->request->destinationFolder->managedCategory?->is_active) throw ValidationException::withMessages(['submission' => 'This request category is inactive. Contact the requester.']);
             abort_unless($recipient->request->destinationFolder->canBeViewedBy($request->user()), 404);
         }
         $rules = ['file' => ['required', 'file', 'max:10240']];
@@ -295,7 +312,7 @@ class DocumentRequestController extends Controller
                 ]);
             });
 
-            return back()->with('success', 'Corrected document submitted successfully.');
+            return redirect()->route('document-requests.index', ['tab' => 'received'])->with('success', 'Corrected document submitted successfully.');
         }
 
         $path = UploadStorage::storeAs($file, 'documents/requests', Str::uuid().'.'.strtolower($file->getClientOriginalExtension()));
@@ -356,7 +373,7 @@ class DocumentRequestController extends Controller
             ['file_hash' => $realPath ? (hash_file('sha256', $realPath) ?: null) : null, 'index_status' => 'pending']
         );
         IndexDocumentContentJob::dispatch($document->document_id)->afterResponse();
-        return back()->with('success', 'Document submitted successfully.');
+        return redirect()->route('document-requests.index', ['tab' => 'received'])->with('success', 'Document submitted successfully.');
     }
 
     public function review(Request $request, DocumentRequestRecipient $recipient)

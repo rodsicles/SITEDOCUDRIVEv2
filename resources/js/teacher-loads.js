@@ -78,14 +78,19 @@ if (root && document.getElementById('tl-dialog')) {
 
     const api = async (url, options = {}) => {
         const response = await fetch(url, {
+            ...options,
             credentials: 'same-origin',
             headers: { Accept: 'application/json', 'X-Requested-With': 'XMLHttpRequest', 'X-CSRF-TOKEN': csrf, ...(options.headers || {}) },
-            ...options,
         });
         const contentType = response.headers.get('content-type') || '';
         const data = contentType.includes('json') ? await response.json() : null;
         if (!response.ok) {
-            const error = new Error(data?.message || 'Unable to complete the request.');
+            const fallback = response.status === 419 || response.status === 401
+                ? 'Your session expired. Sign in again before continuing.'
+                : response.status >= 500
+                    ? 'The server could not save or finalize this load. This is not a missing-field error. Ask the administrator to check database migrations and server logs, then retry.'
+                    : 'The request could not be completed. Please reload the load and try again.';
+            const error = new Error(response.status >= 500 ? fallback : (data?.message || fallback));
             error.errors = data?.errors || {};
             throw error;
         }
@@ -94,8 +99,51 @@ if (root && document.getElementById('tl-dialog')) {
 
     const showError = (error) => {
         const box = $('#tl-error');
-        const messages = Object.values(error.errors || {}).flat();
-        box.textContent = messages.length ? messages.join(' ') : error.message;
+        box.replaceChildren();
+        const entries = Object.entries(error.errors || {});
+        const heading = document.createElement('strong');
+        heading.textContent = entries.length ? 'Check these details before continuing:' : error.message;
+        box.append(heading);
+        if (entries.length) {
+            const list = document.createElement('ul');
+            entries.forEach(([key, messages]) => {
+                const parts = key.split('.');
+                const index = key.startsWith('items') ? 1 : ['employee_id', 'school_year_id', 'semester', 'employment_status'].includes(key) ? 0 : 2;
+                const names = ['Faculty & term', 'Teaching details', 'Review & export'];
+                let target = ({ employee_id: facultySelect, school_year_id: $('#tl-year'), semester: semesterSelect, employment_status: $('#tl-employment') })[key];
+                let context = `Step ${index + 1} — ${names[index]}`;
+                if (parts[0] === 'items' && parts[1] !== undefined) {
+                    const item = $$('#tl-course-rows .tl-item, #tl-duty-rows .tl-item')[Number(parts[1])];
+                    if (item) {
+                        const subject = $('[data-field="course_id"]', item);
+                        context += ` · Row ${Number(parts[1]) + 1}: ${subject ? subject.selectedOptions[0]?.textContent : ($('[data-field="title"]', item)?.value || 'Additional duty')}`;
+                        target = item;
+                        if (parts[2] === 'schedules') {
+                            const meeting = $$('.tl-meeting', item)[Number(parts[3] || 0)];
+                            if (meeting) {
+                                context += ` · Schedule ${Number(parts[3] || 0) + 1}`;
+                                target = meeting.querySelector(`[data-meeting="${parts[4]}"]`) || meeting.querySelector('input');
+                            } else target = $('.tl-add-schedule', item);
+                        } else target = item.querySelector(`[data-field="${parts[2]}"]`) || item;
+                    } else target = $('#tl-add-course');
+                } else if (key === 'items') target = $('#tl-add-course');
+                const li = document.createElement('li');
+                const link = document.createElement('button');
+                link.type = 'button';
+                link.className = 'tl-error-link';
+                link.textContent = `${context}: ${[].concat(messages).join(' ')}`;
+                link.addEventListener('click', () => {
+                    setStep(index);
+                    if (target) {
+                        target.scrollIntoView({ block: 'center' });
+                        if (!target.matches('input,select,button,textarea')) target.tabIndex = -1;
+                        target.focus();
+                    }
+                });
+                li.append(link); list.append(li);
+            });
+            box.append(list);
+        }
         box.hidden = false;
         box.focus();
     };
@@ -400,10 +448,11 @@ if (root && document.getElementById('tl-dialog')) {
         if (step === LAST_STEP) { updateSummary(); refreshPreviewIfStale(); }
     };
 
-    const validateStep = (index) => {
+    const validateStep = (index, finalizing = false) => {
         clearError();
         if (index === 0 && (!facultySelect.value || !$('#tl-year').value || !semesterSelect.value)) {
             setStep(0);
+            showError({ errors: { [!facultySelect.value ? 'employee_id' : (!$('#tl-year').value ? 'school_year_id' : 'semester')]: ['Choose a faculty member, school year, and semester before continuing.'] } });
             (!facultySelect.value ? facultySelect : (!$('#tl-year').value ? $('#tl-year') : semesterSelect)).reportValidity();
             return false;
         }
@@ -411,14 +460,29 @@ if (root && document.getElementById('tl-dialog')) {
         const invalid = $$('input,select', section).find(input => !input.checkValidity());
         if (invalid) {
             setStep(index);
+            const item = invalid.closest('.tl-item');
+            const row = item ? ` · Row ${$$('#tl-course-rows .tl-item, #tl-duty-rows .tl-item').indexOf(item) + 1}` : '';
+            const label = invalid.closest('label')?.childNodes[0]?.textContent?.trim() || 'Required field';
+            showError(new Error(`Step ${index + 1}${row} — ${label}: ${invalid.validationMessage}`));
             invalid.reportValidity();
             return false;
         }
         if (index === 1) {
+            if (finalizing) {
+                const errors = {};
+                if (!$$('#tl-course-rows .tl-item, #tl-duty-rows .tl-item').length) errors.items = ['Add at least one subject or additional duty before finalizing.'];
+                $$('#tl-course-rows .tl-item').forEach((item, row) => {
+                    if (!$('.tl-meeting', item)) errors[`items.${row}.schedules`] = ['Add at least one schedule before finalizing. Drafts may be saved without schedules.'];
+                });
+                if (Object.keys(errors).length) { setStep(1); showError({ errors }); return false; }
+            }
             const missingSchedule = $$('#tl-course-rows .tl-meeting').find(meeting => !$$('input[type="checkbox"]:checked', meeting).length);
             if (missingSchedule) {
                 setStep(1);
-                showError(new Error('Choose at least one day for every schedule row, or remove the empty schedule.'));
+                const item = missingSchedule.closest('.tl-item');
+                const row = $$('#tl-course-rows .tl-item').indexOf(item);
+                const meeting = $$('.tl-meeting', item).indexOf(missingSchedule);
+                showError({ errors: { [`items.${row}.schedules.${meeting}.days`]: ['Choose at least one day, or remove this schedule row.'] } });
                 return false;
             }
         }
@@ -545,8 +609,8 @@ if (root && document.getElementById('tl-dialog')) {
     $('#tl-confirm-final').addEventListener('change', event => $('#tl-finalize').disabled = !event.target.checked);
     $('#tl-finalize').addEventListener('click', async () => {
         clearError(); if (!$('#tl-confirm-final').checked) return;
-        for (let index = 0; index < LAST_STEP; index++) { if (!validateStep(index)) return; }
-        if (dirty && !(await save())) return; setBusy(true);
+        for (let index = 0; index < LAST_STEP; index++) { if (!validateStep(index, true)) return; }
+        if ((!loadId || dirty) && !(await save())) return; setBusy(true);
         try { await api(`${root.dataset.base}/${loadId}/finalize`, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ lock_version: lockVersion }) }); window.location.reload(); }
         catch (error) { showError(error); setBusy(false); }
     });

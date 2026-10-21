@@ -132,6 +132,12 @@ Use these instead of inventing parallel widgets.
 
 Reasons are required for load lifecycle/request-management actions. Course metadata edits record before/after values without a required reason field. Do not label every history entry as an approval. A saved load revision is still unpublished until finalization; its presence must not replace the published profile/PDF.
 
+Teacher's Load validation stays inside the editor's bounded alert. List server field errors with step, subject/duty row, and schedule context; each entry opens that step and focuses its control. Finalize checks earlier steps and missing schedules without deleting entered data. Distinguish server/session failures from incomplete fields; never expose raw server exception details as field guidance.
+
+Request creation's compact recipient checklist refreshes on open and via **Refresh recipients**. Keep the form and eligible selections intact, show loading/matching-count/retry text in a polite status region, reset list scroll when searching, and preserve the existing destination/upload flow. Search is labeled and includes name/username/program; no duplicate recipient-management modal is needed.
+
+Keep selected names/count visible above the checklist. **Done selecting** collapses only the picker (not the form); **Change recipients** reopens it with appropriate expanded state and focus. Deadline guidance names the timezone and optional/no-deadline behavior; show field-level errors and an in-modal summary on failed creation, preserving inputs instead of leaving only a page-level red banner.
+
 
 
 ## Typography and spacing

@@ -87,6 +87,15 @@ class TeacherLoadService
             'items.*.schedules.*.end' => ['required', 'date_format:H:i'],
             'items.*.schedules.*.mode' => ['required', Rule::in(['Lec', 'Lab'])],
             'items.*.schedules.*.room' => ['required', 'string', 'max:40'],
+        ], [
+            'items.min' => 'Add at least one subject or additional duty before finalizing.',
+        ], [
+            'employee_id' => 'faculty member', 'school_year_id' => 'school year', 'employment_status' => 'faculty type',
+            'items.*.course_id' => 'subject', 'items.*.section' => 'section', 'items.*.class_size' => 'class size',
+            'items.*.title' => 'additional duty', 'items.*.lecture_units' => 'lecture units', 'items.*.lab_units' => 'lab units',
+            'items.*.load_equivalent' => 'load equivalent', 'items.*.schedules.*.days' => 'schedule days',
+            'items.*.schedules.*.start' => 'start time', 'items.*.schedules.*.end' => 'end time',
+            'items.*.schedules.*.room' => 'room', 'items.*.schedules.*.mode' => 'schedule type',
         ])->validate();
 
         $faculty = $this->facultyQuery($actor)->find($data['employee_id']);
@@ -108,7 +117,10 @@ class TeacherLoadService
             if ($row['kind'] === 'course') {
                 $course = $courses->get($row['course_id'] ?? 0);
                 if (!$course) throw ValidationException::withMessages(["items.$index.course_id" => 'Choose a subject assigned to this faculty for the selected semester.']);
-                if (!trim($row['section'] ?? '') || empty($row['class_size'])) throw ValidationException::withMessages(["items.$index.section" => 'Enter the section and class size.']);
+                $missing = [];
+                if (!trim($row['section'] ?? '')) $missing["items.$index.section"] = 'Enter the section.';
+                if (empty($row['class_size'])) $missing["items.$index.class_size"] = 'Enter the class size.';
+                if ($missing) throw ValidationException::withMessages($missing);
                 $key = $course->id.'|'.mb_strtolower(trim($row['section']));
                 if (isset($sections[$key])) throw ValidationException::withMessages(["items.$index.section" => 'This subject and section are already listed. Add another schedule to the existing row.']);
                 $sections[$key] = true;

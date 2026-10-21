@@ -154,4 +154,21 @@ class TeacherLoadTest extends TestCase
         $data['items'][0]['schedules'][] = ['days' => ['Mon'], 'start' => '14:00', 'end' => '15:00', 'mode' => 'Lab', 'room' => 'Lab 1'];
         $this->postJson(route('teacher-loads.store'), $data)->assertUnprocessable()->assertJsonValidationErrors('items.0.schedules.1.start');
     }
+
+    public function test_managers_can_open_current_assignments_and_existing_subject_editor_within_scope(): void
+    {
+        [$dean, $faculty, $course] = $this->setupFaculty();
+        $course->update(['semester' => SchoolTerm::current()]);
+        $this->actingAs($dean)->get(route('teacher-loads.index', ['employee_id' => $faculty->employee->employee_id]))
+            ->assertOk()->assertSee($course->title)->assertSee('Manage subjects')
+            ->assertSee(route('dean.edit-employee', $faculty->employee->employee_id), false);
+        $coordinator = User::where('username', 'coordinator')->firstOrFail();
+        $coordinator->employee->update(['program' => $faculty->employee->program]);
+        $this->actingAs($coordinator)->get(route('teacher-loads.index', ['employee_id' => $faculty->employee->employee_id]))
+            ->assertOk()->assertSee($course->title)->assertSee(route('coordinator.edit-faculty', $faculty->employee->employee_id), false);
+
+        $coordinator->employee->update(['program' => $faculty->employee->program === 'BLIS' ? 'BSCpE' : 'BLIS']);
+        $coordinator->employee->syncExtraPrograms([]);
+        $this->get(route('teacher-loads.index', ['employee_id' => $faculty->employee->employee_id]))->assertNotFound();
+    }
 }

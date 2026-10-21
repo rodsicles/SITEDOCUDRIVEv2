@@ -71,6 +71,8 @@ Login: split identity / sign-in. School branding stays in the identity panel; â€
 
 Profile: `profile-panel` tabs (details / password), not the old uneven password grid. File: `resources/views/profile/edit.blade.php`.
 
+The profile details pane includes a compact **Current teaching assignments** list for Faculty and teaching Coordinators. Reuse `partials/teaching-assignment-summary.blade.php` in Teacher's Load: subject code/title first, then published section and schedules when available. Unscheduled assignments show names only with one section-level explanation. Use token-based borders/text and wrapping rows; keep subjects read-only on the employee's own profile and management links on authorized manager views.
+
 ## Shared components
 
 Use these instead of inventing parallel widgets.

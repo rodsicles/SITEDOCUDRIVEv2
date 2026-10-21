@@ -127,6 +127,16 @@
                 </dl>
             </section>
 
+            @if($teachingAssignments)
+                <section class="profile-panel__section" aria-labelledby="profile-teaching-heading">
+                    @include('partials.teaching-assignment-summary', [
+                        'assignments' => $teachingAssignments,
+                        'headingId' => 'profile-teaching-heading',
+                        'loadUrl' => route('teacher-loads.index'),
+                    ])
+                </section>
+            @endif
+
             <section class="profile-panel__section" aria-labelledby="profile-personal-heading">
                 <div class="profile-panel__section-head">
                     <h3 id="profile-personal-heading">Personal details</h3>

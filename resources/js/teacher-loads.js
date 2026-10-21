@@ -172,6 +172,7 @@ if (root && document.getElementById('tl-dialog')) {
         $('.tl-add-schedule', item).addEventListener('click', () => { addSchedule(item); markDirty(); });
         (values.schedules || []).forEach(meeting => addSchedule(item, meeting));
         $('#tl-course-rows').append(item);
+        return item;
     };
 
     const addDuty = (values = {}) => {
@@ -204,6 +205,7 @@ if (root && document.getElementById('tl-dialog')) {
         const role = data?.role_label || selected?.dataset.role || 'This person';
         $('#tl-program').textContent = `SITE / ${program}`;
         courses = data?.courses || [];
+        $('#tl-add-assigned').hidden = courses.length === 0;
         if (data && !loadId && data.employment_status) $('#tl-employment').value = data.employment_status;
 
         const noCourses = next.faculty && (data ? data.has_assigned_courses === false : selected?.dataset.hasCourses === '0');
@@ -423,6 +425,7 @@ if (root && document.getElementById('tl-dialog')) {
         setFaculty(''); $('#tl-employment').value = 'Full-Time Faculty'; $('#tl-program').textContent = 'SITE / —';
         context = { faculty: '', semester: semesterSelect.value };
         $('#tl-course-rows').replaceChildren(); $('#tl-duty-rows').replaceChildren(); $('#tl-course-notice').textContent = '';
+        $('#tl-add-assigned').hidden = true;
         setFacultyTag(''); $('#tl-context-confirm').hidden = true; $('#tl-discard').hidden = true;
         $('#tl-confirm-final').checked = false; $('#tl-finalize').disabled = true; $('#tl-save-state').textContent = 'Unsaved draft';
         if (previewUrl) URL.revokeObjectURL(previewUrl); previewUrl = null; $('#tl-pdf-frame').hidden = true; $('#tl-preview-link').hidden = true;
@@ -462,7 +465,26 @@ if (root && document.getElementById('tl-dialog')) {
 
     /* ── Events ────────────────────────────────────────────────────────── */
 
-    $('#tl-create').addEventListener('click', () => { reset(); dialog.showModal(); });
+    $('#tl-create').addEventListener('click', async () => {
+        reset(); dialog.showModal();
+        if (root.dataset.selectedEmployee) {
+            setBusy(true);
+            try {
+                setFaculty(root.dataset.selectedEmployee);
+                semesterSelect.value = root.dataset.selectedSemester;
+                await loadCourses();
+            } catch (error) { showError(error); } finally { setBusy(false); }
+        }
+    });
+    $('#tl-add-assigned').addEventListener('click', () => {
+        const listed = new Set($$('#tl-course-rows [data-field="course_id"]').map(select => String(select.value)));
+        const remaining = Math.max(0, 60 - $$('#tl-course-rows .tl-item, #tl-duty-rows .tl-item').length);
+        courses.filter(course => !listed.has(String(course.id))).slice(0, remaining).forEach(course => {
+            const item = addCourse({ course_id: course.id, schedules: [] });
+            applyCatalogUnits(item);
+        });
+        markDirty(); updateSummary();
+    });
     $$('[data-edit-load]').forEach(button => button.addEventListener('click', () => edit(button.dataset.editLoad)));
     $('#tl-close').addEventListener('click', () => close());
     $('#tl-keep').addEventListener('click', () => $('#tl-discard').hidden = true);

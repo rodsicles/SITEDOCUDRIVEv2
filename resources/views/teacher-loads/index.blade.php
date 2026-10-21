@@ -15,6 +15,8 @@
 @section('content')
 <section id="teacher-load-workspace" class="tl-workspace"
          data-base="{{ route('teacher-loads.index') }}"
+         data-selected-employee="{{ $manager ? ($filters['employee_id'] ?? '') : '' }}"
+         data-selected-semester="{{ $filters['semester'] ?? \App\Support\SchoolTerm::current() }}"
          data-options="{{ route('teacher-loads.options') }}"
          data-preview="{{ route('teacher-loads.preview') }}">
     <header class="tl-toolbar">
@@ -52,6 +54,14 @@
         <button class="btn btn-primary" type="submit">Apply filters</button>
         <a href="{{ route('teacher-loads.index') }}" class="btn">Reset</a>
     </form>
+
+    @if($teachingAssignments)
+        @include('partials.teaching-assignment-summary', [
+            'assignments' => $teachingAssignments,
+            'headingId' => 'load-teaching-heading',
+            'manageSubjectsUrl' => $manageSubjectsUrl,
+        ])
+    @endif
 
     <div class="tl-table-wrap"><table class="data-table">
         <thead><tr><th>Name</th><th>Program</th><th>School year / semester</th><th>Teaching units</th><th>Load equivalent</th><th>Status</th><th>Actions</th></tr></thead>
@@ -123,7 +133,9 @@
 
         <section data-step="1" hidden>
             <div class="tl-section-head"><div><h3>Teaching details</h3><p>Add one row per subject and section.</p></div><button type="button" class="btn btn-primary" id="tl-add-course">+ Add subject</button></div>
-            <p id="tl-course-notice" class="tl-note" aria-live="polite"></p><div id="tl-course-rows"></div>
+            <p id="tl-course-notice" class="tl-note" aria-live="polite"></p>
+            <button type="button" class="btn btn-secondary" id="tl-add-assigned" hidden>Add assigned subjects</button>
+            <div id="tl-course-rows"></div>
         </section>
 
         <section data-step="2" hidden>

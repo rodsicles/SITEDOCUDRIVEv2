@@ -16,8 +16,11 @@ class ProfileController extends Controller
         $employee = $user->employee;
         $canEditFullName = $user->isDean() || $user->isProgramCoordinator();
         $canEditEmployeeNo = $user->isDean();
+        $teachingAssignments = $user->isFaculty() || $user->isProgramCoordinator()
+            ? app(\App\Services\TeachingAssignmentService::class)->current($user)
+            : null;
 
-        return view('profile.edit', compact('user', 'employee', 'canEditFullName', 'canEditEmployeeNo'));
+        return view('profile.edit', compact('user', 'employee', 'canEditFullName', 'canEditEmployeeNo', 'teachingAssignments'));
     }
 
     public function update(Request $request)

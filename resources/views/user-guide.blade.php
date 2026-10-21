@@ -559,11 +559,12 @@
     </div>
     <p class="guide-intro">Your Profile contains personal and professional information visible to administrators.</p>
     <ol class="guide-steps">
-        <li>Click your <strong>name or avatar</strong> at the top-right of the screen.</li>
-        <li>View your name, program, position, and contact details.</li>
-        <li>Click <strong>Edit Profile</strong> to update your email or contact number.</li>
-        <li>To change your <strong>password</strong>, use the Change Password section: enter your current password, then your new password, and save.</li>
-        <li>Performance review entries appear on your profile when recorded by administrators.</li>
+        <li>Open the account menu using your <strong>name or avatar at the bottom of the sidebar</strong>, then choose <strong>Edit Profile</strong>.</li>
+        <li>Review your account information and <strong>Current teaching assignments</strong> for this semester.</li>
+        <li>Subjects assigned before a timetable was prepared still appear by name. Sections, days, times, and rooms appear after the Dean or Program Coordinator finalizes your <strong>Teacher's Load</strong>.</li>
+        <li>Use the <strong>Teacher's Load</strong> link to view your assignments and download finalized loads. Ask the Dean or Program Coordinator to update subjects or prepare upcoming schedules.</li>
+        <li>Update your email under <strong>Personal details</strong>, or use <strong>Change photo</strong> to upload a profile picture.</li>
+        <li>To change your <strong>password</strong>, open the Password tab, enter your current and new passwords, confirm the new password, and save.</li>
     </ol>
     <div class="guide-tip"><i class="fas fa-lightbulb mr-1"></i> <strong>Tip:</strong> Keep your contact information current so the Dean and coordinators can reach you.</div>
 </div>

@@ -31,7 +31,20 @@ class TeacherLoadController extends Controller
         $loads = $loads->orderByDesc('created_at')->paginate(20)->withQueryString();
         $faculty = $manager ? $this->service->selectableFaculty($viewer) : collect();
         $years = SchoolYear::orderByDesc('start_year')->get();
-        return view('teacher-loads.index', compact('loads', 'faculty', 'years', 'manager', 'filters'));
+        $assignmentTeacher = $manager
+            ? (filled($filters['employee_id'] ?? null)
+                ? $this->service->facultyQuery($viewer)->with('user')->findOrFail($filters['employee_id'])?->user
+                : null)
+            : $viewer;
+        $showCurrentAssignments = empty($filters['school_year_id'])
+            || (int) $filters['school_year_id'] === (int) SchoolYear::activeId();
+        $teachingAssignments = $assignmentTeacher && $showCurrentAssignments
+            ? app(\App\Services\TeachingAssignmentService::class)->current($assignmentTeacher, $filters['semester'] ?? null)
+            : null;
+        $manageSubjectsUrl = $manager && $assignmentTeacher && ($viewer->isDean() || $assignmentTeacher->isFaculty())
+            ? route($viewer->isDean() ? 'dean.edit-employee' : 'coordinator.edit-faculty', $assignmentTeacher->employee->employee_id)
+            : null;
+        return view('teacher-loads.index', compact('loads', 'faculty', 'years', 'manager', 'filters', 'teachingAssignments', 'manageSubjectsUrl'));
     }
 
     private function manager(Request $request): void

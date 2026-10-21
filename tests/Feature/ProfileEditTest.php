@@ -3,6 +3,8 @@
 namespace Tests\Feature;
 
 use App\Models\User;
+use App\Models\{Course, SchoolYear, TeacherLoad};
+use App\Support\SchoolTerm;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Support\Facades\Hash;
 use Tests\TestCase;
@@ -107,5 +109,56 @@ class ProfileEditTest extends TestCase
         ])->assertSessionHasNoErrors();
 
         $this->assertTrue(Hash::check('new-password-1', $faculty->fresh()->password));
+    }
+
+    public function test_existing_assignments_show_in_profile_and_loads_without_creating_a_schedule(): void
+    {
+        $faculty = $this->user('faculty');
+        $courses = Course::active()->where('program', $faculty->employee->program)->take(2)->get();
+        foreach ($courses as $course) {
+            $course->update(['semester' => SchoolTerm::current()]);
+        }
+        $faculty->assignedCourses()->sync([$courses[0]->id]);
+        $loadCount = TeacherLoad::count();
+
+        $this->actingAs($faculty)->get(route('profile.edit'))->assertOk()
+            ->assertSee('Current teaching assignments')->assertSee($courses[0]->title)
+            ->assertSee('Schedules will appear')->assertDontSee('teaching-summary__schedule', false);
+        $this->get(route('teacher-loads.index'))->assertOk()->assertSee($courses[0]->title);
+        $this->assertSame($loadCount, TeacherLoad::count());
+
+        $faculty->assignedCourses()->sync([$courses[1]->id]);
+        $this->get(route('profile.edit'))->assertOk()->assertSee($courses[1]->title)->assertDontSee($courses[0]->title);
+        $this->post(route('profile.update'), ['email' => '', 'course_ids' => [$courses[0]->id]])->assertSessionHasNoErrors();
+        $this->assertSame([$courses[1]->id], $faculty->assignedCourses()->pluck('courses.id')->all());
+    }
+
+    public function test_only_own_current_finalized_schedule_appears_on_profile(): void
+    {
+        $faculty = $this->user('faculty');
+        $course = Course::active()->where('program', $faculty->employee->program)->firstOrFail();
+        $course->update(['semester' => SchoolTerm::current()]);
+        $faculty->assignedCourses()->sync([$course->id]);
+        $load = TeacherLoad::create([
+            'employee_id' => $faculty->employee->employee_id, 'school_year_id' => SchoolYear::activeId(),
+            'semester' => SchoolTerm::current(), 'program' => $faculty->employee->program,
+            'faculty_name' => $faculty->employee->full_name, 'department' => 'SITE',
+            'academic_year' => 'Current', 'employment_status' => 'Full-Time Faculty', 'status' => 'draft',
+        ]);
+        $load->items()->create([
+            'kind' => 'course', 'course_id' => $course->id, 'course_code' => $course->code, 'title' => $course->title,
+            'section' => 'IT 4A', 'position' => 0,
+            'schedules' => [['days' => ['Mon', 'Thu'], 'start' => '13:30', 'end' => '14:30', 'mode' => 'Lec', 'room' => 'Published Room 103']],
+        ]);
+        $this->actingAs($faculty)->get(route('profile.edit'))->assertOk()->assertDontSee('Published Room 103');
+        $load->update(['status' => 'finalized', 'finalized_at' => now()]);
+        $this->get(route('profile.edit'))->assertOk()->assertSee('Published Room 103')->assertSee('1:30 PM')->assertSee('Section IT 4A')
+            ->assertViewHas('teachingAssignments', fn ($summary) => $summary['rows']->count() === 1);
+
+        $load->update(['semester' => SchoolTerm::current() === SchoolTerm::FIRST ? SchoolTerm::SECOND : SchoolTerm::FIRST]);
+        $this->get(route('profile.edit'))->assertOk()->assertDontSee('Published Room 103');
+        $load->update(['semester' => SchoolTerm::current(), 'employee_id' => $this->user('coordinator')->employee->employee_id]);
+        $this->get(route('profile.edit'))->assertOk()->assertDontSee('Published Room 103');
+        $this->get(route('teacher-loads.index', ['employee_id' => $load->employee_id]))->assertOk()->assertDontSee('Published Room 103');
     }
 }

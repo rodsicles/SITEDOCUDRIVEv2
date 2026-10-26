@@ -114,6 +114,9 @@ Use these instead of inventing parallel widgets.
 
 ## Documents, upload, Teacher’s Load
 
+- Course Catalog switches between **All Courses** and **Sections** through the shared `catalog-tabs` navigation. Section management reuses content cards, tables, program/status filters, and native `ui-dialog` edit/remove/restore confirmations; retain validation values and concurrency warnings. Keep historical-load preservation text visible and use Remove/Restore instead of permanent delete.
+- Teacher's Load uses a required section dropdown (active choices for the selected employee's program) with labeled saved/legacy options only on existing rows. The **Drafts (count)** link sits beside Create Teacher's Load, retains filters, and includes revision drafts. Only managers see it; use the same editor and green/white/charcoal tokens, not a second visual system.
+
 - Explorer / tree: `partials/folder-tree.blade.php`, `folder-explorer.blade.php`, `documents-filter-panel.blade.php`
 - Guided upload: `partials/document-upload-dialog.blade.php` — keep destination-then-files.
 - Archive browsing: `resources/views/archives/show.blade.php` reuses the guided upload dialog with archive-specific destinations. Keep its folder toolbar, inline rename controls, and "Added later" badges within the existing square, token-based visual language.

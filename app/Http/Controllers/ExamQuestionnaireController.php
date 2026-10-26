@@ -145,6 +145,7 @@ class ExamQuestionnaireController extends Controller
                 'submitted_by' => auth()->id(),
                 'title' => $title,
                 'file_path' => $storedPath,
+                'original_filename' => \App\Support\DocumentNaming::uploadedFilename($file),
                 'file_type' => $fileType,
                 'subject' => $validated['subject'],
                 'exam_type' => $validated['exam_type'],
@@ -185,8 +186,8 @@ class ExamQuestionnaireController extends Controller
 
             return UploadStorage::inlineResponse(
                 $questionnaire->file_path,
-                $questionnaire->title.'.pdf',
-                'application/pdf'
+                \App\Support\DocumentNaming::downloadFilename($questionnaire->title, $questionnaire->file_path, $questionnaire->original_filename),
+                UploadStorage::mimeType($questionnaire->file_path) ?? 'application/octet-stream'
             );
         }
 
@@ -217,7 +218,7 @@ class ExamQuestionnaireController extends Controller
 
         return UploadStorage::downloadResponse(
             $questionnaire->file_path,
-            \App\Support\DocumentNaming::downloadFilename($questionnaire->title, $questionnaire->file_path),
+            \App\Support\DocumentNaming::downloadFilename($questionnaire->title, $questionnaire->file_path, $questionnaire->original_filename),
         );
     }
 

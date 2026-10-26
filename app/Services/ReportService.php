@@ -44,6 +44,7 @@ class ReportService
                 'report_category' => $validated['report_category'] ?? null,
                 'description' => $validated['description'] ?? null,
                 'file_path' => $path,
+                'original_filename' => \App\Support\DocumentNaming::uploadedFilename($file),
             ]);
 
             DashboardLog::create([

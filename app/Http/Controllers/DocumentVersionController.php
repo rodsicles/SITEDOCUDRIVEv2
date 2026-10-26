@@ -73,7 +73,7 @@ class DocumentVersionController extends Controller
 
             return UploadStorage::inlineResponse(
                 $version->file_path,
-                DocumentNaming::downloadFilename($displayTitle, $version->file_path),
+                DocumentNaming::downloadFilename($displayTitle, $version->file_path, $version->original_filename),
                 $mime,
             );
         }
@@ -127,6 +127,7 @@ class DocumentVersionController extends Controller
                 (int) $version->version_number,
             ),
             $version->file_path,
+            $version->original_filename,
         );
 
         return UploadStorage::downloadResponse($version->file_path, $downloadName);

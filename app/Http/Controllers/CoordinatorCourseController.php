@@ -16,6 +16,7 @@ class CoordinatorCourseController extends Controller
 
     public function index(Request $request)
     {
+        if ($request->query('view') === 'sections') return app(CourseSectionController::class)->index($request);
         $department = $this->coordinatorDepartment();
         $programs = $this->coordinatorPrograms();
         $deptSlug = CourseService::departmentToSlug($department);

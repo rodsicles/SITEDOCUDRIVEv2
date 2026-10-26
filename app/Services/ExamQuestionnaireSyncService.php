@@ -185,6 +185,7 @@ class ExamQuestionnaireSyncService
                 'document_title' => mb_substr($questionnaire->title, 0, \App\Support\DocumentNaming::TITLE_MAX_LENGTH),
                 'subject' => $questionnaire->subject,
                 'file_path' => $questionnaire->file_path,
+                'original_filename' => $questionnaire->original_filename,
                 'file_size' => $fileSize,
                 'document_type' => $questionnaire->file_type === 'word' ? 'word' : 'pdf',
                 'category' => 'Exam Questionnaires',

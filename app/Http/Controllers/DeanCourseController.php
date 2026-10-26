@@ -15,6 +15,7 @@ class DeanCourseController extends Controller
 
     public function index(Request $request)
     {
+        if ($request->query('view') === 'sections') return app(CourseSectionController::class)->index($request);
         $departmentFilter = $request->query('program', 'all');
         $search = $request->query('search');
 

@@ -73,6 +73,7 @@ class CourseUnitsAndUiTest extends TestCase
         $chem = $this->course('BSCpE', 'CHEM1');
         $chem->update(['semester' => SchoolTerm::FIRST]);
         $faculty->assignedCourses()->sync([$chem->id]);
+        \App\Models\CourseSection::create(['program' => 'BSCpE', 'name' => 'CpE 1A', 'year_level' => 1, 'is_active' => true, 'lock_version' => 1]);
 
         $options = $this->actingAs($dean)->getJson(route('teacher-loads.options', [
             'employee_id' => $faculty->employee->employee_id,

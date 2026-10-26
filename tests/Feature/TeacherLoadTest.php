@@ -31,7 +31,7 @@ class TeacherLoadTest extends TestCase
             'employment_status' => 'Full-Time Faculty',
             'items' => [[
                 'kind' => 'course', 'course_id' => $course->id, 'title' => null,
-                'section' => 'IT 4A', 'lecture_units' => 2, 'lab_units' => 1,
+                'section' => 'BSIT 4 A', 'lecture_units' => 2, 'lab_units' => 1,
                 'load_equivalent' => 1.66, 'class_size' => 30,
                 'schedules' => [['days' => ['Mon', 'Thu'], 'start' => '13:30', 'end' => '14:30', 'mode' => 'Lec', 'room' => 'LR 103']],
             ], [
@@ -40,6 +40,61 @@ class TeacherLoadTest extends TestCase
                 'load_equivalent' => 4, 'class_size' => null, 'schedules' => [],
             ]],
         ];
+    }
+
+    public function test_section_choices_and_validation_preserve_old_snapshots(): void
+    {
+        [$dean, $faculty, $course] = $this->setupFaculty();
+        $this->actingAs($dean)->getJson(route('teacher-loads.options', ['employee_id' => $faculty->employee->employee_id, 'semester' => SchoolTerm::FIRST]))
+            ->assertOk()->assertJsonFragment(['name' => 'BSIT 4 A']);
+        $data = $this->payload($faculty, $course);
+        $data['items'][0]['section'] = 'Not a catalog section';
+        $this->postJson(route('teacher-loads.store'), $data)->assertUnprocessable()->assertJsonValidationErrors('items.0.section');
+        $data = $this->payload($faculty, $course);
+        $id = $this->postJson(route('teacher-loads.store'), $data)->assertCreated()->json('id');
+        $load = TeacherLoad::findOrFail($id);
+        \App\Models\CourseSection::where('name', 'BSIT 4 A')->update(['name' => 'BSIT 4 RENAMED', 'is_active' => false]);
+        $this->assertSame('BSIT 4 A', $load->items()->where('kind', 'course')->first()->section);
+        $data['lock_version'] = $load->lock_version;
+        $this->patchJson(route('teacher-loads.update', $id), $data)->assertOk();
+        $this->postJson(route('teacher-loads.finalize', $id), ['lock_version' => $load->fresh()->lock_version])->assertOk();
+        $this->assertSame('BSIT 4 A', $load->fresh()->items()->where('kind', 'course')->first()->section);
+        $new = $data; unset($new['lock_version']);
+        $new['semester'] = SchoolTerm::SECOND;
+        $this->postJson(route('teacher-loads.store'), $new)->assertUnprocessable();
+    }
+
+    public function test_drafts_view_includes_unpublished_loads_and_open_revisions_only(): void
+    {
+        [$dean, $faculty, $course] = $this->setupFaculty();
+        $id = $this->actingAs($dean)->postJson(route('teacher-loads.store'), $this->payload($faculty, $course))->assertCreated()->json('id');
+        $load = TeacherLoad::findOrFail($id);
+        $this->get(route('teacher-loads.index', ['view' => 'drafts']))->assertOk()->assertViewHas('loads', fn ($loads) => $loads->contains('id', $id));
+        $this->postJson(route('teacher-loads.finalize', $id), ['lock_version' => $load->lock_version])->assertOk();
+        $this->get(route('teacher-loads.index', ['view' => 'drafts']))->assertOk()->assertViewHas('loads', fn ($loads) => $loads->isEmpty());
+        $this->post(route('teacher-loads.change', $id), ['action' => 'revise', 'reason' => 'Update schedule details', 'lock_version' => $load->fresh()->lock_version])->assertRedirect();
+        $this->get(route('teacher-loads.index', ['view' => 'drafts']))->assertOk()->assertViewHas('loads', fn ($loads) => $loads->contains('id', $id));
+        $this->actingAs($faculty)->get(route('teacher-loads.index', ['view' => 'drafts']))->assertForbidden();
+        $coordinator = User::where('username', 'coordinator')->firstOrFail();
+        $coordinator->employee->update(['program' => 'BLIS']); $coordinator->employee->syncExtraPrograms([]);
+        $this->actingAs($coordinator)->get(route('teacher-loads.index', ['view' => 'drafts']))->assertOk()->assertViewHas('loads', fn ($loads) => $loads->isEmpty());
+        $coordinator->employee->syncExtraPrograms(['BSIT']);
+        $this->get(route('teacher-loads.index', ['view' => 'drafts']))->assertOk()->assertViewHas('loads', fn ($loads) => $loads->contains('id', $id));
+    }
+
+    public function test_new_load_rejects_removed_or_other_program_sections(): void
+    {
+        [$dean, $faculty, $course] = $this->setupFaculty();
+        \App\Models\CourseSection::where('name', 'BSIT 1 A')->update(['is_active' => false]);
+        \App\Models\CourseSection::create(['program' => 'BLIS', 'name' => 'BLIS 1 A', 'year_level' => 1, 'is_active' => true, 'lock_version' => 1]);
+        $choices = $this->actingAs($dean)->getJson(route('teacher-loads.options', ['employee_id' => $faculty->employee->employee_id, 'semester' => SchoolTerm::FIRST]))->assertOk()->json('sections');
+        $this->assertNotContains('BSIT 1 A', array_column($choices, 'name'));
+        $this->assertNotContains('BLIS 1 A', array_column($choices, 'name'));
+        foreach (['BSIT 1 A', 'BLIS 1 A'] as $section) {
+            $data = $this->payload($faculty, $course);
+            $data['items'][0]['section'] = $section;
+            $this->postJson(route('teacher-loads.store'), $data)->assertUnprocessable()->assertJsonValidationErrors('items.0.section');
+        }
     }
 
     public function test_picker_includes_program_coordinators_with_scope_rules(): void

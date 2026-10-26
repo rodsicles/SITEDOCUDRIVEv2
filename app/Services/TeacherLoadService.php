@@ -110,6 +110,9 @@ class TeacherLoadService
         if ($duplicate->exists()) throw ValidationException::withMessages(['semester' => 'A load already exists for this faculty and term. Open that record to continue.']);
 
         $courses = $this->assignedCourses($faculty, $data['semester'])->keyBy('id');
+        $sectionNames = \App\Models\CourseSection::where('program', $faculty->program)->where('is_active', true)->pluck('name');
+        $savedRows = $load ? $load->items->toArray() : [];
+        if ($load?->revision_draft) $savedRows = array_merge($savedRows, $load->revision_draft['items'] ?? []);
         $items = []; $sections = []; $meetings = []; $units = 0; $equivalents = 0;
         foreach ($data['items'] as $index => $row) {
             $row = \Illuminate\Support\Arr::only($row, ['kind', 'course_id', 'title', 'section', 'lecture_units', 'lab_units', 'load_equivalent', 'class_size', 'schedules']);
@@ -121,6 +124,11 @@ class TeacherLoadService
                 if (!trim($row['section'] ?? '')) $missing["items.$index.section"] = 'Enter the section.';
                 if (empty($row['class_size'])) $missing["items.$index.class_size"] = 'Enter the class size.';
                 if ($missing) throw ValidationException::withMessages($missing);
+                $sectionName = trim($row['section']);
+                $catalogName = $sectionNames->first(fn ($name) => mb_strtolower($name) === mb_strtolower($sectionName));
+                $keptSnapshot = collect($savedRows)->contains(fn ($saved) => (int) ($saved['course_id'] ?? 0) === (int) $course->id && ($saved['section'] ?? '') === $sectionName);
+                if (!$catalogName && !$keptSnapshot) throw ValidationException::withMessages(["items.$index.section" => 'Choose an active section for this program. Manage choices in Course Catalog → Sections.']);
+                $row['section'] = $catalogName ?: $sectionName;
                 $key = $course->id.'|'.mb_strtolower(trim($row['section']));
                 if (isset($sections[$key])) throw ValidationException::withMessages(["items.$index.section" => 'This subject and section are already listed. Add another schedule to the existing row.']);
                 $sections[$key] = true;

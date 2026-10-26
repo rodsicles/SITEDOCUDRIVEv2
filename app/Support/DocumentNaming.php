@@ -7,11 +7,13 @@ final class DocumentNaming
     public const TITLE_MAX_LENGTH = 35;
 
     /**
-     * Build a safe attachment filename from the user-visible title and stored object path.
+     * Prefer the original uploaded name; use the title for legacy/generated files.
+     * The actual served object's extension wins (e.g. a converted PDF sibling).
      */
-    public static function downloadFilename(string $displayTitle, string $storedPath): string
+    public static function downloadFilename(string $displayTitle, string $storedPath, ?string $originalFilename = null): string
     {
-        $title = trim($displayTitle);
+        $hasOriginal = trim((string) $originalFilename) !== '';
+        $title = $hasOriginal ? basename(str_replace('\\', '/', $originalFilename)) : trim($displayTitle);
         if ($title === '') {
             return static::sanitizeDownloadFilename(basename($storedPath));
         }
@@ -28,11 +30,16 @@ final class DocumentNaming
             return $base;
         }
 
-        if ($existingExt !== '' && in_array($existingExt, ['pdf', 'doc', 'docx'], true)) {
+        if ($existingExt !== '' && ($hasOriginal || in_array($existingExt, ['pdf', 'doc', 'docx', 'jpg', 'jpeg', 'png', 'gif', 'webp'], true))) {
             $base = pathinfo($base, PATHINFO_FILENAME);
         }
 
         return $base . '.' . $ext;
+    }
+
+    public static function uploadedFilename(\Illuminate\Http\UploadedFile $file): string
+    {
+        return static::downloadFilename($file->getClientOriginalName(), 'upload.'.$file->getClientOriginalExtension(), $file->getClientOriginalName());
     }
 
     /**
@@ -41,12 +48,17 @@ final class DocumentNaming
     public static function sanitizeDownloadFilename(string $name): string
     {
         $name = str_replace(["\0", '"', '/', '\\', ':', '*', '?', '<', '>', '|'], '', $name);
+        $name = preg_replace('/[\x00-\x1F\x7F]/u', '', $name) ?? '';
         $name = preg_replace('/\s+/', ' ', trim($name)) ?? '';
 
         if ($name === '' || $name === '.') {
             return 'download';
         }
 
+        $ext = pathinfo($name, PATHINFO_EXTENSION);
+        if (mb_strlen($name) > 200 && $ext !== '' && mb_strlen($ext) < 15) {
+            return mb_substr(pathinfo($name, PATHINFO_FILENAME), 0, 199 - mb_strlen($ext)).'.'.$ext;
+        }
         return mb_substr($name, 0, 200);
     }
 

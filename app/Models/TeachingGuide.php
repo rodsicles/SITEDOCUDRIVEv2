@@ -13,6 +13,7 @@ class TeachingGuide extends Model
         'user_id',
         'title',
         'file_path',
+        'original_filename',
         'file_type',
         'subject',
         'folder_id',

@@ -60,7 +60,7 @@ class ArchiveContentTest extends TestCase
         $this->assertNotSame($active->id, $document->school_year_id);
         Storage::disk('local')->assertExists($document->file_path);
         $this->get(route('faculty.archives.show', $archived))->assertOk()->assertSee('late');
-        $this->get(route('faculty.download-document', $document->document_id))->assertOk();
+        $this->get(route('faculty.download-document', $document->document_id))->assertOk()->assertDownload('late.pdf');
 
         $this->patch(route('archive-contents.documents.rename', [$archived, $document]), ['document_title' => 'Late revised'])
             ->assertRedirect()->assertSessionHasNoErrors();
@@ -133,7 +133,8 @@ class ArchiveContentTest extends TestCase
         $this->assertSame($archived->id, $guide->school_year_id);
         $this->assertSame($archived->id, $guide->document?->school_year_id);
         $this->get(route('dean.archives.show', $archived))->assertOk()->assertSee('guide');
-        $this->get(route('dean.teaching-guides.download', $guide->id))->assertOk();
+        $this->assertSame('guide.pdf', $guide->document?->original_filename);
+        $this->get(route('dean.teaching-guides.download', $guide->id))->assertOk()->assertDownload('guide.pdf');
 
         $otherCourse = Course::active()->where('program', $faculty->employee->program)
             ->where('code', '!=', IteSubjects::codeFromLabel($subject))->firstOrFail();
@@ -173,6 +174,7 @@ class ArchiveContentTest extends TestCase
         $questionnaire->refresh();
         $this->assertSame('approved', $questionnaire->status);
         $this->assertSame($archived->id, $questionnaire->document?->school_year_id);
-        $this->get(route('dean.exam-questionnaires.download', $questionnaire->id))->assertOk();
+        $this->assertSame('questionnaire.pdf', $questionnaire->document?->original_filename);
+        $this->get(route('dean.exam-questionnaires.download', $questionnaire->id))->assertOk()->assertDownload('questionnaire.pdf');
     }
 }

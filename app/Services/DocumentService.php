@@ -382,7 +382,7 @@ class DocumentService
 
         return UploadStorage::inlineResponse(
             $serveFilePath,
-            DocumentNaming::downloadFilename($document->document_title, $serveFilePath),
+            DocumentNaming::downloadFilename($document->document_title, $serveFilePath, $document->original_filename),
             $mimeType,
         );
     }
@@ -424,7 +424,7 @@ class DocumentService
 
         return UploadStorage::downloadResponse(
             $downloadPath,
-            \App\Support\DocumentNaming::downloadFilename($document->document_title, $downloadPath),
+            \App\Support\DocumentNaming::downloadFilename($document->document_title, $downloadPath, $document->original_filename),
         );
     }
 
@@ -489,6 +489,8 @@ class DocumentService
                     $autoApprove ? $userId : null,
                 );
 
+                $questionnaire->update(['original_filename' => DocumentNaming::uploadedFilename($file)]);
+
                 if ($autoApprove) {
                     $this->examQuestionnaireSync->syncToDocument($questionnaire->fresh());
                 } else {
@@ -520,6 +522,7 @@ class DocumentService
                 if (!$guide) {
                     continue;
                 }
+                $guide->update(['original_filename' => DocumentNaming::uploadedFilename($file)]);
 
                 if ($autoApprove) {
                     $this->teachingGuideSync->syncDocumentFromGuide($guide, $uploader, $recipientIds);
@@ -543,6 +546,7 @@ class DocumentService
                         'document_title' => $title,
                         'subject' => $subject,
                         'file_path' => $storedRelative,
+                        'original_filename' => DocumentNaming::uploadedFilename($file),
                         'file_size' => (int) ($file->getSize() ?? 0),
                         'document_type' => $validated['document_type'],
                         'category' => $category,
@@ -829,6 +833,7 @@ class DocumentService
             'uploaded_by'    => $actor->id,
             'folder_id'      => $destinationFolderId,
             'document_title' => $source->document_title . ' (Copy)',
+            'original_filename' => $source->original_filename,
             'file_path'      => $newRelPath,
             'file_size'      => $source->file_size,
             'document_type'  => $source->document_type,
@@ -876,6 +881,7 @@ class DocumentService
             'document_id'    => $document->document_id,
             'version_number' => $currentVersion,
             'document_title' => $document->document_title,
+            'original_filename' => $document->original_filename,
             'file_path'      => $document->file_path,
             'file_size'      => $document->file_size,
             'document_type'  => $document->document_type,
@@ -898,6 +904,7 @@ class DocumentService
 
         $document->update([
             'document_title' => $versionedTitle,
+            'original_filename' => DocumentNaming::uploadedFilename($file),
             'file_path'      => $newPath,
             'file_size'      => $file->getSize(),
             'document_type'  => $newType,

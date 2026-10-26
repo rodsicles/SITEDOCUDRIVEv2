@@ -25,6 +25,7 @@ class Report extends Model
         'report_title',
         'report_category',
         'file_path',
+        'original_filename',
         'description',
     ];
 
@@ -40,7 +41,7 @@ class Report extends Model
 
     public function displayFilename(): string
     {
-        return basename((string) $this->file_path) ?: 'Report file';
+        return \App\Support\DocumentNaming::downloadFilename($this->report_title ?: 'Report file', (string) $this->file_path, $this->original_filename);
     }
 
     public function canBeAccessedBy(User $user): bool

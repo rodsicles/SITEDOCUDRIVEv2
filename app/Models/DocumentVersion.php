@@ -14,6 +14,7 @@ class DocumentVersion extends Model
         'version_number',
         'document_title',
         'file_path',
+        'original_filename',
         'file_size',
         'document_type',
         'uploaded_by',

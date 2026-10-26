@@ -258,7 +258,9 @@ class UploadStorage
         }
 
         $mimeType ??= static::mimeType($path) ?? 'application/octet-stream';
-        $disposition = 'inline; filename="' . str_replace('"', '', $displayName) . '"';
+        $displayName = DocumentNaming::sanitizeDownloadFilename($displayName);
+        $fallback = str_replace('%', '_', \Illuminate\Support\Str::ascii($displayName));
+        $disposition = \Symfony\Component\HttpFoundation\HeaderUtils::makeDisposition('inline', $displayName, $fallback ?: 'download');
 
         if (static::isLocal()) {
             return response()->file(static::disk()->path($path), [

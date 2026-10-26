@@ -33,6 +33,7 @@ if (root && document.getElementById('tl-dialog')) {
     let loadId = null;
     let lockVersion = 1;
     let courses = [];
+    let sections = [];
     let context = { faculty: '', semester: '' };
     let pendingContext = null;
     let dirty = false;
@@ -217,11 +218,21 @@ if (root && document.getElementById('tl-dialog')) {
         $('.tl-schedules', item).append(node);
     };
 
+    const fillSectionSelect = (select, value = '', keepSaved = false) => {
+        select.replaceChildren(new Option(sections.length ? 'Choose section' : 'No active sections — add one in Course Catalog', ''));
+        sections.forEach(section => select.add(new Option(section.name, section.name)));
+        if (value && !sections.some(section => section.name === value) && keepSaved) {
+            select.add(new Option(`${value} (saved section — not in active choices)`, value));
+        }
+        select.value = value;
+    };
+
     const addCourse = (values = {}) => {
         if (!courses.length && !values.course_id) { $('#tl-course-notice').textContent = 'No assigned courses are available. Update course assignments on their profile first.'; return; }
         const item = $('#tl-course-template').content.firstElementChild.cloneNode(true);
         const select = $('[data-field="course_id"]', item);
         fillCourseSelect(select, values.course_id);
+        fillSectionSelect($('[data-field="section"]', item), values.section || '', Boolean(loadId && values.section));
         ['section', 'class_size', 'lecture_units', 'lab_units', 'load_equivalent'].forEach(key => { if (values[key] != null) $(`[data-field="${key}"]`, item).value = values[key]; });
         // Saved rows keep their recorded units; only a new subject choice pulls catalog defaults.
         setUnitsEditable(item, false);
@@ -270,6 +281,7 @@ if (root && document.getElementById('tl-dialog')) {
         const role = data?.role_label || selected?.dataset.role || 'This person';
         $('#tl-program').textContent = `SITE / ${program}`;
         courses = data?.courses || [];
+        sections = data?.sections || [];
         $('#tl-add-assigned').hidden = courses.length === 0;
         if (data && !loadId && data.employment_status) $('#tl-employment').value = data.employment_status;
 
@@ -285,6 +297,8 @@ if (root && document.getElementById('tl-dialog')) {
         $$('#tl-course-rows .tl-item').forEach(item => {
             const select = $('[data-field="course_id"]', item);
             fillCourseSelect(select, select.value);
+            const section = $('[data-field="section"]', item);
+            fillSectionSelect(section, section.value, Boolean(loadId));
             updateUnitsHint(item);
         });
         updateSummary();
@@ -500,7 +514,7 @@ if (root && document.getElementById('tl-dialog')) {
     const markDirty = () => { if (!loading) { dirty = true; $('#tl-save-state').textContent = 'Unsaved changes'; } };
 
     const reset = () => {
-        loadId = null; lockVersion = 1; courses = []; dirty = false; pendingContext = null; previewKey = null; clearError();
+        loadId = null; lockVersion = 1; courses = []; sections = []; dirty = false; pendingContext = null; previewKey = null; clearError();
         $('#tl-dialog-title').textContent = 'Create Teacher’s Load';
         facultySelect.disabled = false; $('#tl-year').disabled = false; semesterSelect.disabled = false;
         setFaculty(''); $('#tl-employment').value = 'Full-Time Faculty'; $('#tl-program').textContent = 'SITE / —';

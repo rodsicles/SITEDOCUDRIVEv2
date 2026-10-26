@@ -14,6 +14,7 @@ class ExamQuestionnaire extends Model
         'document_id',
         'title',
         'file_path',
+        'original_filename',
         'file_type',
         'subject',
         'exam_type',

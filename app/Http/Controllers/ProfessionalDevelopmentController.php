@@ -89,7 +89,7 @@ class ProfessionalDevelopmentController extends Controller
 
         return UploadStorage::inlineResponse(
             $pd->certificate_path,
-            basename($pd->certificate_path),
+            \App\Support\DocumentNaming::downloadFilename($pd->seminar_name, $pd->certificate_path, $pd->original_filename),
             UploadStorage::mimeType($pd->certificate_path)
         );
     }

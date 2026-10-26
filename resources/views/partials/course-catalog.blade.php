@@ -35,6 +35,8 @@
         && \Illuminate\Support\Facades\Schema::hasColumn('courses', 'lab_units');
 @endphp
 
+@include('partials.catalog-tabs')
+
 <div class="content-card mb-6">
     <div class="card-header">
         <h3 class="card-title"><i class="fas fa-plus-circle mr-2"></i>Add Course</h3>

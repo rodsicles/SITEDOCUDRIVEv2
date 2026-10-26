@@ -150,6 +150,7 @@ class TeachingGuideController extends Controller
                     'user_id' => $user->id,
                     'title' => $validated['title'],
                     'file_path' => $storedPath,
+                    'original_filename' => \App\Support\DocumentNaming::uploadedFilename($file),
                     'file_type' => $fileType,
                     'subject' => $validated['subject'],
                     'folder_id' => $folder->folder_id,
@@ -271,7 +272,6 @@ class TeachingGuideController extends Controller
             return back()->with('error', 'This file is no longer available. It was uploaded to a previous storage provider and no longer exists in the current storage.');
         }
 
-        $extension = $guide->file_type === 'pdf' ? 'pdf' : 'docx';
         $mime = $guide->file_type === 'pdf'
             ? 'application/pdf'
             : 'application/vnd.openxmlformats-officedocument.wordprocessingml.document';
@@ -279,7 +279,7 @@ class TeachingGuideController extends Controller
         if ($request->boolean('stream')) {
             $this->logSubmissionActivity($user, 'Viewed teaching guide: '.$guide->title, 'teaching_guide_viewed');
 
-            return UploadStorage::inlineResponse($guide->file_path, $guide->title.'.'.$extension, $mime);
+            return UploadStorage::inlineResponse($guide->file_path, \App\Support\DocumentNaming::downloadFilename($guide->title, $guide->file_path, $guide->original_filename), $mime);
         }
 
         $routePrefix = $this->submissionRoutePrefix($user);
@@ -316,7 +316,7 @@ class TeachingGuideController extends Controller
 
         return UploadStorage::downloadResponse(
             $guide->file_path,
-            \App\Support\DocumentNaming::downloadFilename($guide->title, $guide->file_path),
+            \App\Support\DocumentNaming::downloadFilename($guide->title, $guide->file_path, $guide->original_filename),
         );
     }
 

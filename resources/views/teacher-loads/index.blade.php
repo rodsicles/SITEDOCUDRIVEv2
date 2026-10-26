@@ -22,7 +22,11 @@
     <header class="tl-toolbar">
         <div><h2>Teaching loads</h2><p>One record per faculty or program coordinator, school year, and semester.</p></div>
         @if($manager)
+            <div class="flex gap-2 flex-wrap">
+            @if(($filters['view'] ?? '') === 'drafts')<a class="btn btn-secondary" href="{{ route('teacher-loads.index', \Illuminate\Support\Arr::except($filters, ['view'])) }}">All loads</a>@endif
+            <a class="btn btn-secondary" href="{{ route('teacher-loads.index', array_merge($filters, ['view' => 'drafts'])) }}" @if(($filters['view'] ?? '') === 'drafts') aria-current="page" @endif>Drafts ({{ $draftCount }})</a>
             <button type="button" class="btn btn-primary" id="tl-create"><i class="fas fa-plus"></i> Create Teacher’s Load</button>
+            </div>
         @endif
     </header>
 
@@ -31,6 +35,7 @@
         <i class="fas fa-sliders-h"></i> Filters @if($activeLoadFilters)<span class="tl-filters-count">{{ $activeLoadFilters }}</span>@endif
     </button>
     <form class="tl-filters {{ $activeLoadFilters ? '' : 'is-collapsed-mobile' }}" id="tl-filters" method="GET">
+        @if(($filters['view'] ?? '') === 'drafts')<input type="hidden" name="view" value="drafts">@endif
         @if(auth()->user()->isDean())
         <label>Program<select name="program" class="form-control"><option value="">All programs</option>
             @foreach(\App\Models\Program::codes() as $code)<option value="{{ $code }}" @selected(($filters['program'] ?? '') === $code)>{{ $code }}</option>@endforeach
@@ -90,7 +95,7 @@
                 </div></td>
             </tr>
         @empty
-            <tr><td colspan="7" class="tl-empty">{{ $manager ? 'No teaching loads found. Create a load to get started.' : 'No finalized teaching loads available yet.' }}</td></tr>
+            <tr><td colspan="7" class="tl-empty">{{ ($filters['view'] ?? '') === 'drafts' ? 'No drafts or open revisions match these filters.' : ($manager ? 'No teaching loads found. Create a load to get started.' : 'No finalized teaching loads available yet.') }}</td></tr>
         @endforelse
         </tbody>
     </table></div>
@@ -176,7 +181,7 @@
 
 <template id="tl-course-template"><article class="tl-item"><div class="tl-section-head"><h4>Subject &amp; section</h4><button type="button" class="tl-remove btn">Remove</button></div><div class="tl-form-grid">
     <label class="tl-wide">Assigned subject *<select data-field="course_id" class="form-control" required></select></label>
-    <label>Section *<input data-field="section" class="form-control" maxlength="40" placeholder="e.g. IT 4A" required></label>
+    <label>Section *<select data-field="section" class="form-control" required><option value="">Choose section</option></select><small>Manage choices under Course Catalog → Sections.</small></label>
     <label>Class size *<input data-field="class_size" class="form-control" type="number" min="1" max="9999" required></label>
     <div class="tl-numbers tl-wide"><label>Lecture units *<input data-field="lecture_units" type="number" min="0" max="99" step="0.01" class="form-control" value="0" readonly required></label><label>Lab units *<input data-field="lab_units" type="number" min="0" max="99" step="0.01" class="form-control" value="0" readonly required></label><label>Load equivalent *<input data-field="load_equivalent" type="number" min="0" max="999" step="0.001" class="form-control" value="0" required></label></div>
     <div class="tl-units-bar tl-wide"><small class="tl-units-hint" data-units-hint>Choose a subject to fill units from the Course Catalog.</small><button type="button" class="tl-units-edit" data-units-edit aria-pressed="false"><i class="fas fa-pencil-alt" aria-hidden="true"></i> <span>Edit units</span></button></div>

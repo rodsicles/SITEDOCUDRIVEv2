@@ -23,11 +23,15 @@ class TeacherLoadController extends Controller
             'school_year_id' => ['nullable', 'integer', 'exists:school_years,id'],
             'semester' => ['nullable', Rule::in(SchoolTerm::options())],
             'employee_id' => ['nullable', 'integer'],
+            'view' => ['nullable', Rule::in(['all', 'drafts'])],
         ]);
+        abort_if(!$manager && ($filters['view'] ?? '') === 'drafts', 403);
         $loads = TeacherLoad::visibleTo($viewer)->with('schoolYear');
         foreach (['program', 'school_year_id', 'semester', 'employee_id'] as $key) {
             if (!empty($filters[$key])) $loads->where($key, $filters[$key]);
         }
+        $draftCount = (clone $loads)->where(fn ($q) => $q->where('status', 'draft')->orWhereNotNull('revision_draft'))->count();
+        if (($filters['view'] ?? '') === 'drafts') $loads->where(fn ($q) => $q->where('status', 'draft')->orWhereNotNull('revision_draft'));
         $loads = $loads->orderByDesc('created_at')->paginate(20)->withQueryString();
         $faculty = $manager ? $this->service->selectableFaculty($viewer) : collect();
         $years = SchoolYear::orderByDesc('start_year')->get();
@@ -44,7 +48,7 @@ class TeacherLoadController extends Controller
         $manageSubjectsUrl = $manager && $assignmentTeacher && ($viewer->isDean() || $assignmentTeacher->isFaculty())
             ? route($viewer->isDean() ? 'dean.edit-employee' : 'coordinator.edit-faculty', $assignmentTeacher->employee->employee_id)
             : null;
-        return view('teacher-loads.index', compact('loads', 'faculty', 'years', 'manager', 'filters', 'teachingAssignments', 'manageSubjectsUrl'));
+        return view('teacher-loads.index', compact('loads', 'faculty', 'years', 'manager', 'filters', 'teachingAssignments', 'manageSubjectsUrl', 'draftCount'));
     }
 
     private function manager(Request $request): void
@@ -67,13 +71,14 @@ class TeacherLoadController extends Controller
 
         return response()->json([
             'courses' => $courses,
+            'sections' => \App\Models\CourseSection::where('program', $faculty->program)->where('is_active', true)->orderBy('year_level')->orderBy('name')->get(['id', 'name', 'year_level']),
             'program' => $faculty->program,
             'department' => 'SITE',
             'employment_status' => $faculty->facultyTypeLabel(),
             'role_label' => $roleName === 'Program Coordinator' ? 'Program Coordinator' : 'Faculty',
             'has_assigned_courses' => $courses->isNotEmpty() || $faculty->user->assignedCourses()->exists(),
             'assigned_courses_count' => $courses->count(),
-        ]);
+        ])->header('Cache-Control', 'private, no-store');
     }
 
     public function show(Request $request, int $id)

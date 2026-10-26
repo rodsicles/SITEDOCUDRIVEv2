@@ -49,6 +49,7 @@ class DocumentVersionService
 
             $document->update([
                 'file_path' => $storedPath,
+                'original_filename' => DocumentNaming::uploadedFilename($file),
                 'file_size' => $file->getSize(),
                 'document_type' => match ($extension) {
                     'doc', 'docx' => 'word',
@@ -102,6 +103,7 @@ class DocumentVersionService
 
             $document->update([
                 'file_path' => $version->file_path,
+                'original_filename' => $version->original_filename,
                 'file_size' => $version->file_size,
                 'document_type' => $version->document_type,
             ]);
@@ -148,7 +150,7 @@ class DocumentVersionService
 
         return UploadStorage::downloadResponse(
             $version->file_path,
-            DocumentNaming::downloadFilename($title, $version->file_path),
+            DocumentNaming::downloadFilename($title, $version->file_path, $version->original_filename),
         );
     }
 
@@ -162,6 +164,7 @@ class DocumentVersionService
             'version_number' => $this->nextVersionNumber($document),
             'document_title' => $document->document_title,
             'file_path' => $document->file_path,
+            'original_filename' => $document->original_filename,
             'file_size' => $document->file_size,
             'document_type' => $document->document_type,
             'uploaded_by' => $user->id,

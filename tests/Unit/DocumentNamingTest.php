@@ -7,6 +7,22 @@ use PHPUnit\Framework\TestCase;
 
 class DocumentNamingTest extends TestCase
 {
+    public function test_original_name_wins_over_renamed_or_shortened_document_title(): void
+    {
+        $this->assertSame('Original full filename with spaces.pdf', DocumentNaming::downloadFilename('Short renamed title', 'documents/random.pdf', 'Original full filename with spaces.pdf'));
+        $this->assertSame('Meeting notes.pdf', DocumentNaming::downloadFilename('Short', 'documents/converted.pdf', 'Meeting notes.docx'));
+        $this->assertSame('Image.png', DocumentNaming::downloadFilename('Image.jpg', 'documents/random.png'));
+    }
+
+    public function test_original_filename_is_safe_and_long_names_keep_the_extension(): void
+    {
+        $name = DocumentNaming::downloadFilename('Title', 'documents/hash.pdf', "../bad\r\nname.pdf");
+        $this->assertSame('badname.pdf', $name);
+        $long = DocumentNaming::downloadFilename('Title', 'documents/hash.docx', str_repeat('a', 240).'.docx');
+        $this->assertLessThanOrEqual(200, mb_strlen($long));
+        $this->assertStringEndsWith('.docx', $long);
+    }
+
     public function test_download_filename_uses_title_and_stored_extension(): void
     {
         $name = DocumentNaming::downloadFilename(

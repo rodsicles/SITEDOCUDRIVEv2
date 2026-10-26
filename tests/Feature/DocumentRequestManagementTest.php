@@ -34,6 +34,8 @@ class DocumentRequestManagementTest extends TestCase
             'file' => UploadedFile::fake()->create('report.pdf', 10, 'application/pdf'),
         ])->assertRedirect(route('document-requests.index', ['tab' => 'received']))->assertSessionHas('success', 'Document submitted successfully.');
         $documentId = $recipient->fresh()->submitted_document_id;
+        $this->assertSame('report.pdf', Document::findOrFail($documentId)->original_filename);
+        $this->get(route('faculty.download-document', $documentId))->assertOk()->assertDownload('report.pdf');
         Storage::disk('local')->assertExists(Document::findOrFail($documentId)->file_path);
         $count = Document::count();
         $version = $item->fresh()->lock_version;

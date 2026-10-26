@@ -20,6 +20,7 @@ class Document extends Model
         'document_title',
         'subject',
         'file_path',
+        'original_filename',
         'file_size',
         'document_type',
         'category',

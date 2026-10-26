@@ -2,7 +2,7 @@
 
 ## Quick Context
 
-Latest source review: **2026-10-21, Asia/Manila**. Implementation baseline: **`86cd234`**, including **`788be16`** and **`77c2ad8`**. This review covers the recent workflow changes; the earlier broad baseline was `839a07d`. Both V2 and V3 `main` were successfully pushed to `86cd234` in this session. Production deployment, migration execution, workers, and browser behavior remain unverified.
+Latest source review: **2026-10-27, Asia/Manila**. Committed baseline: **`762e5ae`**, following `d75b79c` and `86cd234`; the section catalog/draft-navigation and original-filename changes described below are currently uncommitted. V2/V3 were last confirmed pushed to `762e5ae` on October 21. Local WAMP migrations are verified separately below; Cloud deployment, workers, and browser end-to-end behavior remain unverified.
 
 SITE DocuDrive is the employee document and academic-workflow portal for the School of Information Technology and Engineering, St. Paul University Philippines. It uses Laravel 12 / PHP 8.2+, Blade, Tailwind 4, Vite 7, and JavaScript. Dependencies and scripts are authoritative in `composer.json` and `package.json`.
 
@@ -28,6 +28,7 @@ SITE DocuDrive is the employee document and academic-workflow portal for the Sch
 | Teaching workload / revisions | Teacher's Load | `app/Services/TeacherLoadService.php`, `resources/js/teacher-loads.js` |
 | Profile subjects / timetable | Teacher's Load | `app/Services/TeachingAssignmentService.php`, `resources/views/partials/teaching-assignment-summary.blade.php` |
 | Course term / units / edit history | Permissions and accounts | `app/Support/CourseInput.php`, `app/Services/CourseService.php`, `app/Http/Controllers/CourseHistoryController.php` |
+| Sections / catalog choices | Section catalog | `app/Models/CourseSection.php`, `app/Http/Controllers/CourseSectionController.php` |
 | Dashboard / tasks / communication | Daily operations | `app/Services/DashboardService.php`, `routes/web.php` |
 | History / school years / late additions | Archives and audit trail | `app/Services/SchoolYearService.php`, `app/Services/ArchiveContentService.php`, `app/Models/DashboardLog.php` |
 | Layout / colors / modal / profile | UI design and `docs/AGENTDESIGN.md` | `resources/css/app.css`, `resources/views/layouts/dashboard.blade.php` |
@@ -55,6 +56,14 @@ Changing handled programs affects documents, reviews, course catalog, analytics,
 
 Course Catalog create/edit supports code/title plus optional year level (1–6), semester, and lecture/lab units. `CourseInput` accepts existing official alphanumeric, space, and hyphen formats; duplicate checks are case-insensitive within a program. `CourseService::updateDetails` records before/after metadata in `course_changes`; authorized catalog managers can open Change history. UI saves carry a concurrency version. Explicit unit edits set `units_manually_set`, so `courses:sync-units` preserves them. Unknown values can remain null. Existing published load rows/revisions keep their snapshots; deactivation/reactivation remains the way to remove/restore referenced courses.
 
+## Section catalog
+
+Course Catalog has **All Courses / Sections** navigation for Dean and Program Coordinator. Sections are stored in `course_sections` and managed separately from course records. Dean manages all programs; Coordinator manages only home plus assigned extra programs through `CoordinatorDepartment::requirePrograms()`. Faculty/Secretary cannot manage sections or call the mutation endpoints. Direct updates are scope-checked and row-locked with a `lock_version`; add/edit/remove/restore writes activity logs.
+
+The catalog supports add, rename/year-level edit, remove (deactivate), restore, program/status filters, search, and pagination. Names are whitespace-normalized and uppercase with a unique program/name pair; inactive names must be restored instead of duplicated. Year levels currently run from 1–4. Migration `2026_10_27_000001_create_course_sections_table` seeds only **BSIT 1 A/B through BSIT 4 A/B**. Other program sections are added explicitly, not inferred. No subjects, schedules, or existing section labels are backfilled.
+
+Teacher's Load section inputs are dropdowns populated from active sections for the selected employee's existing home-program scope via the authorized, non-cached options endpoint. The server rejects arbitrary, inactive, or other-program section names for new rows. Existing saved load/revision rows may retain their exact prior section for the same subject, including legacy labels such as `IT 4A`; the selector marks these as saved sections outside active choices. Renaming/removal never rewrites load/PDF/revision snapshots. Text snapshots remain authoritative—there is no cascade from catalog rename to old load rows.
+
 ## Documents and submissions
 
 Daily flow: select category → browse folder hierarchy → select destination → upload → review where required → access the resulting document/preview. Current Folder, Recent, and Favorites provide alternate entry points. Actions include authorized viewing/downloading, favorites, renaming, versions, copying/moving, and recycle-bin operations.
@@ -74,6 +83,14 @@ Normal academic submissions have pending/approved/rejected review flows. Dean/Se
 Privacy is enforced through folder/category ownership and document visibility. Before changing lock behavior, inspect `FolderService` propagation to descendants and category ownership. A private folder must not become visible merely because an actor handles more programs. Missing privacy-schema fallbacks exist and are not proof that an unmigrated deployment is safe.
 
 Document versioning currently has two paths: ordinary preview replacement uses `DocumentService::uploadNewVersion`, while request corrections use `DocumentVersionService`. Their authorization, linked academic-file synchronization, approval, and search-index handling are not identical; see Known gaps. Preview/download responses use storage and naming helpers. Do not confuse a version snapshot with a duplicate submission or a school-year archive.
+
+### Download filenames
+
+The October 27 audit found download names derived from editable/truncated titles or hashed storage basenames, while original upload names were not retained. New uploads now store nullable `original_filename` metadata on Documents, Document Versions, Teaching Guides, Exam Questionnaires, Reports, and Professional Development certificates. General/folder/request uploads, academic approval mirrors, copies, both replacement/version paths, and version restore retain the matching file's original name. Certificate replacement updates its name as well. No internal storage object is renamed.
+
+`DocumentNaming::downloadFilename()` prefers that original name over the display title, including after a title rename. Each historical version keeps its own filename. Names are sanitized for paths/control characters and capped at 200 characters while preserving a normal extension. The served object's extension is authoritative for converted PDF siblings. Inline responses use proper encoded Unicode disposition headers; local attachments and remote streamed downloads share the naming policy. Authorization, privacy, and storage-path checks are unchanged. Task attachments already retain `original_name`; generated Teacher's Load exports and backups keep their generated naming rules.
+
+Old files without original-name metadata fall back to the readable title plus actual extension (Reports/certificates no longer default to a hash). A missing original name cannot reliably be recovered from a hashed path or shortened title: the migration does not guess or rewrite old records. Metadata additions do not resolve the separate academic mirror/version synchronization gaps noted below.
 
 ## Search and indexing
 
@@ -116,6 +133,8 @@ Request authors (Dean/Coordinator) can use **Manage request** to edit title/inst
 Dean and Coordinator managers select eligible Faculty or teaching Coordinators, school year, semester, and employment type. Subject choices come from the selected employee's assigned courses for that semester. Empty assignments are reported; the picker must not silently substitute the whole catalog.
 
 The modal moves through Faculty & term → Teaching details → Review & export. Rows contain subjects/sections, schedules, lecture/lab units, class size, and load equivalent; non-course duties are supported. Catalog units prefill lecture/lab values with an explicit edit control. New load-equivalent values start at zero for manual entry. Changing context must handle incompatible rows carefully.
+
+Managers have a **Drafts (count)** link beside Create Teacher's Load. It shows initial `draft` records plus published/void loads with an open `revision_draft`, preserving program/employee/year/semester filters. **All loads** exits this view. The count uses the same visible, filtered query. Coordinator program scope applies to both results and count; Faculty cannot access the drafts view. Saved drafts are opened through the existing Edit draft/Edit revision actions, not a separate editor.
 
 Validation uses a bounded in-editor alert: server field errors include their step, subject/duty row, and schedule, with links that open the relevant step and focus the control. Finalize checks earlier steps, an empty load, and subjects without schedules before submitting; saving an unscheduled draft remains allowed. JSON/CSRF headers are preserved on save/finalize so server validation is not lost to an HTML response. Server/session failures are distinct from missing fields. The local WAMP status check on October 21 found `2026_10_21_000001_add_workflow_correction_history` pending; this UI fix does not execute it or prove the user's failing request had no other server cause.
 
@@ -279,5 +298,9 @@ Dates below are Git commit dates, not assertions of production deployment. This 
 | 2026-10-21 | uncommitted | Added explicit Done/Change recipient selection with live names/count; optional timezone-labeled deadline with inline validation and in-modal recovery preserving inputs. Role/academic checks unchanged; no migration. DocumentRequest tests: 14 passed (99 assertions); recipient/deadline JS smoke checks, build, Blade compilation, and diff checks passed. Browser/deployment not verified. |
 
 | 2026-10-21 | uncommitted | Fixed local request-upload 500 via approved InnoDB repair and completed workflow migration (batch 9); preserved original submission/file. Added resumable migration constraints, explicit submit redirects, safe repeat submissions, browser validation redirects, and double-click guard. Local schema/file checks passed; targeted workflow tests/build/Blade checks recorded in handoff. Cloud/browser end-to-end behavior not verified. |
+
+| 2026-10-27 | uncommitted | Added scoped section catalog CRUD (remove/restore), BSIT years 1–4 A/B defaults, validated Teacher's Load section dropdowns with historical-label preservation, and manager Drafts count/view including open revisions. Local WAMP section migration completed (batch 10); no Cloud operations. Full tests: 109 passed, 1 skipped (853 assertions); Vite/Blade and section-selector smoke checks passed. Browser end-to-end behavior unverified. |
+
+| 2026-10-27 | uncommitted | Audited and preserved original upload filenames across documents/requests, academic mirrors, versions/copy/restore, reports and certificates; shared safe Unicode naming, correct served extension, legacy title fallback. Added/applied local filename metadata migrations `000002` and `000003`; no storage-object renames or Cloud changes. Full tests: 115 passed, 1 skipped (890 assertions); targeted Rector and diff checks passed. Real-browser/S3 downloads unverified. |
 
 Maintenance: after an authorized change, update current behavior first, then append `Date | actual commit or uncommitted | workflow/roles + migration/config + checks/limitations`. Keep Quick Context short, link to code instead of copying implementations, and do not append whole prompts or chat transcripts. For docs-only commits, the baseline remains the latest implementation commit audited; do not chase the document's own commit hash.

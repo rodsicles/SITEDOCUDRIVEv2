@@ -73,8 +73,18 @@ The migration rollback removes its new history/draft data and metadata flags. Re
 
 Implementation checks for this release were 94 tests passed, 1 existing MySQL-only skip, successful Vite build, and a targeted Rector check. This is a historical release result; rerun suitable **local/test-environment** checks after new code changes. Never run `composer test` on Laravel Cloud.
 
-## Remotes
+## Sections release (October 27)
+
+Run the reviewed migration `2026_10_27_000001_create_course_sections_table` before using Sections or the new Teacher's Load choices. It creates only the section catalog and eight BSIT A/B defaults for years 1–4; it does not change saved loads or invent sections for other programs. Local WAMP completed it as batch 10 on October 27. Cloud has not been checked or migrated. After deployment verify Dean/Coordinator scope, section add/rename/remove/restore, existing legacy section labels, and Drafts including open revisions. Rollback drops the section catalog but not saved load labels; coordinate code/schema rollback rather than leaving the new code without its table.
+
+## Original filename metadata (October 27)
+
+Before deploying the filename fix, apply `2026_10_27_000002_preserve_original_document_filenames` and `2026_10_27_000003_preserve_report_certificate_filenames`. They add nullable metadata for Documents/versions/TG/EQ and Reports/training certificates respectively. Both completed on local WAMP; Cloud migration state is unverified. No files or storage objects are renamed and historical missing names are not backfilled from guesses. Rollback removes this metadata, so coordinate application/database recovery. Check a renamed display title with a different original filename, request submission, approved academic download, copy/version/restore, report/certificate replacement, Unicode names, and legacy fallback. Generated Teacher's Load and backup naming is unchanged.
+
+## Legacy WAMP imports
 
 Legacy WAMP imports may contain MyISAM tables. Check engine compatibility before adding workflow foreign keys: MyISAM cannot provide transactional rollback or foreign-key guarantees. On October 21 the local upload-related tables were repaired to InnoDB with approval and the workflow migration completed as batch 9; Cloud was not changed. The migration now resumes already-created column groups/tables and installs missing constraints/indexes after interrupted MySQL DDL. Do not delete partially created history tables or reset accounts as a recovery shortcut. Review/approve engine changes on each target host separately.
+
+## Remotes
 
 In this checkout, `origin` is the V3 repository and `v2` is the user-described deployed repository. Confirm remotes before push or release work. A local commit is not deployment evidence.

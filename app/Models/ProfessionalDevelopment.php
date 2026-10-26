@@ -15,6 +15,7 @@ class ProfessionalDevelopment extends Model
         'organizer',
         'hours',
         'certificate_path',
+        'original_filename',
     ];
 
     protected $casts = [

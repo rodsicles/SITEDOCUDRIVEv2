@@ -111,6 +111,12 @@ Route::middleware(['auth', 'no.back', 'role:Dean,Program Coordinator,Faculty Emp
     Route::get('/{id}/pdf', [$controller, 'export'])->whereNumber('id')->middleware('throttle:30,1')->name('pdf');
 });
 
+Route::middleware(['auth', 'no.back', 'role:Dean,Program Coordinator'])->prefix('course-sections')->name('course-sections.')->group(function () {
+    Route::post('/', [\App\Http\Controllers\CourseSectionController::class, 'store'])->name('store');
+    Route::patch('/{id}', [\App\Http\Controllers\CourseSectionController::class, 'update'])->name('update');
+    Route::patch('/{id}/status', [\App\Http\Controllers\CourseSectionController::class, 'status'])->name('status');
+});
+
 Route::post('/documents/open-tg-subject', [TgSubjectFolderController::class, 'store'])
     ->middleware(['auth', 'no.back', 'throttle:30,1'])
     ->name('documents.open-tg-subject');

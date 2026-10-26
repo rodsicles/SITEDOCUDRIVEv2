@@ -337,6 +337,7 @@ class DocumentRequestController extends Controller
                     'folder_id' => $recipient->request->destination_folder_id,
                     'document_title' => $recipient->request->title,
                     'file_path' => $path,
+                    'original_filename' => \App\Support\DocumentNaming::uploadedFilename($file),
                     'file_size' => $file->getSize() ?: 0,
                     'document_type' => $documentType,
                     'category' => $category,
@@ -465,6 +466,7 @@ class DocumentRequestController extends Controller
             );
             $questionnaire->update([
                 'document_id' => $document->document_id,
+                'original_filename' => $document->original_filename,
                 'school_year_id' => $request->school_year_id,
             ]);
         }

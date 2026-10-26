@@ -58,6 +58,7 @@ class ProfessionalDevelopmentService
                 'organizer' => $validated['organizer'],
                 'hours' => $validated['hours'],
                 'certificate_path' => $certificatePath,
+                'original_filename' => $certificate ? \App\Support\DocumentNaming::uploadedFilename($certificate) : null,
             ]);
 
             DashboardLog::create([
@@ -99,6 +100,7 @@ class ProfessionalDevelopmentService
             }
             $filename = 'cert_' . time() . '_' . $certificate->hashName();
             $pd->certificate_path = UploadStorage::putFileAs("certificates/{$userId}", $certificate, $filename);
+            $pd->original_filename = \App\Support\DocumentNaming::uploadedFilename($certificate);
         }
 
         $pd->update([
@@ -107,6 +109,7 @@ class ProfessionalDevelopmentService
             'organizer' => $validated['organizer'],
             'hours' => $validated['hours'],
             'certificate_path' => $pd->certificate_path,
+            'original_filename' => $pd->original_filename,
         ]);
 
         DashboardLog::create([

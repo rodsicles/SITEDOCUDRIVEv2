@@ -200,6 +200,10 @@ Upload controllers have `PreventsDuplicateUpload`: an optional client token is g
 
 ## Operations and verification
 
+### Client turnover preparation
+
+`php artisan turnover:preview` is a read-only inventory command requiring `--keep-user-id` and `--expect-name`. It verifies the protected `dean` account/role and matching user/employee name, then lists other accounts, table counts/treatment proposals, referenced upload paths and non-Dean avatars. It does not delete, back up, inspect storage existence or reset analytics. Unknown/mixed tables require review. See [client turnover runbook](runbooks/client-turnover.md) for the approval, backup/restore, isolated rehearsal and production verification gates. No deletion executor is enabled; production identity and inventory remain unverified.
+
 Local setup and commands are in `docs/SETUP.md` (root `README.md` only points here). Do not copy real credentials or `.env` contents into documentation. Source-visible configuration is in `config/`; uploads go through `UploadStorage` and the configured local/object-storage disk. Production persistence must be checked on the host, not inferred from a successful local upload.
 
 Scheduled tasks in `routes/console.php`: academic folders on August 10, recycle purge daily at 02:00, content indexing hourly without overlap. Scheduler/worker runtime and timezone must be verified in deployment; the user's documentation timezone is Asia/Manila. OCR on scanned files needs Poppler and Tesseract on the worker host; missing binaries should fail indexing without blocking uploads.
@@ -267,6 +271,8 @@ Pulled from archived guides so those files are no longer required reading. Re-ve
 Remaining archive (still in tree): old lime `AGENTDESIGN.md`; `MD FOLDERS/UI_COLOR_LATEST_UPDATE.md`, `DOCUMENT_REQUEST_SEARCH.md`, `FEATURES_IMPLEMENTATION_GUIDE.md`, `PERFORMANCE_OPTIMIZATION.md`; `EMP-Dashboard-KnowledgeBase/KNOWLEDGE_BASE.md`. Git history remains the recovery path. Do not copy credentials from old guides.
 
 ## Change history
+
+- **2026-11-01:** Added protected-identity, read-only turnover preview and a client-turnover runbook. No migration, account deletion, upload deletion or production reset performed. Destructive execution remains gated on reviewed production inventory and backup/rehearsal evidence.
 
 Dates below are Git commit dates, not assertions of production deployment. This is a compact milestone record; use Git for every intermediate code change.
 

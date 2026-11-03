@@ -202,7 +202,7 @@ Upload controllers have `PreventsDuplicateUpload`: an optional client token is g
 
 ### Client turnover preparation
 
-`php artisan turnover:preview` is a read-only inventory command requiring `--keep-user-id` and `--expect-name`. It verifies the protected `dean` account/role and matching user/employee name, then lists other accounts, table counts/treatment proposals, referenced upload paths and non-Dean avatars. It does not delete, back up, inspect storage existence or reset analytics. Unknown/mixed tables require review. See [client turnover runbook](runbooks/client-turnover.md) for the approval, backup/restore, isolated rehearsal and production verification gates. No deletion executor is enabled; production identity and inventory remain unverified.
+`php artisan turnover:preview` is a read-only inventory command requiring `--keep-user-id`, `--expect-user-name` and `--expect-employee-name`. It verifies the protected `dean` account/role and both linked names independently, then lists other accounts, table counts/treatment proposals, referenced upload paths and non-Dean avatars. It does not delete, back up, inspect storage existence or reset analytics. Unknown/mixed tables require review. See [client turnover runbook](runbooks/client-turnover.md) for the approval, backup/restore, isolated rehearsal and production verification gates. No deletion executor is enabled; production identity and inventory remain unverified.
 
 Local setup and commands are in `docs/SETUP.md` (root `README.md` only points here). Do not copy real credentials or `.env` contents into documentation. Source-visible configuration is in `config/`; uploads go through `UploadStorage` and the configured local/object-storage disk. Production persistence must be checked on the host, not inferred from a successful local upload.
 
@@ -271,6 +271,8 @@ Pulled from archived guides so those files are no longer required reading. Re-ve
 Remaining archive (still in tree): old lime `AGENTDESIGN.md`; `MD FOLDERS/UI_COLOR_LATEST_UPDATE.md`, `DOCUMENT_REQUEST_SEARCH.md`, `FEATURES_IMPLEMENTATION_GUIDE.md`, `PERFORMANCE_OPTIMIZATION.md`; `EMP-Dashboard-KnowledgeBase/KNOWLEDGE_BASE.md`. Git history remains the recovery path. Do not copy credentials from old guides.
 
 ## Change history
+
+- **2026-11-03:** Corrected turnover preview to validate the linked Dean user and employee names separately, since these can legitimately differ in production; still read-only, with no migration or cleanup.
 
 - **2026-11-01:** Added protected-identity, read-only turnover preview and a client-turnover runbook. No migration, account deletion, upload deletion or production reset performed. Destructive execution remains gated on reviewed production inventory and backup/rehearsal evidence.
 

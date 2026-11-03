@@ -10,17 +10,20 @@ use Illuminate\Support\Facades\Schema;
 
 class PreviewTurnover extends Command
 {
-    protected $signature = 'turnover:preview {--keep-user-id= : Required verified Dean user ID} {--expect-name= : Required exact Dean name}';
+    protected $signature = 'turnover:preview {--keep-user-id= : Required verified Dean user ID} {--expect-user-name= : Exact users.name} {--expect-employee-name= : Exact employees.full_name}';
 
     protected $description = 'Read-only turnover inventory for review; never deletes records or storage objects';
 
     public function handle(): int
     {
         $id = (string) $this->option('keep-user-id');
-        $name = trim((string) $this->option('expect-name'));
+        $userName = trim((string) $this->option('expect-user-name'));
+        $employeeName = trim((string) $this->option('expect-employee-name'));
         $user = ctype_digit($id) ? User::with(['role', 'employee'])->find((int) $id) : null;
-        if (!$user || $name === '' || $user->username !== 'dean' || $user->role?->role_name !== 'Dean'
-            || $user->name !== $name || ($user->employee && $user->employee->full_name !== $name)) {
+        if (!$user || $userName === '' || $employeeName === '' || $user->username !== 'dean'
+            || $user->role?->role_name !== 'Dean' || $user->name !== $userName
+            || !$user->employee || $user->employee->user_id !== $user->id
+            || $user->employee->full_name !== $employeeName) {
             $this->error('STOP: verify the Dean ID, username, role and exact user/employee name. Nothing changed.');
             return self::FAILURE;
         }

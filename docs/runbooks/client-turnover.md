@@ -3,7 +3,7 @@
 Status: read-only inventory implemented. Production cleanup is NOT executed or enabled.
 
 1. Verify production environment and the exact `dean` user ID. Confirm user and employee names match the intended client Dean. Never infer ID from a screenshot or local database.
-2. Run `php artisan turnover:preview --keep-user-id=VERIFIED_ID --expect-name="EXACT VERIFIED NAME"` in the target environment. This only reads the database and prints inventory; it does not access/delete storage, back up data, or test storage existence. Protect the output as employee information.
+2. Run `php artisan turnover:preview --keep-user-id=VERIFIED_ID --expect-user-name="EXACT USERS.NAME" --expect-employee-name="EXACT EMPLOYEES.FULL_NAME"` in the target environment. The two names can differ; both must match the verified linked account. This only reads the database and prints inventory; it does not access/delete storage, back up data, or test storage existence. Protect the output as employee information.
 3. Review all proposed clears and every REVIEW table. Preserve catalogs, units, school years, system folders/categories, Dean credentials/profile. Explicitly decide personal folders/categories, assignments, course history, equipment, backup history and analytics sources. Inspect foreign keys referencing deleted users from retained records. Unknown tables are never automatically cleared.
 4. Inventory storage separately, including converted PDFs, unreferenced objects, archives and avatars. Cross-check protected/shared paths; never delete a whole bucket. Existing orphan-cleanup command is NOT a turnover tool.
 5. Back up database and each relevant storage disk to a separate protected destination. Verify restoration in isolation. No production tests or seeders.

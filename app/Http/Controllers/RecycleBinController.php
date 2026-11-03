@@ -3,7 +3,9 @@
 namespace App\Http\Controllers;
 
 use App\Services\RecycleBinService;
+use App\Models\Document;
 use Illuminate\Http\Request;
+use Symfony\Component\HttpKernel\Exception\HttpException;
 
 class RecycleBinController extends Controller
 {
@@ -40,6 +42,30 @@ class RecycleBinController extends Controller
         return redirect()
             ->route($this->routePrefix() . '.recycle-bin.index')
             ->with('success', 'Document permanently deleted.');
+    }
+
+    public function forceDeleteActive(Request $request, int $id)
+    {
+        try {
+            $this->recycleBin->forceDeleteActive($id, $request->user());
+        } catch (HttpException $exception) {
+            if ($exception->getStatusCode() !== 422 || $request->expectsJson()) {
+                throw $exception;
+            }
+
+            return back()->with('error', $exception->getMessage());
+        }
+
+        return redirect()->route('dean.documents')->with('success', 'Document permanently deleted.');
+    }
+
+    public function deleteImpact(Request $request, int $id)
+    {
+        abort_unless($request->user()->isDean(), 403);
+        $document = Document::findOrFail($id);
+        abort_unless($document->canView($request->user()), 404);
+
+        return response()->json($this->recycleBin->permanentDeleteImpact($document));
     }
 
     public function bulkForceDelete(Request $request)

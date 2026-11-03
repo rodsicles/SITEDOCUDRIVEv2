@@ -144,6 +144,12 @@ Loads are saved as drafts, previewed/exported as PDF, then finalized. Finalizati
 
 ## Daily operations
 
+Dean Analytics has a **Close previous month** action and immutable Monthly history snapshots for document uploads, Teaching Guides, Exam Questionnaires, tasks created, and recorded actions by calendar month. The live school-year/all-time analytics below remain unchanged; closing a month does not delete records or reset totals. Only Dean can close; the month is unique to prevent duplicate snapshots. Migration: `2026_11_03_000001_create_monthly_analytics_snapshots`.
+
+The Dean's **Reset this month's analytics** button saves the current month-to-date summary in reset history and starts those five monthly counters again from the reset time. It does not erase source records or alter the live school-year/all-time analytics below. The Dean's **Reset Activity Log** button starts a new default audit-trail view; **View earlier records** retains access to all prior events. Neither reset physically deletes audit data. Both actions require `2026_11_03_000002_create_system_reset_events` and are disabled in the UI until that migration is present; direct endpoints remain Dean-only.
+
+Dean Documents now offers separate Recycle Bin and permanent-delete actions. The Dean-only impact preview lists the target title, stored file, saved versions, linked request submissions and academic records, and other records sharing the path. Permanent deletion rechecks those links on submission and uses the existing purge path; it is blocked while any exist. The same dependency checks apply in Recycle Bin. File deletion failures retain the database record. Dean-only server checks protect the direct endpoint; Secretary cannot permanently delete.
+
 | Feature | Working reference and purpose |
 |---|---|
 | Dashboards / analytics | Role-based summaries and actionable text insights help staff identify overdue work, changes, and useful observations. Inspect `DashboardService`, analytics services, and role dashboard views; do not invent statistics. |
@@ -271,6 +277,10 @@ Pulled from archived guides so those files are no longer required reading. Re-ve
 Remaining archive (still in tree): old lime `AGENTDESIGN.md`; `MD FOLDERS/UI_COLOR_LATEST_UPDATE.md`, `DOCUMENT_REQUEST_SEARCH.md`, `FEATURES_IMPLEMENTATION_GUIDE.md`, `PERFORMANCE_OPTIMIZATION.md`; `EMP-Dashboard-KnowledgeBase/KNOWLEDGE_BASE.md`. Git history remains the recovery path. Do not copy credentials from old guides.
 
 ## Change history
+
+- **2026-11-03 | uncommitted:** Added Dean monthly-summary and Activity Log reset buttons with confirmation, reset history, and Dean-only endpoints. Activity resets are themselves logged; earlier entries remain in Dean history and live analytics remain intact. Both new tables were migrated in local WAMP only; focused feature tests passed, production migration/browser verification pending.
+
+- **2026-11-03:** Added Dean previous-month analytics snapshots/history and separate document recycle/permanent-delete actions with dependency and shared-file guards. Requires monthly snapshot migration; production execution and browser verification pending.
 
 - **2026-11-03:** Corrected the read-only turnover preview's table classification for schema-qualified production table names; database queries still use the original table name. No deletion or migration.
 

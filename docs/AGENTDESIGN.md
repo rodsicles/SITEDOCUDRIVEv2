@@ -61,6 +61,8 @@ Font stack: Segoe UI, Tahoma, Geneva, Verdana, system sans-serif.
 
 ## Shell and layout
 
+Dean Analytics places a compact Monthly history section before the live metrics. The close action saves the previous calendar month as a snapshot; its confirmation explicitly says live figures are unchanged. Document rows expose Recycle Bin and Dean-only permanent deletion as separate destructive actions with clear confirmation.
+
 - Layout: `resources/views/layouts/dashboard.blade.php`
 - Role sidebars: `partials/dean-sidebar.blade.php`, `coordinator-sidebar.blade.php`, `faculty-sidebar.blade.php`, `secretary-sidebar.blade.php`
 - Account/photo: `partials/sidebar-account.blade.php`
@@ -116,6 +118,7 @@ Use these instead of inventing parallel widgets.
 
 - Course Catalog switches between **All Courses** and **Sections** through the shared `catalog-tabs` navigation. Section management reuses content cards, tables, program/status filters, and native `ui-dialog` edit/remove/restore confirmations; retain validation values and concurrency warnings. Keep historical-load preservation text visible and use Remove/Restore instead of permanent delete.
 - Teacher's Load uses a required section dropdown (active choices for the selected employee's program) with labeled saved/legacy options only on existing rows. The **Drafts (count)** link sits beside Create Teacher's Load, retains filters, and includes revision drafts. Only managers see it; use the same editor and green/white/charcoal tokens, not a second visual system.
+- Dean Analytics places **Reset this month's analytics** beside the previous-month close action in the Monthly history header. The monthly counters and reset history sit inside that card; the separate live overview remains labeled as unchanged. Dean Activity Log places **Reset Activity Log** in the card header and provides **View earlier records** after a reset. Confirmations explain that source records remain. Disable buttons with a migration-pending note if the reset table is absent.
 
 - Explorer / tree: `partials/folder-tree.blade.php`, `folder-explorer.blade.php`, `documents-filter-panel.blade.php`
 - Guided upload: `partials/document-upload-dialog.blade.php` — keep destination-then-files.

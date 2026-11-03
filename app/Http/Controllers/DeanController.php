@@ -14,10 +14,12 @@ use App\Services\EmployeeService;
 use App\Services\FolderService;
 use App\Services\TaskService;
 use App\Services\WeeklyInsightService;
+use App\Services\SystemResetService;
 use App\Support\CourseAssignment;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Cache;
 use Illuminate\Support\Facades\Hash;
+use Illuminate\Support\Facades\Schema;
 
 class DeanController extends Controller
 {
@@ -76,9 +78,14 @@ class DeanController extends Controller
         ]);
 
         $query = $this->buildAuditTrailQuery($filters);
+        $activityResetReady = Schema::hasTable('system_reset_events');
+        $logReset = app(SystemResetService::class)->latest('activity_log');
+        $showHistory = $request->boolean('history') && $request->user()->isDean();
+        if ($logReset && !$showHistory) $query->where('log_id', '>', $logReset->closed_metrics['cutoff_log_id'] ?? 0);
         $logs  = $query->paginate(25)->withQueryString();
 
         $activityTypes = DashboardLog::query()
+            ->when($logReset && !$showHistory, fn ($q) => $q->where('log_id', '>', $logReset->closed_metrics['cutoff_log_id'] ?? 0))
             ->whereNotNull('activity_type')
             ->distinct()
             ->orderBy('activity_type')
@@ -91,8 +98,15 @@ class DeanController extends Controller
             ->values();
 
         return view('dean.audit-trail', compact(
-            'logs', 'activityTypes', 'users', 'filters',
+            'logs', 'activityTypes', 'users', 'filters', 'logReset', 'showHistory', 'activityResetReady',
         ));
+    }
+
+    public function resetActivityLog(Request $request, SystemResetService $resets)
+    {
+        abort_unless($request->user()->isDean(), 403);
+        $resets->resetActivityLog($request->user());
+        return redirect()->route('dean.audit-trail')->with('success', 'Activity Log restarted. Earlier entries remain in historical view.');
     }
 
     /**

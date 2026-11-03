@@ -19,6 +19,10 @@ class DocumentPurgeService
     {
         $documentId = $document->document_id;
 
+        if ($deleteStoredFile) {
+            $this->deleteStoredFile($document->file_path);
+        }
+
         DB::table('document_recipients')->where('document_id', $documentId)->delete();
         DocumentComment::query()->where('document_id', $documentId)->delete();
         DocumentView::query()->where('document_id', $documentId)->delete();
@@ -34,10 +38,6 @@ class DocumentPurgeService
             TeachingGuide::query()->where('document_id', $documentId)->update(['document_id' => null]);
         }
 
-        if ($deleteStoredFile) {
-            $this->deleteStoredFile($document->file_path);
-        }
-
         $document->forceDelete();
     }
 
@@ -47,12 +47,11 @@ class DocumentPurgeService
             return;
         }
 
-        try {
+        if (UploadStorage::exists($path)) {
+            UploadStorage::delete($path);
             if (UploadStorage::exists($path)) {
-                UploadStorage::delete($path);
+                throw new \RuntimeException('Stored file could not be deleted; document record was retained.');
             }
-        } catch (\Throwable $e) {
-            // File may already be gone; still remove DB row.
         }
     }
 }

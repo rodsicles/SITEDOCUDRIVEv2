@@ -22,7 +22,23 @@
                 Activity Log
                 <span class="badge badge-info ml-2">{{ number_format($logs->total()) }} records</span>
             </h3>
+            @if(auth()->user()->isDean())
+                <div class="flex flex-wrap items-center gap-2">
+                    @if($logReset ?? null)
+                        <a href="{{ ($showHistory ?? false) ? route('dean.audit-trail') : route('dean.audit-trail', ['history' => 1]) }}" class="btn btn-secondary">{{ ($showHistory ?? false) ? 'Current log' : 'View earlier records' }}</a>
+                    @endif
+                    <form id="reset-activity-form" method="POST" action="{{ route('dean.audit-trail.reset') }}">@csrf
+                        <button type="button" class="btn btn-danger" @disabled(!($activityResetReady ?? false)) onclick="confirmResetActivity()">Reset Activity Log</button>
+                    </form>
+                </div>
+            @endif
         </div>
+        @unless($activityResetReady ?? false)
+            <p class="px-4 py-2 text-sm text-amber-700">The Activity Log reset migration is pending.</p>
+        @endunless
+        @if(($logReset ?? null) && !($showHistory ?? false))
+            <p class="px-4 py-2 text-sm text-gray-500">Showing activity since {{ $logReset->reset_at->format('M j, Y g:i A') }}. Earlier records remain available in historical view.</p>
+        @endif
 
         {{-- Filter form --}}
         <form method="GET" action="{{ route('dean.audit-trail') }}"
@@ -153,5 +169,17 @@
             </div>
         @endif
     </div>
-
+@push('scripts')
+<script>
+function confirmResetActivity() {
+    const form = document.getElementById('reset-activity-form');
+    if (!form) return;
+    const message = 'Start a fresh Activity Log view from now? Earlier records remain available through View earlier records.';
+    if (typeof Swal === 'undefined') { if (confirm(message)) form.submit(); return; }
+    Swal.fire({title: 'Reset Activity Log?', text: message, icon: 'warning', showCancelButton: true,
+        confirmButtonText: 'Reset log view', cancelButtonText: 'Cancel', confirmButtonColor: '#b42318',
+        customClass: {popup: 'swal-flat'}}).then(result => { if (result.isConfirmed) form.submit(); });
+}
+</script>
+@endpush
 @endsection

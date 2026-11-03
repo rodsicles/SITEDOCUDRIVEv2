@@ -103,9 +103,15 @@
                     @if($canDelete)
                     <form id="delete-doc-{{ $document->document_id }}" action="{{ route($routePrefix . '.delete-document', $document->document_id) }}" method="POST" class="m-0 inline-flex">
                         @csrf @method('DELETE')
-                        <button type="button" class="doc-inline-action doc-inline-action--danger" title="Delete" aria-label="Delete {{ $document->document_title }}" onclick="confirmDelete({{ $document->document_id }})">
-                            <i class="fas fa-trash" aria-hidden="true"></i>
+                        <button type="button" class="doc-inline-action doc-inline-action--danger" title="Move to Recycle Bin" aria-label="Move {{ $document->document_title }} to Recycle Bin" onclick="confirmDelete({{ $document->document_id }})">
+                            <i class="fas fa-recycle" aria-hidden="true"></i>
                         </button>
+                    </form>
+                    @endif
+                    @if($user->isDean())
+                    <form id="permanent-delete-doc-{{ $document->document_id }}" action="{{ route('dean.documents.force-delete', $document->document_id) }}" method="POST" class="m-0 inline-flex">
+                        @csrf @method('DELETE')
+                        <button type="button" class="doc-inline-action doc-inline-action--danger" title="Permanently delete" aria-label="Permanently delete {{ $document->document_title }}" data-impact-url="{{ route('dean.documents.delete-impact', $document->document_id) }}" onclick="confirmPermanentDocument({{ $document->document_id }}, this)"><i class="fas fa-trash-alt" aria-hidden="true"></i></button>
                     </form>
                     @endif
                 </div>
@@ -171,6 +177,43 @@
 @once
 @push('scripts')
 <script>
+async function confirmPermanentDocument(id, button) {
+    const form = document.getElementById('permanent-delete-doc-' + id);
+    if (!form) return;
+    button.disabled = true;
+    let impact;
+    try {
+        const response = await fetch(button.dataset.impactUrl, {headers: {'Accept': 'application/json'}, credentials: 'same-origin'});
+        if (!response.ok) throw new Error('Could not review document dependencies.');
+        impact = await response.json();
+    } catch (error) {
+        if (typeof Swal !== 'undefined') Swal.fire({title: 'Could not review file', text: error.message, icon: 'error', customClass: {popup: 'swal-flat'}});
+        else alert(error.message);
+        button.disabled = false;
+        return;
+    }
+    button.disabled = false;
+    const message = [
+        impact.title,
+        'Stored file: ' + impact.stored_file,
+        'Saved versions: ' + impact.saved_versions,
+        'Request submissions: ' + impact.request_submissions,
+        'Teaching guides: ' + impact.teaching_guides,
+        'Exam questionnaires: ' + impact.exam_questionnaires,
+        'Other records sharing the file: ' + impact.shared_file_records,
+        impact.blocked ? 'Permanent deletion is blocked until these links are resolved.' : 'This cannot be undone.'
+    ].join('\n');
+    if (typeof Swal === 'undefined') {
+        if (!impact.blocked && confirm('Permanently delete this document?\n' + message)) form.submit();
+        return;
+    }
+    Swal.fire({
+        title: 'Permanently delete this document?', text: message, icon: 'warning',
+        showCancelButton: !impact.blocked, showConfirmButton: true,
+        confirmButtonText: impact.blocked ? 'Close' : 'Permanently delete', cancelButtonText: 'Cancel',
+        confirmButtonColor: '#b42318', customClass: { popup: 'swal-flat' }
+    }).then(result => { if (result.isConfirmed && !impact.blocked) form.submit(); });
+}
 function confirmDelete(id) {
     if (typeof Swal === 'undefined') {
         if (confirm('Move this file to the Recycle Bin?')) {

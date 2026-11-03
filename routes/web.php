@@ -239,8 +239,11 @@ Route::middleware(['auth', 'no.back', 'role:Dean,Secretary'])->prefix('dean')->n
 
     Route::get('/reports', [DeanController::class, 'reports'])->name('reports');
     Route::get('/analytics', [AnalyticsController::class, 'index'])->name('analytics');
+    Route::post('/analytics/close-month', [AnalyticsController::class, 'closeMonth'])->middleware('throttle:3,60')->name('analytics.close-month');
+    Route::post('/analytics/reset-this-month', [AnalyticsController::class, 'resetThisMonth'])->middleware('throttle:3,60')->name('analytics.reset-this-month');
     Route::get('/activity-log', [DeanController::class, 'activityLog'])->name('activity-log');
     Route::get('/audit-trail', [DeanController::class, 'auditTrail'])->name('audit-trail');
+    Route::post('/audit-trail/reset', [DeanController::class, 'resetActivityLog'])->middleware('throttle:3,60')->name('audit-trail.reset');
 
     Route::get('/notifications', [DeanController::class, 'notifications'])->name('notifications');
     Route::get('/notifications/unread-count', [DeanController::class, 'unreadNotificationCount'])->name('notifications.unread-count');
@@ -268,6 +271,8 @@ Route::middleware(['auth', 'no.back', 'role:Dean,Secretary'])->prefix('dean')->n
     Route::get('/documents/{id}/view', [DeanController::class, 'viewDocument'])->name('view-document');
     Route::get('/documents/{id}/download', [DeanController::class, 'downloadDocument'])->name('download-document');
     Route::delete('/documents/{id}', [DeanController::class, 'deleteDocument'])->name('delete-document');
+    Route::delete('/documents/{id}/permanent-delete', [RecycleBinController::class, 'forceDeleteActive'])->middleware('throttle:10,60')->name('documents.force-delete');
+    Route::get('/documents/{id}/delete-impact', [RecycleBinController::class, 'deleteImpact'])->name('documents.delete-impact');
     Route::patch('/documents/{id}/rename', [DeanController::class, 'renameDocument'])->middleware('throttle:60,1')->name('rename-document');
     Route::post('/documents/{id}/favorite', [DeanController::class, 'toggleFavorite'])->middleware('throttle:60,1')->name('toggle-favorite');
 

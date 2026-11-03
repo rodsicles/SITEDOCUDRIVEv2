@@ -7,6 +7,7 @@ use App\Models\Document;
 use App\Models\Folder;
 use App\Models\User;
 use Illuminate\Contracts\Pagination\LengthAwarePaginator;
+use Illuminate\Support\Facades\DB;
 
 class RecycleBinService
 {
@@ -73,6 +74,7 @@ class RecycleBinService
         }
 
         $document = Document::onlyTrashed()->findOrFail($documentId);
+        $this->assertCanPermanentlyDelete($document);
 
         $this->notificationService->notifyDocumentPermanentlyDeleted($document, $user);
 
@@ -84,6 +86,49 @@ class RecycleBinService
         ]);
 
         $this->documentPurge->purge($document);
+    }
+
+    public function forceDeleteActive(int $documentId, User $user): void
+    {
+        abort_unless($user->isDean(), 403);
+        $document = Document::findOrFail($documentId);
+        abort_unless($document->canView($user), 404);
+        $this->assertCanPermanentlyDelete($document);
+        $this->moveToRecycleBin($document, $user);
+        $this->forceDelete($documentId, $user);
+    }
+
+    public function permanentDeleteImpact(Document $document): array
+    {
+        $id = $document->document_id;
+        $impact = [
+            'title' => $document->document_title,
+            'request_submissions' => DB::table('document_request_recipients')->where('submitted_document_id', $id)->count(),
+            'teaching_guides' => DB::table('teaching_guides')->where('document_id', $id)->count(),
+            'exam_questionnaires' => DB::table('exam_questionnaires')->where('document_id', $id)->count(),
+            'saved_versions' => DB::table('document_versions')->where('document_id', $id)->count(),
+            'stored_file' => $document->file_path ? 1 : 0,
+        ];
+        $path = $document->file_path;
+        $impact['shared_file_records'] = 0;
+        if ($path) {
+            $impact['shared_file_records'] = Document::withTrashed()->where('document_id', '!=', $id)->where('file_path', $path)->count()
+                + DB::table('teaching_guides')->where('file_path', $path)->count()
+                + DB::table('exam_questionnaires')->where('file_path', $path)->count()
+                + DB::table('reports')->where('file_path', $path)->count()
+                + DB::table('task_attachments')->where('file_path', $path)->count()
+                + DB::table('professional_developments')->where('certificate_path', $path)->count();
+        }
+        $impact['blocked'] = array_sum(array_intersect_key($impact, array_flip([
+            'request_submissions', 'teaching_guides', 'exam_questionnaires', 'saved_versions', 'shared_file_records',
+        ]))) > 0;
+        return $impact;
+    }
+
+    private function assertCanPermanentlyDelete(Document $document): void
+    {
+        abort_if($this->permanentDeleteImpact($document)['blocked'], 422,
+            'This file has a request submission, academic record, saved version, or shared stored file. Resolve those links before permanent deletion.');
     }
 
     /**

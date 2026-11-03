@@ -45,6 +45,12 @@ Optional during development: `composer dev` starts the app, queue listener, logs
 
 Inspect pending migrations before production `migrate --force`. `2026_09_10_000001_ensure_it_dean_account` resets the `dean` account if it runs. See Operations in the system guide.
 
+Dean Monthly history requires `2026_11_03_000001_create_monthly_analytics_snapshots.php`. Check `php artisan migrate:status` on the target host and run only the reviewed pending migration before using Close month. The Analytics page remains readable while this table is absent; the close action is unavailable until it exists. No historical month is automatically closed or backfilled.
+
+Dean monthly-summary and Activity Log reset buttons require `2026_11_03_000002_create_system_reset_events.php`. Inspect pending migrations and apply only the reviewed feature migration on each target host. Until then the buttons remain visible but disabled. Reset events preserve earlier metrics/audit entries; they do not remove files, users, or source records.
+
+Both November 3 feature migrations were applied to local WAMP on November 3. This does not verify or modify Laravel Cloud.
+
 ## Workflow corrections release (`86cd234`)
 
 The latest workflow correction migration is [`2026_10_21_000001_add_workflow_correction_history.php`](../database/migrations/2026_10_21_000001_add_workflow_correction_history.php). It supports published teaching-load revisions/history/voiding, request corrections/exemptions, and course metadata history/manual-unit protection. Run it before using those functions. It requires the existing Teacher's Load, document-request, and course-unit schema; it does not assign subjects or create schedules.

@@ -47,7 +47,9 @@ class PreviewTurnover extends Command
             'leave_requests', 'leave_balances', 'equipment_borrows', 'password_reset_requests', 'password_reset_tokens', 'sessions'];
         $rows = [];
         foreach (Schema::getTableListing() as $table) {
-            $action = in_array($table, $preserve, true) ? 'KEEP' : (in_array($table, $clear, true) ? 'PROPOSE CLEAR (approval required)' : 'REVIEW / DO NOT DELETE');
+            // Laravel may return schema-qualified names (for example production.documents).
+            $plainTable = substr($table, strrpos($table, '.') === false ? 0 : strrpos($table, '.') + 1);
+            $action = in_array($plainTable, $preserve, true) ? 'KEEP' : (in_array($plainTable, $clear, true) ? 'PROPOSE CLEAR (approval required)' : 'REVIEW / DO NOT DELETE');
             $rows[] = [$table, DB::table($table)->count(), $action];
         }
         $this->table(['Table', 'Rows', 'Proposed treatment'], $rows);

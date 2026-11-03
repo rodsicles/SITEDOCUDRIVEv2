@@ -272,6 +272,8 @@ Remaining archive (still in tree): old lime `AGENTDESIGN.md`; `MD FOLDERS/UI_COL
 
 ## Change history
 
+- **2026-11-03:** Corrected the read-only turnover preview's table classification for schema-qualified production table names; database queries still use the original table name. No deletion or migration.
+
 - **2026-11-03:** Corrected turnover preview to validate the linked Dean user and employee names separately, since these can legitimately differ in production; still read-only, with no migration or cleanup.
 
 - **2026-11-01:** Added protected-identity, read-only turnover preview and a client-turnover runbook. No migration, account deletion, upload deletion or production reset performed. Destructive execution remains gated on reviewed production inventory and backup/rehearsal evidence.

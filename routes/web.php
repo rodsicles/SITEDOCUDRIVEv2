@@ -252,6 +252,7 @@ Route::middleware(['auth', 'no.back', 'role:Dean,Secretary'])->prefix('dean')->n
     Route::post('/notifications/{id}/read', [DeanController::class, 'markNotificationRead'])->middleware('throttle:120,1')->name('mark-notification-read');
     Route::post('/notifications/mark-all-read', [DeanController::class, 'markAllNotificationsRead'])->middleware('throttle:30,1')->name('notifications.mark-all-read');
     Route::post('/notifications/mark-all-read-json', [DeanController::class, 'markAllNotificationsReadJson'])->middleware('throttle:30,1')->name('notifications.mark-all-read-json');
+    Route::post('/notifications/clear-json', [DeanController::class, 'clearNotificationsJson'])->middleware('throttle:5,1')->name('notifications.clear-json');
 
     Route::post('/insight/refresh', [DeanController::class, 'refreshInsight'])
         ->middleware('throttle:15,1')
@@ -340,6 +341,7 @@ Route::middleware(['auth', 'no.back', 'role:Program Coordinator'])->prefix('coor
     Route::post('/notifications/{id}/read', [CoordinatorController::class, 'markNotificationRead'])->middleware('throttle:120,1')->name('mark-notification-read');
     Route::post('/notifications/mark-all-read', [CoordinatorController::class, 'markAllNotificationsRead'])->middleware('throttle:30,1')->name('notifications.mark-all-read');
     Route::post('/notifications/mark-all-read-json', [CoordinatorController::class, 'markAllNotificationsReadJson'])->middleware('throttle:30,1')->name('notifications.mark-all-read-json');
+    Route::post('/notifications/clear-json', [CoordinatorController::class, 'clearNotificationsJson'])->middleware('throttle:5,1')->name('notifications.clear-json');
     
     // Course Catalog (scoped to coordinator department)
     Route::get('/courses/by-program', [CoordinatorController::class, 'coursesByProgram'])->name('courses.by-program');
@@ -425,6 +427,7 @@ Route::middleware(['auth', 'no.back', 'role:Faculty Employee'])->prefix('faculty
     Route::post('/notifications/{id}/read', [FacultyController::class, 'markNotificationRead'])->middleware('throttle:120,1')->name('mark-notification-read');
     Route::post('/notifications/mark-all-read', [FacultyController::class, 'markAllNotificationsRead'])->middleware('throttle:30,1')->name('notifications.mark-all-read');
     Route::post('/notifications/mark-all-read-json', [FacultyController::class, 'markAllNotificationsReadJson'])->middleware('throttle:30,1')->name('notifications.mark-all-read-json');
+    Route::post('/notifications/clear-json', [FacultyController::class, 'clearNotificationsJson'])->middleware('throttle:5,1')->name('notifications.clear-json');
     
     // Documents - Rate Limited: 6 uploads per hour
     Route::get('/documents', [FacultyController::class, 'documents'])->name('documents');

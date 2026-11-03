@@ -2,7 +2,7 @@
 
 ## Quick Context
 
-Latest source review: **2026-10-27, Asia/Manila**. Committed baseline: **`762e5ae`**, following `d75b79c` and `86cd234`; the section catalog/draft-navigation and original-filename changes described below are currently uncommitted. V2/V3 were last confirmed pushed to `762e5ae` on October 21. Local WAMP migrations are verified separately below; Cloud deployment, workers, and browser end-to-end behavior remain unverified.
+Latest source review: **2026-11-03, Asia/Manila**. Committed baseline: **`8dc414d`**, last confirmed pushed to V2/V3 on November 3. The Dean dashboard and notification changes described below are currently uncommitted. Local WAMP migrations are verified separately below; Cloud deployment, workers, and browser end-to-end behavior remain unverified.
 
 SITE DocuDrive is the employee document and academic-workflow portal for the School of Information Technology and Engineering, St. Paul University Philippines. It uses Laravel 12 / PHP 8.2+, Blade, Tailwind 4, Vite 7, and JavaScript. Dependencies and scripts are authoritative in `composer.json` and `package.json`.
 
@@ -148,6 +148,8 @@ Dean Analytics has a **Close previous month** action and immutable Monthly histo
 
 The Dean's **Reset this month's analytics** button saves the current month-to-date summary in reset history and starts those five monthly counters again from the reset time. It does not erase source records or alter the live school-year/all-time analytics below. The Dean's **Reset Activity Log** button starts a new default audit-trail view; **View earlier records** retains access to all prior events. Neither reset physically deletes audit data. Both actions require `2026_11_03_000002_create_system_reset_events` and are disabled in the UI until that migration is present; direct endpoints remain Dean-only.
 
+The Dean dashboard no longer repeats unread notifications in a Needs attention card; the bell dropdown and Notifications page remain. **Clear notifications** in the bell dropdown deletes only the signed-in user's notifications, both read and unread, after confirmation. It does not clear other users' notifications or underlying work items. After the Dean resets Activity Log, the Dean dashboard Activity pulse uses the same latest reset cutoff and omits the reset event itself; the reset event remains in the audit trail. Reset invalidates the Dean dashboard cache immediately.
+
 Dean Documents now offers separate Recycle Bin and permanent-delete actions. The Dean-only impact preview lists the target title, stored file, saved versions, linked request submissions and academic records, and other records sharing the path. Permanent deletion rechecks those links on submission and uses the existing purge path; it is blocked while any exist. The same dependency checks apply in Recycle Bin. File deletion failures retain the database record. Dean-only server checks protect the direct endpoint; Secretary cannot permanently delete.
 
 | Feature | Working reference and purpose |
@@ -277,6 +279,8 @@ Pulled from archived guides so those files are no longer required reading. Re-ve
 Remaining archive (still in tree): old lime `AGENTDESIGN.md`; `MD FOLDERS/UI_COLOR_LATEST_UPDATE.md`, `DOCUMENT_REQUEST_SEARCH.md`, `FEATURES_IMPLEMENTATION_GUIDE.md`, `PERFORMANCE_OPTIMIZATION.md`; `EMP-Dashboard-KnowledgeBase/KNOWLEDGE_BASE.md`. Git history remains the recovery path. Do not copy credentials from old guides.
 
 ## Change history
+
+- **2026-11-03 | uncommitted:** Removed the Dean Needs attention notification duplicate, added per-account Clear notifications with confirmation, and synchronized Dean Activity pulse with the Activity Log reset cutoff. No migration; focused feature tests passed, browser/production verification pending.
 
 - **2026-11-03 | uncommitted:** Added Dean monthly-summary and Activity Log reset buttons with confirmation, reset history, and Dean-only endpoints. Activity resets are themselves logged; earlier entries remain in Dean history and live analytics remain intact. Both new tables were migrated in local WAMP only; focused feature tests passed, production migration/browser verification pending.
 

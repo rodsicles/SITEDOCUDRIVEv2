@@ -443,20 +443,6 @@ class DashboardService
                 ->take(5)
                 ->get();
 
-            $overdueTasks = Task::with(['assignedTo.employee'])
-                ->whereNotNull('due_date')
-                ->whereDate('due_date', '<', now()->toDateString())
-                ->where('status', '!=', 'Completed')
-                ->orderBy('due_date')
-                ->take(5)
-                ->get();
-
-            $unreadNotifications = Notification::where('user_id', $userId)
-                ->where('is_read', false)
-                ->latest()
-                ->take(5)
-                ->get();
-
             $pendingPasswordResets = \App\Models\PasswordResetRequest::pending()
                 ->notExpired()
                 ->with(['user.employee'])
@@ -470,7 +456,10 @@ class DashboardService
                 ->get();
 
             $announcements = $this->getAnnouncements($user, 3);
+            $activityReset = app(SystemResetService::class)->latest('activity_log');
             $activityPulse = DashboardLog::with(['user.employee'])
+                ->when($activityReset, fn ($query) => $query->where('log_id', '>', $activityReset->closed_metrics['cutoff_log_id'] ?? 0))
+                ->where(fn ($query) => $query->whereNull('activity_type')->orWhere('activity_type', '!=', 'Activity Log reset'))
                 ->latest('log_date')
                 ->limit(4)
                 ->get();
@@ -516,8 +505,6 @@ class DashboardService
                 'attentionCount' => $attentionCount,
                 'bannerUrl' => $bannerUrl,
                 'bannerCta' => $bannerCta,
-                'overdueTasks' => $overdueTasks,
-                'unreadNotifications' => $unreadNotifications,
                 'pendingPasswordResets' => $pendingPasswordResets,
                 'recentDocuments' => $recentDocuments,
                 'announcements' => $announcements,

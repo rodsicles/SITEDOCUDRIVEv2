@@ -37,11 +37,19 @@ class DeanSystemResetTest extends TestCase
         $dean = User::where('username', 'dean')->firstOrFail();
         DashboardLog::create(['user_id' => $dean->id, 'activity' => 'Before reset', 'activity_type' => 'test']);
 
+        $this->actingAs($dean)->get(route('dean.dashboard'))->assertOk()->assertSee('Before reset');
+
         $this->actingAs($dean)->post(route('dean.audit-trail.reset'))->assertRedirect(route('dean.audit-trail'));
         $this->assertSame(2, DashboardLog::count());
         $this->get(route('dean.audit-trail'))->assertOk()->assertDontSee('Before reset');
         $this->get(route('dean.audit-trail'))->assertOk()->assertSee('Reset Activity Log view');
         $this->get(route('dean.audit-trail', ['history' => 1]))->assertOk()->assertSee('Before reset');
+        $this->get(route('dean.dashboard'))->assertOk()->assertDontSee('Before reset')->assertSee('No recent activity');
+
+        $this->travel(2)->seconds();
+        DashboardLog::create(['user_id' => $dean->id, 'activity' => 'After reset', 'activity_type' => 'test']);
+        \Illuminate\Support\Facades\Cache::forget('dean_command_center_'.$dean->id);
+        $this->get(route('dean.dashboard'))->assertOk()->assertSee('After reset');
     }
 
     public function test_non_dean_cannot_reset_either_view(): void

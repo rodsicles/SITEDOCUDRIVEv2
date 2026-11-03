@@ -6,6 +6,7 @@ use App\Models\DashboardLog;
 use App\Models\SystemResetEvent;
 use App\Models\User;
 use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\Cache;
 use Illuminate\Support\Facades\Schema;
 
 class SystemResetService
@@ -51,7 +52,7 @@ class SystemResetService
     {
         abort_unless($actor->isDean(), 403);
         abort_unless(Schema::hasTable('system_reset_events'), 503, 'The activity log reset migration is pending.');
-        return DB::transaction(function () use ($actor) {
+        $reset = DB::transaction(function () use ($actor) {
             $reset = SystemResetEvent::create([
                 'scope' => 'activity_log',
                 'reset_at' => now(),
@@ -67,5 +68,9 @@ class SystemResetService
 
             return $reset;
         });
+
+        Cache::forget('dean_command_center_'.$actor->id);
+
+        return $reset;
     }
 }

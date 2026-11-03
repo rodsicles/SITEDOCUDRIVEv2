@@ -49,43 +49,6 @@
     {{-- Feature preview: two independent stacks (avoids row-gap holes) --}}
     <div class="dean-preview-grid mb-3">
         <div class="dean-preview-col">
-            {{-- Needs attention --}}
-            <div class="content-card dean-preview-card">
-                <div class="card-header">
-                    <h3 class="card-title text-sm mb-0">
-                        <i class="fas fa-exclamation-circle mr-2 text-[#028a0f]"></i>Needs attention
-                    </h3>
-                    <a href="{{ route('dean.notifications') }}" class="text-xs font-semibold text-[#028a0f] dark:text-[#34d399] no-underline">Notifications</a>
-                </div>
-                <ul class="dean-preview-list">
-                    @forelse($unreadNotifications as $n)
-                        <li>
-                            <span class="dean-preview-list__primary">{{ \Illuminate\Support\Str::limit($n->message, 72) }}</span>
-                            <span class="dean-preview-list__meta">{{ $n->created_at?->diffForHumans() }}</span>
-                        </li>
-                    @empty
-                        <li class="dean-preview-empty">No unread notifications</li>
-                    @endforelse
-                </ul>
-                @if(($passwordResetCount ?? 0) > 0)
-                    <a href="{{ route('password-reset-requests.index', ['tab' => 'pending']) }}"
-                       class="dean-preview-alert no-underline">
-                        {{ $passwordResetCount }} password reset {{ $passwordResetCount === 1 ? 'request' : 'requests' }} pending
-                    </a>
-                @endif
-                @if(isset($overdueTasks) && $overdueTasks->count() > 0)
-                    <div class="dean-preview-subhead">Overdue tasks</div>
-                    <ul class="dean-preview-list">
-                        @foreach($overdueTasks as $task)
-                            <li>
-                                <span class="dean-preview-list__primary">{{ $task->task_title }}</span>
-                                <span class="dean-preview-list__meta">Due {{ $task->due_date?->format('M d, Y') }}</span>
-                            </li>
-                        @endforeach
-                    </ul>
-                @endif
-            </div>
-
             {{-- Announcements --}}
             <div class="content-card dean-preview-card">
                 <div class="card-header">

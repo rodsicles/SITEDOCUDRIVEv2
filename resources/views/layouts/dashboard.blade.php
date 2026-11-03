@@ -77,7 +77,10 @@
                         <div id="notification-dropdown" class="hidden notification-dropdown absolute top-full right-0 mt-2 w-[min(22rem,calc(100vw-2rem))] bg-white dark:bg-[#2a2a2a] border border-gray-200 dark:border-gray-700 shadow-lg z-[1000]">
                             <div class="notification-dropdown-header">
                                 <span class="font-semibold text-sm text-gray-800 dark:text-gray-200">Notifications</span>
-                                <button type="button" id="notification-mark-all-btn" class="text-xs text-[#0d5c3b] dark:text-[#56c596] bg-transparent border-none cursor-pointer font-semibold hidden">Mark all read</button>
+                                <div class="flex items-center gap-3">
+                                    <button type="button" id="notification-mark-all-btn" class="text-xs text-[#0d5c3b] dark:text-[#56c596] bg-transparent border-none cursor-pointer font-semibold hidden">Mark all read</button>
+                                    <button type="button" id="notification-clear-btn" class="text-xs text-red-700 dark:text-red-300 bg-transparent border-none cursor-pointer font-semibold hidden">Clear notifications</button>
+                                </div>
                             </div>
                             <div id="notification-dropdown-list" class="notification-dropdown-list">
                                 <p class="notification-dropdown-empty">Loading...</p>
@@ -770,6 +773,12 @@
                         auth()->user()->isDeanOrSecretary() => route('dean.notifications.mark-all-read-json'),
                         default => '',
                     };
+                    $notificationsClearJsonUrl = match (true) {
+                        auth()->user()->isFaculty() => route('faculty.notifications.clear-json'),
+                        auth()->user()->isProgramCoordinator() => route('coordinator.notifications.clear-json'),
+                        auth()->user()->isDeanOrSecretary() => route('dean.notifications.clear-json'),
+                        default => '',
+                    };
                     $notificationsReadJsonUrlTemplateJs = $notificationsReadJsonPrefixJs
                         ? route($notificationsReadJsonPrefixJs . '.notifications.read-json', ['id' => '__ID__'])
                         : '';
@@ -778,12 +787,14 @@
                 const recentUrl = @json($notificationsRecentUrlJs);
                 const readJsonUrlTemplate = @json($notificationsReadJsonUrlTemplateJs);
                 const markAllUrl = @json($notificationsMarkAllJsonUrl);
+                const clearUrl = @json($notificationsClearJsonUrl);
                 const csrfToken = document.querySelector('meta[name="csrf-token"]')?.getAttribute('content') || '';
                 const badge = document.getElementById('notification-badge');
                 const bellBtn = document.getElementById('notification-bell-btn');
                 const dropdown = document.getElementById('notification-dropdown');
                 const listEl = document.getElementById('notification-dropdown-list');
                 const markAllBtn = document.getElementById('notification-mark-all-btn');
+                const clearBtn = document.getElementById('notification-clear-btn');
                 let dropdownLoaded = false;
 
                 function applyCount(count) {
@@ -809,8 +820,10 @@
                     if (!listEl) return;
                     if (!items.length) {
                         listEl.innerHTML = '<p class="notification-dropdown-empty">No notifications yet.</p>';
+                        clearBtn?.classList.add('hidden');
                         return;
                     }
+                    clearBtn?.classList.remove('hidden');
                     listEl.innerHTML = '';
                     items.forEach(item => {
                         const row = document.createElement('button');
@@ -902,6 +915,35 @@
                             await loadDropdown(true);
                             await refresh();
                         } catch (err) {}
+                    });
+                }
+
+                if (clearBtn) {
+                    clearBtn.addEventListener('click', async (event) => {
+                        event.stopPropagation();
+                        if (!clearUrl || clearBtn.disabled) return;
+                        const message = 'Remove all notifications from your account? This does not clear anyone else\'s notifications.';
+                        const confirmed = typeof Swal !== 'undefined'
+                            ? (await Swal.fire({title: 'Clear notifications?', text: message, icon: 'warning', showCancelButton: true,
+                                confirmButtonText: 'Clear notifications', cancelButtonText: 'Cancel', confirmButtonColor: '#b42318',
+                                customClass: {popup: 'swal-flat'}})).isConfirmed
+                            : window.confirm(message);
+                        if (!confirmed) return;
+                        clearBtn.disabled = true;
+                        try {
+                            const response = await fetch(clearUrl, {
+                                method: 'POST', credentials: 'same-origin',
+                                headers: {'Accept': 'application/json', 'X-CSRF-TOKEN': csrfToken, 'X-Requested-With': 'XMLHttpRequest'},
+                            });
+                            if (!response.ok) throw new Error('Clear failed');
+                            dropdownLoaded = false;
+                            await loadDropdown(true);
+                            applyCount(0);
+                        } catch (error) {
+                            listEl.innerHTML = '<p class="notification-dropdown-empty">Could not clear notifications. Please try again.</p>';
+                        } finally {
+                            clearBtn.disabled = false;
+                        }
                     });
                 }
 

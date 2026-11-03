@@ -5,6 +5,7 @@ namespace App\Http\Controllers\Concerns;
 use App\Models\Notification;
 use App\Services\NotificationService;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\Cache;
 
 trait ManagesUserNotifications
 {
@@ -90,6 +91,15 @@ trait ManagesUserNotifications
         $count = app(NotificationService::class)->markAllAsRead(auth()->id());
 
         return response()->json(['success' => true, 'count' => $count]);
+    }
+
+    public function clearNotificationsJson()
+    {
+        $userId = auth()->id();
+        $count = Notification::where('user_id', $userId)->delete();
+        Cache::forget('dean_command_center_'.$userId);
+
+        return response()->json(['success' => true, 'count' => $count, 'unread_count' => 0]);
     }
 
     public function markNotificationReadJson($id)

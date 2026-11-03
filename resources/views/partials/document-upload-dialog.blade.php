@@ -7,10 +7,10 @@
         <div class="modal-body destination-picker-body">
             <p id="documentUploadError" role="alert" hidden></p>
             <section id="uploadDestinationStep" aria-label="Choose destination">
-                <div class="upload-picker-shortcuts">
-                    <button type="button" class="btn btn-sm btn-secondary" data-upload-scope="folders">Folders</button>
-                    <button type="button" class="btn btn-sm btn-secondary" data-upload-scope="recent">Recent destinations</button>
-                    <button type="button" class="btn btn-sm btn-secondary" data-upload-scope="favorites">Favorites</button>
+                <div class="upload-picker-shortcuts" role="group" aria-label="Destination views">
+                    <button type="button" class="upload-picker-tab" data-upload-scope="folders" aria-pressed="true">Folders</button>
+                    <button type="button" class="upload-picker-tab" data-upload-scope="recent" aria-pressed="false">Recent destinations</button>
+                    <button type="button" class="upload-picker-tab" data-upload-scope="favorites" aria-pressed="false">Favorites</button>
                 </div>
                 <nav id="uploadBreadcrumbs" class="upload-picker-breadcrumbs" aria-label="Destination path"></nav>
                 <label for="uploadFolderSearch" class="form-label">Find a folder or course</label>
@@ -83,12 +83,33 @@ document.addEventListener('DOMContentLoaded', () => {
         });
         if (!list.children.length) list.textContent = state.uploadable ? 'This folder is ready for uploads.' : 'No matching destinations here.';
     }
+    const rootLabel = @json(isset($archiveYear) ? 'All archive folders' : 'All categories');
+    function setScope(scope) {
+        modal.querySelectorAll('[data-upload-scope]').forEach(item => item.setAttribute('aria-pressed', String(item.dataset.uploadScope === scope)));
+    }
+    function renderPath(crumbs, back = null) {
+        const nav = byId('uploadBreadcrumbs'); nav.replaceChildren();
+        if (back) {
+            const item = button('', () => browse(back.id), 'upload-picker-back');
+            item.innerHTML = '<i class="fas fa-chevron-left" aria-hidden="true"></i> Back';
+            item.title = 'Back to ' + back.name; item.setAttribute('aria-label', item.title);
+            nav.append(item);
+        }
+        const list = document.createElement('ol'); list.className = 'upload-picker-path';
+        crumbs.forEach((crumb, index) => {
+            const entry = document.createElement('li');
+            if (index === crumbs.length - 1) {
+                const current = document.createElement('span'); current.textContent = crumb.name; current.setAttribute('aria-current', 'location'); entry.append(current);
+            } else entry.append(button(crumb.name, () => browse(crumb.id), 'upload-picker-crumb'));
+            list.append(entry);
+        });
+        nav.append(list);
+    }
     function render(data) {
         state = data;
-        const crumbs = byId('uploadBreadcrumbs'); crumbs.replaceChildren();
-        crumbs.append(button(@json(isset($archiveYear) ? 'All archive folders' : 'All categories'), () => browse(null)));
-        if (data.folder) crumbs.append(button('← Back', () => browse(data.breadcrumbs.at(-2)?.id || null)));
-        data.breadcrumbs.forEach(folder => crumbs.append(button(folder.name, () => browse(folder.id))));
+        setScope('folders');
+        const crumbs = [{id: null, name: rootLabel}, ...data.breadcrumbs.map(folder => ({id: folder.id, name: folder.name}))];
+        renderPath(crumbs, data.folder ? crumbs.at(-2) : null);
         byId('uploadFolderSearch').value = '';
         byId('uploadFolderSearch').disabled = false;
         useButton.disabled = !data.uploadable;
@@ -164,8 +185,9 @@ document.addEventListener('DOMContentLoaded', () => {
         const scope = item.dataset.uploadScope;
         if (scope === 'folders') { browse(null); return; }
         const ticket = ++sequence; loading = true; state = null; useButton.disabled = true; error('');
+        setScope(scope);
         byId('uploadFolderSearch').value = ''; byId('uploadFolderSearch').disabled = true;
-        byId('uploadFavorite').hidden = true; byId('uploadBreadcrumbs').textContent = item.textContent;
+        byId('uploadFavorite').hidden = true; renderPath([{id: null, name: item.textContent}]);
         byId('uploadDestinationHint').textContent = 'Shortcuts are saved in this browser.';
         const list = byId('uploadFolderChoices'); list.textContent = 'Loading…';
         const results = await Promise.allSettled(shortcuts[scope].map(readFolder));

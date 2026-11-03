@@ -71,6 +71,8 @@ Dark green grouped sidebar, account controls at the bottom, consistent page titl
 
 Documents: breadcrumbs, folder choice, consolidated toolbar, file list. Search scopes must stay obvious.
 
+Guided upload destination step (`partials/document-upload-dialog.blade.php`): view shortcuts are one joined `.upload-picker-tab` bar using `aria-pressed`; navigation is a separate row with a borderless `‹ Back` (shown only inside a folder) followed by text breadcrumbs separated by `›`, current location bold with `aria-current`. Do not mix Back into the breadcrumb trail or style crumbs as boxed buttons.
+
 The shared document scope bar labels its starred-file link **Favorite documents**, with a star icon and count (including zero). Reuse the existing `browse=favorites` view rather than adding a duplicate sidebar item or separate favorites page. Its heading explains that favorites span folders and categories; existing access checks still apply.
 
 Login: split identity / sign-in. School branding stays in the identity panel; “Employee portal” in the header. Do not restyle login unless the user asked.

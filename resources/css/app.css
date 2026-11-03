@@ -10738,8 +10738,22 @@ textarea:disabled {
 .document-upload-card [hidden] { display: none !important; }
 .document-upload-card .modal-body { max-height: none; min-height: 0; }
 .document-upload-card .modal-footer { flex: 0 0 auto; flex-wrap: wrap; }
-.upload-picker-shortcuts, .upload-picker-breadcrumbs { display: flex; flex-wrap: wrap; gap: 0.4rem; margin-bottom: 0.75rem; }
-.upload-picker-breadcrumbs button { white-space: normal; text-align: left; overflow-wrap: anywhere; }
+.upload-picker-shortcuts { display: inline-flex; flex-wrap: wrap; margin-bottom: 0.85rem; border: 1px solid var(--site-border-strong); background: var(--site-surface); }
+.upload-picker-tab { padding: 0.45rem 0.85rem; border: 0; background: transparent; color: var(--site-text); font-size: 0.75rem; font-weight: 600; cursor: pointer; }
+.upload-picker-tab + .upload-picker-tab { border-left: 1px solid var(--site-border-strong); }
+.upload-picker-tab:hover { background: var(--site-surface-selected); }
+.upload-picker-tab[aria-pressed="true"] { background: var(--site-primary); color: #fff; }
+.upload-picker-breadcrumbs { display: flex; align-items: flex-start; gap: 0.6rem; margin-bottom: 0.75rem; font-size: 0.78rem; }
+.upload-picker-back { display: inline-flex; align-items: center; gap: 0.35rem; flex-shrink: 0; padding: 0.15rem 0.65rem 0.15rem 0; border: 0; border-right: 1px solid var(--site-border); background: none; color: var(--site-primary); font: inherit; font-weight: 600; cursor: pointer; }
+.upload-picker-back i { font-size: 0.65rem; }
+.upload-picker-back:hover { color: var(--site-primary-strong); text-decoration: underline; }
+.upload-picker-path { display: flex; flex-wrap: wrap; align-items: center; gap: 0.3rem; min-width: 0; margin: 0; padding: 0.15rem 0; list-style: none; }
+.upload-picker-path li { display: inline-flex; align-items: center; gap: 0.3rem; overflow-wrap: anywhere; }
+.upload-picker-path li + li::before { content: '›'; color: var(--site-muted); }
+.upload-picker-crumb { padding: 0; border: 0; background: none; color: var(--site-muted); font: inherit; text-align: left; overflow-wrap: anywhere; cursor: pointer; }
+.upload-picker-crumb:hover { color: var(--site-primary); text-decoration: underline; }
+.upload-picker-path [aria-current] { color: var(--site-heading); font-weight: 700; }
+.upload-picker-tab:focus-visible, .upload-picker-back:focus-visible, .upload-picker-crumb:focus-visible { outline: 2px solid var(--site-primary); outline-offset: 2px; }
 .upload-picker-choices { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 0.5rem; margin: 0.8rem 0; }
 .upload-picker-folder { padding: 0.8rem; text-align: left; border: 1px solid var(--site-border); background: var(--site-surface); color: var(--site-text); font-size: 0.78rem; overflow-wrap: anywhere; }
 .upload-picker-folder:hover { background: var(--site-surface-selected); border-color: var(--site-primary); }

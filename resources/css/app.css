@@ -10813,7 +10813,6 @@ textarea:disabled {
 .dean-preview-col .operational-insights { border:1px solid #d7e2dc; border-left:3px solid #0b6845; }
 .operational-insights__heading { display:flex; justify-content:space-between; align-items:flex-start; gap:1rem; padding:.9rem 1rem .7rem; }
 .operational-insights__heading h3 { margin:0; color:#123d2e; font-size:.9rem; font-weight:750; }
-.operational-insights__heading p { margin:.15rem 0 0; color:#61776e; font-size:.72rem; }
 .operational-insights__heading > span { color:#7b8d86; font-size:.66rem; white-space:nowrap; }
 .operational-insights__list { border-top:1px solid #e2e9e5; }
 .operational-insight { display:grid; grid-template-columns:28px minmax(0,1fr) auto; align-items:center; gap:.7rem; padding:.75rem 1rem; border-bottom:1px solid #e7ece9; }
@@ -13905,9 +13904,7 @@ html[data-theme="dark"] .operational-insights__heading h3,
     color: var(--site-heading);
 }
 
-html[data-theme="dark"] .operational-insights__heading p,
 html[data-theme="dark"] .operational-insights__heading > span,
-.dark .operational-insights__heading p,
 .dark .operational-insights__heading > span {
     color: var(--site-muted);
 }

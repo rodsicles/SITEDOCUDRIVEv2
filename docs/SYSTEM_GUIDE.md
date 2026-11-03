@@ -280,6 +280,8 @@ Remaining archive (still in tree): old lime `AGENTDESIGN.md`; `MD FOLDERS/UI_COL
 
 ## Change history
 
+- **2026-11-03 | uncommitted:** Removed the "Key changes and items worth your attention" subtitle from the shared Operational Insights panel (Dean, Coordinator, Faculty dashboards) and its unused CSS. No migration or authorization change; requires `npm run build`. Browser/production verification pending.
+
 - **2026-11-03 | uncommitted:** Removed the Dean Needs attention notification duplicate, added per-account Clear notifications with confirmation, and synchronized Dean Activity pulse with the Activity Log reset cutoff. No migration; focused feature tests passed, browser/production verification pending.
 
 - **2026-11-03 | uncommitted:** Added Dean monthly-summary and Activity Log reset buttons with confirmation, reset history, and Dean-only endpoints. Activity resets are themselves logged; earlier entries remain in Dean history and live analytics remain intact. Both new tables were migrated in local WAMP only; focused feature tests passed, production migration/browser verification pending.

@@ -8,7 +8,6 @@
     <div class="operational-insights__heading">
         <div>
             <h3 id="operationalInsightsTitle">Operational Insights</h3>
-            <p>Key changes and items worth your attention</p>
         </div>
         <span>Updated {{ now()->format('g:i A') }}</span>
     </div>

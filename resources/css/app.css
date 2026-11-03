@@ -1377,7 +1377,6 @@ body {
     padding: 0;
 }
 
-#renameModal,
 .course-catalog-modal {
     display: none;
     position: fixed;
@@ -1389,7 +1388,6 @@ body {
     background: rgba(0, 0, 0, 0.5);
 }
 
-#renameModal.is-open,
 .course-catalog-modal.is-open {
     display: flex;
 }

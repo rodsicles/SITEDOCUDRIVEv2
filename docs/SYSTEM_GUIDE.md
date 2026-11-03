@@ -280,6 +280,8 @@ Remaining archive (still in tree): old lime `AGENTDESIGN.md`; `MD FOLDERS/UI_COL
 
 ## Change history
 
+- **2026-11-03 | uncommitted:** Fixed the translucent Course Catalog Edit course dialog: a legacy `#renameModal` overlay rule (50% black background) overrode the shared `dialog.ui-dialog` card. The dialog now uses the shared solid card and backdrop. CSS only; requires `npm run build`. Browser verification pending.
+
 - **2026-11-03 | uncommitted:** Removed the "Key changes and items worth your attention" subtitle from the shared Operational Insights panel (Dean, Coordinator, Faculty dashboards) and its unused CSS. No migration or authorization change; requires `npm run build`. Browser/production verification pending.
 
 - **2026-11-03 | uncommitted:** Removed the Dean Needs attention notification duplicate, added per-account Clear notifications with confirmation, and synchronized Dean Activity pulse with the Activity Log reset cutoff. No migration; focused feature tests passed, browser/production verification pending.

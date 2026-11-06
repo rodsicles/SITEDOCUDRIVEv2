@@ -51,8 +51,16 @@
                 <div class="ui-form-section">
                     <h4 class="ui-form-section__title">Employee details</h4>
                     <div class="form-group">
-                        <label class="form-label" for="{{ $prefix }}FullName">Full Name *</label>
-                        <input type="text" id="{{ $prefix }}FullName" name="full_name" class="form-control" placeholder="Enter full name" required maxlength="45" value="{{ $isOld ? old('full_name') : '' }}">
+                        <label class="form-label" for="{{ $prefix }}FirstName">First name *</label>
+                        <input type="text" id="{{ $prefix }}FirstName" name="first_name" class="form-control" autocomplete="given-name" required maxlength="45" value="{{ $isOld ? old('first_name') : '' }}">
+                    </div>
+                    <div class="form-group">
+                        <label class="form-label" for="{{ $prefix }}MiddleName">Middle name <span class="text-gray-500">(optional)</span></label>
+                        <input type="text" id="{{ $prefix }}MiddleName" name="middle_name" class="form-control" autocomplete="additional-name" maxlength="45" value="{{ $isOld ? old('middle_name') : '' }}">
+                    </div>
+                    <div class="form-group">
+                        <label class="form-label" for="{{ $prefix }}LastName">Last name *</label>
+                        <input type="text" id="{{ $prefix }}LastName" name="last_name" class="form-control" autocomplete="family-name" required maxlength="45" value="{{ $isOld ? old('last_name') : '' }}">
                     </div>
                     <div class="form-group">
                         <label class="form-label" for="{{ $prefix }}Department">Program *</label>

@@ -81,6 +81,8 @@ Profile: `profile-panel` tabs (details / password), not the old uneven password 
 
 The profile details pane includes a compact **Current teaching assignments** list for Faculty and teaching Coordinators. Reuse `partials/teaching-assignment-summary.blade.php` in Teacher's Load: subject code/title first, then published section and schedules when available. Unscheduled assignments show names only with one section-level explanation. Use token-based borders/text and wrapping rows; keep subjects read-only on the employee's own profile and management links on authorized manager views.
 
+The shared Create Coordinator/Faculty form shows separate First name, optional Middle name, and Last name fields in Employee details. Keep explicit labels and required markers, preserve each field on validation failure, and leave the existing account access and subject picker layout intact. The server composes the stored display name.
+
 ## Shared components
 
 Use these instead of inventing parallel widgets.

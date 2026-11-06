@@ -156,13 +156,13 @@ class CoordinatorController extends Controller
 
     public function storeFaculty(Request $request)
     {
+        $nameRules = \App\Support\EmployeeNameInput::prepare($request);
         $validated = $request->validate([
             'username'     => 'required|string|unique:users,username|max:20',
             'password'     => 'required|string|min:8|max:40',
-            'full_name'    => 'required|string|max:45',
             'program'      => ['required', Rule::in(Program::codes())],
             'faculty_type' => 'required|in:full_time,shared',
-        ] + CourseAssignment::rules($request->input('program'), true), CourseAssignment::messages());
+        ] + $nameRules + CourseAssignment::rules($request->input('program'), true), CourseAssignment::messages());
 
         try {
             $this->employeeService->createFaculty($validated, auth()->id());

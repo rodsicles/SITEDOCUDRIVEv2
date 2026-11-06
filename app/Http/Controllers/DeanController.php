@@ -16,6 +16,7 @@ use App\Services\TaskService;
 use App\Services\WeeklyInsightService;
 use App\Services\SystemResetService;
 use App\Support\CourseAssignment;
+use App\Support\EmployeeNameInput;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Cache;
 use Illuminate\Support\Facades\Hash;
@@ -413,12 +414,12 @@ class DeanController extends Controller
 
     public function storeCoordinator(Request $request)
     {
+        $nameRules = EmployeeNameInput::prepare($request);
         $validated = $request->validate([
             'username'     => 'required|string|unique:users,username|max:20',
             'password'     => 'required|string|min:8|max:40',
-            'full_name'    => 'required|string|max:45',
             'program'   => ['required', \Illuminate\Validation\Rule::in(\App\Models\Program::codes())],
-        ] + self::extraProgramRules() + CourseAssignment::rules($request->input('program'), true), CourseAssignment::messages());
+        ] + $nameRules + self::extraProgramRules() + CourseAssignment::rules($request->input('program'), true), CourseAssignment::messages());
 
         try {
             $this->employeeService->createCoordinator($validated, auth()->id());
@@ -439,13 +440,13 @@ class DeanController extends Controller
 
     public function storeFaculty(Request $request)
     {
+        $nameRules = EmployeeNameInput::prepare($request);
         $validated = $request->validate([
             'username'     => 'required|string|unique:users,username|max:20',
             'password'     => 'required|string|min:8|max:40',
-            'full_name'    => 'required|string|max:45',
             'program'   => ['required', \Illuminate\Validation\Rule::in(\App\Models\Program::codes())],
             'faculty_type' => 'required|in:full_time,shared',
-        ] + CourseAssignment::rules($request->input('program'), true), CourseAssignment::messages());
+        ] + $nameRules + CourseAssignment::rules($request->input('program'), true), CourseAssignment::messages());
 
         try {
             $this->employeeService->createFaculty($validated, auth()->id());

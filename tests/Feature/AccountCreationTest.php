@@ -54,6 +54,51 @@ class AccountCreationTest extends TestCase
             ->assertSee('Select a program to load its subjects.');
     }
 
+    public function test_create_forms_use_name_parts_and_store_the_composed_name(): void
+    {
+        $dean = $this->user('dean');
+        $this->actingAs($dean)->get(route('dean.employees', ['tab' => 'createFaculty']))
+            ->assertOk()->assertSee('name="first_name"', false)
+            ->assertSee('name="middle_name"', false)
+            ->assertSee('name="last_name"', false);
+
+        $faculty = $this->facultyPayload('split-faculty', 'BSIT', $this->courseIds('BSIT'));
+        unset($faculty['full_name']);
+        $faculty += ['first_name' => '  Maria  ', 'middle_name' => ' C. ', 'last_name' => ' Santos '];
+        $this->post(route('dean.store-faculty'), $faculty)->assertSessionHasNoErrors();
+        $this->assertSame('Maria C. Santos', $this->user('split-faculty')->employee->full_name);
+        $this->assertSame('Maria C. Santos', $this->user('split-faculty')->name);
+
+        $coordinator = [
+            '_form' => 'coordinator', 'first_name' => 'Ana', 'last_name' => 'Reyes',
+            'program' => 'BLIS', 'username' => 'split-coordinator',
+            'password' => 'Test-only-password-2026', 'course_ids' => $this->courseIds('BLIS'),
+        ];
+        $this->post(route('dean.store-coordinator'), $coordinator)->assertSessionHasNoErrors();
+        $this->assertSame('Ana Reyes', $this->user('split-coordinator')->employee->full_name);
+
+        $this->actingAs($this->coordinatorIn('BSIT'));
+        $byCoordinator = $this->facultyPayload('split-by-coordinator', 'BSIT', $this->courseIds('BSIT'));
+        unset($byCoordinator['full_name']);
+        $byCoordinator += ['first_name' => 'Jose', 'last_name' => 'Cruz'];
+        $this->post(route('coordinator.store-faculty'), $byCoordinator)->assertSessionHasNoErrors();
+        $this->assertSame('Jose Cruz', $this->user('split-by-coordinator')->employee->full_name);
+    }
+
+    public function test_create_account_requires_first_and_last_name_and_limits_combined_name(): void
+    {
+        $payload = $this->facultyPayload('invalid-name', 'BSIT', $this->courseIds('BSIT'));
+        unset($payload['full_name']);
+        $payload += ['first_name' => 'Maria', 'middle_name' => 'C.'];
+
+        $this->actingAs($this->user('dean'))->post(route('dean.store-faculty'), $payload)
+            ->assertSessionHasErrors('last_name');
+
+        $payload['last_name'] = str_repeat('S', 42);
+        $this->post(route('dean.store-faculty'), $payload)->assertSessionHasErrors('full_name');
+        $this->assertDatabaseMissing('users', ['username' => 'invalid-name']);
+    }
+
     public function test_validation_errors_restore_program_and_selected_subjects(): void
     {
         [$first, $second] = $this->courseIds('BSIT', 2);

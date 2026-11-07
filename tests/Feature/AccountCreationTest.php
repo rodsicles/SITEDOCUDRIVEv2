@@ -67,6 +67,9 @@ class AccountCreationTest extends TestCase
         $faculty += ['first_name' => '  Maria  ', 'middle_name' => ' C. ', 'last_name' => ' Santos '];
         $this->post(route('dean.store-faculty'), $faculty)->assertSessionHasNoErrors();
         $this->assertSame('Maria C. Santos', $this->user('split-faculty')->employee->full_name);
+        $this->assertSame('Maria', $this->user('split-faculty')->employee->first_name);
+        $this->assertSame('C.', $this->user('split-faculty')->employee->middle_name);
+        $this->assertSame('Santos', $this->user('split-faculty')->employee->last_name);
         $this->assertSame('Maria C. Santos', $this->user('split-faculty')->name);
 
         $coordinator = [
@@ -274,6 +277,31 @@ class AccountCreationTest extends TestCase
         $this->assertSame('BSCpE', $faculty->employee->program);
         $current = $faculty->assignedCourses()->where('courses.program', 'BSCpE')->pluck('courses.id')->all();
         $this->assertEqualsCanonicalizing($newCourses, $current);
+    }
+
+    public function test_dean_and_coordinator_can_update_structured_employee_names(): void
+    {
+        $faculty = $this->user('faculty');
+        $employee = $faculty->employee;
+        $this->actingAs($this->user('dean'))->patch(route('dean.update-employee', $employee->employee_id), [
+            'first_name' => 'Ana', 'middle_name' => 'M.', 'last_name' => 'Cruz',
+            'program' => $employee->program, 'faculty_type' => 'full_time',
+        ])->assertSessionHasNoErrors();
+
+        $this->assertSame('Ana M. Cruz', $employee->fresh()->full_name);
+        $this->assertSame('Ana M. Cruz', $faculty->fresh()->name);
+        $this->assertSame('M.', $employee->fresh()->middle_name);
+
+        $this->actingAs($this->coordinatorIn('BSIT'))
+            ->patch(route('coordinator.update-faculty', $employee->employee_id), [
+                'first_name' => 'Ana', 'middle_name' => '', 'last_name' => 'Reyes',
+                'program' => $employee->program, 'faculty_type' => 'full_time',
+            ])->assertSessionHasNoErrors();
+
+        $this->assertSame('Ana Reyes', $employee->fresh()->full_name);
+        $this->assertNull($employee->fresh()->middle_name);
+        $this->assertSame('Reyes', $employee->fresh()->last_name);
+        $this->assertSame('Ana Reyes', $faculty->fresh()->name);
     }
 
     public function test_subjects_outside_selected_program_are_rejected(): void

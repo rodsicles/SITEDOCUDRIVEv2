@@ -46,6 +46,9 @@ class EmployeeService
                 'user_id' => $user->id,
                 'employee_no' => $validated['employee_no'],
                 'full_name' => $validated['full_name'],
+                'first_name' => $validated['first_name'] ?? null,
+                'middle_name' => $validated['middle_name'] ?? null,
+                'last_name' => $validated['last_name'] ?? null,
                 'program' => $validated['program'],
                 'position' => 'Program Coordinator',
                 'hire_date' => now(),
@@ -98,6 +101,9 @@ class EmployeeService
                 'user_id' => $user->id,
                 'employee_no' => $validated['employee_no'],
                 'full_name' => $validated['full_name'],
+                'first_name' => $validated['first_name'] ?? null,
+                'middle_name' => $validated['middle_name'] ?? null,
+                'last_name' => $validated['last_name'] ?? null,
                 'program' => $validated['program'],
                 'faculty_type' => $validated['faculty_type'],
                 'position' => 'Faculty Employee',
@@ -140,7 +146,7 @@ class EmployeeService
                 'faculty_type' => $validated['faculty_type'] ?? $employee->faculty_type,
                 'position' => $validated['position'] ?? $employee->position,
                 'hire_date' => $validated['hire_date'] ?? $employee->hire_date,
-            ]);
+            ] + $this->namePartsForUpdate($employee, $validated));
 
             $employee->user->update([
                 'name' => $validated['full_name'],
@@ -207,7 +213,7 @@ class EmployeeService
                 'faculty_type' => $validated['faculty_type'] ?? $employee->faculty_type,
                 'position' => $validated['position'] ?? $employee->position,
                 'hire_date' => $validated['hire_date'] ?? $employee->hire_date,
-            ]);
+            ] + $this->namePartsForUpdate($employee, $validated));
             if ((int) $employee->user->role_id === 2) {
                 $employee->syncExtraPrograms($validated['extra_programs'] ?? []);
             }
@@ -416,6 +422,24 @@ class EmployeeService
             'course_ids' => ['nullable', 'array'],
             'course_ids.*' => ['integer', \Illuminate\Validation\Rule::exists('courses', 'id')->where('program', $data['program'] ?? '')->where('is_active', true)],
         ])->validate();
+    }
+
+    private function namePartsForUpdate(Employee $employee, array $validated): array
+    {
+        if (filled($validated['first_name'] ?? null) && filled($validated['last_name'] ?? null)) {
+            return [
+                'first_name' => $validated['first_name'],
+                'middle_name' => $validated['middle_name'] ?? null,
+                'last_name' => $validated['last_name'],
+            ];
+        }
+
+        if ($validated['full_name'] !== $employee->full_name) {
+            // An older full_name-only caller cannot supply trustworthy name parts.
+            return ['first_name' => null, 'middle_name' => null, 'last_name' => null];
+        }
+
+        return [];
     }
 
     private function syncCurrentAssignments(User $user, array $data): void

@@ -151,10 +151,26 @@
                 <div class="profile-panel__grid">
                     @if($canEditFullName)
                         <div class="profile-panel__field profile-panel__field--wide">
-                            <label for="profileFullName">Full name</label>
-                            <input type="text" id="profileFullName" name="full_name" maxlength="45" required
-                                   class="form-control @error('full_name') is-invalid @enderror"
-                                   value="{{ old('full_name', optional($employee)->full_name) }}" autocomplete="name">
+                            <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
+                                <div>
+                                    <label for="profileFirstName">First name *</label>
+                                    <input type="text" id="profileFirstName" name="first_name" maxlength="45" class="form-control @error('first_name') is-invalid @enderror" value="{{ old('first_name', optional($employee)->first_name) }}" autocomplete="given-name" @if($employee?->first_name) required @endif>
+                                    @error('first_name')<small class="profile-panel__error">{{ $message }}</small>@enderror
+                                </div>
+                                <div>
+                                    <label for="profileMiddleName">Middle name (optional)</label>
+                                    <input type="text" id="profileMiddleName" name="middle_name" maxlength="45" class="form-control @error('middle_name') is-invalid @enderror" value="{{ old('middle_name', optional($employee)->middle_name) }}" autocomplete="additional-name">
+                                    @error('middle_name')<small class="profile-panel__error">{{ $message }}</small>@enderror
+                                </div>
+                                <div>
+                                    <label for="profileLastName">Last name *</label>
+                                    <input type="text" id="profileLastName" name="last_name" maxlength="45" class="form-control @error('last_name') is-invalid @enderror" value="{{ old('last_name', optional($employee)->last_name) }}" autocomplete="family-name" @if($employee?->last_name) required @endif>
+                                    @error('last_name')<small class="profile-panel__error">{{ $message }}</small>@enderror
+                                </div>
+                            </div>
+                            @if($employee && (!$employee->first_name || !$employee->last_name))
+                                <small class="profile-panel__note">Current name: {{ $employee->full_name }}. Leave these fields blank to keep it, or enter first and last name to replace it.</small>
+                            @endif
                             @error('full_name')<small class="profile-panel__error">{{ $message }}</small>@enderror
                         </div>
                     @endif

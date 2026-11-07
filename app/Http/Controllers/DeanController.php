@@ -487,15 +487,15 @@ class DeanController extends Controller
             abort(403, 'Cannot edit Dean accounts.');
         }
 
+        $nameRules = EmployeeNameInput::prepareForUpdate($request, $employee);
         $validated = $request->validate([
-            'full_name'    => 'required|string|max:45',
             'employee_no'  => 'nullable|string|max:20|unique:employees,employee_no,' . $employee->employee_id . ',employee_id',
             'program'   => ['required', \Illuminate\Validation\Rule::in(\App\Models\Program::codes())],
             'faculty_type' => 'nullable|in:full_time,shared',
             'email'        => 'nullable|email|max:45',
             'position'     => 'nullable|string|max:100',
             'hire_date'    => 'nullable|date|before_or_equal:today',
-        ] + self::extraProgramRules() + CourseAssignment::rules($request->input('program')), CourseAssignment::messages());
+        ] + $nameRules + self::extraProgramRules() + CourseAssignment::rules($request->input('program')), CourseAssignment::messages());
 
         try {
             $this->employeeService->updateEmployee($employee, $validated, auth()->id());

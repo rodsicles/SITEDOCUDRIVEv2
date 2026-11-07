@@ -71,6 +71,40 @@ class ProfileEditTest extends TestCase
 
         $this->assertSame('SITE-BSIT-COOR001', $coordinator->employee->fresh()->employee_no);
         $this->assertSame('Jane Smith', $coordinator->employee->fresh()->full_name);
+        $this->assertSame('Jane Smith', $coordinator->fresh()->name);
+    }
+
+    public function test_structured_profile_name_updates_both_user_and_employee(): void
+    {
+        $dean = $this->user('dean');
+        $this->actingAs($dean)->post(route('profile.update'), [
+            'first_name' => 'Maria', 'middle_name' => 'C.', 'last_name' => 'Reyes',
+            'employee_no' => 'DEAN001', 'email' => 'dean@example.com',
+        ])->assertSessionHasNoErrors();
+
+        $this->assertSame('Maria C. Reyes', $dean->fresh()->name);
+        $this->assertSame('Maria C. Reyes', $dean->employee->fresh()->full_name);
+        $this->assertSame('Maria', $dean->employee->fresh()->first_name);
+        $this->assertSame('Reyes', $dean->employee->fresh()->last_name);
+    }
+
+    public function test_legacy_profile_name_is_preserved_when_only_other_details_change(): void
+    {
+        $coordinator = $this->user('coordinator');
+        $originalName = $coordinator->employee->full_name;
+        $this->actingAs($coordinator)->post(route('profile.update'), [
+            'first_name' => '', 'middle_name' => '', 'last_name' => '',
+            'email' => 'updated@example.com',
+        ])->assertSessionHasNoErrors();
+
+        $this->assertSame($originalName, $coordinator->employee->fresh()->full_name);
+        $this->assertNull($coordinator->employee->fresh()->first_name);
+        $this->assertSame('updated@example.com', $coordinator->fresh()->email);
+
+        $this->post(route('profile.update'), [
+            'first_name' => 'Only', 'middle_name' => '', 'last_name' => '', 'email' => '',
+        ])->assertSessionHasErrors('last_name');
+        $this->assertSame($originalName, $coordinator->employee->fresh()->full_name);
     }
 
     public function test_dean_can_save_lettered_employee_numbers_but_not_symbols(): void

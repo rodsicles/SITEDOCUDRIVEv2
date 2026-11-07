@@ -2,11 +2,43 @@
 
 namespace App\Support;
 
+use App\Models\Employee;
 use Illuminate\Http\Request;
 use Illuminate\Support\Str;
 
 final class EmployeeNameInput
 {
+    public static function prepareForUpdate(Request $request, Employee $employee): array
+    {
+        $input = $request->all();
+        $hasParts = array_key_exists('first_name', $input)
+            || array_key_exists('middle_name', $input)
+            || array_key_exists('last_name', $input);
+
+        if (!$hasParts) {
+            return self::prepare($request);
+        }
+
+        $values = array_map(
+            fn ($field) => $request->input($field),
+            ['first_name', 'middle_name', 'last_name']
+        );
+        $allEmpty = collect($values)->every(fn ($value) => $value === null || $value === '');
+
+        if ($allEmpty && !$employee->first_name && !$employee->last_name) {
+            $request->merge(['full_name' => $employee->full_name]);
+
+            return [
+                'first_name' => 'nullable|string|max:45',
+                'middle_name' => 'nullable|string|max:45',
+                'last_name' => 'nullable|string|max:45',
+                'full_name' => 'required|string|max:45',
+            ];
+        }
+
+        return self::prepare($request);
+    }
+
     /**
      * Create-account forms use name parts; existing API callers may still send full_name.
      * EmployeeService continues to receive the validated full_name used across the app.

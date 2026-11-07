@@ -7,6 +7,8 @@ use Illuminate\Support\Facades\Hash;
 use Illuminate\Support\Facades\Storage;
 use Illuminate\Validation\Rules\Password;
 use App\Models\DashboardLog;
+use App\Support\EmployeeNameInput;
+use Illuminate\Support\Facades\DB;
 
 class ProfileController extends Controller
 {
@@ -38,7 +40,9 @@ class ProfileController extends Controller
         ];
 
         if ($canEditFullName) {
-            $rules['full_name'] = 'required|string|max:45';
+            $rules += $employee
+                ? EmployeeNameInput::prepareForUpdate($request, $employee)
+                : EmployeeNameInput::prepare($request);
         }
 
         if ($canEditEmployeeNo) {
@@ -49,24 +53,28 @@ class ProfileController extends Controller
             'employee_no.regex' => 'Employee number may only contain letters, numbers, and dashes.',
         ]);
 
-        $user->update([
-            'email' => ($validated['email'] ?? null) ?: null,
-        ]);
+        DB::transaction(function () use ($user, $employee, $validated, $canEditFullName, $canEditEmployeeNo) {
+            $userData = ['email' => ($validated['email'] ?? null) ?: null];
+            if ($canEditFullName) $userData['name'] = $validated['full_name'];
+            $user->update($userData);
 
-        // Program and (for non-Dean users) employee number are managed through employee management.
-        $employeeData = [];
-
-        if ($canEditEmployeeNo) {
-            $employeeData['employee_no'] = $validated['employee_no'] ?? null;
-        }
-
-        if ($canEditFullName) {
-            $employeeData['full_name'] = $validated['full_name'];
-        }
-
-        if ($employee && $employeeData) {
-            $employee->update($employeeData);
-        }
+            // Program and (for non-Dean users) employee number are managed through employee management.
+            $employeeData = [];
+            if ($canEditEmployeeNo) $employeeData['employee_no'] = $validated['employee_no'] ?? null;
+            if ($canEditFullName) {
+                $employeeData['full_name'] = $validated['full_name'];
+                if (filled($validated['first_name'] ?? null) && filled($validated['last_name'] ?? null)) {
+                    $employeeData += [
+                        'first_name' => $validated['first_name'],
+                        'middle_name' => $validated['middle_name'] ?? null,
+                        'last_name' => $validated['last_name'],
+                    ];
+                } elseif ($employee && $validated['full_name'] !== $employee->full_name) {
+                    $employeeData += ['first_name' => null, 'middle_name' => null, 'last_name' => null];
+                }
+            }
+            if ($employee && $employeeData) $employee->update($employeeData);
+        });
 
         DashboardLog::create([
             'user_id' => auth()->id(),

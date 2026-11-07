@@ -46,11 +46,22 @@
             @method('PATCH')
 
             <div class="grid grid-cols-1 md:grid-cols-2 gap-5">
-                <div class="form-group">
-                    <label class="form-label">Full Name *</label>
-                    <input type="text" name="full_name" class="form-control" 
-                           value="{{ old('full_name', $employee->full_name) }}" 
-                           required maxlength="45" placeholder="Enter full name">
+                <div class="md:col-span-2 grid grid-cols-1 md:grid-cols-3 gap-4">
+                    <div class="form-group">
+                        <label class="form-label" for="facultyFirstName">First name *</label>
+                        <input id="facultyFirstName" type="text" name="first_name" class="form-control" value="{{ old('first_name', $employee->first_name) }}" maxlength="45" autocomplete="given-name" @if($employee->first_name) required @endif>
+                    </div>
+                    <div class="form-group">
+                        <label class="form-label" for="facultyMiddleName">Middle name (optional)</label>
+                        <input id="facultyMiddleName" type="text" name="middle_name" class="form-control" value="{{ old('middle_name', $employee->middle_name) }}" maxlength="45" autocomplete="additional-name">
+                    </div>
+                    <div class="form-group">
+                        <label class="form-label" for="facultyLastName">Last name *</label>
+                        <input id="facultyLastName" type="text" name="last_name" class="form-control" value="{{ old('last_name', $employee->last_name) }}" maxlength="45" autocomplete="family-name" @if($employee->last_name) required @endif>
+                    </div>
+                    @if(!$employee->first_name || !$employee->last_name)
+                        <p class="md:col-span-3 text-xs text-gray-600 dark:text-gray-400">Current name: {{ $employee->full_name }}. These parts were not recorded before. Leave them blank to keep this name, or enter first and last name to replace it.</p>
+                    @endif
                 </div>
 
                 <div class="form-group">

@@ -42,6 +42,51 @@ class TeacherLoadTest extends TestCase
         ];
     }
 
+    public function test_signatories_are_saved_printed_and_prefilled_for_new_loads(): void
+    {
+        [$dean, $faculty, $course] = $this->setupFaculty();
+        $this->actingAs($dean)->get(route('teacher-loads.index'))->assertOk()->assertViewHas('signatoryDefaults', [
+            'endorsed_by_name' => null, 'endorsed_by_title' => 'University Registrar',
+            'approved_by_name' => null, 'approved_by_title' => 'Vice President for Academics',
+        ]);
+
+        $data = $this->payload($faculty, $course) + [
+            'endorsed_by_name' => '  Dr. Maria Santos ', 'endorsed_by_title' => '',
+            'approved_by_name' => 'Dr. Jose Reyes', 'approved_by_title' => 'VP for Academic Affairs',
+        ];
+        $this->postJson(route('teacher-loads.preview'), $data)->assertOk()->assertHeader('content-type', 'application/pdf');
+        $id = $this->postJson(route('teacher-loads.store'), $data)->assertCreated()
+            ->assertJsonPath('endorsed_by_name', 'Dr. Maria Santos')->assertJsonPath('endorsed_by_title', 'University Registrar')->json('id');
+        $load = TeacherLoad::findOrFail($id);
+        $this->postJson(route('teacher-loads.finalize', $id), ['lock_version' => $load->lock_version])->assertOk();
+        $load->refresh()->load('items');
+        $this->assertSame('VP for Academic Affairs', $load->approved_by_title);
+        $this->get(route('teacher-loads.pdf', $load))->assertOk();
+
+        $html = view('teacher-loads.pdf', ['load' => $load, 'logo' => ''])->render();
+        $this->assertStringContainsString('Dr. Maria Santos', $html);
+        $this->assertStringContainsString('University Registrar', $html);
+        $this->assertStringContainsString('Dr. Jose Reyes', $html);
+        $this->assertStringContainsString('VP for Academic Affairs', $html);
+        $this->assertStringContainsString('1:30–2:30&nbsp;PM', $html);
+        $this->assertStringNotContainsString('Lec · LR 103', $html);
+
+        $this->get(route('teacher-loads.index'))->assertViewHas('signatoryDefaults', fn ($defaults) => $defaults['endorsed_by_name'] === 'Dr. Maria Santos' && $defaults['approved_by_title'] === 'VP for Academic Affairs');
+    }
+
+    public function test_loads_without_signatory_names_still_print_default_titles(): void
+    {
+        [$dean, $faculty, $course] = $this->setupFaculty();
+        $id = $this->actingAs($dean)->postJson(route('teacher-loads.store'), $this->payload($faculty, $course))->assertCreated()->json('id');
+        $load = TeacherLoad::with('items')->findOrFail($id);
+        $load->forceFill(['endorsed_by_title' => null, 'approved_by_title' => null])->save();
+
+        $html = view('teacher-loads.pdf', ['load' => $load->fresh('items'), 'logo' => ''])->render();
+        $this->assertStringContainsString('University Registrar', $html);
+        $this->assertStringContainsString('Vice President for Academics', $html);
+        $this->get(route('teacher-loads.pdf', $load))->assertOk();
+    }
+
     public function test_section_choices_and_validation_preserve_old_snapshots(): void
     {
         [$dean, $faculty, $course] = $this->setupFaculty();

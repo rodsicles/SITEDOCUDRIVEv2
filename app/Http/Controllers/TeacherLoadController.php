@@ -48,7 +48,8 @@ class TeacherLoadController extends Controller
         $manageSubjectsUrl = $manager && $assignmentTeacher && ($viewer->isDean() || $assignmentTeacher->isFaculty())
             ? route($viewer->hasOversightAccess() ? 'dean.edit-employee' : 'coordinator.edit-faculty', $assignmentTeacher->employee->employee_id)
             : null;
-        return view('teacher-loads.index', compact('loads', 'faculty', 'years', 'manager', 'filters', 'teachingAssignments', 'manageSubjectsUrl', 'draftCount'));
+        $signatoryDefaults = $manager ? $this->service->signatoryDefaults($viewer) : [];
+        return view('teacher-loads.index', compact('loads', 'faculty', 'years', 'manager', 'filters', 'teachingAssignments', 'manageSubjectsUrl', 'draftCount', 'signatoryDefaults'));
     }
 
     private function manager(Request $request): void

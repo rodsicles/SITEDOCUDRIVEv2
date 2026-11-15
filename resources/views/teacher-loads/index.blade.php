@@ -18,7 +18,8 @@
          data-selected-employee="{{ $manager ? ($filters['employee_id'] ?? '') : '' }}"
          data-selected-semester="{{ $filters['semester'] ?? \App\Support\SchoolTerm::current() }}"
          data-options="{{ route('teacher-loads.options') }}"
-         data-preview="{{ route('teacher-loads.preview') }}">
+         data-preview="{{ route('teacher-loads.preview') }}"
+         data-signatories='@json($signatoryDefaults ?? [])'>
     <header class="tl-toolbar">
         <div><h2>Teaching loads</h2><p>One record per faculty or program coordinator, school year, and semester.</p></div>
         @if($manager)
@@ -161,6 +162,21 @@
             <p id="tl-course-notice" class="tl-note" aria-live="polite"></p>
             <button type="button" class="btn btn-secondary" id="tl-add-assigned" hidden>Add assigned subjects</button>
             <div id="tl-course-rows"></div>
+
+            <div class="tl-section-head tl-signatory-head"><div><h3>Signatories</h3><p>Printed on the registrar form. Leave a name blank to sign by hand.</p></div></div>
+            <div class="tl-signatories">
+                <fieldset class="tl-signatory">
+                    <legend>Endorsed by</legend>
+                    <label>Name<input id="tl-endorsed-name" data-signatory="endorsed_by_name" class="form-control" maxlength="100" placeholder="e.g. Dr. Maria Santos" autocomplete="off"></label>
+                    <label>Title<input id="tl-endorsed-title" data-signatory="endorsed_by_title" class="form-control" maxlength="100" placeholder="{{ \App\Services\TeacherLoadService::DEFAULT_ENDORSED_TITLE }}" autocomplete="off"></label>
+                </fieldset>
+                <fieldset class="tl-signatory">
+                    <legend>Approved by</legend>
+                    <label>Name<input id="tl-approved-name" data-signatory="approved_by_name" class="form-control" maxlength="100" placeholder="e.g. Dr. Jose Reyes" autocomplete="off"></label>
+                    <label>Title<input id="tl-approved-title" data-signatory="approved_by_title" class="form-control" maxlength="100" placeholder="{{ \App\Services\TeacherLoadService::DEFAULT_APPROVED_TITLE }}" autocomplete="off"></label>
+                </fieldset>
+            </div>
+            <p class="tl-note">Titles default to {{ \App\Services\TeacherLoadService::DEFAULT_ENDORSED_TITLE }} and {{ \App\Services\TeacherLoadService::DEFAULT_APPROVED_TITLE }} when left blank. New loads start with the names from your latest saved load.</p>
         </section>
 
         <section data-step="2" hidden>

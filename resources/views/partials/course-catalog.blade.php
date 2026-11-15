@@ -37,55 +37,70 @@
 
 @include('partials.catalog-tabs')
 
-<div class="content-card mb-6">
-    <div class="card-header">
-        <h3 class="card-title"><i class="fas fa-plus-circle mr-2"></i>Add Course</h3>
-    </div>
-    <form action="{{ route($storeRoute) }}" method="POST" class="p-4">
+@php
+    // Reopen the Add Course dialog only when its own submission failed (not the Edit course dialog).
+    $addCourseFailed = $errors->any() && old('_add_course') && !old('_course_id');
+@endphp
+
+{{-- Add course (centered dialog; opened from the All Courses header) --}}
+<dialog id="addCourseModal" class="ui-dialog ui-dialog--course" aria-labelledby="addCourseTitle">
+    <form action="{{ route($storeRoute) }}" method="POST" class="ui-dialog__form" data-request-guard>
         @csrf
-        <div class="grid grid-cols-1 md:grid-cols-4 gap-4 items-end">
-            <div class="form-group mb-0">
-                <label class="form-label">Course Code <span class="text-red-500">*</span></label>
-                <input type="text" name="code" class="form-control" placeholder="e.g. ITE127" value="{{ old('code') }}" required maxlength="20">
-            </div>
-            <div class="form-group mb-0 md:col-span-2">
-                <label class="form-label">Course Title <span class="text-red-500">*</span></label>
-                <input type="text" name="title" class="form-control" placeholder="Full course title" value="{{ old('title') }}" required maxlength="150">
-            </div>
-            @if($lockedDepartment)
-            <div class="form-group mb-0">
-                <label class="form-label">Program</label>
-                <input type="text" class="form-control bg-gray-100 dark:bg-gray-800" value="{{ $lockedDepartment }}" readonly disabled>
-            </div>
-            @else
-            <div class="form-group mb-0">
-                <label class="form-label">Program <span class="text-red-500">*</span></label>
-                <select name="program" class="form-control" required>
-                    @foreach($departments as $value => $label)
-                        <option value="{{ $value }}" @selected(old('program', CourseService::slugToDepartment($departmentFilter)) === $value)>{{ $label }}</option>
-                    @endforeach
-                </select>
-            </div>
+        <input type="hidden" name="_add_course" value="1">
+        <header class="ui-dialog__head"><h2 id="addCourseTitle" class="ui-dialog__title"><i class="fas fa-plus-circle mr-1" aria-hidden="true"></i> Add course</h2><button type="button" class="ui-dialog__close" data-close-add-course aria-label="Close">&times;</button></header>
+        <div class="ui-dialog__body">
+            @if($addCourseFailed)
+                <div class="ui-dialog__error" role="alert">
+                    <strong>Course not added. Please correct:</strong>
+                    <ul class="mt-1 ml-4 list-disc">@foreach($errors->all() as $message)<li>{{ $message }}</li>@endforeach</ul>
+                </div>
             @endif
+            <div class="grid grid-cols-1 sm:grid-cols-3 gap-4">
+                <div class="form-group mb-0">
+                    <label class="form-label" for="new-course-code">Course Code <span class="text-red-500">*</span></label>
+                    <input type="text" id="new-course-code" name="code" class="form-control" placeholder="e.g. ITE127" value="{{ $addCourseFailed ? old('code') : '' }}" required maxlength="20">
+                </div>
+                <div class="form-group mb-0 sm:col-span-2">
+                    <label class="form-label" for="new-course-title">Course Title <span class="text-red-500">*</span></label>
+                    <input type="text" id="new-course-title" name="title" class="form-control" placeholder="Full course title" value="{{ $addCourseFailed ? old('title') : '' }}" required maxlength="150">
+                </div>
+                <div class="form-group mb-0 sm:col-span-3">
+                    @if($lockedDepartment)
+                        <label class="form-label" for="new-course-program">Program</label>
+                        <input type="text" id="new-course-program" class="form-control bg-gray-100 dark:bg-gray-800" value="{{ $lockedDepartment }}" readonly disabled>
+                    @else
+                        <label class="form-label" for="new-course-program">Program <span class="text-red-500">*</span></label>
+                        <select id="new-course-program" name="program" class="form-control" required>
+                            @foreach($departments as $value => $label)
+                                <option value="{{ $value }}" @selected(($addCourseFailed ? old('program') : CourseService::slugToDepartment($departmentFilter)) === $value)>{{ $label }}</option>
+                            @endforeach
+                        </select>
+                    @endif
+                </div>
+            </div>
+            @include('partials.course-metadata-fields', ['fieldPrefix' => 'new-course', 'restoreInput' => $addCourseFailed])
+            <p class="text-xs text-gray-500 dark:text-gray-400 mt-3 mb-0">
+                @if($lockedDepartment)
+                    Faculty and coordinators in <strong>{{ $lockedDepartment }}</strong> will see this course when uploading to Teaching Guides or Exam Questionnaires.
+                @else
+                    Faculty and coordinators in the selected program will see this course when uploading to Teaching Guides or Exam Questionnaires.
+                @endif
+            </p>
         </div>
-        @include('partials.course-metadata-fields', ['fieldPrefix' => 'new-course', 'restoreInput' => true])
-        <p class="text-xs text-gray-500 dark:text-gray-400 mt-2 mb-3">
-            @if($lockedDepartment)
-                Faculty and coordinators in <strong>{{ $lockedDepartment }}</strong> will see this course when uploading to Teaching Guides or Exam Questionnaires.
-            @else
-                Faculty and coordinators in the selected program will see this course when uploading to Teaching Guides or Exam Questionnaires.
-            @endif
-        </p>
-        <button type="submit" class="btn btn-primary">
-            <i class="fas fa-plus"></i> Add Course
-        </button>
+        <footer class="ui-dialog__foot">
+            <button type="button" class="btn btn-secondary" data-close-add-course>Cancel</button>
+            <button type="submit" class="btn btn-primary"><i class="fas fa-plus"></i> Add Course</button>
+        </footer>
     </form>
-</div>
+</dialog>
 
 <div class="content-card">
     <div class="card-header flex-col sm:flex-row gap-3 items-start sm:items-center">
         <h3 class="card-title mb-0">All Courses</h3>
         <div class="flex flex-col sm:flex-row sm:items-center gap-3 w-full sm:w-auto sm:ml-auto">
+            <button type="button" class="btn btn-primary text-sm whitespace-nowrap" id="openAddCourse" aria-haspopup="dialog" aria-controls="addCourseModal">
+                <i class="fas fa-plus" aria-hidden="true"></i> Add Course
+            </button>
             <form action="{{ route($indexRoute) }}" method="GET" class="flex items-center gap-2 w-full sm:w-auto">
                 @if($dept !== 'all')
                     <input type="hidden" name="program" value="{{ $dept }}">
@@ -413,6 +428,24 @@ document.addEventListener('DOMContentLoaded', function () {
             openModal(renameModal);
         });
     });
+
+    var addCourseModal = document.getElementById('addCourseModal');
+    var openAddCourse = document.getElementById('openAddCourse');
+    if (addCourseModal && openAddCourse) {
+        openAddCourse.addEventListener('click', function () {
+            openModal(addCourseModal);
+            document.getElementById('new-course-code').focus();
+        });
+        addCourseModal.querySelectorAll('[data-close-add-course]').forEach(function (btn) {
+            btn.addEventListener('click', function () { closeModal(addCourseModal); openAddCourse.focus(); });
+        });
+        addCourseModal.addEventListener('click', function (e) {
+            if (e.target === addCourseModal) closeModal(addCourseModal);
+        });
+        @if($addCourseFailed)
+        openModal(addCourseModal);
+        @endif
+    }
 
     var cancelBtn = document.getElementById('renameModalCancel');
     document.getElementById('editCourseClose').addEventListener('click', function () { closeModal(renameModal); });

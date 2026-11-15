@@ -30,7 +30,7 @@
             <button type="submit" class="btn btn-primary">Search</button>
         </form>
         <button type="button" class="doc-filter-button {{ $showFilters ? 'is-active' : '' }}" id="docFilterToggle" aria-expanded="{{ $showFilters ? 'true' : 'false' }}" aria-controls="docAdvancedFilters">
-            <i class="fas fa-sliders-h"></i> Filters @if($activeCount)<span>{{ $activeCount }}</span>@endif
+            <i class="fas fa-sliders-h" aria-hidden="true"></i> Advanced filters @if($activeCount)<span>{{ $activeCount }}</span>@endif
         </button>
         <select class="doc-clean-sort" aria-label="Sort documents" onchange="if(this.value) window.location=this.value">
             <option value="">Sort</option>
@@ -62,12 +62,8 @@
         <label>Uploaded to<input type="date" name="date_to" value="{{ request('date_to') }}"></label>
         <div class="unified-filter-actions"><a href="{{ route($documentsRoute, array_filter(['tab'=>$tab,'folder'=>$folderFilter])) }}" class="btn btn-secondary">Clear all</a><button class="btn btn-primary" type="submit">Apply filters</button></div>
     </form>
-</div>
 
-@if($activeCount || $search !== '')
-<div class="doc-active-search-summary"><span><strong>{{ $documents->total() }}</strong> accessible {{ $documents->total() === 1 ? 'result' : 'results' }}</span>@if($search !== '')<span class="doc-filter-chip">Search: {{ $search }}</span>@endif @if($scope === 'all')<span class="doc-filter-chip">All documents</span>@endif @foreach($filterKeys as $key) @if(request()->filled($key))<span class="doc-filter-chip">{{ str($key)->replace('_',' ')->title() }}</span>@endif @endforeach</div>
-@endif
-
+{{-- Saved searches live inside the advanced panel so the default view shows only the search bar. --}}
 <details class="doc-saved-searches">
     <summary><i class="fas fa-bookmark"></i> Saved searches @if($savedFilters->isNotEmpty())<span>{{ $savedFilters->count() }}</span>@endif</summary>
     <div class="doc-saved-searches__panel">
@@ -89,6 +85,11 @@
         @endif
     </div>
 </details>
+</div>
+
+@if($activeCount || $search !== '')
+<div class="doc-active-search-summary"><span><strong>{{ $documents->total() }}</strong> accessible {{ $documents->total() === 1 ? 'result' : 'results' }}</span>@if($search !== '')<span class="doc-filter-chip">Search: {{ $search }}</span>@endif @if($scope === 'all')<span class="doc-filter-chip">All documents</span>@endif @foreach($filterKeys as $key) @if(request()->filled($key))<span class="doc-filter-chip">{{ str($key)->replace('_',' ')->title() }}</span>@endif @endforeach</div>
+@endif
 
 @push('scripts')
 <script>document.getElementById('docFilterToggle')?.addEventListener('click',function(){const p=document.getElementById('docAdvancedFilters');const c=p.classList.toggle('is-collapsed');this.setAttribute('aria-expanded',c?'false':'true');});</script>

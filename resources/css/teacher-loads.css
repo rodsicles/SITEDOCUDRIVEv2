@@ -109,3 +109,11 @@ dialog.tl-dialog{padding:0;border:1px solid #aec6b9;border-top:3px solid #0d583b
 .tl-error ul{margin:6px 0 0;padding-left:18px}
 .tl-error-link{padding:3px 0;border:0;background:transparent;color:inherit;font:inherit;text-align:left;text-decoration:underline;cursor:pointer}
 .tl-error-link:focus-visible{outline:2px solid var(--site-primary);outline-offset:2px}
+
+/* Signatories (Endorsed by / Approved by) printed on the registrar form */
+.tl-signatory-head{margin-top:18px}
+.tl-signatories{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:12px}
+.tl-signatory{display:grid;gap:8px;margin:0;padding:10px 12px;border:1px solid var(--site-border);background:var(--site-surface)}
+.tl-signatory legend{padding:0 4px;font-weight:600;color:var(--site-heading)}
+.tl-signatory label{display:grid;gap:4px;font-size:13px}
+@media(max-width:640px){.tl-signatories{grid-template-columns:1fr}}

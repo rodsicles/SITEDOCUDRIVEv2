@@ -44,18 +44,35 @@
 
         {{-- Filter form --}}
         <form method="GET" action="{{ route('dean.audit-trail') }}"
-              class="audit-filter-panel">
-            <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-5 gap-3">
+              class="audit-filter-panel audit-filters" aria-label="Activity Log filters">
+            @if($showHistory ?? false)<input type="hidden" name="history" value="1">@endif
 
-                <div class="form-group mb-0 lg:col-span-2">
-                    <label class="form-label">Search</label>
-                    <input type="text" name="q" value="{{ $filters['q'] ?? '' }}"
-                           class="form-control" placeholder="Name, activity text, or IP">
+            @php
+                $advancedKeys = ['activity_type', 'user_id', 'actor_role', 'date_from', 'date_to'];
+                $advancedCount = collect($advancedKeys)->filter(fn ($key) => filled($filters[$key] ?? null))->count();
+            @endphp
+            <div class="audit-filters__search">
+                <label class="sr-only" for="audit-q">Search activity</label>
+                <div class="audit-filters__search-field">
+                    <i class="fas fa-search" aria-hidden="true"></i>
+                    <input id="audit-q" type="search" name="q" value="{{ $filters['q'] ?? '' }}"
+                           class="form-control" placeholder="Search name, activity, or IP address…">
                 </div>
+                <button type="submit" class="btn btn-primary">Search</button>
+                <button type="button" class="audit-filters__toggle {{ $advancedCount ? 'is-active' : '' }}" id="auditFilterToggle"
+                        aria-expanded="{{ $advancedCount ? 'true' : 'false' }}" aria-controls="auditAdvancedFilters">
+                    <i class="fas fa-sliders-h" aria-hidden="true"></i> Advanced filters @if($advancedCount)<span>{{ $advancedCount }}</span>@endif
+                </button>
+                @if($hasFilters)
+                    <a href="{{ route('dean.audit-trail', ($showHistory ?? false) ? ['history' => 1] : []) }}" class="audit-filters__clear">Clear</a>
+                @endif
+            </div>
 
+            <div id="auditAdvancedFilters" class="audit-filters__advanced" @unless($advancedCount) hidden @endunless>
+            <div class="audit-filters__row audit-filters__row--three">
                 <div class="form-group mb-0">
-                    <label class="form-label">Action Type</label>
-                    <select name="activity_type" class="form-control">
+                    <label class="form-label" for="audit-type">Action Type</label>
+                    <select id="audit-type" name="activity_type" class="form-control">
                         <option value="">All Types</option>
                         @foreach($activityTypes as $type)
                             <option value="{{ $type }}" @selected(($filters['activity_type'] ?? '') === $type)>
@@ -66,8 +83,8 @@
                 </div>
 
                 <div class="form-group mb-0">
-                    <label class="form-label">User</label>
-                    <select name="user_id" class="form-control">
+                    <label class="form-label" for="audit-user">User</label>
+                    <select id="audit-user" name="user_id" class="form-control">
                         <option value="">All Users</option>
                         @foreach($users as $u)
                             <option value="{{ $u->id }}" @selected((string)($filters['user_id'] ?? '') === (string)$u->id)>
@@ -79,35 +96,35 @@
                 </div>
 
                 <div class="form-group mb-0">
-                    <label class="form-label" for="audit-actor-role">Actions by</label>
+                    <label class="form-label" for="audit-actor-role">Role</label>
                     <select id="audit-actor-role" name="actor_role" class="form-control">
-                        <option value="">All roles</option>
+                        <option value="">All Roles</option>
                         @foreach($actorRoles ?? [] as $roleName)
                             <option value="{{ $roleName }}" @selected(($filters['actor_role'] ?? '') === $roleName)>{{ $roleName }}</option>
                         @endforeach
                     </select>
                 </div>
-
-                <div class="form-group mb-0">
-                    <label class="form-label">From</label>
-                    <input type="date" name="date_from" value="{{ $filters['date_from'] ?? '' }}" class="form-control" min="{{ (date('Y') - 1) . '-01-01' }}" max="{{ date('Y') . '-12-31' }}">
-                </div>
-
-                <div class="form-group mb-0">
-                    <label class="form-label">To</label>
-                    <input type="date" name="date_to" value="{{ $filters['date_to'] ?? '' }}" class="form-control" min="{{ (date('Y') - 1) . '-01-01' }}" max="{{ date('Y') . '-12-31' }}">
-                </div>
             </div>
 
-            <div class="flex gap-2 mt-4">
-                <button type="submit" class="btn btn-primary border-0">
-                    <i class="fas fa-filter mr-1"></i> Apply Filters
+            <fieldset class="audit-filters__dates">
+                <legend class="audit-filters__dates-head"><span>Date Range</span><small>Filter by period</small></legend>
+                <div class="audit-filters__row audit-filters__row--two">
+                    <div class="form-group mb-0">
+                        <label class="form-label" for="audit-from">From</label>
+                        <input id="audit-from" type="date" name="date_from" value="{{ $filters['date_from'] ?? '' }}" class="form-control" min="{{ (date('Y') - 1) . '-01-01' }}" max="{{ date('Y') . '-12-31' }}">
+                    </div>
+                    <div class="form-group mb-0">
+                        <label class="form-label" for="audit-to">To</label>
+                        <input id="audit-to" type="date" name="date_to" value="{{ $filters['date_to'] ?? '' }}" class="form-control" min="{{ (date('Y') - 1) . '-01-01' }}" max="{{ date('Y') . '-12-31' }}">
+                    </div>
+                </div>
+            </fieldset>
+
+            <div class="audit-filters__actions">
+                <button type="submit" class="btn btn-primary">
+                    <i class="fas fa-filter mr-1" aria-hidden="true"></i> Apply Filters
                 </button>
-                @if($hasFilters)
-                    <a href="{{ route('dean.audit-trail') }}" class="btn btn-secondary border-0">
-                        <i class="fas fa-times mr-1"></i> Clear
-                    </a>
-                @endif
+            </div>
             </div>
         </form>
 
@@ -183,6 +200,14 @@
     </div>
 @push('scripts')
 <script>
+document.getElementById('auditFilterToggle')?.addEventListener('click', function () {
+    var panel = document.getElementById('auditAdvancedFilters');
+    var open = panel.hidden;
+    panel.hidden = !open;
+    this.setAttribute('aria-expanded', open ? 'true' : 'false');
+    if (open) panel.querySelector('select, input')?.focus();
+});
+
 function confirmResetActivity() {
     const form = document.getElementById('reset-activity-form');
     if (!form) return;

@@ -9,6 +9,44 @@ use Illuminate\Validation\{Rule, ValidationException};
 
 class TeacherLoadService
 {
+    public const DEFAULT_ENDORSED_TITLE = 'University Registrar';
+    public const DEFAULT_APPROVED_TITLE = 'Vice President for Academics';
+
+    /** Signatory columns exist only after the 2026_11_14_000001 migration. */
+    public static function signatoriesAvailable(): bool
+    {
+        static $available;
+
+        return $available ??= \Illuminate\Support\Facades\Schema::hasColumn('teacher_loads', 'endorsed_by_name');
+    }
+
+    /** Trimmed names (blank = handwritten signature) and titles with institutional defaults. */
+    public static function signatories(array $input): array
+    {
+        if (!self::signatoriesAvailable()) {
+            return [];
+        }
+        $clean = fn ($key) => ($value = trim((string) ($input[$key] ?? ''))) === '' ? null : $value;
+
+        return [
+            'endorsed_by_name' => $clean('endorsed_by_name'),
+            'endorsed_by_title' => $clean('endorsed_by_title') ?? self::DEFAULT_ENDORSED_TITLE,
+            'approved_by_name' => $clean('approved_by_name'),
+            'approved_by_title' => $clean('approved_by_title') ?? self::DEFAULT_APPROVED_TITLE,
+        ];
+    }
+
+    /** Pre-fill values for a new load: the most recently saved load the actor can see, else defaults. */
+    public function signatoryDefaults(User $actor): array
+    {
+        $latest = self::signatoriesAvailable()
+            ? TeacherLoad::visibleTo($actor)->whereNotNull('endorsed_by_title')->latest('updated_at')->first()
+            : null;
+
+        return self::signatories($latest?->only(['endorsed_by_name', 'endorsed_by_title', 'approved_by_name', 'approved_by_title']) ?? [])
+            ?: ['endorsed_by_name' => null, 'endorsed_by_title' => self::DEFAULT_ENDORSED_TITLE, 'approved_by_name' => null, 'approved_by_title' => self::DEFAULT_APPROVED_TITLE];
+    }
+
     public function facultyQuery(User $actor)
     {
         $query = Employee::query()
@@ -87,6 +125,10 @@ class TeacherLoadService
             'items.*.schedules.*.end' => ['required', 'date_format:H:i'],
             'items.*.schedules.*.mode' => ['required', Rule::in(['Lec', 'Lab'])],
             'items.*.schedules.*.room' => ['required', 'string', 'max:40'],
+            'endorsed_by_name' => ['nullable', 'string', 'max:100'],
+            'endorsed_by_title' => ['nullable', 'string', 'max:100'],
+            'approved_by_name' => ['nullable', 'string', 'max:100'],
+            'approved_by_title' => ['nullable', 'string', 'max:100'],
         ], [
             'items.min' => 'Add at least one subject or additional duty before finalizing.',
         ], [
@@ -96,6 +138,8 @@ class TeacherLoadService
             'items.*.load_equivalent' => 'load equivalent', 'items.*.schedules.*.days' => 'schedule days',
             'items.*.schedules.*.start' => 'start time', 'items.*.schedules.*.end' => 'end time',
             'items.*.schedules.*.room' => 'room', 'items.*.schedules.*.mode' => 'schedule type',
+            'endorsed_by_name' => 'endorsed by name', 'endorsed_by_title' => 'endorsed by title',
+            'approved_by_name' => 'approved by name', 'approved_by_title' => 'approved by title',
         ])->validate();
 
         $faculty = $this->facultyQuery($actor)->find($data['employee_id']);
@@ -168,7 +212,7 @@ class TeacherLoadService
                 'program' => $faculty->program, 'faculty_name' => $faculty->full_name, 'employee_number' => $faculty->employee_no,
                 'department' => Program::DEPARTMENT_NAME, 'academic_year' => $year->start_year.'–'.$year->end_year,
                 'employment_status' => $data['employment_status'], 'total_units' => $units / 100, 'total_load' => $equivalents / 1000,
-            ],
+            ] + self::signatories($data),
             'items' => $items, 'lock_version' => $data['lock_version'] ?? null,
         ];
     }

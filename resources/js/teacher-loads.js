@@ -359,6 +359,11 @@ if (root && document.getElementById('tl-dialog')) {
         room: $('[data-meeting="room"]', meeting).value.trim(),
     });
 
+    // Endorsed by / Approved by names and titles printed on the PDF.
+    const signatoryDefaults = (() => { try { return JSON.parse(root.dataset.signatories || '{}'); } catch { return {}; } })();
+    const signatoryValues = () => Object.fromEntries($$('[data-signatory]').map(input => [input.dataset.signatory, input.value.trim()]));
+    const setSignatories = values => $$('[data-signatory]').forEach(input => { input.value = values?.[input.dataset.signatory] ?? ''; });
+
     const payload = () => {
         const items = $$('#tl-course-rows .tl-item').map(item => ({
             kind: 'course', course_id: Number($('[data-field="course_id"]', item).value), title: null,
@@ -370,7 +375,7 @@ if (root && document.getElementById('tl-dialog')) {
             kind: 'duty', course_id: null, title: $('[data-field="title"]', item).value.trim(), section: null, class_size: null,
             lecture_units: 0, lab_units: 0, load_equivalent: number($('[data-field="load_equivalent"]', item).value), schedules: [],
         }));
-        return { employee_id: Number(facultySelect.value), school_year_id: Number($('#tl-year').value), semester: semesterSelect.value, employment_status: $('#tl-employment').value, lock_version: lockVersion, items };
+        return { employee_id: Number(facultySelect.value), school_year_id: Number($('#tl-year').value), semester: semesterSelect.value, employment_status: $('#tl-employment').value, lock_version: lockVersion, items, ...signatoryValues() };
     };
 
     const renderReview = (data) => {
@@ -521,6 +526,7 @@ if (root && document.getElementById('tl-dialog')) {
         context = { faculty: '', semester: semesterSelect.value };
         $('#tl-course-rows').replaceChildren(); $('#tl-duty-rows').replaceChildren(); $('#tl-course-notice').textContent = '';
         $('#tl-add-assigned').hidden = true;
+        setSignatories(signatoryDefaults);
         setFacultyTag(''); $('#tl-context-confirm').hidden = true; $('#tl-discard').hidden = true;
         $('#tl-confirm-final').checked = false; $('#tl-finalize').disabled = true; $('#tl-save-state').textContent = 'Unsaved draft';
         if (previewUrl) URL.revokeObjectURL(previewUrl); previewUrl = null; $('#tl-pdf-frame').hidden = true; $('#tl-preview-link').hidden = true;
@@ -551,6 +557,7 @@ if (root && document.getElementById('tl-dialog')) {
             loadId = data.id; lockVersion = data.lock_version; $('#tl-dialog-title').textContent = 'Edit Teacher’s Load';
             if (data.editing_revision) $('#tl-dialog-title').textContent = 'Edit teaching load revision';
             setFaculty(String(data.employee_id)); $('#tl-year').value = data.school_year_id; semesterSelect.value = data.semester; $('#tl-employment').value = data.employment_status;
+            if (data.endorsed_by_title !== undefined) setSignatories(data);
             facultySelect.disabled = $('#tl-year').disabled = semesterSelect.disabled = true;
             await loadCourses();
             data.items.filter(item => item.kind === 'course').forEach(addCourse); data.items.filter(item => item.kind === 'duty').forEach(addDuty);

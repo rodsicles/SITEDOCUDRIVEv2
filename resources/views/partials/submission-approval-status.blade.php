@@ -1,27 +1,21 @@
 @php
     /** @var \App\Models\TeachingGuide|\App\Models\ExamQuestionnaire $submission */
+    $reviewStatus = $submission->review_status ?? app(\App\Services\SubmissionReviewService::class)->status($submission);
+    $icon = match ($reviewStatus['key']) {
+        'needs_revision' => 'fa-pen-to-square',
+        'revised' => 'fa-code-branch',
+        'viewed' => 'fa-eye',
+        'approved' => 'fa-check',
+        'rejected' => 'fa-times',
+        default => 'fa-paper-plane',
+    };
 @endphp
 <div class="submission-status-cell">
-    @if($submission->isPending())
-        <span class="submission-status submission-status--pending" title="Awaiting Dean approval">
-            <i class="fas fa-clock" aria-hidden="true"></i>
-            Pending
-        </span>
-    @elseif($submission->isApproved())
-        <span class="submission-status submission-status--approved">
-            <i class="fas fa-check" aria-hidden="true"></i>
-            Approved
-        </span>
-        @if($submission->reviewer)
-            <span class="submission-status-meta">by {{ $submission->reviewer->employee->full_name ?? $submission->reviewer->username }}</span>
-        @endif
-    @else
-        <span class="submission-status submission-status--rejected">
-            <i class="fas fa-times" aria-hidden="true"></i>
-            Rejected
-        </span>
-        @if($submission->remarks)
-            <span class="submission-status-meta" title="{{ $submission->remarks }}">{{ \Illuminate\Support\Str::limit($submission->remarks, 40) }}</span>
-        @endif
+    <span class="submission-status submission-status--{{ $reviewStatus['key'] }}">
+        <i class="fas {{ $icon }}" aria-hidden="true"></i>
+        {{ $reviewStatus['label'] }}
+    </span>
+    @if($reviewStatus['detail'])
+        <span class="submission-status-meta" title="{{ $reviewStatus['detail'] }}">{{ \Illuminate\Support\Str::limit($reviewStatus['detail'], 40) }}</span>
     @endif
 </div>

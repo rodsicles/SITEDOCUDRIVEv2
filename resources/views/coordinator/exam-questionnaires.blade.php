@@ -1,8 +1,8 @@
 @extends('layouts.dashboard')
 
-@section('title', 'Pending Exam Questionnaires - Coordinator')
-@section('page-title', 'Pending Exam Questionnaires')
-@section('page-subtitle', 'Review and approve exam questionnaire submissions from your program faculty')
+@section('title', 'Exam Questionnaires - Coordinator')
+@section('page-title', 'Exam Questionnaires')
+@section('page-subtitle', 'Open new submissions, leave revision notes, and track revisions')
 
 @section('sidebar')
     @include('partials.coordinator-sidebar')
@@ -14,7 +14,7 @@
             <h3 class="card-title">Exam Questionnaire Submissions</h3>
             <span class="badge badge-info">{{ $questionnaires->total() }} Submissions</span>
             @if(($pendingCount ?? 0) > 0)
-                <span class="badge" style="background:#b45309;color:#fff;">{{ $pendingCount }} Pending Review</span>
+                <span class="badge" style="background:#b45309;color:#fff;">{{ $pendingCount }} New for you</span>
             @endif
         </div>
 
@@ -24,15 +24,15 @@
         </p>
 
         <div class="submission-toolbar">
-            <nav class="ui-segmented" aria-label="Submission status">
-                <a href="{{ route('coordinator.exam-questionnaires.index', array_filter(['exam_type' => $examTypeFilter ?: null, 'search' => $search ?: null])) }}"
-                   class="{{ ($statusFilter ?? '') === '' ? 'is-active' : '' }}">All</a>
-                <a href="{{ route('coordinator.exam-questionnaires.index', array_filter(['status' => 'pending', 'exam_type' => $examTypeFilter ?: null, 'search' => $search ?: null])) }}"
-                   class="{{ ($statusFilter ?? '') === 'pending' ? 'is-active' : '' }}">Pending{{ ($pendingCount ?? 0) > 0 ? ' · '.$pendingCount : '' }}</a>
-                <a href="{{ route('coordinator.exam-questionnaires.index', array_filter(['status' => 'approved', 'exam_type' => $examTypeFilter ?: null, 'search' => $search ?: null])) }}"
-                   class="{{ ($statusFilter ?? '') === 'approved' ? 'is-active' : '' }}">Approved</a>
-                <a href="{{ route('coordinator.exam-questionnaires.index', array_filter(['status' => 'rejected', 'exam_type' => $examTypeFilter ?: null, 'search' => $search ?: null])) }}"
-                   class="{{ ($statusFilter ?? '') === 'rejected' ? 'is-active' : '' }}">Rejected</a>
+            <nav class="ui-segmented" aria-label="Review filter">
+                <a href="{{ route('coordinator.exam-questionnaires.index', array_filter(['exam_type' => $examTypeFilter ?? null, 'search' => $search ?: null])) }}"
+                   class="{{ empty($reviewFilter) && ($statusFilter ?? '') !== 'rejected' ? 'is-active' : '' }}">All</a>
+                <a href="{{ route('coordinator.exam-questionnaires.index', array_filter(['review' => 'new', 'exam_type' => $examTypeFilter ?? null, 'search' => $search ?: null])) }}"
+                   class="{{ ($reviewFilter ?? '') === 'new' ? 'is-active' : '' }}">New for you{{ ($pendingCount ?? 0) > 0 ? ' · '.$pendingCount : '' }}</a>
+                <a href="{{ route('coordinator.exam-questionnaires.index', array_filter(['review' => 'needs_revision', 'exam_type' => $examTypeFilter ?? null, 'search' => $search ?: null])) }}"
+                   class="{{ ($reviewFilter ?? '') === 'needs_revision' ? 'is-active' : '' }}">Needs revision</a>
+                <a href="{{ route('coordinator.exam-questionnaires.index', array_filter(['status' => 'rejected', 'exam_type' => $examTypeFilter ?? null, 'search' => $search ?: null])) }}"
+                   class="{{ ($statusFilter ?? '') === 'rejected' ? 'is-active' : '' }}">Rejected (earlier)</a>
             </nav>
             <div class="submission-toolbar__group">
                 <label class="submission-toolbar__label">Exam Type</label>
@@ -65,7 +65,7 @@
                     <th>Type</th>
                     <th>Exam Type</th>
                     <th>Semester</th>
-                    <th>Approval</th>
+                    <th>Review</th>
                     <th>Submitted</th>
                     <th>Actions</th>
                 </tr>
@@ -99,8 +99,6 @@
                                 'popoverPrefix' => 'eq',
                                 'viewUrl' => route('coordinator.exam-questionnaires.view', $q->id),
                                 'downloadUrl' => route('coordinator.exam-questionnaires.download', $q->id),
-                                'approveUrl' => route('coordinator.exam-questionnaires.approve', $q->id),
-                                'rejectOnClick' => 'openRejectModal',
                             ])
                         @else
                             @include('partials.submission-browse-actions', [
@@ -126,34 +124,7 @@
     @if($canReviewSubmissions ?? false)
     @include('partials.submission-review-table-scripts')
 
-    <div id="rejectModal" style="display:none;position:fixed;inset:0;background:rgba(0,0,0,0.5);z-index:1000;align-items:center;justify-content:center;">
-        <div class="content-card" style="width:100%;max-width:480px;margin:auto;">
-            <div class="card-header">
-                <h3 class="card-title">Reject Questionnaire</h3>
-                <button type="button" onclick="closeRejectModal()" class="btn btn-sm bg-gray-200 dark:bg-gray-700"><i class="fas fa-times"></i></button>
-            </div>
-            <form id="rejectForm" method="POST">
-                @csrf
-                <div class="p-4">
-                    <label class="form-label">Reason for Rejection <span class="text-red-500">*</span></label>
-                    <textarea name="remarks" class="form-control" rows="3" maxlength="500" required placeholder="Provide feedback for the faculty..."></textarea>
-                </div>
-                <div class="px-4 pb-4 flex gap-2">
-                    <button type="submit" class="btn btn-danger"><i class="fas fa-times"></i> Reject</button>
-                    <button type="button" onclick="closeRejectModal()" class="btn bg-gray-200 dark:bg-gray-700 text-gray-700 dark:text-gray-300">Cancel</button>
-                </div>
-            </form>
-        </div>
-    </div>
+    @include('partials.submission-note-modal')
 
-    <script>
-        function openRejectModal(id) {
-            document.getElementById('rejectForm').action = '{{ url('/coordinator/exam-questionnaires') }}/' + id + '/reject';
-            document.getElementById('rejectModal').style.display = 'flex';
-        }
-        function closeRejectModal() {
-            document.getElementById('rejectModal').style.display = 'none';
-        }
-    </script>
     @endif
 @endsection

@@ -314,6 +314,18 @@ class DocumentService
         $canVersion = $this->userCanVersionDocument($document, $user);
         $versions   = $document->versions()->with('uploader.employee')->get();
 
+        // Teaching Guide / Exam Questionnaire mirrors: record reviewer views and show the review panel.
+        $submission = $document->teachingGuide()->first() ?? $document->examQuestionnaire()->first();
+        $review = null;
+        if ($submission && $submission->isVisibleTo($user)) {
+            $reviews = app(SubmissionReviewService::class);
+            $submission->setRelation('document', $document);
+            $reviews->recordView($submission, $user);
+            $review = $reviews->panel($submission, $user);
+            // Revised versions go through the review flow so the submission record stays in sync.
+            $canVersion = $canVersion && !$review['isOwner'];
+        }
+
         return [
             'title'              => $document->document_title,
             'folderPath'         => $folderPath,
@@ -332,6 +344,7 @@ class DocumentService
             'versions'           => $versions,
             'canCopy'            => $document->canView($user),
             'foldersListUrl'     => route($routePrefix.'.folders.list'),
+            'review'             => $review,
         ];
     }
 
@@ -474,9 +487,9 @@ class DocumentService
                 $filename = time() . '_' . $index . '_' . $file->hashName();
                 $storedPath = UploadStorage::storeAs($file, 'exam-questionnaires', $filename);
                 $examType = $validated['exam_type'] ?? 'Quiz';
-                $status = $autoApprove ? 'approved' : 'pending';
                 $submissionTitle = $title;
 
+                // Submissions are live immediately; review happens through views and revision notes.
                 $questionnaire = $this->examQuestionnaireSync->createFromFolderUpload(
                     $userId,
                     $folder,
@@ -485,16 +498,14 @@ class DocumentService
                     $fileType,
                     $examType,
                     $subject,
-                    $status,
-                    $autoApprove ? $userId : null,
+                    'approved',
+                    null,
                 );
 
-                $questionnaire->update(['original_filename' => DocumentNaming::uploadedFilename($file)]);
-
-                if ($autoApprove) {
-                    $this->examQuestionnaireSync->syncToDocument($questionnaire->fresh());
-                } else {
-                    $submittedForApproval = true;
+                $questionnaire->update(['original_filename' => DocumentNaming::uploadedFilename($file), 'reviewed_at' => null]);
+                $this->examQuestionnaireSync->syncToDocument($questionnaire->fresh());
+                if (!$autoApprove) {
+                    app(SubmissionReviewService::class)->notifySubmitted($questionnaire->fresh('document'), $uploader);
                 }
 
                 $uploadedCount++;
@@ -504,9 +515,9 @@ class DocumentService
             if ($category === 'Teaching Guides' && $folder) {
                 $filename = time() . '_' . $index . '_' . $file->hashName();
                 $storedPath = UploadStorage::storeAs($file, 'teaching-guides', $filename);
-                $status = $autoApprove ? 'approved' : 'pending';
                 $guideTitle = $title;
 
+                // Submissions are live immediately; review happens through views and revision notes.
                 $guide = $this->teachingGuideSync->createFromFolderUpload(
                     $userId,
                     $folder,
@@ -514,20 +525,18 @@ class DocumentService
                     $storedPath,
                     $fileType,
                     $subject,
-                    $status,
-                    $autoApprove ? $userId : null,
+                    'approved',
+                    null,
                     $recipientIds,
                 );
 
                 if (!$guide) {
                     continue;
                 }
-                $guide->update(['original_filename' => DocumentNaming::uploadedFilename($file)]);
-
-                if ($autoApprove) {
-                    $this->teachingGuideSync->syncDocumentFromGuide($guide, $uploader, $recipientIds);
-                } else {
-                    $submittedForApproval = true;
+                $guide->update(['original_filename' => DocumentNaming::uploadedFilename($file), 'reviewed_at' => null]);
+                $this->teachingGuideSync->syncDocumentFromGuide($guide->fresh(), $uploader, $recipientIds);
+                if (!$autoApprove) {
+                    app(SubmissionReviewService::class)->notifySubmitted($guide->fresh('document'), $uploader);
                 }
 
                 $uploadedCount++;
@@ -615,7 +624,8 @@ class DocumentService
             'visibility' => 'own',
         ]);
 
-        if ($uploadedCount > 0) {
+        // Teaching Guides / Exam Questionnaires notify reviewers through SubmissionReviewService instead.
+        if ($uploadedCount > 0 && !in_array($category, Document::SHAREABLE_CATEGORIES, true)) {
             $this->notificationService->notifyDeanOnFileUpload(
                 $uploader,
                 $uploadedCount,

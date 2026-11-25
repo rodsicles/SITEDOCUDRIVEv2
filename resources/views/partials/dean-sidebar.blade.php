@@ -28,28 +28,17 @@
             <i class="fas fa-chalkboard-teacher"></i> Teacher’s Load
         </a>
         <a href="{{ route('dean.teaching-guides.index') }}" class="menu-item {{ request()->routeIs('dean.teaching-guides.*') ? 'active' : '' }}">
-            <i class="fas fa-book-open"></i> Pending Teaching Guides
+            <i class="fas fa-book-open"></i> Teaching Guides
             @if(($pendingTeachingGuidesCount ?? 0) > 0)
             <span class="badge badge-danger ml-auto">{{ $pendingTeachingGuidesCount }}</span>
             @endif
         </a>
         <a href="{{ route('dean.exam-questionnaires.index') }}" class="menu-item {{ request()->routeIs('dean.exam-questionnaires.*') ? 'active' : '' }}">
-            <i class="fas fa-file-alt"></i> Pending Exam Questionnaires
+            <i class="fas fa-file-alt"></i> Exam Questionnaires
             @if(($pendingExamQuestionnairesCount ?? 0) > 0)
             <span class="badge badge-danger ml-auto">{{ $pendingExamQuestionnairesCount }}</span>
             @endif
         </a>
-        <a href="{{ route('dean.archives.index') }}" class="menu-item {{ request()->routeIs('dean.archives.*') ? 'active' : '' }}">
-            <i class="fas fa-box-archive"></i> Archives
-        </a>
-        <a href="{{ route('dean.recycle-bin.index') }}" class="menu-item {{ request()->routeIs('dean.recycle-bin.*') ? 'active' : '' }}">
-            <i class="fas fa-recycle"></i> Recycle Bin
-        </a>
-        @if(auth()->user()->hasOversightAccess())
-        <a href="{{ route('dean.rejected-files.index') }}" class="menu-item {{ request()->routeIs('dean.rejected-files.*') ? 'active' : '' }}">
-            <i class="fas fa-circle-xmark"></i> Rejected Files
-        </a>
-        @endif
     </div>
 </div>
 
@@ -92,6 +81,17 @@
         <i class="fas fa-chevron-down sidebar-chevron" aria-hidden="true"></i>
     </button>
     <div class="sidebar-group-items" id="group-management">
+        <a href="{{ route('dean.archives.index') }}" class="menu-item {{ request()->routeIs('dean.archives.*') ? 'active' : '' }}">
+            <i class="fas fa-box-archive"></i> Archives
+        </a>
+        <a href="{{ route('dean.recycle-bin.index') }}" class="menu-item {{ request()->routeIs('dean.recycle-bin.*') ? 'active' : '' }}">
+            <i class="fas fa-recycle"></i> Recycle Bin
+        </a>
+        @if(auth()->user()->hasOversightAccess())
+        <a href="{{ route('dean.rejected-files.index') }}" class="menu-item {{ request()->routeIs('dean.rejected-files.*') ? 'active' : '' }}">
+            <i class="fas fa-circle-xmark"></i> Rejected Files
+        </a>
+        @endif
         <a href="{{ route('dean.employees') }}" class="menu-item {{ request()->routeIs('dean.employees', 'dean.employee-profile', 'dean.edit-employee') ? 'active' : '' }}">
             <i class="fas fa-users"></i> Faculty Members
         </a>

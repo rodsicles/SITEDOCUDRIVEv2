@@ -49,12 +49,10 @@ class TeachingGuideController extends Controller
         );
         $role = $this->getViewRole($user);
 
-        if ($user->isFaculty()) {
-            $pendingGuides = $this->facultyOwnedGuidesQuery($user, $request, 'pending')
-                ->with(['folder.parent', 'document.folder'])
-                ->orderByDesc('created_at')
-                ->get();
+        $reviews = app(\App\Services\SubmissionReviewService::class);
 
+        if ($user->isFaculty()) {
+            $pendingGuides = collect(); // no approval queue; kept for the view contract
             $rejectedGuides = $this->facultyOwnedGuidesQuery($user, $request, 'rejected')
                 ->with(['folder.parent', 'document.folder'])
                 ->orderByDesc('created_at')
@@ -66,6 +64,7 @@ class TeachingGuideController extends Controller
             $this->applyTeachingGuideListFilters($guidesQuery, $request);
             $this->applyListSort($guidesQuery, $sort);
             $guides = $guidesQuery->paginate(15)->appends($request->query());
+            $reviews->decorate($guides);
 
             return view('faculty.teaching-guides', compact(
                 'guides', 'search', 'sort', 'semesterFilter', 'academicYearStart',
@@ -74,22 +73,29 @@ class TeachingGuideController extends Controller
         }
 
         $statusFilter = $request->query('status');
+        $reviewFilter = in_array($request->query('review'), ['new', 'needs_revision'], true) ? $request->query('review') : null;
 
-        $query = TeachingGuide::with('uploader.employee', 'reviewer.employee', 'folder')->forUser($user);
+        $query = $reviewFilter === 'new'
+            ? $reviews->newQuery($user, TeachingGuide::class)->with('uploader.employee', 'reviewer.employee', 'folder', 'document')
+            : TeachingGuide::with('uploader.employee', 'reviewer.employee', 'folder', 'document')->forUser($user);
         $this->applyTeachingGuideListFilters($query, $request);
 
-        if ($statusFilter) {
-            $query->where('status', $statusFilter);
+        if ($reviewFilter === 'needs_revision' && \App\Services\SubmissionReviewService::available()) {
+            $query->whereHas('reviewComments', fn ($c) => $c->whereNull('addressed_at'));
+        }
+        if ($statusFilter === 'rejected') {
+            $query->where('status', 'rejected');
         }
 
         $this->applyListSort($query, $sort);
         $guides = $query->paginate(15)->appends($request->query());
+        $reviews->decorate($guides);
 
-        $pendingCount = \App\Support\SubmissionPendingCounts::teachingGuidesFor($user);
-        $canReviewSubmissions = $user->isDeanOrSecretary() || $user->isProgramCoordinator();
+        $pendingCount = $reviews->newCountFor($user, TeachingGuide::class);
+        $canReviewSubmissions = $user->hasOversightAccess() || $user->isProgramCoordinator();
 
         return view("{$role}.teaching-guides", compact(
-            'guides', 'search', 'sort', 'statusFilter', 'semesterFilter', 'academicYearStart',
+            'guides', 'search', 'sort', 'statusFilter', 'reviewFilter', 'semesterFilter', 'academicYearStart',
             'archiveYears', 'pendingCount', 'canReviewSubmissions',
         ));
     }
@@ -157,10 +163,13 @@ class TeachingGuideController extends Controller
                     'school_year_id' => SchoolYear::activeId(),
                     'semester' => $validated['semester'],
                     'academic_year' => $academicYear,
-                    'status' => 'pending',
+                    'status' => 'approved', // live immediately; reviewed through views and revision notes
                 ]);
 
-                $this->teachingGuideSync->syncRecipients($guide, $recipientIds);
+                $this->teachingGuideSync->syncDocumentFromGuide($guide, $user, $recipientIds);
+                if (!$user->isDeanOrSecretary()) {
+                    app(\App\Services\SubmissionReviewService::class)->notifySubmitted($guide->fresh('document'), $user);
+                }
                 $uploadedCount++;
             }
         } catch (\Throwable $e) {
@@ -177,7 +186,7 @@ class TeachingGuideController extends Controller
                 : "{$uploadedCount} teaching guides in \"{$folder->folder_name}\"";
             $this->notificationService->notifyMany(
                 $recipientIds,
-                "New teaching guide uploaded: {$label}. Awaiting Dean approval.",
+                "New teaching guide shared: {$label}.",
                 null,
                 null,
                 function (\App\Models\User $recipient) {
@@ -188,75 +197,17 @@ class TeachingGuideController extends Controller
             );
         }
 
-        $this->notificationService->notifyDeanOnFileUpload(
-            $user,
-            $uploadedCount,
-            (string) $validated['title'],
-            'Teaching Guides',
-            true,
-        );
-
         $msg = $uploadedCount === 1
-            ? 'Teaching guide submitted for Dean approval.'
-            : "{$uploadedCount} teaching guides submitted for Dean approval.";
+            ? 'Teaching guide submitted and available now.'
+            : "{$uploadedCount} teaching guides submitted and available now.";
 
         return back()->with('success', $msg);
-    }
-
-    public function approve(Request $request, $id)
-    {
-        $user = $this->submissionReviewer();
-
-        $guide = TeachingGuide::query()->visibleTo($user)->findOrFail($id);
-
-        if (!$guide->isPending()) {
-            return back()->with('info', 'This guide has already been reviewed.');
-        }
-
-        $guide->update([
-            'status' => 'approved',
-            'reviewed_by' => $user->id,
-            'reviewed_at' => now(),
-            'remarks' => $request->input('remarks'),
-        ]);
-
-        $fresh = $guide->fresh();
-        $recipientIds = $fresh->recipients()->pluck('users.id')->all();
-        $this->teachingGuideSync->syncDocumentFromGuide($fresh, $user, $recipientIds);
-
-        $this->notificationService->notifyTeachingGuideApproved($fresh, $user);
-
-        return back()->with('success', 'Teaching guide approved and now visible in Documents.');
-    }
-
-    public function reject(Request $request, $id)
-    {
-        $user = $this->submissionReviewer();
-
-        $request->validate(['remarks' => 'required|string|max:500']);
-
-        $guide = TeachingGuide::query()->visibleTo($user)->findOrFail($id);
-
-        if (!$guide->isPending()) {
-            return back()->with('info', 'This guide has already been reviewed.');
-        }
-
-        $guide->update([
-            'status' => 'rejected',
-            'reviewed_by' => $user->id,
-            'reviewed_at' => now(),
-            'remarks' => $request->input('remarks'),
-        ]);
-
-        $this->notificationService->notifyTeachingGuideRejected($guide->fresh(), $user);
-
-        return back()->with('success', 'Teaching guide rejected.');
     }
 
     public function view(Request $request, $id)
     {
         $user = auth()->user();
-        $guide = TeachingGuide::with('folder.parent.parent')->visibleTo($user)->findOrFail($id);
+        $guide = TeachingGuide::with('folder.parent.parent', 'document')->visibleTo($user)->findOrFail($id);
 
         if ($user->isFaculty()) {
             $isOwner = (int) $guide->user_id === (int) $user->id;
@@ -276,6 +227,9 @@ class TeachingGuideController extends Controller
             ? 'application/pdf'
             : 'application/vnd.openxmlformats-officedocument.wordprocessingml.document';
 
+        $reviews = app(\App\Services\SubmissionReviewService::class);
+        $reviews->recordView($guide, $user);
+
         if ($request->boolean('stream')) {
             $this->logSubmissionActivity($user, 'Viewed teaching guide: '.$guide->title, 'teaching_guide_viewed');
 
@@ -291,6 +245,7 @@ class TeachingGuideController extends Controller
             'streamUrl' => route($routePrefix.'.teaching-guides.view', ['id' => $id, 'stream' => 1]),
             'downloadUrl' => route($routePrefix.'.teaching-guides.download', $id),
             'backUrl' => route($routePrefix.'.teaching-guides.index'),
+            'review' => $reviews->panel($guide->fresh('document'), $user),
         ]);
     }
 
@@ -329,9 +284,6 @@ class TeachingGuideController extends Controller
             if ((int) $guide->user_id !== (int) $user->id) {
                 abort(403, 'You can only rename your own teaching guides.');
             }
-            if (!$guide->isPending()) {
-                abort(403, 'Only pending submissions can be renamed.');
-            }
         }
 
         $title = $request->validated('document_title');
@@ -356,8 +308,8 @@ class TeachingGuideController extends Controller
         $guide = TeachingGuide::visibleTo($user)->findOrFail($id);
 
         if ($user->isFaculty()) {
-            if ((int) $guide->user_id !== (int) $user->id || !$guide->isRejected()) {
-                abort(403, 'You can only delete rejected teaching guides.');
+            if ((int) $guide->user_id !== (int) $user->id) {
+                abort(403, 'You can only delete your own teaching guides.');
             }
         }
 

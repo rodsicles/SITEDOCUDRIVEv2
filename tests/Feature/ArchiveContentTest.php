@@ -98,7 +98,7 @@ class ArchiveContentTest extends TestCase
         $this->patch(route('archive-contents.documents.rename', [$archived, $document]), ['document_title' => 'Wrong'])->assertForbidden();
     }
 
-    public function test_late_teaching_guide_stays_in_review_until_approved(): void
+    public function test_late_teaching_guide_is_live_in_the_archived_year(): void
     {
         [$archived] = $this->years();
         $faculty = User::where('username', 'faculty')->firstOrFail();
@@ -122,14 +122,12 @@ class ArchiveContentTest extends TestCase
         ])->assertOk()->assertJsonPath('success', true);
         $guide = TeachingGuide::where('folder_id', $leaf->folder_id)->firstOrFail();
         $this->assertSame($archived->id, $guide->school_year_id);
-        $this->assertSame('pending', $guide->status);
-        $this->get(route('faculty.archives.show', $archived))->assertOk()->assertSee('No approved teaching guides in this archive.');
-
-        $this->actingAs(User::where('username', 'dean')->firstOrFail())
-            ->post(route('dean.teaching-guides.approve', $guide->id))
-            ->assertRedirect();
-        $guide->refresh();
+        // No approval step: late submissions are live in the archived year right away.
         $this->assertSame('approved', $guide->status);
+        $this->assertNull($guide->reviewed_by);
+
+        $this->actingAs(User::where('username', 'dean')->firstOrFail());
+        $guide->refresh();
         $this->assertSame($archived->id, $guide->school_year_id);
         $this->assertSame($archived->id, $guide->document?->school_year_id);
         $this->get(route('dean.archives.show', $archived))->assertOk()->assertSee('guide');
@@ -142,7 +140,7 @@ class ArchiveContentTest extends TestCase
         $this->actingAs($faculty)->getJson(route('archive-contents.destinations', [$archived, 'folder' => $leaf->folder_id]))->assertNotFound();
     }
 
-    public function test_late_exam_questionnaire_uses_the_archived_year_after_approval(): void
+    public function test_late_exam_questionnaire_is_live_in_the_archived_year(): void
     {
         [$archived] = $this->years();
         $faculty = User::where('username', 'faculty')->firstOrFail();
@@ -167,12 +165,10 @@ class ArchiveContentTest extends TestCase
             'documents' => [UploadedFile::fake()->create('questionnaire.pdf', 10, 'application/pdf')],
         ])->assertOk()->assertJsonPath('success', true);
         $questionnaire = ExamQuestionnaire::where('school_year_id', $archived->id)->latest('id')->firstOrFail();
-        $this->assertSame('pending', $questionnaire->status);
-        $this->actingAs(User::where('username', 'dean')->firstOrFail())
-            ->post(route('dean.exam-questionnaires.approve', $questionnaire->id))
-            ->assertRedirect();
-        $questionnaire->refresh();
+        // No approval step: late submissions are live in the archived year right away.
         $this->assertSame('approved', $questionnaire->status);
+        $this->actingAs(User::where('username', 'dean')->firstOrFail());
+        $questionnaire->refresh();
         $this->assertSame($archived->id, $questionnaire->document?->school_year_id);
         $this->assertSame('questionnaire.pdf', $questionnaire->document?->original_filename);
         $this->get(route('dean.exam-questionnaires.download', $questionnaire->id))->assertOk()->assertDownload('questionnaire.pdf');

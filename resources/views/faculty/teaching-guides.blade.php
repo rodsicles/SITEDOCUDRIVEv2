@@ -21,7 +21,7 @@
             <div class="stat-icon-horizontal"><i class="fas fa-info-circle"></i></div>
             <div>
                 <div class="font-semibold text-gray-700 dark:text-gray-200">Current: {{ $currentAY }}</div>
-                <div class="text-xs text-gray-500 dark:text-gray-400">Upload teaching guides from Documents &rarr; Teaching Guides. Files stay pending until the Dean approves them.</div>
+                <div class="text-xs text-gray-500 dark:text-gray-400">Upload teaching guides from Documents &rarr; Teaching Guides. Files are available right away. The Dean or your Coordinator may leave revision notes — open a file to see them.</div>
             </div>
         </div>
     </div>
@@ -57,6 +57,7 @@
                         <th class="w-10"></th>
                         <th>Title</th>
                         <th>Subject</th>
+                        <th>Review</th>
                         <th>Date Uploaded</th>
                         <th>Actions</th>
                     </tr>
@@ -95,6 +96,13 @@
                             @endif
                         </td>
                         <td><span class="doc-category-badge">{{ $guide->subject }}</span></td>
+                        <td>
+                            @if((int) $guide->user_id === (int) auth()->id())
+                                @include('partials.submission-approval-status', ['submission' => $guide])
+                            @else
+                                <span class="text-xs text-gray-500">Shared with you</span>
+                            @endif
+                        </td>
                         <td>{{ $guide->created_at->format('M d, Y') }}</td>
                         <td>
                             <div class="doc-action-btns">
@@ -109,7 +117,7 @@
                     </tr>
                     @empty
                     <tr>
-                        <td colspan="5" class="text-center text-gray-500 dark:text-gray-400 py-8">No approved teaching guides available yet.</td>
+                        <td colspan="6" class="text-center text-gray-500 dark:text-gray-400 py-8">No teaching guides available yet.</td>
                     </tr>
                     @endforelse
                 </tbody>

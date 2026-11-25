@@ -70,22 +70,9 @@ class AppServiceProvider extends ServiceProvider
                 return;
             }
 
-            $activeId = SchoolYear::activeId();
-            $pendingTeachingGuidesCount = TeachingGuide::query()
-                ->where('user_id', $user->id)
-                ->where('status', 'pending')
-                ->where(function ($q) use ($activeId) {
-                    $q->where('school_year_id', $activeId)->orWhereNull('school_year_id');
-                })
-                ->count();
-
-            $pendingExamQuestionnairesCount = ExamQuestionnaire::query()
-                ->where('submitted_by', $user->id)
-                ->where('status', 'pending')
-                ->where(function ($q) use ($activeId) {
-                    $q->where('school_year_id', $activeId)->orWhereNull('school_year_id');
-                })
-                ->count();
+            // Faculty badges: own submissions with open revision notes (no approval queue any more).
+            $pendingTeachingGuidesCount = \App\Support\SubmissionPendingCounts::openNotesFor($user, TeachingGuide::class);
+            $pendingExamQuestionnairesCount = \App\Support\SubmissionPendingCounts::openNotesFor($user, ExamQuestionnaire::class);
 
             $view->with(compact('pendingTeachingGuidesCount', 'pendingExamQuestionnairesCount'));
         });

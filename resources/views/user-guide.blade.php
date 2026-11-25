@@ -133,8 +133,8 @@
             <a href="#guide-courses" class="guide-toc-item"><span class="guide-toc-num">7</span> Course Catalog</a>
             <a href="#guide-analytics" class="guide-toc-item"><span class="guide-toc-num">8</span> Analytics</a>
             <a href="#guide-documents" class="guide-toc-item"><span class="guide-toc-num">9</span> Documents</a>
-            <a href="#guide-teaching" class="guide-toc-item"><span class="guide-toc-num">10</span> Pending Teaching Guides</a>
-            <a href="#guide-exams" class="guide-toc-item"><span class="guide-toc-num">11</span> Pending Exam Questionnaires</a>
+            <a href="#guide-teaching" class="guide-toc-item"><span class="guide-toc-num">10</span> Teaching Guides</a>
+            <a href="#guide-exams" class="guide-toc-item"><span class="guide-toc-num">11</span> Exam Questionnaires</a>
             <a href="#guide-archives" class="guide-toc-item"><span class="guide-toc-num">12</span> Archives</a>
         @else
             <a href="#guide-dashboard" class="guide-toc-item"><span class="guide-toc-num">1</span> Dashboard</a>
@@ -147,8 +147,8 @@
             <a href="#guide-analytics" class="guide-toc-item"><span class="guide-toc-num">8</span> Analytics</a>
             <a href="#guide-documents" class="guide-toc-item"><span class="guide-toc-num">9</span> Documents</a>
             <a href="#guide-recycle-bin" class="guide-toc-item"><span class="guide-toc-num">10</span> Recycle Bin</a>
-            <a href="#guide-teaching" class="guide-toc-item"><span class="guide-toc-num">11</span> Pending Teaching Guides</a>
-            <a href="#guide-exams" class="guide-toc-item"><span class="guide-toc-num">12</span> Pending Exam Questionnaires</a>
+            <a href="#guide-teaching" class="guide-toc-item"><span class="guide-toc-num">11</span> Teaching Guides</a>
+            <a href="#guide-exams" class="guide-toc-item"><span class="guide-toc-num">12</span> Exam Questionnaires</a>
             <a href="#guide-archives" class="guide-toc-item"><span class="guide-toc-num">13</span> Archives</a>
         @endif
     </div>
@@ -485,13 +485,13 @@
             @elseif($isSecretary) 10.
             @else 11.
             @endif
-            @if($isDeanOrSecretary) Pending Teaching Guides @else Teaching Guides @endif
+            Teaching Guides
         </h3>
     </div>
     @if($isDeanOrSecretary)
     <p class="guide-intro">Review faculty teaching guide submissions, approve valid files, or reject submissions that need revision.</p>
     <ol class="guide-steps">
-        <li>Click <strong>Pending Teaching Guides</strong> in the sidebar. The badge shows how many items await review.</li>
+        <li>Click <strong>Teaching Guides</strong> in the sidebar. The badge shows new submissions you have not opened yet. Open a file to mark it Viewed, then use the yellow <strong>Leave a revision note</strong> button to say which part needs changes.</li>
         <li>Filter by <strong>Status</strong> (pending, approved, rejected) and <strong>Semester</strong>, or search by title, subject, or faculty name.</li>
         <li><strong>View</strong> or <strong>Download</strong> a submission before deciding.</li>
         <li>Click <strong>Approve</strong> to publish the guide to the shared library and notify the uploader.</li>
@@ -527,13 +527,13 @@
             @elseif($isSecretary) 11.
             @else 12.
             @endif
-            @if($isDeanOrSecretary) Pending Exam Questionnaires @else Exam Questionnaires @endif
+            Exam Questionnaires
         </h3>
     </div>
     @if($isDeanOrSecretary)
     <p class="guide-intro">Review exam questionnaire submissions (TOQ, MCQ, and related types) before they are published.</p>
     <ol class="guide-steps">
-        <li>Click <strong>Pending Exam Questionnaires</strong> in the sidebar. The badge shows pending items.</li>
+        <li>Click <strong>Exam Questionnaires</strong> in the sidebar. The badge shows new submissions you have not opened yet. Open a file, then use <strong>Leave a revision note</strong> (e.g. "Part II, item 5: wrong answer key").</li>
         <li>Use the compact toolbar: filter by <strong>Status</strong> and <strong>Exam Type</strong>, then search by title, subject, or faculty name beside those filters.</li>
         <li><strong>View</strong> or <strong>Download</strong> each file, then <strong>Approve</strong> or <strong>Reject</strong> with remarks.</li>
         <li>Approved questionnaires become available in the shared library; rejected ones return to the uploader for correction.</li>

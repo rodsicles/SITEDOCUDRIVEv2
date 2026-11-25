@@ -49,11 +49,10 @@ class ExamQuestionnaireController extends Controller
         );
         $role = $this->getViewRole($user);
 
+        $reviews = app(\App\Services\SubmissionReviewService::class);
+
         if ($user->isFaculty()) {
-            $pendingSubmissions = $this->facultyOwnedQuestionnairesQuery($user, $request, 'pending')
-                ->with('document.folder.parent')
-                ->orderByDesc('created_at')
-                ->get();
+            $pendingSubmissions = collect(); // no approval queue; kept for the view contract
 
             $rejectedSubmissions = $this->facultyOwnedQuestionnairesQuery($user, $request, 'rejected')
                 ->with('document.folder')
@@ -66,8 +65,8 @@ class ExamQuestionnaireController extends Controller
             $this->applyExamQuestionnaireListFilters($questionnairesQuery, $request);
             $this->applyListSort($questionnairesQuery, $sort);
             $questionnaires = $questionnairesQuery->paginate(15)->appends($request->query());
+            $reviews->decorate($questionnaires);
 
-            $activeId = SchoolYear::activeId();
             $pendingCount = 0;
 
             return view('faculty.exam-questionnaires', compact(
@@ -77,26 +76,32 @@ class ExamQuestionnaireController extends Controller
             ));
         }
 
-        $query = ExamQuestionnaire::with('submitter.employee', 'reviewer.employee')
-            ->visibleTo($user);
+        $reviewFilter = in_array($request->query('review'), ['new', 'needs_revision'], true) ? $request->query('review') : null;
+        $query = $reviewFilter === 'new'
+            ? $reviews->newQuery($user, ExamQuestionnaire::class)->with('submitter.employee', 'reviewer.employee', 'document')
+            : ExamQuestionnaire::with('submitter.employee', 'reviewer.employee', 'document')->visibleTo($user);
 
         $this->applyExamQuestionnaireListFilters($query, $request);
 
-        if ($statusFilter) {
-            $query->where('status', $statusFilter);
+        if ($reviewFilter === 'needs_revision' && \App\Services\SubmissionReviewService::available()) {
+            $query->whereHas('reviewComments', fn ($c) => $c->whereNull('addressed_at'));
+        }
+        if ($statusFilter === 'rejected') {
+            $query->where('status', 'rejected');
         }
 
         $this->applyListSort($query, $sort);
         $questionnaires = $query->paginate(15)->appends($request->query());
+        $reviews->decorate($questionnaires);
 
         $pendingSubmissions = collect();
         $rejectedSubmissions = collect();
 
-        $pendingCount = \App\Support\SubmissionPendingCounts::examQuestionnairesFor($user);
-        $canReviewSubmissions = $user->isDeanOrSecretary() || $user->isProgramCoordinator();
+        $pendingCount = $reviews->newCountFor($user, ExamQuestionnaire::class);
+        $canReviewSubmissions = $user->hasOversightAccess() || $user->isProgramCoordinator();
 
         return view("{$role}.exam-questionnaires", compact(
-            'questionnaires', 'search', 'sort', 'statusFilter', 'examTypeFilter',
+            'questionnaires', 'search', 'sort', 'statusFilter', 'reviewFilter', 'examTypeFilter',
             'semesterFilter', 'academicYearStart', 'archiveYears', 'pendingCount',
             'pendingSubmissions', 'rejectedSubmissions', 'canReviewSubmissions',
         ));
@@ -104,7 +109,8 @@ class ExamQuestionnaireController extends Controller
 
     public function store(Request $request)
     {
-        if (auth()->user()->isFaculty()) {
+        $user = auth()->user();
+        if ($user->isFaculty()) {
             abort(403, 'Upload exam questionnaires from Documents → Exam Questionnaires.');
         }
 
@@ -141,7 +147,7 @@ class ExamQuestionnaireController extends Controller
             $filename = time() . '_' . $file->hashName();
             $storedPath = UploadStorage::storeAs($file, 'exam-questionnaires', $filename);
 
-            ExamQuestionnaire::create([
+            $questionnaire = ExamQuestionnaire::create([
                 'submitted_by' => auth()->id(),
                 'title' => $title,
                 'file_path' => $storedPath,
@@ -153,21 +159,18 @@ class ExamQuestionnaireController extends Controller
                 'school_year_id' => SchoolYear::activeId(),
                 'semester' => $semester,
                 'academic_year' => $academicYear,
-                'status' => 'pending',
+                'status' => 'approved', // live immediately; reviewed through views and revision notes
             ]);
+            app(ExamQuestionnaireSyncService::class)->syncToDocument($questionnaire);
         } catch (\Throwable $e) {
             return $this->uploadFailedResponse($request, $e);
         }
 
-        app(\App\Services\NotificationService::class)->notifyDeanOnFileUpload(
-            auth()->user(),
-            1,
-            $title,
-            'Exam Questionnaires',
-            true,
-        );
+        if (!auth()->user()->isDeanOrSecretary()) {
+            app(\App\Services\SubmissionReviewService::class)->notifySubmitted($questionnaire->fresh('document'), auth()->user());
+        }
 
-        return back()->with('success', 'Exam questionnaire submitted for Dean approval.');
+        return back()->with('success', 'Exam questionnaire submitted and available now.');
     }
 
     public function view(Request $request, $id)
@@ -180,6 +183,9 @@ class ExamQuestionnaireController extends Controller
         if (!UploadStorage::exists($questionnaire->file_path)) {
             return back()->with('error', 'This file is no longer available. It was uploaded to a previous storage provider and no longer exists in the current storage.');
         }
+
+        $reviews = app(\App\Services\SubmissionReviewService::class);
+        $reviews->recordView($questionnaire, $user);
 
         if ($request->boolean('stream')) {
             $this->logSubmissionActivity($user, 'Viewed exam questionnaire: '.$questionnaire->title, 'exam_questionnaire_viewed');
@@ -200,6 +206,7 @@ class ExamQuestionnaireController extends Controller
             'streamUrl' => route($routePrefix.'.exam-questionnaires.view', ['id' => $id, 'stream' => 1]),
             'downloadUrl' => route($routePrefix.'.exam-questionnaires.download', $id),
             'backUrl' => route($routePrefix.'.exam-questionnaires.index'),
+            'review' => $reviews->panel($questionnaire->fresh('document'), $user),
         ]);
     }
 
@@ -222,70 +229,6 @@ class ExamQuestionnaireController extends Controller
         );
     }
 
-    public function approve(Request $request, $id)
-    {
-        $user = $this->submissionReviewer();
-
-        $questionnaire = ExamQuestionnaire::query()->visibleTo($user)->findOrFail($id);
-
-        if (!$questionnaire->isPending()) {
-            if ($questionnaire->isApproved() && !$questionnaire->document_id) {
-                $sync = app(ExamQuestionnaireSyncService::class);
-                $document = $sync->syncToDocument($questionnaire->fresh());
-                if ($document) {
-                    return back()->with('success', 'Approved file synced to Documents folder.');
-                }
-
-                return back()->with('warning', 'Submission is approved but could not be synced. Ensure TOS/TOQ folders exist for the active school year.');
-            }
-
-            return back()->with('info', 'This submission has already been reviewed.');
-        }
-
-        $questionnaire->update([
-            'status' => 'approved',
-            'reviewed_by' => $user->id,
-            'reviewed_at' => now(),
-            'remarks' => $request->input('remarks'),
-        ]);
-
-        $fresh = $questionnaire->fresh();
-        $sync = app(ExamQuestionnaireSyncService::class);
-        $document = $sync->syncToDocument($fresh);
-
-        $this->notificationService->notifyExamQuestionnaireApproved($fresh, $user);
-
-        if (!$document) {
-            return back()->with('warning', 'Questionnaire approved, but it could not be placed in the Documents folder. Ensure TOS/TOQ folders exist for the active school year.');
-        }
-
-        return back()->with('success', 'Questionnaire approved and added to Documents.');
-    }
-
-    public function reject(Request $request, $id)
-    {
-        $user = $this->submissionReviewer();
-
-        $request->validate(['remarks' => 'required|string|max:500']);
-
-        $questionnaire = ExamQuestionnaire::query()->visibleTo($user)->findOrFail($id);
-
-        if (!$questionnaire->isPending()) {
-            return back()->with('info', 'This submission has already been reviewed.');
-        }
-
-        $questionnaire->update([
-            'status' => 'rejected',
-            'reviewed_by' => $user->id,
-            'reviewed_at' => now(),
-            'remarks' => $request->input('remarks'),
-        ]);
-
-        $this->notificationService->notifyExamQuestionnaireRejected($questionnaire->fresh(), $user);
-
-        return back()->with('success', 'Questionnaire rejected.');
-    }
-
     public function rename(\App\Http\Requests\RenameDocumentRequest $request, $id)
     {
         $user = auth()->user();
@@ -294,9 +237,6 @@ class ExamQuestionnaireController extends Controller
         if ($user->isFaculty()) {
             if ((int) $questionnaire->submitted_by !== (int) $user->id) {
                 abort(403, 'You can only rename your own exam questionnaires.');
-            }
-            if (!$questionnaire->isPending()) {
-                abort(403, 'Only pending submissions can be renamed.');
             }
         }
 
@@ -322,8 +262,8 @@ class ExamQuestionnaireController extends Controller
         $questionnaire = ExamQuestionnaire::visibleTo($user)->findOrFail($id);
 
         if ($user->isFaculty()) {
-            if ((int) $questionnaire->submitted_by !== (int) $user->id || !$questionnaire->isRejected()) {
-                abort(403, 'You can only delete rejected exam questionnaires.');
+            if ((int) $questionnaire->submitted_by !== (int) $user->id) {
+                abort(403, 'You can only delete your own exam questionnaires.');
             }
         }
 

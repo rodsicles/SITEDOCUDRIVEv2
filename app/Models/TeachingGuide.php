@@ -9,6 +9,9 @@ use Illuminate\Database\Eloquent\Model;
 class TeachingGuide extends Model
 {
     use ScopesSubmissionVisibility;
+
+    public const REVIEW_TYPE = 'teaching_guide';
+
     protected $fillable = [
         'user_id',
         'title',
@@ -56,6 +59,21 @@ class TeachingGuide extends Model
     public function reviewer()
     {
         return $this->belongsTo(User::class, 'reviewed_by');
+    }
+
+    public function reviewComments()
+    {
+        return $this->hasMany(SubmissionComment::class, 'submission_id')->where('submission_type', self::REVIEW_TYPE);
+    }
+
+    public function reviewViews()
+    {
+        return $this->hasMany(SubmissionView::class, 'submission_id')->where('submission_type', self::REVIEW_TYPE);
+    }
+
+    public function owner()
+    {
+        return $this->uploader();
     }
 
     public function isPending(): bool

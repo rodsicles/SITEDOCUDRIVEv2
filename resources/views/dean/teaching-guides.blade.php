@@ -1,8 +1,8 @@
 ﻿@extends('layouts.dashboard')
 
-@section('title', 'Pending Teaching Guides - Dean')
-@section('page-title', 'Pending Teaching Guides')
-@section('page-subtitle', 'Review and approve faculty teaching guide submissions')
+@section('title', 'Teaching Guides - Dean')
+@section('page-title', 'Teaching Guides')
+@section('page-subtitle', 'Open new submissions, leave revision notes, and track revisions')
 
 @section('sidebar')
     @if(auth()->user()->isSecretary())
@@ -19,20 +19,20 @@
             <h3 class="card-title">Teaching Guide Submissions</h3>
             <span class="badge badge-info">{{ $guides->total() }} Submissions</span>
             @if(($pendingCount ?? 0) > 0)
-                <span class="badge badge-warning">{{ $pendingCount }} Pending Review</span>
+                <span class="badge badge-warning">{{ $pendingCount }} New for you</span>
             @endif
         </div>
 
         <div class="submission-toolbar">
-            <nav class="ui-segmented" aria-label="Submission status">
+            <nav class="ui-segmented" aria-label="Review filter">
                 <a href="{{ route('dean.teaching-guides.index', array_filter(['semester' => $semesterFilter ?? null, 'search' => $search ?: null])) }}"
-                   class="{{ ($statusFilter ?? '') === '' ? 'is-active' : '' }}">All</a>
-                <a href="{{ route('dean.teaching-guides.index', array_filter(['status' => 'pending', 'semester' => $semesterFilter ?? null, 'search' => $search ?: null])) }}"
-                   class="{{ ($statusFilter ?? '') === 'pending' ? 'is-active' : '' }}">Pending{{ ($pendingCount ?? 0) > 0 ? ' · '.$pendingCount : '' }}</a>
-                <a href="{{ route('dean.teaching-guides.index', array_filter(['status' => 'approved', 'semester' => $semesterFilter ?? null, 'search' => $search ?: null])) }}"
-                   class="{{ ($statusFilter ?? '') === 'approved' ? 'is-active' : '' }}">Approved</a>
+                   class="{{ empty($reviewFilter) && ($statusFilter ?? '') !== 'rejected' ? 'is-active' : '' }}">All</a>
+                <a href="{{ route('dean.teaching-guides.index', array_filter(['review' => 'new', 'semester' => $semesterFilter ?? null, 'search' => $search ?: null])) }}"
+                   class="{{ ($reviewFilter ?? '') === 'new' ? 'is-active' : '' }}">New for you{{ ($pendingCount ?? 0) > 0 ? ' · '.$pendingCount : '' }}</a>
+                <a href="{{ route('dean.teaching-guides.index', array_filter(['review' => 'needs_revision', 'semester' => $semesterFilter ?? null, 'search' => $search ?: null])) }}"
+                   class="{{ ($reviewFilter ?? '') === 'needs_revision' ? 'is-active' : '' }}">Needs revision</a>
                 <a href="{{ route('dean.teaching-guides.index', array_filter(['status' => 'rejected', 'semester' => $semesterFilter ?? null, 'search' => $search ?: null])) }}"
-                   class="{{ ($statusFilter ?? '') === 'rejected' ? 'is-active' : '' }}">Rejected</a>
+                   class="{{ ($statusFilter ?? '') === 'rejected' ? 'is-active' : '' }}">Rejected (earlier)</a>
             </nav>
             <div class="submission-toolbar__group">
                 <label class="submission-toolbar__label">Semester</label>
@@ -64,7 +64,7 @@
                     <th>Faculty</th>
                     <th>Type</th>
                     <th>Semester</th>
-                    <th>Approval</th>
+                    <th>Review</th>
                     <th>Submitted</th>
                     <th>Actions</th>
                 </tr>
@@ -96,8 +96,6 @@
                             'popoverPrefix' => 'tg',
                             'viewUrl' => route('dean.teaching-guides.view', $guide->id),
                             'downloadUrl' => route('dean.teaching-guides.download', $guide->id),
-                            'approveUrl' => route('dean.teaching-guides.approve', $guide->id),
-                            'rejectOnClick' => 'openTgRejectModal',
                         ])
                     </td>
                 </tr>
@@ -114,38 +112,6 @@
 
     @include('partials.submission-review-table-scripts')
 
-    {{-- Reject Modal --}}
-    <div id="tgRejectModal" class="modal-overlay" hidden role="dialog" aria-modal="true" aria-labelledby="tgRejectTitle">
-        <div class="modal-card">
-            <div class="card-header">
-                <h3 class="card-title" id="tgRejectTitle">Reject Teaching Guide</h3>
-                <button type="button" onclick="closeTgRejectModal()" class="btn btn-sm bg-gray-200 dark:bg-gray-700"><i class="fas fa-times"></i></button>
-            </div>
-            <form id="tgRejectForm" method="POST">
-                @csrf
-                <div class="p-4">
-                    <label class="form-label">Reason for Rejection <span class="text-red-500">*</span></label>
-                    <textarea name="remarks" class="form-control" rows="3" maxlength="500" required placeholder="Provide feedback for the faculty..."></textarea>
-                </div>
-                <div class="px-4 pb-4 flex gap-2">
-                    <button type="submit" class="btn btn-danger"><i class="fas fa-times"></i> Reject</button>
-                    <button type="button" onclick="closeTgRejectModal()" class="btn bg-gray-200 dark:bg-gray-700 text-gray-700 dark:text-gray-300">Cancel</button>
-                </div>
-            </form>
-        </div>
-    </div>
+    @include('partials.submission-note-modal')
 
-    <script>
-        function openTgRejectModal(id) {
-            document.getElementById('tgRejectForm').action = '{{ url('/dean/teaching-guides') }}/' + id + '/reject';
-            const modal = document.getElementById('tgRejectModal');
-            modal.hidden = false;
-            modal.classList.add('active');
-        }
-        function closeTgRejectModal() {
-            const modal = document.getElementById('tgRejectModal');
-            modal.classList.remove('active');
-            modal.hidden = true;
-        }
-    </script>
 @endsection

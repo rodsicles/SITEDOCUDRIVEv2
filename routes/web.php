@@ -95,6 +95,16 @@ Route::middleware(['auth', 'no.back'])->prefix('archive-contents/{year}')->name(
     Route::patch('/exam-questionnaires/{questionnaire}', [ArchiveContentController::class, 'renameQuestionnaire'])->middleware('throttle:60,1')->name('questionnaires.rename');
 });
 
+// Comment-based review for Teaching Guides / Exam Questionnaires (authorization in SubmissionReviewService).
+Route::middleware(['auth', 'no.back'])->name('submission-reviews.')->group(function () {
+    Route::post('/submissions/{type}/{id}/comments', [\App\Http\Controllers\SubmissionReviewController::class, 'storeComment'])
+        ->whereIn('type', ['teaching-guide', 'exam-questionnaire'])->whereNumber('id')->middleware('throttle:30,1')->name('comments.store');
+    Route::post('/submissions/{type}/{id}/revise', [\App\Http\Controllers\SubmissionReviewController::class, 'revise'])
+        ->whereIn('type', ['teaching-guide', 'exam-questionnaire'])->whereNumber('id')->middleware('throttle:10,60')->name('revise');
+    Route::post('/submission-comments/{comment}/addressed', [\App\Http\Controllers\SubmissionReviewController::class, 'addressed'])
+        ->middleware('throttle:60,1')->name('comments.addressed');
+});
+
 // Teaching Guides: open or create subject folder (TG/LB) from semester picker
 Route::middleware(['auth', 'no.back', 'role:Dean,Secretary,Admin,Program Coordinator,Faculty Employee'])->prefix('teacher-loads')->name('teacher-loads.')->group(function () {
     $controller = \App\Http\Controllers\TeacherLoadController::class;
@@ -312,16 +322,12 @@ Route::middleware(['auth', 'no.back', 'role:Dean,Secretary,Admin'])->prefix('dea
     Route::post('/teaching-guides', [TeachingGuideController::class, 'store'])->middleware('throttle:6,60')->name('teaching-guides.store');
     Route::get('/teaching-guides/{id}/view', [TeachingGuideController::class, 'view'])->name('teaching-guides.view');
     Route::get('/teaching-guides/{id}/download', [TeachingGuideController::class, 'download'])->name('teaching-guides.download');
-    Route::post('/teaching-guides/{id}/approve', [TeachingGuideController::class, 'approve'])->middleware('throttle:30,1')->name('teaching-guides.approve');
-    Route::post('/teaching-guides/{id}/reject', [TeachingGuideController::class, 'reject'])->middleware('throttle:30,1')->name('teaching-guides.reject');
     Route::delete('/teaching-guides/{id}', [TeachingGuideController::class, 'destroy'])->name('teaching-guides.destroy');
 
     // Exam Questionnaires
     Route::get('/exam-questionnaires', [ExamQuestionnaireController::class, 'index'])->name('exam-questionnaires.index');
     Route::get('/exam-questionnaires/{id}/view', [ExamQuestionnaireController::class, 'view'])->name('exam-questionnaires.view');
     Route::get('/exam-questionnaires/{id}/download', [ExamQuestionnaireController::class, 'download'])->name('exam-questionnaires.download');
-    Route::post('/exam-questionnaires/{id}/approve', [ExamQuestionnaireController::class, 'approve'])->middleware('throttle:30,1')->name('exam-questionnaires.approve');
-    Route::post('/exam-questionnaires/{id}/reject', [ExamQuestionnaireController::class, 'reject'])->middleware('throttle:30,1')->name('exam-questionnaires.reject');
 
     // Archives (Dean manages + browses)
     Route::get('/archives', [SchoolYearController::class, 'index'])->name('archives.index');
@@ -395,8 +401,6 @@ Route::middleware(['auth', 'no.back', 'role:Program Coordinator'])->prefix('coor
     Route::post('/teaching-guides', [TeachingGuideController::class, 'store'])->middleware('throttle:6,60')->name('teaching-guides.store');
     Route::get('/teaching-guides/{id}/view', [TeachingGuideController::class, 'view'])->name('teaching-guides.view');
     Route::get('/teaching-guides/{id}/download', [TeachingGuideController::class, 'download'])->name('teaching-guides.download');
-    Route::post('/teaching-guides/{id}/approve', [TeachingGuideController::class, 'approve'])->middleware('throttle:30,1')->name('teaching-guides.approve');
-    Route::post('/teaching-guides/{id}/reject', [TeachingGuideController::class, 'reject'])->middleware('throttle:30,1')->name('teaching-guides.reject');
     Route::delete('/teaching-guides/{id}', [TeachingGuideController::class, 'destroy'])->name('teaching-guides.destroy');
 
     // Exam Questionnaires (coordinator reviews department faculty submissions)
@@ -404,8 +408,6 @@ Route::middleware(['auth', 'no.back', 'role:Program Coordinator'])->prefix('coor
     Route::post('/exam-questionnaires', [ExamQuestionnaireController::class, 'store'])->middleware('throttle:6,60')->name('exam-questionnaires.store');
     Route::get('/exam-questionnaires/{id}/view', [ExamQuestionnaireController::class, 'view'])->name('exam-questionnaires.view');
     Route::get('/exam-questionnaires/{id}/download', [ExamQuestionnaireController::class, 'download'])->name('exam-questionnaires.download');
-    Route::post('/exam-questionnaires/{id}/approve', [ExamQuestionnaireController::class, 'approve'])->middleware('throttle:30,1')->name('exam-questionnaires.approve');
-    Route::post('/exam-questionnaires/{id}/reject', [ExamQuestionnaireController::class, 'reject'])->middleware('throttle:30,1')->name('exam-questionnaires.reject');
     Route::get('/activity-log', [CoordinatorController::class, 'activityLog'])->name('activity-log');
 
     // Archives (browse only)

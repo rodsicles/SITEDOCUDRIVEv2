@@ -17,13 +17,13 @@
             <i class="fas fa-chalkboard-teacher"></i> Teacher’s Load
         </a>
         <a href="{{ route('coordinator.teaching-guides.index') }}" class="menu-item {{ request()->routeIs('coordinator.teaching-guides.*') ? 'active' : '' }}">
-            <i class="fas fa-book-open"></i> Pending Teaching Guides
+            <i class="fas fa-book-open"></i> Teaching Guides
             @if(($pendingTeachingGuidesCount ?? 0) > 0)
             <span class="badge badge-danger ml-auto">{{ $pendingTeachingGuidesCount }}</span>
             @endif
         </a>
         <a href="{{ route('coordinator.exam-questionnaires.index') }}" class="menu-item {{ request()->routeIs('coordinator.exam-questionnaires.*') ? 'active' : '' }}">
-            <i class="fas fa-file-alt"></i> Pending Exam Questionnaires
+            <i class="fas fa-file-alt"></i> Exam Questionnaires
             @if(($pendingExamQuestionnairesCount ?? 0) > 0)
             <span class="badge badge-danger ml-auto">{{ $pendingExamQuestionnairesCount }}</span>
             @endif

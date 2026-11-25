@@ -9,6 +9,9 @@ use Illuminate\Database\Eloquent\Model;
 class ExamQuestionnaire extends Model
 {
     use ScopesSubmissionVisibility;
+
+    public const REVIEW_TYPE = 'exam_questionnaire';
+
     protected $fillable = [
         'submitted_by',
         'document_id',
@@ -45,6 +48,21 @@ class ExamQuestionnaire extends Model
     public function reviewer()
     {
         return $this->belongsTo(User::class, 'reviewed_by');
+    }
+
+    public function reviewComments()
+    {
+        return $this->hasMany(SubmissionComment::class, 'submission_id')->where('submission_type', self::REVIEW_TYPE);
+    }
+
+    public function reviewViews()
+    {
+        return $this->hasMany(SubmissionView::class, 'submission_id')->where('submission_type', self::REVIEW_TYPE);
+    }
+
+    public function owner()
+    {
+        return $this->submitter();
     }
 
     public function isPending(): bool

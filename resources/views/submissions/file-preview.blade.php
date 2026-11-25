@@ -24,6 +24,10 @@
         $isArchivedPreview = (bool) ($isArchivedVersion ?? false);
     @endphp
 
+    @if(!empty($review))
+        @include('partials.submission-review-panel', ['review' => $review, 'title' => $title])
+    @endif
+
     <div class="submission-preview-layout {{ $showSidePanel ? 'submission-preview-layout--with-side' : '' }}">
         <div class="submission-preview-main">
             <div class="content-card submission-preview-card mb-0">

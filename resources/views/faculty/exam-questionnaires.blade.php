@@ -21,7 +21,7 @@
             <div class="stat-icon-horizontal"><i class="fas fa-info-circle"></i></div>
             <div>
                 <div class="font-semibold text-gray-700 dark:text-gray-200">Current: {{ $currentAY }}</div>
-                <div class="text-xs text-gray-500 dark:text-gray-400">Upload exam questionnaires from Documents &rarr; Exam Questionnaires. Files stay pending until the Dean approves them.</div>
+                <div class="text-xs text-gray-500 dark:text-gray-400">Upload exam questionnaires from Documents &rarr; Exam Questionnaires. Files are available right away. The Dean or your Coordinator may leave revision notes — open a file to see them.</div>
             </div>
         </div>
     </div>
@@ -60,6 +60,7 @@
                         <th>Exam Type</th>
                         <th>Semester</th>
                         <th>Academic Year</th>
+                        <th>Review</th>
                         <th>Date Submitted</th>
                         <th>Actions</th>
                     </tr>
@@ -100,6 +101,7 @@
                         <td><span class="doc-category-badge">{{ $q->exam_type }}</span></td>
                         <td>{{ $q->semester }}</td>
                         <td>{{ $q->academic_year }}</td>
+                        <td>@include('partials.submission-approval-status', ['submission' => $q])</td>
                         <td>{{ $q->created_at->format('M d, Y') }}</td>
                         <td>
                             <div class="doc-action-btns">
@@ -114,7 +116,7 @@
                     </tr>
                     @empty
                     <tr>
-                        <td colspan="8" class="text-center text-gray-500 dark:text-gray-400 py-8">No approved exam questionnaires available yet.</td>
+                        <td colspan="9" class="text-center text-gray-500 dark:text-gray-400 py-8">No exam questionnaires available yet.</td>
                     </tr>
                     @endforelse
                 </tbody>

@@ -34,11 +34,11 @@ class DashboardService
 
         if ($user->isDeanOrSecretary()) {
             $overdue = Task::whereNotNull('due_date')->whereDate('due_date', '<', today())->where('status', '!=', 'Completed')->count();
-            $pending = \App\Models\TeachingGuide::where('status', 'pending')->count()
-                + \App\Models\ExamQuestionnaire::where('status', 'pending')->count();
+            $pending = \App\Support\SubmissionPendingCounts::teachingGuidesFor($user)
+                + \App\Support\SubmissionPendingCounts::examQuestionnairesFor($user);
             $urgent = $overdue > 0
                 ? ['tone'=>'urgent','title'=>"{$overdue} overdue ".($overdue === 1 ? 'task' : 'tasks'),'detail'=>'These assignments are past their due date and still incomplete.','url'=>route('dean.tasks'),'action'=>'Review tasks']
-                : ['tone'=>$pending > 0 ? 'urgent' : 'clear','title'=>$pending > 0 ? "{$pending} submissions awaiting review" : 'No urgent review backlog','detail'=>$pending > 0 ? 'Teaching Guides or Exam Questionnaires are waiting for a decision.' : 'There are no overdue tasks or pending academic submissions.','url'=>$pending > 0 ? route('dean.teaching-guides.index', ['status'=>'pending']) : route('dean.dashboard'),'action'=>$pending > 0 ? 'Open review queue' : 'Dashboard'];
+                : ['tone'=>$pending > 0 ? 'urgent' : 'clear','title'=>$pending > 0 ? "{$pending} new submissions to open" : 'No urgent review backlog','detail'=>$pending > 0 ? 'New Teaching Guides or Exam Questionnaires are live and ready for review notes.' : 'There are no overdue tasks or unopened academic submissions.','url'=>$pending > 0 ? route('dean.teaching-guides.index', ['review'=>'new']) : route('dean.dashboard'),'action'=>$pending > 0 ? 'Open review queue' : 'Dashboard'];
             $completed = Task::where('status', 'Completed')->where('updated_at', '>=', now()->subDays(30))->count();
             $positive = ['tone'=>'positive','title'=>"{$completed} tasks completed in 30 days",'detail'=>'A useful monthly signal of work closed across the institution.','url'=>route('dean.analytics'),'action'=>'View analytics'];
         } elseif ($user->isProgramCoordinator()) {
@@ -49,11 +49,11 @@ class DashboardService
             $positive = ['tone'=>'positive','title'=>"{$faculty} faculty in your programs",'detail'=>'Use this directory for focused follow-up and document coordination.','url'=>route('coordinator.faculty'),'action'=>'View faculty'];
         } else {
             $overdue = Task::where('assigned_to', $userId)->whereNotNull('due_date')->whereDate('due_date', '<', today())->where('status', '!=', 'Completed')->count();
-            $pending = \App\Models\TeachingGuide::where('user_id', $userId)->where('status', 'pending')->count()
-                + \App\Models\ExamQuestionnaire::where('submitted_by', $userId)->where('status', 'pending')->count();
+            $pending = \App\Support\SubmissionPendingCounts::openNotesFor($user, \App\Models\TeachingGuide::class)
+                + \App\Support\SubmissionPendingCounts::openNotesFor($user, \App\Models\ExamQuestionnaire::class);
             $urgent = $overdue > 0
                 ? ['tone'=>'urgent','title'=>"{$overdue} overdue ".($overdue === 1 ? 'task' : 'tasks'),'detail'=>'These items should be completed before starting lower-priority work.','url'=>route('faculty.tasks', ['filter'=>'overdue']),'action'=>'Review overdue']
-                : ['tone'=>$pending > 0 ? 'attention' : 'clear','title'=>$pending > 0 ? "{$pending} submissions under review" : 'No urgent work overdue','detail'=>$pending > 0 ? 'Your academic submissions are awaiting an approval decision.' : 'Your assigned work is currently within deadline.','url'=>$pending > 0 ? route('faculty.documents') : route('faculty.tasks'),'action'=>$pending > 0 ? 'Check documents' : 'View tasks'];
+                : ['tone'=>$pending > 0 ? 'attention' : 'clear','title'=>$pending > 0 ? "{$pending} submissions need revision" : 'No urgent work overdue','detail'=>$pending > 0 ? 'Reviewers left revision notes on your Teaching Guides or Exam Questionnaires.' : 'Your assigned work is currently within deadline.','url'=>$pending > 0 ? route('faculty.documents') : route('faculty.tasks'),'action'=>$pending > 0 ? 'Check documents' : 'View tasks'];
             $completed = Task::where('assigned_to', $userId)->where('status', 'Completed')->where('updated_at', '>=', now()->subDays(30))->count();
             $positive = ['tone'=>'positive','title'=>"{$completed} tasks completed in 30 days",'detail'=>'A concise view of your recently finished work.','url'=>route('faculty.tasks', ['filter'=>'completed']),'action'=>'View completed'];
         }
@@ -135,15 +135,9 @@ class DashboardService
 
             $unreadCount = $this->getUnreadNotificationCount($userId);
 
-            $pendingTeachingGuidesCount = \App\Models\TeachingGuide::query()
-                ->where('user_id', $userId)
-                ->where('status', 'pending')
-                ->count();
-
-            $pendingExamQuestionnairesCount = \App\Models\ExamQuestionnaire::query()
-                ->where('submitted_by', $userId)
-                ->where('status', 'pending')
-                ->count();
+            // Own submissions with open revision notes (there is no approval queue).
+            $pendingTeachingGuidesCount = \App\Support\SubmissionPendingCounts::openNotesFor($user, \App\Models\TeachingGuide::class);
+            $pendingExamQuestionnairesCount = \App\Support\SubmissionPendingCounts::openNotesFor($user, \App\Models\ExamQuestionnaire::class);
 
             $awaitingApproval = $pendingTeachingGuidesCount + $pendingExamQuestionnairesCount;
             $attentionCount = $overdueCount + $unreadCount + $awaitingApproval;
@@ -155,7 +149,7 @@ class DashboardService
                 $bannerUrl = $pendingTeachingGuidesCount >= $pendingExamQuestionnairesCount
                     ? route('faculty.teaching-guides.index')
                     : route('faculty.exam-questionnaires.index');
-                $bannerCta = 'Check submissions awaiting approval';
+                $bannerCta = 'Review revision notes';
             } elseif ($unreadCount > 0) {
                 $bannerUrl = route('faculty.notifications');
                 $bannerCta = 'Open notifications';
@@ -404,13 +398,9 @@ class DashboardService
             $stats = $this->getDeanStats($userId);
             $activeId = \App\Models\SchoolYear::activeId();
 
-            $pendingScope = fn ($q) => $q->where('status', 'pending')
-                ->where(function ($q2) use ($activeId) {
-                    $q2->where('school_year_id', $activeId)->orWhereNull('school_year_id');
-                });
-
-            $pendingTeachingGuidesCount = \App\Models\TeachingGuide::query()->where($pendingScope)->count();
-            $pendingExamQuestionnairesCount = \App\Models\ExamQuestionnaire::query()->where($pendingScope)->count();
+            // "New submissions" this Dean has not opened yet (there is no approval queue).
+            $pendingTeachingGuidesCount = \App\Support\SubmissionPendingCounts::teachingGuidesFor($user);
+            $pendingExamQuestionnairesCount = \App\Support\SubmissionPendingCounts::examQuestionnairesFor($user);
             $pendingApprovals = $pendingTeachingGuidesCount + $pendingExamQuestionnairesCount;
 
             $passwordResetCount = \App\Models\PasswordResetRequest::pending()
@@ -427,9 +417,9 @@ class DashboardService
 
             if ($pendingApprovals > 0) {
                 $bannerUrl = $pendingTeachingGuidesCount >= $pendingExamQuestionnairesCount
-                    ? route('dean.teaching-guides.index', ['status' => 'pending'])
-                    : route('dean.exam-questionnaires.index', ['status' => 'pending']);
-                $bannerCta = 'Review pending files';
+                    ? route('dean.teaching-guides.index', ['review' => 'new'])
+                    : route('dean.exam-questionnaires.index', ['review' => 'new']);
+                $bannerCta = 'Open new submissions';
             } elseif ($passwordResetCount > 0) {
                 $bannerUrl = route('password-reset-requests.index', ['tab' => 'pending']);
                 $bannerCta = 'Review password resets';

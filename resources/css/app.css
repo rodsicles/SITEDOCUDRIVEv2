@@ -14162,3 +14162,37 @@ html[data-theme="dark"] .authenticated-ui .badge-info,
 .dark .authenticated-ui .badge-info {
     color: #8bb4e8 !important;
 }
+
+/* ── Comment-based submission review (Teaching Guides / Exam Questionnaires) ── */
+.submission-note-btn { display: inline-flex; align-items: center; gap: 0.35rem; border: 1px solid #b45309; background: #fef3c7; color: #92400e; font-weight: 700; font-size: 0.75rem; white-space: nowrap; }
+.submission-note-btn:hover, .submission-note-btn:focus-visible { background: #f59e0b; border-color: #b45309; color: #fff; }
+.submission-note-btn:focus-visible { outline: 2px solid #b45309; outline-offset: 2px; }
+.submission-note-btn--lg { padding: 0.6rem 1rem; font-size: 0.875rem; }
+.submission-status--submitted { background: #eef2f7; color: #334155; border-color: #cbd5e1; }
+.submission-status--viewed, .submission-status--approved { background: var(--site-surface-selected); color: var(--site-primary); border-color: var(--site-border-strong); }
+.submission-status--needs_revision { background: #fef3c7; color: #92400e; border-color: #f59e0b; }
+.submission-status--revised { background: #e0f2fe; color: #075985; border-color: #7dd3fc; }
+.submission-status--rejected { background: #fee2e2; color: #991b1b; border-color: #fca5a5; }
+.submission-review-panel { margin-bottom: 1rem; padding: 1rem 1.25rem; border-left: 4px solid #f59e0b; }
+.submission-review-panel__head { display: flex; flex-wrap: wrap; align-items: flex-start; justify-content: space-between; gap: 0.75rem; }
+.submission-review-panel__status { display: flex; flex-wrap: wrap; align-items: center; gap: 0.5rem; margin-top: 0.35rem; }
+.submission-review-panel__actions { display: flex; flex-wrap: wrap; gap: 0.5rem; }
+.submission-review-panel__alert { margin: 0.75rem 0 0; padding: 0.6rem 0.75rem; border: 1px solid #f59e0b; background: #fffbeb; color: #92400e; font-size: 0.8125rem; font-weight: 600; }
+.submission-review-panel__grid { display: grid; grid-template-columns: minmax(0, 2fr) minmax(0, 1fr); gap: 1.25rem; margin-top: 1rem; }
+.submission-review-panel__subhead { margin: 0 0 0.5rem; font-size: 0.8125rem; font-weight: 700; color: var(--site-heading); text-transform: uppercase; letter-spacing: 0.03em; }
+.submission-review-panel__view { margin: 0 0 0.35rem; font-size: 0.8125rem; color: var(--site-text); }
+.submission-review-panel__view span { color: var(--site-muted); }
+.submission-note { margin-bottom: 0.6rem; padding: 0.65rem 0.75rem; border: 1px solid var(--site-border); background: var(--site-surface); }
+.submission-note.is-open { border-left: 3px solid #f59e0b; }
+.submission-note.is-addressed { border-left: 3px solid var(--site-primary); opacity: 0.85; }
+.submission-note header { display: flex; flex-wrap: wrap; gap: 0.5rem; align-items: baseline; font-size: 0.8125rem; }
+.submission-note header span { color: var(--site-muted); font-size: 0.75rem; }
+.submission-note__location { margin: 0.35rem 0 0; font-size: 0.75rem; font-weight: 700; color: #92400e; }
+.submission-note__body { margin: 0.35rem 0 0; font-size: 0.875rem; white-space: pre-line; color: var(--site-text); }
+.submission-note footer { display: flex; align-items: center; gap: 0.5rem; margin-top: 0.5rem; }
+dialog.ui-dialog.ui-dialog--note { border-top: 4px solid #f59e0b; }
+.submission-note-modal__target { margin: 0 0 0.75rem; font-size: 0.875rem; }
+.dark .submission-note-btn, html[data-theme="dark"] .submission-note-btn { background: #3a2a10; color: #fcd34d; border-color: #b45309; }
+.dark .submission-review-panel__alert, html[data-theme="dark"] .submission-review-panel__alert { background: #2d2310; color: #fcd34d; }
+.dark .submission-status--submitted, html[data-theme="dark"] .submission-status--submitted { background: var(--site-surface-subtle); color: var(--site-text); border-color: var(--site-border); }
+@media (max-width: 768px) { .submission-review-panel__grid { grid-template-columns: 1fr; } }
